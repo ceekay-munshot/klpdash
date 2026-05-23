@@ -3,21 +3,206 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>klpdash</title>
+    <title>KLP Stock Screener · Fundamentals Dashboard</title>
+    <meta name="description" content="Fundamentals scoring dashboard for NSE 500 companies, scored on the KLP framework." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        max-width: 40rem;
-        margin: 4rem auto;
-        padding: 0 1rem;
-        color: #222;
+      :root {
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }
-      h1 { margin-bottom: 0.25rem; }
-      p  { color: #555; }
+      body {
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background:
+          radial-gradient(at 0% 0%, rgba(167, 139, 250, 0.12) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, rgba(244, 114, 182, 0.10) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.10) 0px, transparent 50%),
+          #f8fafc;
+        min-height: 100vh;
+      }
+      .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+      .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+      .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      .drill-panel { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      .fade-in { animation: fade-in 0.4s ease-out both; }
+      table thead th[data-sort] { cursor: pointer; user-select: none; }
+      table thead th[data-sort]:hover { color: #4f46e5; }
     </style>
   </head>
-  <body>
-    <h1>klpdash</h1>
-    <p>Placeholder. Dashboard UI will be added here.</p>
+  <body class="text-slate-800">
+
+    <!-- HEADER -->
+    <header class="max-w-7xl mx-auto px-6 pt-8 pb-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-extrabold text-lg shadow-lg">
+            KLP
+          </div>
+          <div>
+            <h1 class="font-display font-extrabold text-2xl text-slate-900 leading-tight">KLP Stock Screener</h1>
+            <p class="text-sm text-slate-500">Fundamentals scoring · NSE 500 universe</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-500">
+          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 ring-1 ring-emerald-100 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="font-medium text-emerald-700">Live</span>
+          </div>
+          <div class="px-3 py-1.5 bg-white/70 ring-1 ring-slate-200 rounded-full">
+            Updated <span id="meta-updated" class="font-semibold text-slate-700">—</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="max-w-7xl mx-auto px-6">
+      <div class="flex items-center gap-1 border-b border-slate-200">
+        <button class="px-4 py-2.5 font-semibold text-sm text-indigo-600 border-b-2 border-indigo-600 -mb-px">
+          Fundamentals
+        </button>
+        <button disabled class="px-4 py-2.5 font-medium text-sm text-slate-400 cursor-not-allowed flex items-center gap-1.5">
+          Technicals <span class="text-xs">🔒</span>
+        </button>
+        <button disabled class="px-4 py-2.5 font-medium text-sm text-slate-400 cursor-not-allowed flex items-center gap-1.5">
+          Macro <span class="text-xs">🔒</span>
+        </button>
+        <button disabled class="px-4 py-2.5 font-medium text-sm text-slate-400 cursor-not-allowed flex items-center gap-1.5">
+          Top 7 Picks <span class="text-xs">🔒</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-6 fade-in">
+
+      <!-- HERO STATS -->
+      <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
+          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Universe</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1" id="meta-count">—</div>
+          <div class="text-xs text-slate-500 mt-0.5" id="meta-source">—</div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
+          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Scoring Method</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">16 / 19</div>
+          <div class="text-xs text-slate-500 mt-0.5">Active rules <button id="deferred-info" class="text-indigo-600 hover:text-indigo-800 underline ml-1">(<span id="deferred-count">3</span> deferred)</button></div>
+        </div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
+          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Max Score</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1">24 pts</div>
+          <div class="text-xs text-slate-500 mt-0.5">After deferred rules: 29 pts</div>
+        </div>
+        <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-4 shadow-lg text-white">
+          <div class="text-xs font-medium uppercase tracking-wider opacity-90">Refresh Cadence</div>
+          <div class="text-2xl font-bold mt-1">Daily</div>
+          <div class="text-xs opacity-90 mt-0.5">06:00 IST · auto-scheduled</div>
+        </div>
+      </section>
+
+      <!-- TOP 10 -->
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+            <span class="text-amber-500">🏆</span> Top 10 by Score
+          </h2>
+          <div class="text-xs text-slate-500">Click any card to see the full breakdown</div>
+        </div>
+        <div id="top-cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+      </section>
+
+      <!-- DEFERRED PARAMETERS PANEL (collapsible) -->
+      <details class="mb-6 bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
+        <summary class="cursor-pointer px-5 py-4 flex items-center justify-between hover:bg-slate-50">
+          <div class="flex items-center gap-3">
+            <div class="text-amber-500 text-lg">⚠</div>
+            <div>
+              <div class="font-semibold text-slate-900 text-sm">3 parameters pending data source</div>
+              <div class="text-xs text-slate-500">Not yet included in scoring · click to see why</div>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400">expand ↓</div>
+        </summary>
+        <div id="deferred-list" class="px-5 pb-5 pt-1 space-y-2"></div>
+      </details>
+
+      <!-- TABLE CONTROLS -->
+      <section class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="flex-1 flex items-center gap-2">
+            <div class="relative flex-1 max-w-md">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+              <input id="search" type="text" placeholder="Search company..." class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            </div>
+            <select id="score-filter" class="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+              <option value="all">All scores</option>
+              <option value="excellent">Excellent (80%+)</option>
+              <option value="good">Good (60–80%)</option>
+              <option value="average">Average (40–60%)</option>
+              <option value="weak">Weak (&lt;40%)</option>
+              <option value="hardfail">Hard-fail flagged</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-xs text-slate-500 hidden sm:block"><span id="row-count" class="font-semibold text-slate-700">—</span> shown</div>
+            <button id="export-btn" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all">
+              <span>📊</span> Export Excel
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto scrollbar-thin">
+          <table id="table" class="w-full text-sm">
+            <thead class="bg-slate-50/70 sticky top-0 z-10">
+              <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-600">
+                <th class="px-4 py-3 w-12">#</th>
+                <th class="px-4 py-3" data-sort="name">Company</th>
+                <th class="px-4 py-3" data-sort="score">Score ▾</th>
+                <th class="px-4 py-3">Signals</th>
+                <th class="px-4 py-3">ROE</th>
+                <th class="px-4 py-3">ROCE</th>
+                <th class="px-4 py-3">Rev 3Y</th>
+                <th class="px-4 py-3">PAT 3Y</th>
+                <th class="px-4 py-3">D/E</th>
+                <th class="px-4 py-3">P/E</th>
+                <th class="px-4 py-3 text-right">Link</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- LEGEND -->
+      <section class="mt-6 p-4 bg-white/60 rounded-2xl ring-1 ring-slate-100">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Legend</div>
+        <div class="flex flex-wrap gap-4 text-xs">
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Pass</div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Partial</div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Fail</div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Hard Fail (red flag)</div>
+          <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> N/A — data missing</div>
+          <div class="flex items-center gap-1.5"><span class="text-amber-500">⊘</span> Some parameters N/A</div>
+          <div class="flex items-center gap-1.5"><span class="text-rose-500">⚠</span> Has hard-fail flag</div>
+        </div>
+      </section>
+
+      <footer class="mt-8 text-center text-xs text-slate-500">
+        Data sourced from Screener.in · Scoring rules per KLP framework ·
+        <a class="text-indigo-600 hover:underline" href="data/screener-companies.csv" download>Download raw CSV</a>
+      </footer>
+    </main>
+
+    <!-- DRILL-DOWN PANEL -->
+    <div id="drill-overlay" class="fixed inset-0 bg-slate-900/30 hidden z-40 backdrop-blur-sm"></div>
+    <aside id="drill-panel" class="drill-panel fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white shadow-2xl translate-x-full z-50 overflow-y-auto scrollbar-thin">
+      <div id="drill-content"></div>
+    </aside>
+
+    <script type="module" src="js/app.js"></script>
   </body>
 </html>
