@@ -135,14 +135,33 @@ async function fetchScreenCompanies(page, base) {
 }
 
 async function fetchCompanyData(page, path, debug = false) {
-  await page.goto(`${ORIGIN}${path}`, { waitUntil: "domcontentloaded", timeout: 60000 });
-  // Wait for JS to inject custom ribbon ratios (defaults are 9).
-  await page
-    .waitForFunction(() => document.querySelectorAll("#top-ratios li").length > 9, { timeout: 12000 })
-    .catch(() => {});
-  await page.waitForTimeout(800);
+  const url = `${ORIGIN}${path}`;
+  let html = null;
+  let ribbonCount = 0;
 
-  const html = await page.content();
+  // Screener fetches custom ribbon ratios via XHR after page load. If they
+  // miss the first wait, reload with longer patience before giving up.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const patient = attempt === 2;
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page
+      .waitForLoadState("networkidle", { timeout: patient ? 30000 : 15000 })
+      .catch(() => {});
+    await page
+      .waitForFunction(() => document.querySelectorAll("#top-ratios li").length > 9, {
+        timeout: patient ? 25000 : 15000,
+      })
+      .catch(() => {});
+    await page.waitForTimeout(patient ? 1500 : 800);
+    html = await page.content();
+    ribbonCount = cheerio.load(html)("#top-ratios li").length;
+    if (ribbonCount > 9) break;
+    if (attempt < 2) {
+      process.stdout.write(`(only ${ribbonCount} ratios; retrying) `);
+      await sleep(1500);
+    }
+  }
+
   if (debug) {
     writeFileSync(resolve(OUT_DIR, "_debug-first-company.html"), html);
   }
@@ -155,6 +174,9 @@ async function fetchCompanyData(page, path, debug = false) {
     if (name) data[name] = cleanValue(value);
   });
   if (!Object.keys(data).length) throw new Error("no #top-ratios block found");
+  if (ribbonCount <= 9) {
+    throw new Error(`custom ribbon ratios did not load after retry (got ${ribbonCount}, expected >9)`);
+  }
 
   const npq = parseSectionRow($, "#quarters", /^net profit/i);
   if (npq && npq.values.length) {
