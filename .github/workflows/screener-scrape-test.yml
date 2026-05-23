@@ -18,11 +18,16 @@ on:
         required: false
         type: string
         default: "30"
+      start_at:
+        description: "Resume index (0 = start from the first company). Use this with max_companies to continue a previous run."
+        required: false
+        type: string
+        default: "0"
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 180
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,9 +49,11 @@ jobs:
           SCREEN_URL: ${{ inputs.url }}
           MAX_COMPANIES: ${{ inputs.max_companies }}
           MAX_PAGES: ${{ inputs.max_pages }}
+          START_AT: ${{ inputs.start_at }}
         run: node screener-test/scrape.mjs
 
       - name: Upload scraped data
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screener-data

@@ -19,6 +19,7 @@ const PASSWORD = process.env.SCREENER_PASSWORD;
 const screenUrl = process.env.SCREEN_URL || "https://www.screener.in/screens/3675531/fundareal-klp-final/";
 const maxPages = Number(process.env.MAX_PAGES || "30");
 const maxCompanies = Number(process.env.MAX_COMPANIES || "0"); // 0 = all
+const startAt = Math.max(0, Number(process.env.START_AT || "0"));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -45,18 +46,31 @@ async function run() {
     console.log(`\nScreen returned ${companies.length} companies.`);
     if (!companies.length) throw new Error("Screen returned no companies.");
 
-    const limit = maxCompanies > 0 ? Math.min(maxCompanies, companies.length) : companies.length;
-    console.log(`Scraping ${limit} company pages...\n`);
+    const start = Math.min(startAt, companies.length);
+    const end = maxCompanies > 0 ? Math.min(start + maxCompanies, companies.length) : companies.length;
+    const total = end - start;
+    if (startAt > 0) console.log(`Resuming from index ${start} (skipping first ${start}).`);
+    console.log(`Scraping ${total} company pages (range ${start}..${end - 1})...\n`);
 
     const rows = [];
     const allKeys = new Set(["Company", "Screener URL"]);
     let failures = 0;
+    const csvPath = resolve(OUT_DIR, "screener-companies.csv");
+    const jsonPath = resolve(OUT_DIR, "screener-companies.json");
+    const flush = () => {
+      const headers = [...allKeys];
+      const csv = [headers, ...rows.map((r) => headers.map((h) => r[h] ?? ""))]
+        .map((line) => line.map(csvCell).join(","))
+        .join("\n");
+      writeFileSync(csvPath, csv + "\n");
+      writeFileSync(jsonPath, JSON.stringify(rows, null, 2) + "\n");
+    };
 
-    for (let i = 0; i < limit; i++) {
+    for (let i = start; i < end; i++) {
       const c = companies[i];
-      process.stdout.write(`[${i + 1}/${limit}] ${c.name} ... `);
+      process.stdout.write(`[${i + 1}/${companies.length}] ${c.name} ... `);
       try {
-        const data = await fetchCompanyData(page, c.path, i === 0);
+        const data = await fetchCompanyData(page, c.path, i === start);
         const row = { Company: c.name, "Screener URL": `${ORIGIN}${c.path}`, ...data };
         Object.keys(data).forEach((k) => allKeys.add(k));
         rows.push(row);
@@ -66,16 +80,11 @@ async function run() {
         rows.push({ Company: c.name, "Screener URL": `${ORIGIN}${c.path}`, Error: err.message });
         console.log(`FAILED: ${err.message}`);
       }
+      flush();
       await sleep(300);
     }
 
     const headers = [...allKeys];
-    const csv = [headers, ...rows.map((r) => headers.map((h) => r[h] ?? ""))]
-      .map((line) => line.map(csvCell).join(","))
-      .join("\n");
-    writeFileSync(resolve(OUT_DIR, "screener-companies.csv"), csv + "\n");
-    writeFileSync(resolve(OUT_DIR, "screener-companies.json"), JSON.stringify(rows, null, 2) + "\n");
-
     console.log("\n=== Done ===");
     console.log(`Companies scraped: ${rows.length} (${failures} failed)`);
     console.log(`Columns found: ${headers.length}`);
@@ -139,20 +148,18 @@ async function fetchCompanyData(page, path, debug = false) {
   let html = null;
   let ribbonCount = 0;
 
-  // Screener fetches custom ribbon ratios via XHR after page load. If they
-  // miss the first wait, reload with longer patience before giving up.
+  // Screener fetches custom ribbon ratios via XHR after page load. Poll the
+  // DOM for them directly — networkidle is unreliable here (analytics never
+  // settle). Retry the load once with extra patience if the first miss.
   for (let attempt = 1; attempt <= 2; attempt++) {
     const patient = attempt === 2;
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page
-      .waitForLoadState("networkidle", { timeout: patient ? 30000 : 15000 })
-      .catch(() => {});
-    await page
       .waitForFunction(() => document.querySelectorAll("#top-ratios li").length > 9, {
-        timeout: patient ? 25000 : 15000,
+        timeout: patient ? 25000 : 12000,
       })
       .catch(() => {});
-    await page.waitForTimeout(patient ? 1500 : 800);
+    await page.waitForTimeout(patient ? 1200 : 400);
     html = await page.content();
     ribbonCount = cheerio.load(html)("#top-ratios li").length;
     if (ribbonCount > 9) break;
