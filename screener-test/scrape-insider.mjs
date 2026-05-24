@@ -17,14 +17,6 @@ const CHUNK_DAYS = 60;      // NSE PIT endpoint accepts windows up to ~90 days
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-run().catch((err) => {
-  console.error("Fatal:", err.stack || err.message);
-  // Don't crash the workflow — write an empty payload so the dashboard
-  // gracefully renders an N/A explanation for everyone.
-  writeFallback(err.message);
-  process.exit(0);
-});
-
 // ---------- main ----------
 async function run() {
   console.log("Initialising NSE session...");
@@ -217,3 +209,12 @@ function dateGt(a, b) {
   // Both NSE strings (e.g. "15-Jan-2026"); naive string compare is enough.
   return new Date(a) > new Date(b);
 }
+
+// ---------- entry ----------
+// Invoked at the bottom so module-level let/const (cookieJar, NSE_HEADERS)
+// reach their declarations before initNSESession() touches them.
+run().catch((err) => {
+  console.error("Fatal:", err.stack || err.message);
+  writeFallback(err.message);
+  process.exit(0);
+});
