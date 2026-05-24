@@ -164,8 +164,9 @@ function renderTable() {
       })[b.status];
       return `<span class="w-1.5 h-1.5 rounded-full ${dot}" title="${escapeHtml(b.label)}: ${b.status}"></span>`;
     }).join("");
+    const flagged = s.hardFails.length > 0;
     return `
-      <tr data-idx="${i}" class="row-clickable border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+      <tr data-idx="${i}" class="row-clickable border-b border-slate-100 cursor-pointer transition-colors ${flagged ? "bg-rose-50/40 hover:bg-rose-50" : "hover:bg-slate-50"}" ${flagged ? `style="box-shadow: inset 3px 0 0 #f43f5e"` : ""}>
         <td class="px-4 py-3 text-sm text-slate-500 font-medium">${rank}</td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-3">
@@ -179,7 +180,7 @@ function renderTable() {
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold ${scoreBadgeClass(s.scorePct)}">${s.totalPoints}/${s.totalMax}</span>
-            ${s.hardFails.length ? `<span class="text-rose-500 text-base" title="Hard fail: ${escapeHtml(s.hardFails.join(", "))}">⚠</span>` : ""}
+            ${flagged ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-rose-100 text-rose-700 ring-1 ring-rose-200" title="${escapeHtml(s.hardFails.join(", "))}">⚠ Red Flag</span>` : ""}
           </div>
         </td>
         <td class="px-4 py-3"><div class="flex items-center gap-1">${breakdownIcons}</div></td>
@@ -287,12 +288,21 @@ function openDrillDown(s) {
       </div>
       ${s.hardFails.length ? `
         <div class="mt-3 p-3 bg-rose-50 rounded-lg ring-1 ring-rose-100">
-          <div class="flex items-start gap-2">
+          <div class="flex items-start gap-2 mb-2">
             <div class="text-rose-500 text-lg leading-none">⚠</div>
-            <div>
-              <div class="font-semibold text-rose-800 text-sm">Hard fail flags</div>
-              <div class="text-xs text-rose-700 mt-0.5">${escapeHtml(s.hardFails.join(", "))}</div>
+            <div class="flex-1">
+              <div class="font-semibold text-rose-800 text-sm">Red flag${s.hardFails.length>1?"s":""} (per client framework)</div>
+              <div class="text-[11px] text-rose-700/80">All data is present — these signals are deliberately surfaced as cautionary.</div>
             </div>
+          </div>
+          <div class="space-y-1.5 mt-2">
+            ${s.breakdown.filter(b=>b.status==="hard_fail").map(b=>`
+              <div class="text-xs">
+                <span class="font-bold text-rose-800">${escapeHtml(b.label)}:</span>
+                <span class="text-rose-700">${escapeHtml(b.value || "—")}</span>
+                <div class="text-rose-700/80 mt-0.5">${escapeHtml(b.note)}</div>
+              </div>
+            `).join("")}
           </div>
         </div>` : ""}
     </div>
