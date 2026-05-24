@@ -39,6 +39,12 @@ async function run() {
   const indexReturns = dailyReturns(indexBars);
   const indexClose = indexBars.map((b) => b.close);
 
+  // NSE bhavcopy delivery % trends. Best-effort: if NSE blocks our IP we
+  // get an empty map and the rule falls back to N/A per company.
+  console.log(`\nFetching NSE bhavcopy for delivery % (last ~30 trading days)...`);
+  const deliveryTrends = await buildDeliveryTrends();
+  console.log(`  Got delivery trends for ${Object.keys(deliveryTrends).length} tickers`);
+
   const results = [];
   let failures = 0;
   for (let i = 0; i < companies.length; i++) {
@@ -51,12 +57,22 @@ async function run() {
       const bars = await fetchBars(yahooSym, start, end);
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
       const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose);
+      const delivery = deliveryTrends[ticker] || null;
       results.push({
         ticker, name: c.Company, screenerUrl: c["Screener URL"],
         marketCap: c["Market Cap"] || null,
         sector: c["Sector"] || null,
         broadSector: c["Broad Sector"] || null,
         industry: c["Broad Industry"] || c["Industry"] || null,
+        // Pass through FII/DII change from the fundamentals scrape. The
+        // Technicals "Institutional Activity" rule reuses this signal.
+        chg_fii_hold: parsePercentValue(c["Chg in FII Hold"]),
+        chg_dii_hold: parsePercentValue(c["Chg in DII Hold"]),
+        // Delivery % trend (last 30 trading days, recent half vs older half)
+        delivery_avg_recent: delivery?.avg_recent ?? null,
+        delivery_avg_older: delivery?.avg_older ?? null,
+        delivery_trend_diff: delivery?.diff ?? null,
+        delivery_days_count: delivery?.days_count ?? 0,
         ...indicators,
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
@@ -72,7 +88,17 @@ async function run() {
   flush(results, indexBars, failures);
   console.log(`\n=== Done ===`);
   console.log(`Companies: ${results.length - failures} OK, ${failures} failed`);
+  console.log(`Delivery % coverage: ${Object.keys(deliveryTrends).length} tickers`);
   console.log(`Wrote: ${OUT_PATH}`);
+}
+
+function parsePercentValue(v) {
+  // "Chg in FII Hold" comes from Screener as e.g. "-0.25 %" or "0.65 %"
+  if (v == null) return null;
+  const s = String(v).replace(/%/g, "").replace(/,/g, "").trim();
+  if (!s || s === "-") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
 }
 
 function flush(results, indexBars, failures) {
@@ -362,4 +388,109 @@ function computeBeta(stockReturns, indexReturns) {
   }
   if (varI === 0) return null;
   return cov / varI;
+}
+
+// ---------- NSE delivery % (sec_bhavdata_full) ----------
+
+const NSE_HEADERS = {
+  // NSE rejects requests without a believable browser identity.
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+  "Accept": "text/csv, */*; q=0.01",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Referer": "https://www.nseindia.com/all-reports",
+};
+
+function ddmmyyyy(date) {
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${d}${m}${date.getUTCFullYear()}`;
+}
+
+async function fetchBhavDelivery(date) {
+  // NSE moved this file around a few times; try the current then the legacy URL.
+  const stamp = ddmmyyyy(date);
+  const urls = [
+    `https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_${stamp}.csv`,
+    `https://archives.nseindia.com/products/content/sec_bhavdata_full_${stamp}.csv`,
+  ];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { headers: NSE_HEADERS });
+      if (r.status !== 200) continue;
+      const text = await r.text();
+      if (text.length < 500 || !/SYMBOL/i.test(text)) continue;
+      return text;
+    } catch { /* try next URL */ }
+  }
+  return null;
+}
+
+function parseDeliveryCSV(csv) {
+  const lines = csv.split(/\r?\n/);
+  if (lines.length < 2) return null;
+  const headers = lines[0].split(",").map((h) => h.trim().toUpperCase());
+  const symIdx = headers.indexOf("SYMBOL");
+  const serIdx = headers.indexOf("SERIES");
+  const dpIdx = headers.indexOf("DELIV_PER");
+  if (symIdx < 0 || serIdx < 0 || dpIdx < 0) return null;
+  const out = {};
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split(",");
+    if (cells.length <= dpIdx) continue;
+    if (cells[serIdx].trim() !== "EQ") continue;
+    const sym = cells[symIdx].trim().toUpperCase();
+    const dp = parseFloat(cells[dpIdx]);
+    if (sym && Number.isFinite(dp)) out[sym] = dp;
+  }
+  return out;
+}
+
+async function buildDeliveryTrends() {
+  const perTicker = {};                     // ticker → array of delivery %, newest first
+  const today = new Date();
+  let fetched = 0, attempted = 0;
+  for (let daysBack = 1; daysBack <= 50 && fetched < 30; daysBack++) {
+    const date = new Date(today.getTime() - daysBack * 86400000);
+    const dow = date.getUTCDay();
+    if (dow === 0 || dow === 6) continue;       // skip weekends
+    attempted++;
+    const csv = await fetchBhavDelivery(date);
+    if (!csv) {
+      process.stdout.write(`  ${ddmmyyyy(date)} no file\n`);
+      await sleep(150);
+      continue;
+    }
+    const data = parseDeliveryCSV(csv);
+    if (!data) {
+      process.stdout.write(`  ${ddmmyyyy(date)} parse fail\n`);
+      continue;
+    }
+    let count = 0;
+    for (const [sym, dp] of Object.entries(data)) {
+      (perTicker[sym] ||= []).push(dp);
+      count++;
+    }
+    fetched++;
+    process.stdout.write(`  ${ddmmyyyy(date)} ok (${count} symbols)\n`);
+    await sleep(250);
+  }
+  console.log(`  Fetched ${fetched} bhavcopy files out of ${attempted} attempts.`);
+  if (fetched === 0) return {};
+
+  const result = {};
+  for (const [sym, vals] of Object.entries(perTicker)) {
+    if (vals.length < 6) continue;             // need at least a few days
+    const half = Math.floor(vals.length / 2);
+    const recent = vals.slice(0, half);
+    const older  = vals.slice(half);
+    const avgR = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const avgO = older.reduce((a, b) => a + b, 0) / older.length;
+    result[sym] = {
+      avg_recent: Math.round(avgR * 100) / 100,
+      avg_older:  Math.round(avgO * 100) / 100,
+      diff:       Math.round((avgR - avgO) * 100) / 100,
+      days_count: vals.length,
+    };
+  }
+  return result;
 }
