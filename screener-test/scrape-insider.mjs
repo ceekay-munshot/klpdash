@@ -66,9 +66,6 @@ async function run() {
     chunks_ok: chunkOk,
     chunks_total: chunks,
     companies: perTicker,
-    // One-time schema probe: dump the first 5 raw trades so we can see
-    // which NSE field names actually carry sell shares / value / date.
-    _sample_raw_trades: trades.slice(0, 5),
   };
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
@@ -164,35 +161,30 @@ function num(v) { const n = Number(String(v ?? "").replace(/,/g, "")); return Nu
 function aggregate(trades) {
   const out = {};
   for (const t of trades) {
-    const sym = String(t.symbol || t.SYMBOL || "").trim().toUpperCase();
+    const sym = String(t.symbol || "").trim().toUpperCase();
     if (!sym) continue;
 
-    // NSE PIT shape: noOfSecAcq / noOfSecSold are share counts; tdpTransactionVal
-    // is total value. acquisitionMode tells us buy vs sell. Handle multiple
-    // field-name variants defensively in case NSE changes the schema.
-    const buyShares  = num(t.noOfSecAcq ?? t.secAcq ?? t.noOfSecAcquired ?? 0);
-    const sellShares = num(t.noOfSecSold ?? t.secSold ?? 0);
-    const acqVal     = num(t.secAcqVal ?? t.tdpTransactionVal ?? t.acqValue ?? 0);
-    const soldVal    = num(t.secSoldVal ?? t.soldValue ?? 0);
-    const mode       = String(t.acquisitionMode || t.transactionType || "").toLowerCase();
+    // Actual NSE PIT response keys (probed via PR #13):
+    //   buyQuantity, sellquantity (note lowercase 'q' in sell — NSE typo),
+    //   buyValue, sellValue, date, intimDt, acqfromDt, acqtoDt,
+    //   tdpTransactionType, personCategory, acqMode.
+    const buyShares  = num(t.buyQuantity);
+    const sellShares = num(t.sellquantity);
+    const buyVal     = num(t.buyValue);
+    const sellVal    = num(t.sellValue);
 
     if (!out[sym]) out[sym] = {
       buy_shares: 0, sell_shares: 0, buy_value: 0, sell_value: 0,
       transactions: 0, last_date: null,
     };
 
-    // If both buyShares > 0 and sellShares > 0 in one row, treat as net.
     out[sym].buy_shares  += buyShares;
     out[sym].sell_shares += sellShares;
-    out[sym].buy_value   += acqVal;
-    out[sym].sell_value  += soldVal;
-    // Fallback if acqVal == 0 but sellShares > 0 — sometimes one combined val
-    if (acqVal === 0 && soldVal === 0 && mode.includes("dispos")) {
-      // disposal mode but no value — ignore
-    }
+    out[sym].buy_value   += buyVal;
+    out[sym].sell_value  += sellVal;
     out[sym].transactions++;
 
-    const date = t.acquisitionDate || t.intimDate || t.transactionDate || null;
+    const date = t.date || t.intimDt || t.acqtoDt || null;
     if (date && (!out[sym].last_date || dateGt(date, out[sym].last_date))) {
       out[sym].last_date = date;
     }
