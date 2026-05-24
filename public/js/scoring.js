@@ -227,9 +227,47 @@ function ruleDividendConsistency(c) {
   return { points: 0, max: 1, status: "fail", value: val, note: "No / erratic dividend." };
 }
 
+function ruleInsiderBuying(c) {
+  // The dashboard merges insider data from public/data/insider-trades.json
+  // into each company under c.insider_*. If the merge didn't find a match,
+  // those fields are absent → N/A with explanation.
+  if (!c.insider_loaded) {
+    return { ...NA, max: 1, note: "Insider trades data not loaded — NSE PIT feed unavailable. Will populate on next refresh." };
+  }
+  if (c.insider_transactions == null || c.insider_transactions === 0) {
+    return { ...NA, max: 1, note: "No insider trades disclosed in the last 6 months for this company." };
+  }
+  const netSh = c.insider_net_shares ?? 0;
+  const netVal = c.insider_net_value ?? 0;
+  const buySh  = c.insider_buy_shares ?? 0;
+  const sellSh = c.insider_sell_shares ?? 0;
+  // Compute sell % of total shares using market cap / price as a rough proxy
+  const mcap = parseNumber((c["Market Cap"] || "").replace(/Cr\.?/i, "").replace(/,/g, ""));
+  const cmp = parseNumber((c["Current Price"] || "").replace(/,/g, ""));
+  const totalShares = (mcap != null && cmp != null && cmp > 0) ? (mcap * 1e7) / cmp : null;
+  const sellPctOfFloat = totalShares ? (sellSh / totalShares) * 100 : null;
+  const sellHardFail = sellPctOfFloat != null && sellPctOfFloat > 1;
+
+  const val = `Buy ${formatShares(buySh)} | Sell ${formatShares(sellSh)} | Net ${(netSh>=0?"+":"")}${formatShares(netSh)} (${c.insider_transactions} disclosure${c.insider_transactions===1?"":"s"})`;
+  if (sellHardFail) {
+    return { points: 0, max: 1, status: "fail", value: val, note: `Insider selling exceeded 1% of float (${sellPctOfFloat.toFixed(2)}%) — red flag per client framework.` };
+  }
+  if (netVal > 0) return { points: 1, max: 1, status: "pass", value: val, note: "Net insider buying over last 6 months — positive signal." };
+  if (netVal === 0) return { points: 1, max: 1, status: "partial", value: val, note: "Insider activity roughly balanced." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Net insider selling over last 6 months." };
+}
+
+function formatShares(n) {
+  if (n == null || !Number.isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  if (abs >= 1e7) return (n / 1e7).toFixed(2) + " Cr";
+  if (abs >= 1e5) return (n / 1e5).toFixed(2) + " L";
+  if (abs >= 1e3) return (n / 1e3).toFixed(1) + " K";
+  return n.toString();
+}
+
 // ---- deferred parameters (data source pending) ----
 const DEFERRED = [
-  { key: "insiderBuying", label: "Insider Buying", category: "Shareholding", reason: "BSE/SEBI insider transactions feed not yet integrated.", max: 1 },
   { key: "auditorRemarks", label: "Auditor Remarks", category: "Governance", reason: "Annual-report parsing not yet integrated.", max: 2 },
   { key: "governanceIssues", label: "Corporate Governance Issues", category: "Governance", reason: "SEBI orders / litigation feed not yet integrated.", max: 2 },
 ];
@@ -251,6 +289,7 @@ const ACTIVE_RULES = [
   { key: "pledge", label: "Promoter Pledge", category: "Balance Sheet", criteria: "< 5%", fn: rulePledge },
   { key: "ph", label: "Promoter Holding", category: "Shareholding", criteria: "Stable / increasing", fn: rulePromoterHolding },
   { key: "fiidii", label: "FII + DII Holding", category: "Shareholding", criteria: "Increasing", fn: ruleFIIDII },
+  { key: "insider", label: "Insider Buying", category: "Shareholding", criteria: "Net buying in last 6 mo", fn: ruleInsiderBuying },
   { key: "div", label: "Dividend Consistency", category: "Governance", criteria: "Positive", fn: ruleDividendConsistency },
 ];
 
