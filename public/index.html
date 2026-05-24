@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KLP Stock Screener · Fundamentals Dashboard</title>
-    <meta name="description" content="Fundamentals scoring dashboard for NSE 500 companies, scored on the KLP framework." />
+    <title>KLP Stock Screener · Fundamentals + Technicals</title>
+    <meta name="description" content="Fundamentals and technicals scoring dashboard for the NSE 500 universe, on the KLP framework." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -45,7 +45,7 @@
           </div>
           <div>
             <h1 class="font-display font-extrabold text-2xl text-slate-900 leading-tight">KLP Stock Screener</h1>
-            <p class="text-sm text-slate-500">Fundamentals scoring · NSE 500 universe</p>
+            <p class="text-sm text-slate-500">Multi-screen scoring · NSE 500 universe</p>
           </div>
         </div>
         <div class="flex items-center gap-2 text-xs text-slate-500">
@@ -63,11 +63,11 @@
     <!-- TABS -->
     <nav class="max-w-7xl mx-auto px-6">
       <div class="flex items-center gap-1 border-b border-slate-200">
-        <button class="px-4 py-2.5 font-semibold text-sm text-indigo-600 border-b-2 border-indigo-600 -mb-px">
+        <button data-tab="fundamentals" class="tab-btn px-4 py-2.5 font-semibold text-sm text-indigo-600 border-b-2 border-indigo-600 -mb-px transition-colors">
           Fundamentals
         </button>
-        <button disabled class="px-4 py-2.5 font-medium text-sm text-slate-400 cursor-not-allowed flex items-center gap-1.5">
-          Technicals <span class="text-xs">🔒</span>
+        <button data-tab="technicals" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors">
+          Technicals
         </button>
         <button disabled class="px-4 py-2.5 font-medium text-sm text-slate-400 cursor-not-allowed flex items-center gap-1.5">
           Macro <span class="text-xs">🔒</span>
@@ -89,13 +89,13 @@
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
           <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Scoring Method</div>
-          <div class="text-2xl font-bold text-slate-900 mt-1">16 / 19</div>
-          <div class="text-xs text-slate-500 mt-0.5">Active rules <button id="deferred-info" class="text-indigo-600 hover:text-indigo-800 underline ml-1">(<span id="deferred-count">3</span> deferred)</button></div>
+          <div class="text-2xl font-bold text-slate-900 mt-1" id="stat-rules">—</div>
+          <div class="text-xs text-slate-500 mt-0.5"><span id="stat-rules-note">Active rules</span> <span class="text-slate-400">·</span> <span id="deferred-count">—</span> deferred</div>
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
           <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Max Score</div>
-          <div class="text-2xl font-bold text-slate-900 mt-1">24 pts</div>
-          <div class="text-xs text-slate-500 mt-0.5">After deferred rules: 29 pts</div>
+          <div class="text-2xl font-bold text-slate-900 mt-1" id="stat-max">—</div>
+          <div class="text-xs text-slate-500 mt-0.5" id="stat-max-note">—</div>
         </div>
         <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-4 shadow-lg text-white">
           <div class="text-xs font-medium uppercase tracking-wider opacity-90">Refresh Cadence</div>
@@ -107,7 +107,7 @@
       <!-- TOP 10 -->
       <section class="mb-8">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+          <h2 id="top-cards-title" class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
             <span class="text-amber-500">🏆</span> Top 10 by Score
           </h2>
           <div class="text-xs text-slate-500">Click any card to see the full breakdown</div>
@@ -121,7 +121,7 @@
           <div class="flex items-center gap-3">
             <div class="text-amber-500 text-lg">⚠</div>
             <div>
-              <div class="font-semibold text-slate-900 text-sm">3 parameters pending data source</div>
+              <div id="deferred-summary" class="font-semibold text-slate-900 text-sm">— parameters pending data source</div>
               <div class="text-xs text-slate-500">Not yet included in scoring · click to see why</div>
             </div>
           </div>
@@ -157,21 +157,7 @@
 
         <div class="overflow-x-auto scrollbar-thin">
           <table id="table" class="w-full text-sm">
-            <thead class="bg-slate-50/70 sticky top-0 z-10">
-              <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-600">
-                <th class="px-4 py-3 w-12">#</th>
-                <th class="px-4 py-3" data-sort="name">Company</th>
-                <th class="px-4 py-3" data-sort="score">Score ▾</th>
-                <th class="px-4 py-3">Signals</th>
-                <th class="px-4 py-3">ROE</th>
-                <th class="px-4 py-3">ROCE</th>
-                <th class="px-4 py-3">Rev 3Y</th>
-                <th class="px-4 py-3">PAT 3Y</th>
-                <th class="px-4 py-3">D/E</th>
-                <th class="px-4 py-3">P/E</th>
-                <th class="px-4 py-3 text-right">Link</th>
-              </tr>
-            </thead>
+            <thead id="table-head" class="bg-slate-50/70 sticky top-0 z-10"></thead>
             <tbody id="table-body"></tbody>
           </table>
         </div>
@@ -191,8 +177,9 @@
       </section>
 
       <footer class="mt-8 text-center text-xs text-slate-500">
-        Data sourced from Screener.in · Scoring rules per KLP framework ·
-        <a class="text-indigo-600 hover:underline" href="data/screener-companies.csv" download>Download raw CSV</a>
+        Fundamentals data from Screener.in · Technicals from Yahoo Finance EOD · Scoring per KLP framework ·
+        <a class="text-indigo-600 hover:underline" href="data/screener-companies.csv" download>Fund. CSV</a> ·
+        <a class="text-indigo-600 hover:underline" href="data/technicals.json" download>Tech. JSON</a>
       </footer>
     </main>
 
