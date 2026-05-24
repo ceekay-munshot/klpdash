@@ -6,6 +6,38 @@
 
 const NA = { points: 0, max: 0, status: "na", value: null, note: "Data not available" };
 
+// Sector-aware N/A: produce a contextual note instead of generic "Data not available".
+function naWithReason(c, ruleKey, max) {
+  const broad = (c["Broad Sector"] || "").trim();
+  const sec = (c["Sector"] || "").trim();
+  const ind = (c["Broad Industry"] || "").trim();
+  const isFinancial = broad === "Financial Services";
+  const isInsurance = /insurance/i.test(ind) || /insurance/i.test(sec);
+  const isBank = /bank/i.test(ind);
+  const isREIT = /reit|invit|real estate investment/i.test(ind);
+  let note = "Data not available";
+  if (ruleKey === "de" && isFinancial) {
+    note = "Not applicable — client framework excludes the financial sector from Debt/Equity scoring (banks, NBFCs, insurance and AMCs are highly leveraged by design).";
+  } else if (ruleKey === "de") {
+    note = "D/E not reported — likely negative net worth, or capital structure too small/atypical to report. Treat as a caution.";
+  } else if (ruleKey === "icr" && (isFinancial || isInsurance || isBank)) {
+    note = `Not applicable — ${isInsurance ? "insurance" : isBank ? "banking" : "financial-sector"} companies report interest as core revenue/expense, not as a coverage ratio.`;
+  } else if (ruleKey === "icr") {
+    note = "Interest Coverage not reported — usually means the company is debt-free or had no interest expense in the period (which is positive).";
+  } else if (ruleKey === "cfo" && (isFinancial || isInsurance || isREIT)) {
+    note = `Not directly comparable — ${isREIT ? "REITs/InvITs" : isInsurance ? "insurance companies" : "financial-sector companies"} report cash flows on a different framework.`;
+  } else if (ruleKey === "cfo") {
+    note = "Operating cash flow not reported yet (often the case for recently-listed companies before their first full annual report).";
+  } else if (ruleKey === "ebitda" && (isFinancial || isBank)) {
+    note = `Not applicable — ${isBank ? "banks" : "financial-sector companies"} don't report "operating margin" in the conventional sense.`;
+  } else if (ruleKey === "npm" && (isFinancial || isBank)) {
+    note = `Not applicable to ${isBank ? "banks" : "financial-sector companies"} as reported.`;
+  } else if ((ruleKey === "rev3y" || ruleKey === "pat3y" || ruleKey === "eps") && c["Company"]) {
+    note = "Insufficient history — likely a recently-listed company. Will populate once 3+ years of data are available.";
+  }
+  return { points: 0, max, status: "na", value: null, note };
+}
+
 // ---- helpers ----
 const parsePercent = (v) => {
   if (v == null) return null;
@@ -27,7 +59,7 @@ const fmtPct = (n) => (n == null ? "—" : `${n}%`);
 
 function ruleROE(c) {
   const v = parsePercent(c["ROE"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "roe", 2);
   if (v > 12) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "ROE > 12% — strong capital efficiency vs cost of equity." };
   if (v >= 8) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "ROE 8–12% — borderline." };
   return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: "ROE < 8% — weak capital efficiency." };
@@ -35,7 +67,7 @@ function ruleROE(c) {
 
 function ruleROCE(c) {
   const v = parsePercent(c["ROCE"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "roce", 2);
   if (v > 15) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "ROCE > 15% — returns exceed cost of capital deployed." };
   if (v >= 10) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "ROCE 10–15% — borderline." };
   return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: "ROCE < 10% — capital not being deployed efficiently." };
@@ -45,7 +77,7 @@ function ruleEBITDAMargin(c) {
   // OPM in our data ≈ EBITDA margin proxy
   const last = parsePercent(c["OPM last year"]);
   const prev = parsePercent(c["OPM preceding year"]);
-  if (last == null || prev == null) return { ...NA, max: 1 };
+  if (last == null || prev == null) return naWithReason(c, "ebitda", 1);
   const val = `${fmtPct(prev)} → ${fmtPct(last)}`;
   if (last > prev) return { points: 1, max: 1, status: "pass", value: val, note: "Operating margin improving YoY." };
   if (last >= prev - 0.5) return { points: 1, max: 1, status: "partial", value: val, note: "Margin roughly stable." };
@@ -55,7 +87,7 @@ function ruleEBITDAMargin(c) {
 function ruleNPM(c) {
   const last = parsePercent(c["NPM last year"]);
   const prev = parsePercent(c["NPM preceding year"]);
-  if (last == null || prev == null) return { ...NA, max: 1 };
+  if (last == null || prev == null) return naWithReason(c, "npm", 1);
   const val = `${fmtPct(prev)} → ${fmtPct(last)}`;
   const compressionBps = (prev - last) * 100;
   if (last >= prev) return { points: 1, max: 1, status: "pass", value: val, note: "Net profit margin stable or expanding." };
@@ -66,7 +98,7 @@ function ruleNPM(c) {
 function ruleCFO(c) {
   const ly = parseNumber(c["CF Operations LY"]);
   const py = parseNumber(c["CF Operations PY"]);
-  if (ly == null && py == null) return { ...NA, max: 2 };
+  if (ly == null && py == null) return naWithReason(c, "cfo", 2);
   const val = `LY ${ly ?? "—"} | PY ${py ?? "—"}`;
   if (ly != null && py != null && ly > 0 && py > 0) {
     return { points: 2, max: 2, status: "pass", value: val, note: "Positive operating cash flow both years (proxy for 10-yr rule)." };
@@ -82,7 +114,7 @@ function ruleCFO(c) {
 
 function ruleRevenueGrowth(c) {
   const v = parsePercent(c["Sales growth 3Years"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "rev3y", 2);
   if (v >= 12) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "3Y revenue CAGR ≥ 12%." };
   if (v >= 8) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "3Y revenue CAGR 8–12%." };
   return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: "3Y revenue CAGR < 8%." };
@@ -90,7 +122,7 @@ function ruleRevenueGrowth(c) {
 
 function rulePATGrowth(c) {
   const v = parsePercent(c["Profit Var 3Yrs"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "pat3y", 2);
   if (v >= 15) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "3Y PAT CAGR ≥ 15% — strongest profit signal." };
   if (v >= 8) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "3Y PAT CAGR 8–15%." };
   return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: "3Y PAT CAGR < 8%." };
@@ -99,7 +131,7 @@ function rulePATGrowth(c) {
 function ruleEPSGrowth(c) {
   const v3 = parsePercent(c["EPS growth 3Years"]);
   const v5 = parsePercent(c["EPS growth 5Years"]);
-  if (v3 == null && v5 == null) return { ...NA, max: 1 };
+  if (v3 == null && v5 == null) return naWithReason(c, "eps", 1);
   const val = `3Y ${fmtPct(v3)} | 5Y ${fmtPct(v5)}`;
   if ((v3 ?? -1) > 0 && (v5 ?? -1) > 0) return { points: 1, max: 1, status: "pass", value: val, note: "EPS positive and growing consistently." };
   if ((v3 ?? -1) > 0 || (v5 ?? -1) > 0) return { points: 1, max: 1, status: "partial", value: val, note: "EPS positive in one window." };
@@ -113,7 +145,7 @@ function ruleQuarterlyEarnings(c) {
     parseNumber(c["Net Profit Qtr (-1)"]),
     parseNumber(c["Net Profit Qtr (latest)"]),
   ];
-  if (q.some((x) => x == null)) return { ...NA, max: 1 };
+  if (q.some((x) => x == null)) return naWithReason(c, "qoq", 1);
   const val = q.join(" → ");
   let declines = 0, maxConsecDeclines = 0;
   for (let i = 1; i < q.length; i++) {
@@ -126,15 +158,18 @@ function ruleQuarterlyEarnings(c) {
 
 function ruleDebtEquity(c) {
   const v = parseNumber(c["Debt to equity"]);
-  if (v == null) return { ...NA, max: 2 };
+  const broadSector = (c["Broad Sector"] || "").trim();
+  // Apply client's sector exception: financial sector excluded from D/E scoring.
+  if (broadSector === "Financial Services") return naWithReason(c, "de", 2);
+  if (v == null) return naWithReason(c, "de", 2);
   if (v < 0.5) return { points: 2, max: 2, status: "pass", value: v.toString(), note: "D/E < 0.5 — comfortably low leverage." };
   if (v <= 1.0) return { points: 1, max: 2, status: "partial", value: v.toString(), note: "D/E 0.5–1.0 — moderate leverage." };
-  return { points: 0, max: 2, status: "fail", value: v.toString(), note: "D/E > 1.0 — elevated leverage. (Financial-sector exclusion not yet applied.)" };
+  return { points: 0, max: 2, status: "fail", value: v.toString(), note: "D/E > 1.0 — elevated leverage." };
 }
 
 function ruleInterestCoverage(c) {
   const v = parseNumber(c["Int Coverage"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "icr", 2);
   if (v > 3) return { points: 2, max: 2, status: "pass", value: v.toString(), note: "Interest coverage > 3 — debt comfortably serviced." };
   if (v >= 1.5) return { points: 1, max: 2, status: "partial", value: v.toString(), note: "Coverage 1.5–3 — tight." };
   return { points: 0, max: 2, status: "hard_fail", value: v.toString(), note: "Coverage < 1.5 — debt serviceability risk." };
@@ -142,7 +177,7 @@ function ruleInterestCoverage(c) {
 
 function ruleCurrentRatio(c) {
   const v = parseNumber(c["Current ratio"]);
-  if (v == null) return { ...NA, max: 1 };
+  if (v == null) return naWithReason(c, "cr", 1);
   if (v > 1.2) return { points: 1, max: 1, status: "pass", value: v.toString(), note: "Current ratio > 1.2." };
   if (v >= 1.0) return { points: 1, max: 1, status: "partial", value: v.toString(), note: "Current ratio 1.0–1.2." };
   return { points: 0, max: 1, status: "fail", value: v.toString(), note: "Current ratio < 1.0 — liquidity stress." };
@@ -150,7 +185,7 @@ function ruleCurrentRatio(c) {
 
 function rulePledge(c) {
   const v = parsePercent(c["Pledged percentage"]);
-  if (v == null) return { ...NA, max: 2 };
+  if (v == null) return naWithReason(c, "pledge", 2);
   if (v < 5) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "Promoter pledge < 5%." };
   if (v <= 20) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "Promoter pledge 5–20%." };
   return { points: 0, max: 2, status: "hard_fail", value: fmtPct(v), note: "Promoter pledge > 20% — hard fail." };
@@ -158,7 +193,7 @@ function rulePledge(c) {
 
 function rulePromoterHolding(c) {
   const v = parsePercent(c["Change in Prom Hold"]);
-  if (v == null) return { ...NA, max: 1 };
+  if (v == null) return naWithReason(c, "ph", 1);
   if (v >= 0) return { points: 1, max: 1, status: "pass", value: fmtPct(v), note: "Promoter holding stable or increasing." };
   if (v > -2) return { points: 1, max: 1, status: "partial", value: fmtPct(v), note: "Minor reduction in promoter holding." };
   return { points: 0, max: 1, status: "fail", value: fmtPct(v), note: "Promoter holding falling > 2%." };
@@ -167,7 +202,7 @@ function rulePromoterHolding(c) {
 function ruleFIIDII(c) {
   const fii = parsePercent(c["Chg in FII Hold"]);
   const dii = parsePercent(c["Chg in DII Hold"]);
-  if (fii == null && dii == null) return { ...NA, max: 1 };
+  if (fii == null && dii == null) return naWithReason(c, "fiidii", 1);
   const sum = (fii ?? 0) + (dii ?? 0);
   const val = `FII ${fmtPct(fii)} | DII ${fmtPct(dii)}`;
   if (sum > 0) {
@@ -183,7 +218,7 @@ function ruleDividendConsistency(c) {
   const ly = parseNumber(c["Dividend last year"]);
   const py = parseNumber(c["Dividend Prev Ann"]);
   const d5 = parsePercent(c["Div 5Yrs"]);
-  if (ly == null && py == null && d5 == null) return { ...NA, max: 1 };
+  if (ly == null && py == null && d5 == null) return naWithReason(c, "div", 1);
   const val = `LY ${ly ?? "—"} | PY ${py ?? "—"} | 5Y avg ${fmtPct(d5)}`;
   const lastTwoPaid = (ly ?? 0) > 0 && (py ?? 0) > 0;
   const fiveYrYield = d5 ?? 0;

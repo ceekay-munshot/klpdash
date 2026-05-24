@@ -180,7 +180,6 @@ function renderTable() {
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold ${scoreBadgeClass(s.scorePct)}">${s.totalPoints}/${s.totalMax}</span>
             ${s.hardFails.length ? `<span class="text-rose-500 text-base" title="Hard fail: ${escapeHtml(s.hardFails.join(", "))}">⚠</span>` : ""}
-            ${s.naCount ? `<span class="text-amber-500 text-sm" title="${s.naCount} parameter(s) had no data">⊘</span>` : ""}
           </div>
         </td>
         <td class="px-4 py-3"><div class="flex items-center gap-1">${breakdownIcons}</div></td>
@@ -265,6 +264,7 @@ function openDrillDown(s) {
         <div class="w-14 h-14 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-md">${initials}</div>
         <div class="flex-1 min-w-0">
           <div class="font-bold text-xl text-slate-900 truncate">${escapeHtml(c.Company)}</div>
+          ${(c["Sector"] || c["Broad Industry"]) ? `<div class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(c["Sector"] || "")}${c["Sector"] && c["Broad Industry"] ? " · " : ""}${escapeHtml(c["Broad Industry"] || "")}</div>` : ""}
           <a href="${escapeHtml(c["Screener URL"])}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-800">View on Screener.in ↗</a>
         </div>
       </div>
