@@ -1,6 +1,7 @@
 import * as fund from "./scoring.js";
 import * as tech from "./tech-scoring.js";
 import * as macro from "./macro-scoring.js";
+import * as senliq from "./sentiment-liquidity-scoring.js";
 
 // ---------------- Tab configuration ----------------
 const CONFIGS = {
@@ -66,6 +67,38 @@ const CONFIGS = {
       { label: "Policy flags",
         main: [c.in_pli ? "PLI" : null, c.in_renewable ? "Renewable" : null].filter(Boolean).join(" · ") || "—",
         sub: "" },
+    ],
+  },
+  sentiment: {
+    label: "Sentiment & Liquidity",
+    dataUrl: "data/technicals.json",
+    metaUrl: "data/macro.json",
+    parseData: (raw) => ({ rows: raw.companies || [], meta: raw }),
+    rules: senliq.ACTIVE_RULES,
+    deferred: senliq.DEFERRED,
+    score: senliq.scoreCompany,
+    name: (c) => c.name,
+    marketCap: (c) => c.marketCap || "",
+    screenerUrl: (c) => c.screenerUrl,
+    sector: (c) => c.sector || null,
+    industry: (c) => c.industry || null,
+    columns: [
+      { label: "Sector",  get: (c) => c.sector || "—" },
+      { label: "ADTV ₹Cr", get: (c) => c.adtv_20d_cr == null ? "—" : "₹" + c.adtv_20d_cr },
+      { label: "F&O",     get: (c) => c.fno_eligible ? "✓" : "—" },
+      { label: "CMP",     get: (c) => c.cmp ? "₹" + Math.round(c.cmp).toLocaleString("en-IN") : "—" },
+    ],
+    stats: {
+      rules: "4 / 8",    rulesNote: "Active rules",
+      maxScore: "7 pts", maxNote: "After deferred: 13 pts",
+    },
+    drillHeaderStats: (c) => [
+      { label: "ADTV · F&O",
+        main: c.adtv_20d_cr == null ? "—" : "₹" + c.adtv_20d_cr + " Cr",
+        sub: c.fno_eligible ? "On NSE F&O list" : "Cash-only" },
+      { label: "Sentiment regime",
+        main: c._macro?.live?.india_vix?.latest != null ? "VIX " + c._macro.live.india_vix.latest : "—",
+        sub: c._macro?.sentiment?.fii_net_positive_last_20d === "yes" ? "FII flow net positive" : (c._macro?.sentiment?.fii_net_positive_last_20d || "") },
     ],
   },
   technicals: {
@@ -229,6 +262,13 @@ async function loadTab(tabId) {
       row.in_pli = ticker ? pli.has(ticker) : false;
       row.in_renewable = ticker ? renew.has(ticker) : false;
     }
+  }
+
+  // Sentiment & Liquidity: tab data is technicals.json (gives us ADTV +
+  // F&O eligibility per company), and macro.json provides the market-wide
+  // sentiment context (VIX, FII/DII flow, PCR, breadth). Merge as ._macro.
+  if (tabId === "sentiment" && rawMeta) {
+    for (const row of rows) row._macro = rawMeta;
   }
 
   const scored = rows.map(c.score).sort((a, b) => b.totalPoints - a.totalPoints);

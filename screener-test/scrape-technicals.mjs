@@ -16,6 +16,8 @@ const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days
 const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
 const FETCH_DELAY_MS = 200;        // be polite — ~5 req/sec
 
+const FNO_STOCKS_PATH = resolve(__dirname, "static/fno-stocks.json");
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 run().catch((err) => {
@@ -27,6 +29,16 @@ run().catch((err) => {
 async function run() {
   const companies = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
   console.log(`Loaded ${companies.length} companies from screener-companies.json`);
+
+  // F&O eligible list — used by the Sentiment & Liquidity tab's F&O rule.
+  let fnoSet = new Set();
+  try {
+    const fno = JSON.parse(readFileSync(FNO_STOCKS_PATH, "utf8"));
+    fnoSet = new Set((fno.tickers || []).map((s) => String(s).toUpperCase()));
+    console.log(`Loaded ${fnoSet.size} F&O-eligible tickers from static list.`);
+  } catch (err) {
+    console.log("F&O static list not found — F&O flag will be false for all companies.");
+  }
 
   const end = new Date();
   const start = new Date(end.getTime() - HISTORY_DAYS * 86400000);
@@ -73,6 +85,9 @@ async function run() {
         delivery_avg_older: delivery?.avg_older ?? null,
         delivery_trend_diff: delivery?.diff ?? null,
         delivery_days_count: delivery?.days_count ?? 0,
+        // Sentiment & Liquidity tab data: 20-day ADTV in ₹ crores + F&O eligibility
+        adtv_20d_cr: adtv20Cr(bars),
+        fno_eligible: fnoSet.has(ticker),
         ...indicators,
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
@@ -371,6 +386,16 @@ function dailyReturns(bars) {
   const out = [];
   for (let i = 1; i < bars.length; i++) out.push(bars[i].close / bars[i - 1].close - 1);
   return out;
+}
+
+function adtv20Cr(bars) {
+  // Average Daily Traded Value over the last 20 trading bars, expressed in
+  // rupees-crore. Each bar contributes (close × volume) ÷ 1e7.
+  const last20 = bars.slice(-20);
+  if (last20.length < 5) return null;
+  const totalRupees = last20.reduce((sum, b) => sum + b.close * b.volume, 0);
+  const avgRupees = totalRupees / last20.length;
+  return Math.round((avgRupees / 1e7) * 100) / 100;
 }
 
 function computeBeta(stockReturns, indexReturns) {
