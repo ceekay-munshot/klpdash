@@ -66,6 +66,9 @@ async function run() {
     chunks_ok: chunkOk,
     chunks_total: chunks,
     companies: perTicker,
+    // One-time schema probe: dump the first 5 raw trades so we can see
+    // which NSE field names actually carry sell shares / value / date.
+    _sample_raw_trades: trades.slice(0, 5),
   };
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
