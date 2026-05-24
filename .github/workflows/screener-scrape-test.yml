@@ -12,7 +12,7 @@ on:
         description: "How many companies to scrape (0 = all). Use a small number for a quick test."
         required: false
         type: string
-        default: "15"
+        default: "0"
       max_pages:
         description: "Safety cap on screen pages to read"
         required: false
@@ -23,11 +23,16 @@ on:
         required: false
         type: string
         default: "0"
+  schedule:
+    # 00:30 UTC == 06:00 IST every day. Fresh data ready before market open.
+    - cron: "30 0 * * *"
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,10 +51,10 @@ jobs:
         env:
           SCREENER_EMAIL: ${{ secrets.SCREENER_EMAIL }}
           SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
-          SCREEN_URL: ${{ inputs.url }}
-          MAX_COMPANIES: ${{ inputs.max_companies }}
-          MAX_PAGES: ${{ inputs.max_pages }}
-          START_AT: ${{ inputs.start_at }}
+          SCREEN_URL: ${{ inputs.url || 'https://www.screener.in/screens/3675531/fundareal-klp-final/' }}
+          MAX_COMPANIES: ${{ inputs.max_companies || '0' }}
+          MAX_PAGES: ${{ inputs.max_pages || '30' }}
+          START_AT: ${{ inputs.start_at || '0' }}
         run: node screener-test/scrape.mjs
 
       - name: Upload scraped data
@@ -59,3 +64,24 @@ jobs:
           name: screener-data
           path: screener-test/output/
           if-no-files-found: warn
+
+      - name: Sync fresh data into public/
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p public/data
+          cp screener-test/output/screener-companies.csv public/data/
+          cp screener-test/output/screener-companies.json public/data/
+          cp screener-test/output/metadata.json public/data/
+
+      - name: Commit refreshed data to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/screener-companies.csv public/data/screener-companies.json public/data/metadata.json
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "Daily data refresh ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:main
+          fi

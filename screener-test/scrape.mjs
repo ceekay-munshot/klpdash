@@ -85,6 +85,16 @@ async function run() {
     }
 
     const headers = [...allKeys];
+
+    // Write a small metadata file the dashboard reads for "last updated" etc.
+    writeFileSync(resolve(OUT_DIR, "metadata.json"), JSON.stringify({
+      generated_at: new Date().toISOString(),
+      source: `Screener saved screen: ${screenUrl}`,
+      company_count: rows.length,
+      failures,
+      columns: headers,
+    }, null, 2) + "\n");
+
     console.log("\n=== Done ===");
     console.log(`Companies scraped: ${rows.length} (${failures} failed)`);
     console.log(`Columns found: ${headers.length}`);
@@ -184,6 +194,13 @@ async function fetchCompanyData(page, path, debug = false) {
   if (ribbonCount <= 9) {
     throw new Error(`custom ribbon ratios did not load after retry (got ${ribbonCount}, expected >9)`);
   }
+
+  // Sector classification (4 levels). Used by the dashboard to apply
+  // sector-specific scoring exceptions (e.g. exclude financial sector from D/E).
+  data["Broad Sector"] = $('p.sub a[title="Broad Sector"]').first().text().trim();
+  data["Sector"] = $('p.sub a[title="Sector"]').first().text().trim();
+  data["Broad Industry"] = $('p.sub a[title="Broad Industry"]').first().text().trim();
+  data["Industry"] = $('p.sub a[title="Industry"]').first().text().trim();
 
   const npq = parseSectionRow($, "#quarters", /^net profit/i);
   if (npq && npq.values.length) {
