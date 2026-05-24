@@ -62,9 +62,13 @@ function ruleChinaPlusOne(c) {
   const active = m.regime?.china_plus_one_active;
   const isBenef = inTheme(c, "china_plus_one");
   const sector = getSector(c);
-  if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active." };
-  if (isBenef) return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.china_plus_one_note || "In a sector benefiting from China+1 reorientation." };
-  return { points: 0, max: 2, status: "fail", value: sector, note: "Sector not exposed to China+1 substitution / EMS theme." };
+  // NB: client's spec is "company derives >15% revenue from China+1". We
+  // can't see segment-level revenue from Screener, so this rule uses
+  // SECTOR membership as a proxy. Flag the approximation in the note.
+  const proxyNote = "(Sector-level proxy — client spec asks for >15% revenue exposure, which requires segment data we don't yet capture.)";
+  if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: `China+1 theme not flagged as active. ${proxyNote}` };
+  if (isBenef) return { points: 2, max: 2, status: "pass", value: sector, note: `${m.regime?.china_plus_one_note || "In a sector benefiting from China+1 reorientation."} ${proxyNote}` };
+  return { points: 0, max: 2, status: "fail", value: sector, note: `Sector not in the China+1 / EMS theme list. ${proxyNote}` };
 }
 
 function ruleRuralRecovery(c) {
@@ -90,7 +94,7 @@ function ruleGDPGrowth(c) {
   const val = `GDP YoY ${v}%${up ? " (trending up)" : " (not trending up)"}`;
   if (v >= 6.5 && up) return { points: 2, max: 2, status: "pass", value: val, note: "GDP ≥ 6.5% and trending up — broad market re-rating tailwind." };
   if (v >= 6.0) return { points: 1, max: 2, status: "partial", value: val, note: "GDP between 6.0–6.5% — broad-market caution." };
-  return { points: 0, max: 2, status: "fail", value: val, note: "GDP below 6% — growth headwind for the broad market." };
+  return { points: 1, max: 2, status: "partial", value: val, note: "GDP below 6% — broad market caution (per client framework: 1 pt caution flag)." };
 }
 
 function ruleInflation(c) {
@@ -116,8 +120,7 @@ function ruleCrudeOil(c) {
   const val = `Brent $${crude}/bbl (${trend})`;
   if (crude < 85 && benefitsLow) return { points: 1, max: 1, status: "pass", value: val, note: `Crude below $85 — favourable for ${sector}.` };
   if (crude > 90 && hurtsHigh) return { points: 0, max: 1, status: "fail", value: val, note: `Crude above $90 — input-cost headwind for ${sector}.` };
-  if (crude < 85) return { points: 0, max: 1, status: "fail", value: val, note: "Sector neutral to crude price level." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Crude elevated and sector not a clear beneficiary." };
+  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly crude-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 function ruleINRUSD(c) {
@@ -127,13 +130,15 @@ function ruleINRUSD(c) {
   const rate = m.live.usdinr.latest;
   const trend = m.live.usdinr.trend;
   const inrWeakening = trend === "rising";  // USD/INR rising == INR weakening
+  const inrStrengthening = trend === "falling";
   const sector = getSector(c);
   const exporter = inTheme(c, "inr_weakening_benefit");
   const importer = inTheme(c, "inr_weakening_hurt");
-  const val = `USD/INR ₹${rate} (INR ${inrWeakening ? "weakening" : trend === "falling" ? "strengthening" : "stable"})`;
+  const val = `USD/INR ₹${rate} (INR ${inrWeakening ? "weakening" : inrStrengthening ? "strengthening" : "stable"})`;
   if (inrWeakening && exporter) return { points: 1, max: 1, status: "pass", value: val, note: `INR weakening trend — adds ~70 bps margin tailwind for ${sector} exporters.` };
+  if (inrStrengthening && exporter) return { points: 0, max: 1, status: "fail", value: val, note: `Strong INR hurts ${sector} exporters.` };
   if (inrWeakening && importer) return { points: 0, max: 1, status: "fail", value: val, note: `INR weakening hurts ${sector} importers.` };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Sector not directly INR-sensitive on this trend." };
+  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly INR-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 function ruleBondYields(c) {
@@ -147,7 +152,7 @@ function ruleBondYields(c) {
   const val = `10Y G-Sec ${y}% (${trend})`;
   if (trend === "declining" && benefitsFall) return { points: 1, max: 1, status: "pass", value: val, note: "Falling 10Y yield — spread compression eases for Banks/NBFCs/Realty." };
   if (trend === "rising" && benefitsFall) return { points: 0, max: 1, status: "fail", value: val, note: "Rising yields compress NIMs for rate-sensitive financials." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Sector not directly rate-sensitive in the bond-yield sense." };
+  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly bond-yield-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 // ---- Government Policy (4 pts) ----
