@@ -66,10 +66,6 @@ async function run() {
     chunks_ok: chunkOk,
     chunks_total: chunks,
     companies: perTicker,
-    // Schema probe round 2: dump the FULL content of 5 raw trades so we
-    // can see which fields are actually populated. Keys exist but values
-    // come in different fields depending on the disclosure type.
-    _sample_raw_trades: trades.slice(0, 5),
   };
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
@@ -164,35 +160,49 @@ function num(v) { const n = Number(String(v ?? "").replace(/,/g, "")); return Nu
 
 function aggregate(trades) {
   const out = {};
+  let pledgeSkipped = 0;
   for (const t of trades) {
     const sym = String(t.symbol || "").trim().toUpperCase();
     if (!sym) continue;
 
-    // Actual NSE PIT response keys (probed via PR #13):
-    //   buyQuantity, sellquantity (note lowercase 'q' in sell — NSE typo),
-    //   buyValue, sellValue, date, intimDt, acqfromDt, acqtoDt,
-    //   tdpTransactionType, personCategory, acqMode.
-    const buyShares  = num(t.buyQuantity);
-    const sellShares = num(t.sellquantity);
-    const buyVal     = num(t.buyValue);
-    const sellVal    = num(t.sellValue);
+    // Actual NSE PIT values (probed via PR #15):
+    //   buyValue / sellValue / buyQuantity / sellquantity are always "0"
+    //   placeholders. Real values live in:
+    //     secAcq             – share count (regardless of direction)
+    //     secVal             – transaction value in ₹
+    //     tdpTransactionType – "Buy" | "Sell" | "Pledge" | "Pledge Release"
+    //     acqMode            – "Market Purchase" | "Market Sale" | "ESOP" | ...
+    //     personCategory     – "Promoters" | "Director" | "Promoter Group" | ...
+    const shares = num(t.secAcq);
+    const value  = num(t.secVal);
+    const type   = String(t.tdpTransactionType || "").trim();
 
     if (!out[sym]) out[sym] = {
       buy_shares: 0, sell_shares: 0, buy_value: 0, sell_value: 0,
       transactions: 0, last_date: null,
     };
 
-    out[sym].buy_shares  += buyShares;
-    out[sym].sell_shares += sellShares;
-    out[sym].buy_value   += buyVal;
-    out[sym].sell_value  += sellVal;
+    if (type === "Buy") {
+      out[sym].buy_shares += shares;
+      out[sym].buy_value  += value;
+    } else if (type === "Sell") {
+      out[sym].sell_shares += shares;
+      out[sym].sell_value  += value;
+    } else {
+      // Pledge / Pledge Release / Invocation — not a buy or sell of beneficial
+      // ownership. Skip from the scoring count (the client rule is about
+      // net BUYING vs SELLING, not collateral pledges).
+      pledgeSkipped++;
+      continue;
+    }
     out[sym].transactions++;
 
-    const date = t.date || t.intimDt || t.acqtoDt || null;
+    const date = t.date || t.intimDt || t.acqtoDt;
     if (date && (!out[sym].last_date || dateGt(date, out[sym].last_date))) {
       out[sym].last_date = date;
     }
   }
+  console.log(`  Skipped ${pledgeSkipped} pledge/non-buy-sell disclosures.`);
   // Derive net + round
   for (const sym in out) {
     const o = out[sym];
