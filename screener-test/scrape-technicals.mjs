@@ -1,0 +1,365 @@
+#!/usr/bin/env node
+// Technicals scraper: pulls daily OHLC for every company in the KLP screener
+// list (and the Nifty 500 index) from Yahoo Finance, computes the technical
+// indicators the client's scoring framework needs, and writes a single
+// public/data/technicals.json that the dashboard reads.
+
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUT_PATH = resolve(__dirname, "../public/data/technicals.json");
+const COMPANIES_PATH = resolve(__dirname, "../public/data/screener-companies.json");
+
+const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days
+const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
+const FETCH_DELAY_MS = 200;        // be polite — ~5 req/sec
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+run().catch((err) => {
+  console.error("Fatal:", err.stack || err.message);
+  process.exit(1);
+});
+
+// ---------- main ----------
+async function run() {
+  const companies = JSON.parse(readFileSync(COMPANIES_PATH, "utf8"));
+  console.log(`Loaded ${companies.length} companies from screener-companies.json`);
+
+  const end = new Date();
+  const start = new Date(end.getTime() - HISTORY_DAYS * 86400000);
+
+  // Fetch the index first — needed for relative strength and beta.
+  console.log(`\nFetching ${INDEX_SYMBOL} (Nifty 500)...`);
+  const indexBars = await fetchBars(INDEX_SYMBOL, start, end);
+  if (!indexBars.length) throw new Error("Could not load Nifty 500 index data — aborting.");
+  console.log(`  ${indexBars.length} bars`);
+  const indexReturns = dailyReturns(indexBars);
+  const indexClose = indexBars.map((b) => b.close);
+
+  const results = [];
+  let failures = 0;
+  for (let i = 0; i < companies.length; i++) {
+    const c = companies[i];
+    const ticker = extractTicker(c["Screener URL"]);
+    if (!ticker) { failures++; continue; }
+    const yahooSym = `${ticker}.NS`;
+    process.stdout.write(`[${i + 1}/${companies.length}] ${c.Company.padEnd(28).slice(0, 28)} ${yahooSym.padEnd(16)} `);
+    try {
+      const bars = await fetchBars(yahooSym, start, end);
+      if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
+      const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose);
+      results.push({
+        ticker, name: c.Company, screenerUrl: c["Screener URL"],
+        marketCap: c["Market Cap"] || null,
+        sector: c["Sector"] || null,
+        broadSector: c["Broad Sector"] || null,
+        industry: c["Broad Industry"] || c["Industry"] || null,
+        ...indicators,
+      });
+      console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
+    } catch (err) {
+      failures++;
+      results.push({ ticker, name: c.Company, screenerUrl: c["Screener URL"], error: err.message });
+      console.log(`FAIL ${err.message}`);
+    }
+    await sleep(FETCH_DELAY_MS);
+    if ((i + 1) % 25 === 0) flush(results, indexBars, failures);   // checkpoint
+  }
+
+  flush(results, indexBars, failures);
+  console.log(`\n=== Done ===`);
+  console.log(`Companies: ${results.length - failures} OK, ${failures} failed`);
+  console.log(`Wrote: ${OUT_PATH}`);
+}
+
+function flush(results, indexBars, failures) {
+  mkdirSync(dirname(OUT_PATH), { recursive: true });
+  const payload = {
+    generated_at: new Date().toISOString(),
+    source: "Yahoo Finance",
+    index_symbol: INDEX_SYMBOL,
+    index_close: indexBars.at(-1)?.close ?? null,
+    index_6m_return: indexBars.length >= 126
+      ? (indexBars.at(-1).close / indexBars.at(-126).close) - 1
+      : null,
+    company_count: results.length,
+    failures,
+    companies: results,
+  };
+  writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
+}
+
+function extractTicker(url) {
+  // /company/ICICIAMC/ or /company/ICICIAMC/consolidated/ → ICICIAMC
+  const m = String(url || "").match(/\/company\/([^/]+)/);
+  return m ? m[1].toUpperCase() : null;
+}
+
+async function fetchBars(symbol, start, end) {
+  // Yahoo Chart v8 API — public, no auth. Returns parallel arrays of
+  // timestamps + OHLCV; we zip them into bar objects and drop any nulls
+  // (Yahoo occasionally inserts null at non-trading days).
+  const p1 = Math.floor(start.getTime() / 1000);
+  const p2 = Math.floor(end.getTime() / 1000);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${p1}&period2=${p2}&interval=1d&events=history`;
+  const headers = { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" };
+  let attempt = 0, lastErr;
+  while (attempt < 3) {
+    try {
+      const r = await fetch(url, { headers });
+      if (r.status === 404) throw new Error("ticker not found");
+      if (r.status === 429) { lastErr = new Error("rate limited"); attempt++; await sleep(1500 * attempt); continue; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      const result = j?.chart?.result?.[0];
+      if (!result || !result.timestamp) throw new Error("no chart data");
+      const ts = result.timestamp;
+      const q  = result.indicators?.quote?.[0] || {};
+      const out = [];
+      for (let i = 0; i < ts.length; i++) {
+        const close = q.close?.[i], volume = q.volume?.[i];
+        if (close == null || volume == null) continue;
+        out.push({
+          date: new Date(ts[i] * 1000).toISOString().slice(0, 10),
+          open:  q.open?.[i]  ?? close,
+          high:  q.high?.[i]  ?? close,
+          low:   q.low?.[i]   ?? close,
+          close, volume,
+        });
+      }
+      return out;
+    } catch (err) {
+      lastErr = err;
+      attempt++;
+      if (attempt < 3) await sleep(800 * attempt);
+    }
+  }
+  throw lastErr;
+}
+
+// ---------- indicators ----------
+function computeIndicators(bars, indexBars, indexReturns, indexClose) {
+  const close = bars.map((b) => b.close);
+  const high  = bars.map((b) => b.high);
+  const low   = bars.map((b) => b.low);
+  const vol   = bars.map((b) => b.volume);
+  const n = bars.length;
+  const cmp = close.at(-1);
+
+  const ema50 = ema(close, 50).at(-1);
+  const sma50 = sma(close, 50).at(-1);
+  const sma200 = n >= 200 ? sma(close, 200).at(-1) : null;
+  const rsi14 = rsi(close, 14).at(-1);
+  const macdSeries = macd(close, 12, 26, 9);
+  const macdLine = macdSeries.line.at(-1);
+  const macdSig = macdSeries.signal.at(-1);
+  const macdLinePrev = macdSeries.line.at(-2);
+  const macdSigPrev = macdSeries.signal.at(-2);
+  const positiveCrossover = macdLinePrev <= macdSigPrev && macdLine > macdSig;
+  const adx14 = adx(high, low, close, 14).at(-1);
+  const atr14 = atr(high, low, close, 14).at(-1);
+  const atrPct = (atr14 / cmp) * 100;
+
+  // 52w high/low — use last 250 trading days
+  const window52 = close.slice(-250);
+  const high52 = Math.max(...window52);
+  const low52 = Math.min(...window52);
+  const highProximityPct = cmp / high52;          // 0.93 = 7% below 52W high
+
+  // 20-day avg volume vs latest
+  const avg20Vol = avg(vol.slice(-21, -1));        // prior 20 days, excluding today
+  const volRatio = avg20Vol > 0 ? vol.at(-1) / avg20Vol : null;
+
+  // 6M return + Relative Strength
+  const sixMReturn = n >= 126 ? close.at(-1) / close.at(-126) - 1 : null;
+  const indexSixM = indexClose.length >= 126 ? indexClose.at(-1) / indexClose.at(-126) - 1 : null;
+  const relStrength6m = (sixMReturn != null && indexSixM != null) ? sixMReturn - indexSixM : null;
+
+  // Beta — last ~252 daily returns aligned with index
+  const stockReturns = dailyReturns(bars);
+  const beta = computeBeta(stockReturns, indexReturns);
+
+  return {
+    cmp,
+    ema50: round(ema50),
+    sma50: round(sma50),
+    sma200: sma200 == null ? null : round(sma200),
+    above_50ema: cmp > ema50,
+    above_200dma: sma200 != null ? cmp > sma200 : null,
+    golden_cross: (sma50 != null && sma200 != null) ? sma50 > sma200 : null,
+    death_cross:  (sma50 != null && sma200 != null) ? sma50 < sma200 : null,
+    rsi14: round(rsi14, 1),
+    macd: {
+      line: round(macdLine, 2),
+      signal: round(macdSig, 2),
+      above_zero: macdLine > 0,
+      positive_crossover: positiveCrossover,
+    },
+    adx14: round(adx14, 1),
+    atr14_pct: round(atrPct, 2),
+    high_52w: round(high52),
+    low_52w: round(low52),
+    high_proximity_pct: round(highProximityPct, 4),   // 0.93 = within 7%
+    avg_volume_20d: Math.round(avg20Vol),
+    volume_ratio_today: volRatio == null ? null : round(volRatio, 2),
+    return_6m: sixMReturn == null ? null : round(sixMReturn, 4),
+    return_6m_index: indexSixM == null ? null : round(indexSixM, 4),
+    relative_strength_6m: relStrength6m == null ? null : round(relStrength6m, 4),
+    beta_1y: beta == null ? null : round(beta, 2),
+    bars_count: n,
+  };
+}
+
+function round(n, d = 0) {
+  if (n == null || !Number.isFinite(n)) return null;
+  const m = Math.pow(10, d);
+  return Math.round(n * m) / m;
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function sma(arr, n) {
+  const out = new Array(arr.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < arr.length; i++) {
+    sum += arr[i];
+    if (i >= n) sum -= arr[i - n];
+    if (i >= n - 1) out[i] = sum / n;
+  }
+  return out;
+}
+
+function ema(arr, n) {
+  const out = new Array(arr.length).fill(null);
+  const k = 2 / (n + 1);
+  let prev;
+  for (let i = 0; i < arr.length; i++) {
+    if (i < n - 1) continue;
+    if (i === n - 1) {
+      let s = 0;
+      for (let j = 0; j < n; j++) s += arr[j];
+      prev = s / n;
+    } else {
+      prev = arr[i] * k + prev * (1 - k);
+    }
+    out[i] = prev;
+  }
+  return out;
+}
+
+function rsi(close, n) {
+  const out = new Array(close.length).fill(null);
+  if (close.length < n + 1) return out;
+  let gainSum = 0, lossSum = 0;
+  for (let i = 1; i <= n; i++) {
+    const d = close[i] - close[i - 1];
+    if (d >= 0) gainSum += d; else lossSum -= d;
+  }
+  let avgG = gainSum / n, avgL = lossSum / n;
+  out[n] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  for (let i = n + 1; i < close.length; i++) {
+    const d = close[i] - close[i - 1];
+    const g = d > 0 ? d : 0, l = d < 0 ? -d : 0;
+    avgG = (avgG * (n - 1) + g) / n;
+    avgL = (avgL * (n - 1) + l) / n;
+    out[i] = avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL);
+  }
+  return out;
+}
+
+function macd(close, fast = 12, slow = 26, signalLen = 9) {
+  const emaF = ema(close, fast);
+  const emaS = ema(close, slow);
+  const line = close.map((_, i) => (emaF[i] != null && emaS[i] != null) ? emaF[i] - emaS[i] : null);
+  const lineDefined = line.filter((x) => x != null);
+  const signalRaw = ema(lineDefined, signalLen);
+  const offset = line.findIndex((x) => x != null);
+  const signal = new Array(line.length).fill(null);
+  for (let i = 0; i < signalRaw.length; i++) signal[i + offset] = signalRaw[i];
+  return { line, signal };
+}
+
+function trueRange(high, low, close) {
+  const out = new Array(high.length).fill(null);
+  out[0] = high[0] - low[0];
+  for (let i = 1; i < high.length; i++) {
+    out[i] = Math.max(
+      high[i] - low[i],
+      Math.abs(high[i] - close[i - 1]),
+      Math.abs(low[i] - close[i - 1]),
+    );
+  }
+  return out;
+}
+
+function wilderSmooth(arr, n) {
+  const out = new Array(arr.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += arr[i];
+  out[n - 1] = sum / n;                     // simple seed
+  for (let i = n; i < arr.length; i++) {
+    out[i] = (out[i - 1] * (n - 1) + arr[i]) / n;
+  }
+  return out;
+}
+
+function atr(high, low, close, n) {
+  return wilderSmooth(trueRange(high, low, close), n);
+}
+
+function adx(high, low, close, n) {
+  const len = high.length;
+  const tr = trueRange(high, low, close);
+  const plusDM = new Array(len).fill(0), minusDM = new Array(len).fill(0);
+  for (let i = 1; i < len; i++) {
+    const up = high[i] - high[i - 1];
+    const dn = low[i - 1] - low[i];
+    plusDM[i]  = (up > dn && up > 0) ? up : 0;
+    minusDM[i] = (dn > up && dn > 0) ? dn : 0;
+  }
+  const atrSmoothed   = wilderSmooth(tr, n);
+  const plusDMSmooth  = wilderSmooth(plusDM, n);
+  const minusDMSmooth = wilderSmooth(minusDM, n);
+  const plusDI = atrSmoothed.map((a, i) => (a && a > 0) ? 100 * plusDMSmooth[i] / a : null);
+  const minusDI = atrSmoothed.map((a, i) => (a && a > 0) ? 100 * minusDMSmooth[i] / a : null);
+  const dx = plusDI.map((p, i) => {
+    const m = minusDI[i];
+    if (p == null || m == null || (p + m) === 0) return null;
+    return 100 * Math.abs(p - m) / (p + m);
+  });
+  // ADX = Wilder smoothing of DX, but skip leading nulls.
+  const dxClean = dx.map((v) => v == null ? 0 : v);
+  const adxRaw = wilderSmooth(dxClean, n);
+  // Mask out positions before the first valid DX.
+  const firstDX = dx.findIndex((v) => v != null);
+  return adxRaw.map((v, i) => i >= firstDX + n - 1 ? v : null);
+}
+
+function dailyReturns(bars) {
+  const out = [];
+  for (let i = 1; i < bars.length; i++) out.push(bars[i].close / bars[i - 1].close - 1);
+  return out;
+}
+
+function computeBeta(stockReturns, indexReturns) {
+  // Align tail ends; use up to 252 obs
+  const m = Math.min(stockReturns.length, indexReturns.length, 252);
+  if (m < 60) return null;
+  const sR = stockReturns.slice(-m);
+  const iR = indexReturns.slice(-m);
+  const sMean = avg(sR);
+  const iMean = avg(iR);
+  let cov = 0, varI = 0;
+  for (let i = 0; i < m; i++) {
+    cov += (sR[i] - sMean) * (iR[i] - iMean);
+    varI += (iR[i] - iMean) ** 2;
+  }
+  if (varI === 0) return null;
+  return cov / varI;
+}

@@ -1,0 +1,47 @@
+name: Technicals scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 00:45 UTC == 06:15 IST. Runs 15 min after the fundamentals scrape so
+    # it picks up any new companies added by the morning's fundamentals run.
+    - cron: "45 0 * * *"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run technicals scraper
+        run: node screener-test/scrape-technicals.mjs
+
+      - name: Upload technicals data (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: technicals-data
+          path: public/data/technicals.json
+          if-no-files-found: warn
+
+      - name: Commit refreshed technicals to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/technicals.json
+          if git diff --cached --quiet; then
+            echo "No technicals changes to commit."
+          else
+            git commit -m "Daily technicals refresh ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:main
+          fi
