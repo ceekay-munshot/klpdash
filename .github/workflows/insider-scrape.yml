@@ -41,7 +41,18 @@ jobs:
           git add public/data/insider-trades.json
           if git diff --cached --quiet; then
             echo "No insider data changes to commit."
-          else
-            git commit -m "Daily insider-trades refresh ($(date -u +%Y-%m-%d))"
-            git push origin HEAD:main
+            exit 0
           fi
+          git commit -m "Daily insider-trades refresh ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push still failing after 4 attempts."
+          exit 1
