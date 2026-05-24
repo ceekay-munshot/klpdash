@@ -66,6 +66,10 @@ async function run() {
     chunks_ok: chunkOk,
     chunks_total: chunks,
     companies: perTicker,
+    // Schema probe round 2: dump the FULL content of 5 raw trades so we
+    // can see which fields are actually populated. Keys exist but values
+    // come in different fields depending on the disclosure type.
+    _sample_raw_trades: trades.slice(0, 5),
   };
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
