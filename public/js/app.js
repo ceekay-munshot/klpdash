@@ -58,8 +58,8 @@ const CONFIGS = {
       { label: "ATR%", get: (c) => c.atr14_pct == null ? "—" : c.atr14_pct + "%" },
     ],
     stats: {
-      rules: "11 / 16",   rulesNote: "Active rules",
-      maxScore: "18 pts", maxNote: "After deferred: 24 pts",
+      rules: "13 / 16",   rulesNote: "Active rules",
+      maxScore: "20 pts", maxNote: "After deferred: 24 pts",
     },
     drillHeaderStats: (c) => [
       { label: "CMP · 52W High", main: c.cmp ? "₹" + Math.round(c.cmp).toLocaleString("en-IN") : "—",

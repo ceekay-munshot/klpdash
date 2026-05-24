@@ -112,27 +112,58 @@ function ruleATRStability(c) {
   return { points: 0, max: 1, status: "fail", value: val, note: "ATR% > 4% — high volatility, position-size flag." };
 }
 
-// ---- deferred (5 — need additional data sources) ----
+function ruleInstitutionalActivity(c) {
+  const fii = c.chg_fii_hold;
+  const dii = c.chg_dii_hold;
+  if (fii == null && dii == null) {
+    return { ...NA, max: 1, note: "FII / DII holding change not available for this company in the latest Screener shareholding data." };
+  }
+  const sum = (fii ?? 0) + (dii ?? 0);
+  const val = `Chg FII ${fii == null ? "—" : (fii > 0 ? "+" : "") + fmtNum(fii, 2) + "%"} | Chg DII ${dii == null ? "—" : (dii > 0 ? "+" : "") + fmtNum(dii, 2) + "%"}`;
+  if (sum > 0) {
+    if (fii != null && fii < -2) {
+      return { points: 1, max: 1, status: "partial", value: val, note: "Combined institutional buying, but FII exiting sharply (>2%) — caution." };
+    }
+    return { points: 1, max: 1, status: "pass", value: val, note: "Net FII + DII buying in latest period — institutional accumulation." };
+  }
+  return { points: 0, max: 1, status: "fail", value: val, note: "Net institutional selling in latest period." };
+}
+
+function ruleDeliveryPercentage(c) {
+  if (c.delivery_trend_diff == null) {
+    if (c.error || c.delivery_days_count === 0) {
+      return { ...NA, max: 1, note: "Delivery % data not available — NSE bhavcopy did not include this ticker, or files could not be fetched." };
+    }
+    return { ...NA, max: 1, note: "Insufficient delivery % history (fewer than 6 trading days returned by NSE)." };
+  }
+  const diff = c.delivery_trend_diff;
+  const val = `Recent ~15d avg ${fmtNum(c.delivery_avg_recent,1)}% vs preceding ~15d ${fmtNum(c.delivery_avg_older,1)}% (Δ ${diff > 0 ? "+" : ""}${fmtNum(diff,1)} pp)`;
+  if (diff > 1) return { points: 1, max: 1, status: "pass", value: val, note: "Delivery % clearly rising over the last 30 trading days — stronger holding conviction." };
+  if (diff > 0) return { points: 1, max: 1, status: "partial", value: val, note: "Delivery % slightly higher — mildly improving conviction." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Delivery % flat or declining — weaker holding conviction." };
+}
+
+// ---- deferred (3 — pattern recognition still pending) ----
 const DEFERRED = [
-  { key: "hhhl",       label: "Higher Highs–Higher Lows", category: "Trend Strength", reason: "Weekly-chart pattern recognition not yet implemented.", max: 1 },
-  { key: "delivery",   label: "Delivery Percentage",      category: "Volume",         reason: "NSE bhavcopy delivery-% feed not yet integrated.", max: 1 },
-  { key: "fiidii",     label: "Institutional Activity",   category: "Volume",         reason: "NSE FII/DII daily flow feed not yet integrated.", max: 1 },
-  { key: "consolidation", label: "Breakout from Consolidation", category: "Breakout", reason: "6-week base / consolidation pattern detection not yet implemented.", max: 2 },
-  { key: "base",       label: "Base Formation",           category: "Breakout",       reason: "Drawdown + closing-range analysis not yet implemented.", max: 1 },
+  { key: "hhhl",          label: "Higher Highs–Higher Lows",   category: "Trend Strength", reason: "Weekly-chart pattern recognition not yet implemented.", max: 1 },
+  { key: "consolidation", label: "Breakout from Consolidation", category: "Breakout",      reason: "6-week base / consolidation pattern detection not yet implemented.", max: 2 },
+  { key: "base",          label: "Base Formation",             category: "Breakout",       reason: "Drawdown + closing-range analysis not yet implemented.", max: 1 },
 ];
 
 const ACTIVE_RULES = [
-  { key: "ema50",   label: "Price Above 50 EMA",       category: "Trend Strength", criteria: "CMP > 50 EMA",          fn: rulePriceAbove50EMA },
-  { key: "dma200",  label: "Price Above 200 DMA",      category: "Trend Strength", criteria: "CMP > 200 DMA",         fn: rulePriceAbove200DMA },
-  { key: "gold",    label: "Golden Cross",             category: "Trend Strength", criteria: "50 DMA > 200 DMA",      fn: ruleGoldenCross },
-  { key: "rsi",     label: "RSI (14)",                 category: "Momentum",       criteria: "55–75",                 fn: ruleRSI },
-  { key: "macd",    label: "MACD",                     category: "Momentum",       criteria: "Positive crossover",    fn: ruleMACD },
-  { key: "adx",     label: "ADX (14)",                 category: "Momentum",       criteria: "> 25",                  fn: ruleADX },
-  { key: "rs",      label: "Relative Strength vs Nifty 500", category: "Momentum", criteria: "Outperforming index",   fn: ruleRelativeStrength },
-  { key: "volbo",   label: "Volume Breakout",          category: "Volume",         criteria: "≥ 1.5× 20-day avg",     fn: ruleVolumeBreakout },
-  { key: "near52w", label: "52-Week High Proximity",   category: "Breakout",       criteria: "Within 10%",            fn: rule52WHighProximity },
-  { key: "beta",    label: "Beta",                     category: "Risk",           criteria: "0.7 – 1.3",             fn: ruleBeta },
-  { key: "atr",     label: "ATR Stability",            category: "Risk",           criteria: "< 2.5% of price",       fn: ruleATRStability },
+  { key: "ema50",    label: "Price Above 50 EMA",       category: "Trend Strength", criteria: "CMP > 50 EMA",          fn: rulePriceAbove50EMA },
+  { key: "dma200",   label: "Price Above 200 DMA",      category: "Trend Strength", criteria: "CMP > 200 DMA",         fn: rulePriceAbove200DMA },
+  { key: "gold",     label: "Golden Cross",             category: "Trend Strength", criteria: "50 DMA > 200 DMA",      fn: ruleGoldenCross },
+  { key: "rsi",      label: "RSI (14)",                 category: "Momentum",       criteria: "55–75",                 fn: ruleRSI },
+  { key: "macd",     label: "MACD",                     category: "Momentum",       criteria: "Positive crossover",    fn: ruleMACD },
+  { key: "adx",      label: "ADX (14)",                 category: "Momentum",       criteria: "> 25",                  fn: ruleADX },
+  { key: "rs",       label: "Relative Strength vs Nifty 500", category: "Momentum", criteria: "Outperforming index",   fn: ruleRelativeStrength },
+  { key: "volbo",    label: "Volume Breakout",          category: "Volume",         criteria: "≥ 1.5× 20-day avg",     fn: ruleVolumeBreakout },
+  { key: "delivery", label: "Delivery Percentage",      category: "Volume",         criteria: "Rising over 30 days",   fn: ruleDeliveryPercentage },
+  { key: "instact",  label: "Institutional Activity",   category: "Volume",         criteria: "Net FII + DII buying",  fn: ruleInstitutionalActivity },
+  { key: "near52w",  label: "52-Week High Proximity",   category: "Breakout",       criteria: "Within 10%",            fn: rule52WHighProximity },
+  { key: "beta",     label: "Beta",                     category: "Risk",           criteria: "0.7 – 1.3",             fn: ruleBeta },
+  { key: "atr",      label: "ATR Stability",            category: "Risk",           criteria: "< 2.5% of price",       fn: ruleATRStability },
 ];
 
 export function scoreCompany(c) {
