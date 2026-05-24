@@ -1,0 +1,47 @@
+name: Macro scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 01:15 UTC == 06:45 IST. Runs after insider trades (01:00 UTC) so the
+    # daily commits land in sequence with no race.
+    - cron: "15 1 * * *"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run macro scraper
+        run: node screener-test/scrape-macro.mjs
+
+      - name: Upload macro data (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macro-data
+          path: public/data/macro.json
+          if-no-files-found: warn
+
+      - name: Commit refreshed macro data
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/macro.json
+          if git diff --cached --quiet; then
+            echo "No macro changes to commit."
+          else
+            git commit -m "Daily macro refresh ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:main
+          fi

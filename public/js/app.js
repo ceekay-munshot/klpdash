@@ -1,5 +1,6 @@
 import * as fund from "./scoring.js";
 import * as tech from "./tech-scoring.js";
+import * as macro from "./macro-scoring.js";
 
 // ---------------- Tab configuration ----------------
 const CONFIGS = {
@@ -34,6 +35,37 @@ const CONFIGS = {
     drillHeaderStats: (c) => [
       { label: "Market Cap", main: c["Market Cap"] || "—", sub: `CMP ${c["Current Price"] || "—"}` },
       { label: "P/E · D/E",  main: `${c["Stock P/E"] || "—"} · ${c["Debt to equity"] || "—"}`, sub: `ROCE ${c["ROCE"] || "—"}` },
+    ],
+  },
+  macro: {
+    label: "Macro",
+    dataUrl: "data/screener-companies.json",
+    metaUrl: "data/macro.json",
+    parseData: (raw) => raw,
+    rules: macro.ACTIVE_RULES,
+    deferred: macro.DEFERRED,
+    score: macro.scoreCompany,
+    name: (c) => c.Company,
+    marketCap: (c) => c["Market Cap"] || "",
+    screenerUrl: (c) => c["Screener URL"],
+    sector: (c) => c["Sector"] || null,
+    industry: (c) => c["Broad Industry"] || null,
+    columns: [
+      { label: "Sector",   get: (c) => c["Sector"] || "—" },
+      { label: "Industry", get: (c) => c["Broad Industry"] || "—" },
+      { label: "PLI",      get: (c) => c.in_pli ? "✓" : "—" },
+      { label: "Renewable", get: (c) => c.in_renewable ? "✓" : "—" },
+    ],
+    stats: {
+      rules: "11 / 11",   rulesNote: "Active rules",
+      maxScore: "15 pts", maxNote: "Sector overlays + macro context",
+    },
+    drillHeaderStats: (c) => [
+      { label: "Sector · Industry", main: c["Sector"] || "—",
+        sub: c["Broad Industry"] || "" },
+      { label: "Policy flags",
+        main: [c.in_pli ? "PLI" : null, c.in_renewable ? "Renewable" : null].filter(Boolean).join(" · ") || "—",
+        sub: "" },
     ],
   },
   technicals: {
@@ -182,6 +214,21 @@ async function loadTab(tabId) {
         }
       }
     } catch { /* insider file missing — rule shows N/A with explanation */ }
+  }
+
+  // Macro tab: merge the loaded macro.json into each row as ._macro, and
+  // set per-company convenience flags in_pli / in_renewable based on NSE
+  // ticker (extracted from Screener URL slug).
+  if (tabId === "macro" && rawMeta) {
+    const pli = new Set((rawMeta.pli_companies || []).map((s) => String(s).toUpperCase()));
+    const renew = new Set((rawMeta.renewable_companies || []).map((s) => String(s).toUpperCase()));
+    for (const row of rows) {
+      const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
+      const ticker = m ? m[1].toUpperCase() : null;
+      row._macro = rawMeta;
+      row.in_pli = ticker ? pli.has(ticker) : false;
+      row.in_renewable = ticker ? renew.has(ticker) : false;
+    }
   }
 
   const scored = rows.map(c.score).sort((a, b) => b.totalPoints - a.totalPoints);
