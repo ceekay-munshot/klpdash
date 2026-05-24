@@ -28,8 +28,8 @@ const CONFIGS = {
     ],
     // 3 stat-card values for the header strip
     stats: {
-      rules: "16 / 19",   rulesNote: "Active rules",
-      maxScore: "24 pts", maxNote: "After deferred: 29 pts",
+      rules: "17 / 19",   rulesNote: "Active rules",
+      maxScore: "25 pts", maxNote: "After deferred: 29 pts",
     },
     drillHeaderStats: (c) => [
       { label: "Market Cap", main: c["Market Cap"] || "—", sub: `CMP ${c["Current Price"] || "—"}` },
@@ -156,6 +156,34 @@ async function loadTab(tabId) {
   const parsed = c.parseData(rawData);
   const rows = parsed.rows || parsed;
   const meta = parsed.meta || rawMeta || rawData;
+
+  // Fundamentals tab: merge insider-trades.json onto each row by NSE ticker
+  // (extracted from Screener URL slug). If insider data is missing or empty,
+  // ruleInsiderBuying degrades to a clear N/A explanation.
+  if (tabId === "fundamentals") {
+    try {
+      const insider = await fetch("data/insider-trades.json").then((r) => r.json());
+      const byTicker = insider?.companies || {};
+      const insiderLoaded = Object.keys(byTicker).length > 0;
+      for (const row of rows) {
+        const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
+        const ticker = m ? m[1].toUpperCase() : null;
+        const data = ticker ? byTicker[ticker] : null;
+        row.insider_loaded = insiderLoaded;
+        if (data) {
+          row.insider_net_shares  = data.net_shares;
+          row.insider_net_value   = data.net_value;
+          row.insider_buy_shares  = data.buy_shares;
+          row.insider_sell_shares = data.sell_shares;
+          row.insider_transactions = data.transactions;
+          row.insider_last_date   = data.last_date;
+        } else {
+          row.insider_transactions = 0;
+        }
+      }
+    } catch { /* insider file missing — rule shows N/A with explanation */ }
+  }
+
   const scored = rows.map(c.score).sort((a, b) => b.totalPoints - a.totalPoints);
   state.cache[tabId] = { rows, scored, meta, filtered: scored };
 }

@@ -1,0 +1,47 @@
+name: Insider trades scrape
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 01:00 UTC == 06:30 IST. Runs after fundamentals (06:00) and technicals
+    # (06:15) so daily commits land in sequence with no race.
+    - cron: "0 1 * * *"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run insider scraper
+        run: node screener-test/scrape-insider.mjs
+
+      - name: Upload insider data (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: insider-trades
+          path: public/data/insider-trades.json
+          if-no-files-found: warn
+
+      - name: Commit refreshed insider data
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/insider-trades.json
+          if git diff --cached --quiet; then
+            echo "No insider data changes to commit."
+          else
+            git commit -m "Daily insider-trades refresh ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:main
+          fi
