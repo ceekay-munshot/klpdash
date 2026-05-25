@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T18:07:42.707Z",
+  "generated_at": "2026-05-25T18:20:29.513Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
@@ -49,7 +49,20 @@
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
     "market_breadth_ad_ratio": 2.96,
-    "market_breadth_note": "370 advances vs 125 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV)."
+    "market_breadth_note": "370 advances vs 125 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "_pcr_debug": {
+      "yahoo": {
+        "error": "HTTP 401"
+      },
+      "moneycontrol": {
+        "http_status": 200,
+        "url": "https://www.moneycontrol.com/markets/indian-indices/top-nse-pcr/9",
+        "html_size": 607940,
+        "contains_nifty": true,
+        "contains_pcr_word": false,
+        "nifty_chunk_found": false
+      }
+    }
   },
   "sector_themes": {
     "infra_push": [
