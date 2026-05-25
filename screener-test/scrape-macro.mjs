@@ -227,13 +227,24 @@ async function fetchNSESentimentAll() {
 }
 
 async function fetchFIIDIIFlow() {
-  // NSE returns the last ~5 daily activity rows. Count days where total
-  // FII net buy is positive. With <20 rows we mark "partial / unknown".
   const data = await fetchNSEJson("https://www.nseindia.com/api/fiidiiTradeReact");
-  if (!Array.isArray(data) || !data.length) return null;
-  const fiiRows = data.filter((r) => r.category === "FII/FPI *" || String(r.category || "").toLowerCase().startsWith("fii"));
+  if (!Array.isArray(data) || !data.length) {
+    console.log("  FII raw response shape:", typeof data, Array.isArray(data) ? `array(${data.length})` : Object.keys(data || {}).join(","));
+    return null;
+  }
+  console.log("  FII first row keys:", Object.keys(data[0]).join(", "));
+  console.log("  FII first row:", JSON.stringify(data[0]).slice(0, 200));
+  // Lenient match: any row whose category mentions FII / FPI / Foreign.
+  const fiiRows = data.filter((r) => {
+    const cat = String(r.category || r.Category || "").toLowerCase();
+    return cat.includes("fii") || cat.includes("fpi") || cat.includes("foreign");
+  });
+  if (!fiiRows.length) {
+    console.log("  FII filter matched 0 rows. Categories seen:", [...new Set(data.map((r) => r.category || r.Category))].join(" | "));
+    return null;
+  }
   const days = fiiRows.length;
-  const positive = fiiRows.filter((r) => Number(r.netValue ?? r.net ?? 0) > 0).length;
+  const positive = fiiRows.filter((r) => Number(r.netValue ?? r.net ?? r.netBuy ?? 0) > 0).length;
   let signal;
   if (days >= 5) {
     const pctPositive = positive / days;
@@ -241,7 +252,7 @@ async function fetchFIIDIIFlow() {
     else if (pctPositive >= 0.3) signal = "mixed";
     else signal = "no";
   } else {
-    return null; // not enough data
+    return null;
   }
   return {
     fii_net_positive_last_20d: signal,
@@ -252,8 +263,15 @@ async function fetchFIIDIIFlow() {
 }
 
 async function fetchPutCallRatio() {
-  const data = await fetchNSEJson("https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY");
-  const records = data?.records?.data || [];
+  // The legacy /api/option-chain-indices endpoint 404s. Try v3 instead.
+  const url = "https://www.nseindia.com/api/option-chain-v3?type=Indices&symbol=NIFTY";
+  const data = await fetchNSEJson(url);
+  if (!data) throw new Error("v3 option chain returned no data");
+  const records = data?.records?.data || data?.data || [];
+  if (!records.length) {
+    console.log("  PCR v3 response keys:", Object.keys(data).join(","));
+    return null;
+  }
   let ceOI = 0, peOI = 0;
   for (const r of records) {
     ceOI += Number(r.CE?.openInterest || 0);
@@ -264,14 +282,37 @@ async function fetchPutCallRatio() {
 }
 
 async function fetchMarketBreadth() {
-  // Use NIFTY 500 constituent list; each row has pChange (% change today).
-  const data = await fetchNSEJson("https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%20500");
+  // The /api/equity-stockIndices?index=NIFTY%20500 endpoint 404s. Use the
+  // pre-open snapshot which returns per-stock advances/declines across the
+  // full universe. Falls back to allIndices if that also fails.
+  const candidates = [
+    "https://www.nseindia.com/api/snapshot-capital-market-pre-open?key=NIFTY",
+    "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY+500",
+    "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050",
+  ];
+  let data = null, urlUsed = null;
+  for (const url of candidates) {
+    try {
+      data = await fetchNSEJson(url);
+      urlUsed = url;
+      break;
+    } catch (e) { /* try next */ }
+  }
+  if (!data) throw new Error("all breadth endpoints failed");
+  console.log("  A/D endpoint that worked:", urlUsed);
+  console.log("  A/D response top keys:  ", Object.keys(data).slice(0, 10).join(","));
+  // pre-open shape: { advances, declines, unchanged, data: [...] }
+  if (typeof data.advances === "number" && typeof data.declines === "number") {
+    const adv = data.advances, dec = data.declines;
+    return { adv, dec, ad_ratio: dec === 0 ? null : Math.round((adv / dec) * 100) / 100 };
+  }
+  // equity-stockIndices shape: { data: [...] } with pChange per row
   const rows = data?.data || [];
-  // The first row is the index itself — drop it.
-  const stocks = rows.filter((r) => r.priority !== 1 && r.symbol && r.symbol !== "NIFTY 500");
-  if (!stocks.length) return null;
-  const adv = stocks.filter((r) => Number(r.pChange) > 0).length;
-  const dec = stocks.filter((r) => Number(r.pChange) < 0).length;
-  if (dec === 0) return { adv, dec, ad_ratio: null };
-  return { adv, dec, ad_ratio: Math.round((adv / dec) * 100) / 100 };
+  if (rows.length) {
+    const stocks = rows.filter((r) => r.priority !== 1 && r.symbol);
+    const adv = stocks.filter((r) => Number(r.pChange) > 0).length;
+    const dec = stocks.filter((r) => Number(r.pChange) < 0).length;
+    return { adv, dec, ad_ratio: dec === 0 ? null : Math.round((adv / dec) * 100) / 100 };
+  }
+  return null;
 }
