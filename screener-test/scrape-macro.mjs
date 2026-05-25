@@ -241,6 +241,7 @@ async function fetchNSESentimentAll() {
   //    option chain data.
   try {
     const pcr = await fetchPCR();
+    out._pcr_debug = pcr.diag;
     if (pcr && pcr.value != null) {
       out.put_call_ratio = pcr.value;
       out.put_call_ratio_note = pcr.note;
@@ -256,65 +257,91 @@ async function fetchNSESentimentAll() {
 }
 
 async function fetchPCR() {
+  const diag = { yahoo: null, moneycontrol: null };
   // Try Yahoo options endpoint first
   try {
-    const pcr = await fetchPCRFromYahoo();
-    if (pcr != null) return { value: pcr, source: "Yahoo Finance ^NSEI options", note: `NIFTY 50 total PE OI / CE OI = ${pcr} (live via Yahoo).` };
+    const yahooResult = await fetchPCRFromYahoo();
+    diag.yahoo = yahooResult.diag;
+    if (yahooResult.value != null) return { value: yahooResult.value, source: "Yahoo Finance ^NSEI options", note: `NIFTY 50 total PE OI / CE OI = ${yahooResult.value} (live via Yahoo).`, diag };
   } catch (err) {
+    diag.yahoo = { error: err.message };
     console.log("  PCR (Yahoo): " + err.message);
   }
   // Fall back to MoneyControl scrape
   try {
-    const pcr = await fetchPCRFromMoneycontrol();
-    if (pcr != null) return { value: pcr, source: "MoneyControl", note: `NIFTY PCR ${pcr} (live via MoneyControl page scrape).` };
+    const mcResult = await fetchPCRFromMoneycontrol();
+    diag.moneycontrol = mcResult.diag;
+    if (mcResult.value != null) return { value: mcResult.value, source: "MoneyControl", note: `NIFTY PCR ${mcResult.value} (live via MoneyControl page scrape).`, diag };
   } catch (err) {
+    diag.moneycontrol = { error: err.message };
     console.log("  PCR (MoneyControl): " + err.message);
   }
-  return null;
+  return { value: null, diag };
 }
 
 async function fetchPCRFromYahoo() {
   const url = "https://query1.finance.yahoo.com/v7/finance/options/%5ENSEI";
   const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" } });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const diag = { http_status: r.status };
+  if (!r.ok) {
+    diag.error = `HTTP ${r.status}`;
+    throw new Error(`HTTP ${r.status}`);
+  }
   const j = await r.json();
-  const options = j?.optionChain?.result?.[0]?.options?.[0];
+  const top = j?.optionChain?.result?.[0];
+  diag.has_result = !!top;
+  diag.result_keys = top ? Object.keys(top).slice(0, 12).join(",") : null;
+  diag.expiry_dates = top?.expirationDates?.length || 0;
+  diag.option_groups = top?.options?.length || 0;
+  const options = top?.options?.[0];
+  diag.has_options = !!options;
   if (!options) {
-    console.log("  PCR (Yahoo): no options block. Top keys:", Object.keys(j?.optionChain?.result?.[0] || {}).join(","));
-    return null;
+    return { value: null, diag };
   }
   const calls = options.calls || [];
   const puts  = options.puts  || [];
+  diag.calls_count = calls.length;
+  diag.puts_count = puts.length;
   const ceOI = calls.reduce((s, c) => s + (c.openInterest || 0), 0);
   const peOI = puts .reduce((s, p) => s + (p.openInterest || 0), 0);
-  if (ceOI === 0) return null;
-  return Math.round((peOI / ceOI) * 100) / 100;
+  diag.ce_oi_total = ceOI;
+  diag.pe_oi_total = peOI;
+  if (ceOI === 0) return { value: null, diag };
+  const pcr = Math.round((peOI / ceOI) * 100) / 100;
+  diag.pcr = pcr;
+  return { value: pcr, diag };
 }
 
 async function fetchPCRFromMoneycontrol() {
-  // MoneyControl PCR page — simple HTML, regex extract is enough.
   const url = "https://www.moneycontrol.com/markets/indian-indices/top-nse-pcr/9";
   const r = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" },
   });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const html = await r.text();
-  // Pattern: NIFTY row in their PCR table — look for the word NIFTY followed
-  // by a numeric PCR value within a few cells. MoneyControl's HTML structure
-  // for this table puts the PCR in a <td> right after the index name.
-  // Generous regex — capture the first sane-looking PCR (0.3 to 3.0) near "NIFTY".
-  const niftyChunk = html.match(/NIFTY[\s\S]{0,500}?<\/tr>/i)?.[0];
-  if (!niftyChunk) {
-    console.log("  PCR (MoneyControl): no NIFTY row found in HTML.");
-    return null;
+  const diag = { http_status: r.status, url };
+  if (!r.ok) {
+    diag.error = `HTTP ${r.status}`;
+    throw new Error(`HTTP ${r.status}`);
   }
+  const html = await r.text();
+  diag.html_size = html.length;
+  diag.contains_nifty = /NIFTY/i.test(html);
+  diag.contains_pcr_word = /put.?call/i.test(html);
+  // Try to find the NIFTY row
+  const niftyChunk = html.match(/NIFTY[\s\S]{0,500}?<\/tr>/i)?.[0];
+  diag.nifty_chunk_found = !!niftyChunk;
+  if (!niftyChunk) {
+    return { value: null, diag };
+  }
+  diag.nifty_chunk_sample = niftyChunk.slice(0, 250).replace(/\s+/g, " ");
   const nums = [...niftyChunk.matchAll(/>([0-3]\.\d{2,4})</g)].map((m) => Number(m[1]));
+  diag.numeric_candidates = nums;
   const candidate = nums.find((n) => n >= 0.3 && n <= 3.0);
   if (candidate == null) {
-    console.log("  PCR (MoneyControl): NIFTY row had no plausible PCR number.");
-    return null;
+    return { value: null, diag };
   }
-  return Math.round(candidate * 100) / 100;
+  const pcr = Math.round(candidate * 100) / 100;
+  diag.pcr = pcr;
+  return { value: pcr, diag };
 }
 
 async function fetchFIIDIITodayRows() {
