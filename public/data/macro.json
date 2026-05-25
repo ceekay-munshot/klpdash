@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T05:49:07.243Z",
+  "generated_at": "2026-05-25T11:18:53.151Z",
   "source": "Yahoo Finance (live) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
@@ -10,16 +10,16 @@
       "history_bars": 26
     },
     "usdinr": {
-      "latest": 95.13,
+      "latest": 95.22,
       "latest_unit": "₹/$",
-      "pct_change_30d": 1.08,
+      "pct_change_30d": 1.18,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 16.85,
+      "latest": 16.7,
       "latest_unit": "",
-      "pct_change_30d": -9.35,
+      "pct_change_30d": -10.15,
       "trend": "falling",
       "history_bars": 25
     }
@@ -41,6 +41,15 @@
     "china_plus_one_note": "Chemicals + electronics manufacturing themes continue benefiting from China+1 reorientation.",
     "rural_recovery_signal": "good",
     "rural_recovery_note": "Above-normal monsoon outlook + MSP hike + stable kharif sowing."
+  },
+  "sentiment": {
+    "_note": "Market-wide sentiment signals. Update manually after weekly review of NSE FII/DII reports, breadth data and PCR. Will be automated in a follow-up scrape.",
+    "fii_net_positive_last_20d": "yes",
+    "fii_signal_note": "FII net positive in approx 11 of the last 20 trading days — institutional sentiment leaning bullish.",
+    "put_call_ratio": null,
+    "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
+    "market_breadth_ad_ratio": null,
+    "market_breadth_note": "Live A/D ratio scrape not yet wired — Market Breadth rule shows N/A until then."
   },
   "sector_themes": {
     "infra_push": [
@@ -226,14 +235,5 @@
     "RPOWER",
     "TORNTPOWER"
   ],
-  "static_last_updated": "2026-05-24",
-  "sentiment": {
-    "_note": "Market-wide sentiment signals. Update manually after weekly review of NSE FII/DII reports, breadth data and PCR. Will be automated in a follow-up scrape.",
-    "fii_net_positive_last_20d": "yes",
-    "fii_signal_note": "FII net positive in approx 11 of the last 20 trading days — institutional sentiment leaning bullish.",
-    "put_call_ratio": null,
-    "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": null,
-    "market_breadth_note": "Live A/D ratio scrape not yet wired — Market Breadth rule shows N/A until then."
-  }
+  "static_last_updated": "2026-05-24"
 }
