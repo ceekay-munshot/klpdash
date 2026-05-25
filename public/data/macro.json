@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T18:20:29.513Z",
+  "generated_at": "2026-05-25T18:27:10.082Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
@@ -51,16 +51,24 @@
     "market_breadth_ad_ratio": 2.96,
     "market_breadth_note": "370 advances vs 125 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "_pcr_debug": {
-      "yahoo": {
-        "error": "HTTP 401"
-      },
-      "moneycontrol": {
-        "http_status": 200,
-        "url": "https://www.moneycontrol.com/markets/indian-indices/top-nse-pcr/9",
-        "html_size": 607940,
-        "contains_nifty": true,
-        "contains_pcr_word": false,
-        "nifty_chunk_found": false
+      "fo_bhavcopy": {
+        "attempts": [
+          {
+            "date": "20260525",
+            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260525_F_0000.csv",
+            "http_status": 404
+          },
+          {
+            "date": "20260522",
+            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260522_F_0000.csv",
+            "http_status": 404
+          },
+          {
+            "date": "20260521",
+            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260521_F_0000.csv",
+            "http_status": 404
+          }
+        ]
       }
     }
   },
