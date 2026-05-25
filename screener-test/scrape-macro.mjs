@@ -236,11 +236,85 @@ async function fetchNSESentimentAll() {
     console.log("  A/D fetch error: couldn't read technicals.json —", err.message);
   }
 
-  // 3) PCR: deferred until we have a stable data source. Leave whatever's in
-  //    the static block (typically null with a note).
-  console.log("  PCR: skipped this run (separate follow-up — NSE option-chain API is fragile).");
+  // 3) PCR: try Yahoo Finance options first (no cookies needed). Fall back
+  //    to a MoneyControl HTML scrape if Yahoo doesn't return Indian index
+  //    option chain data.
+  try {
+    const pcr = await fetchPCR();
+    if (pcr && pcr.value != null) {
+      out.put_call_ratio = pcr.value;
+      out.put_call_ratio_note = pcr.note;
+      console.log(`  PCR: ${pcr.value} (source: ${pcr.source})`);
+    } else {
+      console.log("  PCR: no source returned a usable value — rule stays N/A.");
+    }
+  } catch (err) {
+    console.log("  PCR fetch error:", err.message);
+  }
 
   return out;
+}
+
+async function fetchPCR() {
+  // Try Yahoo options endpoint first
+  try {
+    const pcr = await fetchPCRFromYahoo();
+    if (pcr != null) return { value: pcr, source: "Yahoo Finance ^NSEI options", note: `NIFTY 50 total PE OI / CE OI = ${pcr} (live via Yahoo).` };
+  } catch (err) {
+    console.log("  PCR (Yahoo): " + err.message);
+  }
+  // Fall back to MoneyControl scrape
+  try {
+    const pcr = await fetchPCRFromMoneycontrol();
+    if (pcr != null) return { value: pcr, source: "MoneyControl", note: `NIFTY PCR ${pcr} (live via MoneyControl page scrape).` };
+  } catch (err) {
+    console.log("  PCR (MoneyControl): " + err.message);
+  }
+  return null;
+}
+
+async function fetchPCRFromYahoo() {
+  const url = "https://query1.finance.yahoo.com/v7/finance/options/%5ENSEI";
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  const options = j?.optionChain?.result?.[0]?.options?.[0];
+  if (!options) {
+    console.log("  PCR (Yahoo): no options block. Top keys:", Object.keys(j?.optionChain?.result?.[0] || {}).join(","));
+    return null;
+  }
+  const calls = options.calls || [];
+  const puts  = options.puts  || [];
+  const ceOI = calls.reduce((s, c) => s + (c.openInterest || 0), 0);
+  const peOI = puts .reduce((s, p) => s + (p.openInterest || 0), 0);
+  if (ceOI === 0) return null;
+  return Math.round((peOI / ceOI) * 100) / 100;
+}
+
+async function fetchPCRFromMoneycontrol() {
+  // MoneyControl PCR page — simple HTML, regex extract is enough.
+  const url = "https://www.moneycontrol.com/markets/indian-indices/top-nse-pcr/9";
+  const r = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" },
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const html = await r.text();
+  // Pattern: NIFTY row in their PCR table — look for the word NIFTY followed
+  // by a numeric PCR value within a few cells. MoneyControl's HTML structure
+  // for this table puts the PCR in a <td> right after the index name.
+  // Generous regex — capture the first sane-looking PCR (0.3 to 3.0) near "NIFTY".
+  const niftyChunk = html.match(/NIFTY[\s\S]{0,500}?<\/tr>/i)?.[0];
+  if (!niftyChunk) {
+    console.log("  PCR (MoneyControl): no NIFTY row found in HTML.");
+    return null;
+  }
+  const nums = [...niftyChunk.matchAll(/>([0-3]\.\d{2,4})</g)].map((m) => Number(m[1]));
+  const candidate = nums.find((n) => n >= 0.3 && n <= 3.0);
+  if (candidate == null) {
+    console.log("  PCR (MoneyControl): NIFTY row had no plausible PCR number.");
+    return null;
+  }
+  return Math.round(candidate * 100) / 100;
 }
 
 async function fetchFIIDIITodayRows() {
