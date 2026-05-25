@@ -206,14 +206,22 @@ async function fetchNSESentimentAll() {
     fetchMarketBreadth(),
   ]);
   const out = {};
-  if (fii.status === "fulfilled" && fii.value) Object.assign(out, fii.value);
+  if (fii.status === "fulfilled" && fii.value) {
+    Object.assign(out, fii.value);
+  } else {
+    console.log("  FII/DII fetch error:", fii.status === "rejected" ? (fii.reason?.message || String(fii.reason)) : "no data returned");
+  }
   if (pcr.status === "fulfilled" && pcr.value != null) {
     out.put_call_ratio = pcr.value;
     out.put_call_ratio_note = `NIFTY total PE OI / CE OI = ${pcr.value} (live from NSE option chain).`;
+  } else {
+    console.log("  PCR fetch error:    ", pcr.status === "rejected" ? (pcr.reason?.message || String(pcr.reason)) : "no data returned");
   }
   if (breadth.status === "fulfilled" && breadth.value) {
     out.market_breadth_ad_ratio = breadth.value.ad_ratio;
     out.market_breadth_note = `${breadth.value.adv} advances vs ${breadth.value.dec} declines across Nifty 500 (live).`;
+  } else {
+    console.log("  A/D fetch error:    ", breadth.status === "rejected" ? (breadth.reason?.message || String(breadth.reason)) : "no data returned");
   }
   return out;
 }
