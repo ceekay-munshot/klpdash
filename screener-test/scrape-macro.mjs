@@ -31,7 +31,7 @@ async function run() {
   const [crude, inrusd, vix] = await Promise.all([
     fetchYahoo("BZ=F", 35),         // Brent crude
     fetchYahoo("USDINR=X", 35),     // USD/INR
-    fetchYahoo("^INDIAVIX", 35),    // India VIX (used later by Sentiment tab)
+    fetchYahoo("^INDIAVIX", 35),    // India VIX (used by Sentiment tab)
   ]);
 
   const live = {
@@ -43,13 +43,31 @@ async function run() {
   console.log("  USD/INR:    ", live.usdinr.latest, "(30d change:", live.usdinr.pct_change_30d + "%)");
   console.log("  India VIX:  ", live.india_vix.latest);
 
+  // Live NSE sentiment fetches — FII/DII flow, PCR, A/D ratio. Each is
+  // best-effort: if NSE blocks our IP we fall back to the static value
+  // (or null) and the Sentiment tab rule shows the right N/A note.
+  console.log("\nInitialising NSE session for sentiment fetches...");
+  let liveSentiment = {};
+  try {
+    await initNSESession();
+    liveSentiment = await fetchNSESentimentAll();
+    console.log("  FII flow signal:", liveSentiment.fii_net_positive_last_20d, `(${liveSentiment.fii_positive_days}/${liveSentiment.fii_total_days} days)`);
+    console.log("  Put/Call Ratio:", liveSentiment.put_call_ratio);
+    console.log("  A/D ratio:     ", liveSentiment.market_breadth_ad_ratio, "(", liveSentiment.market_breadth_note, ")");
+  } catch (err) {
+    console.log("  NSE sentiment fetch failed:", err.message, "— falling back to static values.");
+  }
+
+  // Merge: prefer live values where present, fall back to static
+  const sentiment = { ...(stat.sentiment || {}), ...liveSentiment };
+
   const payload = {
     generated_at: new Date().toISOString(),
-    source: "Yahoo Finance (live) + macro-context.json (slow-changing)",
+    source: "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
     live,
     economic: stat.economic,
     regime: stat.regime,
-    sentiment: stat.sentiment || null,
+    sentiment,
     sector_themes: stat.sector_themes,
     pli_companies: stat.pli_companies,
     renewable_companies: stat.renewable_companies,
@@ -126,4 +144,126 @@ function round(n, d = 2) {
   if (n == null || !Number.isFinite(n)) return null;
   const m = Math.pow(10, d);
   return Math.round(n * m) / m;
+}
+
+// ---------- NSE session + sentiment fetches ----------
+
+const NSE_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+  "Accept": "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Referer": "https://www.nseindia.com/",
+};
+let cookieJar = "";
+
+function saveCookies(response) {
+  const setCookies = response.headers.getSetCookie?.() || [];
+  for (const sc of setCookies) {
+    const [kv] = sc.split(";");
+    const eq = kv.indexOf("=");
+    if (eq < 0) continue;
+    const k = kv.slice(0, eq).trim();
+    const v = kv.slice(eq + 1).trim();
+    const existing = new RegExp(`(^|; )${k}=[^;]*`);
+    if (existing.test(cookieJar)) cookieJar = cookieJar.replace(existing, (m, p) => `${p}${k}=${v}`);
+    else cookieJar += (cookieJar ? "; " : "") + `${k}=${v}`;
+  }
+}
+
+async function initNSESession() {
+  cookieJar = "";
+  for (const url of ["https://www.nseindia.com/", "https://www.nseindia.com/market-data/live-equity-market"]) {
+    const r = await fetch(url, { headers: NSE_HEADERS });
+    saveCookies(r);
+    await sleep(600);
+  }
+}
+
+async function fetchNSEJson(url, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const r = await fetch(url, { headers: { ...NSE_HEADERS, Cookie: cookieJar } });
+      if (r.status === 401 || r.status === 403) {
+        await initNSESession();
+        continue;
+      }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      saveCookies(r);
+      return await r.json();
+    } catch (err) {
+      lastErr = err;
+      await sleep(800 * (i + 1));
+    }
+  }
+  throw lastErr;
+}
+
+async function fetchNSESentimentAll() {
+  const [fii, pcr, breadth] = await Promise.allSettled([
+    fetchFIIDIIFlow(),
+    fetchPutCallRatio(),
+    fetchMarketBreadth(),
+  ]);
+  const out = {};
+  if (fii.status === "fulfilled" && fii.value) Object.assign(out, fii.value);
+  if (pcr.status === "fulfilled" && pcr.value != null) {
+    out.put_call_ratio = pcr.value;
+    out.put_call_ratio_note = `NIFTY total PE OI / CE OI = ${pcr.value} (live from NSE option chain).`;
+  }
+  if (breadth.status === "fulfilled" && breadth.value) {
+    out.market_breadth_ad_ratio = breadth.value.ad_ratio;
+    out.market_breadth_note = `${breadth.value.adv} advances vs ${breadth.value.dec} declines across Nifty 500 (live).`;
+  }
+  return out;
+}
+
+async function fetchFIIDIIFlow() {
+  // NSE returns the last ~5 daily activity rows. Count days where total
+  // FII net buy is positive. With <20 rows we mark "partial / unknown".
+  const data = await fetchNSEJson("https://www.nseindia.com/api/fiidiiTradeReact");
+  if (!Array.isArray(data) || !data.length) return null;
+  const fiiRows = data.filter((r) => r.category === "FII/FPI *" || String(r.category || "").toLowerCase().startsWith("fii"));
+  const days = fiiRows.length;
+  const positive = fiiRows.filter((r) => Number(r.netValue ?? r.net ?? 0) > 0).length;
+  let signal;
+  if (days >= 5) {
+    const pctPositive = positive / days;
+    if (pctPositive >= 0.5) signal = "yes";
+    else if (pctPositive >= 0.3) signal = "mixed";
+    else signal = "no";
+  } else {
+    return null; // not enough data
+  }
+  return {
+    fii_net_positive_last_20d: signal,
+    fii_positive_days: positive,
+    fii_total_days: days,
+    fii_signal_note: `FII net positive in ${positive} of last ${days} reported trading days (live from NSE daily activity).`,
+  };
+}
+
+async function fetchPutCallRatio() {
+  const data = await fetchNSEJson("https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY");
+  const records = data?.records?.data || [];
+  let ceOI = 0, peOI = 0;
+  for (const r of records) {
+    ceOI += Number(r.CE?.openInterest || 0);
+    peOI += Number(r.PE?.openInterest || 0);
+  }
+  if (ceOI === 0) return null;
+  return Math.round((peOI / ceOI) * 100) / 100;
+}
+
+async function fetchMarketBreadth() {
+  // Use NIFTY 500 constituent list; each row has pChange (% change today).
+  const data = await fetchNSEJson("https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%20500");
+  const rows = data?.data || [];
+  // The first row is the index itself — drop it.
+  const stocks = rows.filter((r) => r.priority !== 1 && r.symbol && r.symbol !== "NIFTY 500");
+  if (!stocks.length) return null;
+  const adv = stocks.filter((r) => Number(r.pChange) > 0).length;
+  const dec = stocks.filter((r) => Number(r.pChange) < 0).length;
+  if (dec === 0) return { adv, dec, ad_ratio: null };
+  return { adv, dec, ad_ratio: Math.round((adv / dec) * 100) / 100 };
 }
