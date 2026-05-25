@@ -118,6 +118,17 @@ function parsePercentValue(v) {
 
 function flush(results, indexBars, failures) {
   mkdirSync(dirname(OUT_PATH), { recursive: true });
+  // Market-wide advances vs declines across the Nifty 500 universe. Used by
+  // the Sentiment & Liquidity tab so we don't depend on NSE's breadth API.
+  const withChange = results.filter((r) => Number.isFinite(r.pct_change_today));
+  const advances = withChange.filter((r) => r.pct_change_today > 0).length;
+  const declines = withChange.filter((r) => r.pct_change_today < 0).length;
+  const breadth = withChange.length ? {
+    advances, declines,
+    unchanged: withChange.length - advances - declines,
+    ad_ratio: declines === 0 ? null : Math.round((advances / declines) * 100) / 100,
+    universe: withChange.length,
+  } : null;
   const payload = {
     generated_at: new Date().toISOString(),
     source: "Yahoo Finance",
@@ -126,6 +137,7 @@ function flush(results, indexBars, failures) {
     index_6m_return: indexBars.length >= 126
       ? (indexBars.at(-1).close / indexBars.at(-126).close) - 1
       : null,
+    market_breadth: breadth,
     company_count: results.length,
     failures,
     companies: results,
@@ -223,8 +235,14 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
   const stockReturns = dailyReturns(bars);
   const beta = computeBeta(stockReturns, indexReturns);
 
+  // Today's % change vs yesterday's close — feeds the market-wide
+  // Advances/Declines breadth computation in the Sentiment tab.
+  const prevClose = n >= 2 ? close[n - 2] : null;
+  const pctChangeToday = prevClose ? ((cmp - prevClose) / prevClose) * 100 : null;
+
   return {
     cmp,
+    pct_change_today: pctChangeToday == null ? null : round(pctChangeToday, 2),
     ema50: round(ema50),
     sma50: round(sma50),
     sma200: sma200 == null ? null : round(sma200),

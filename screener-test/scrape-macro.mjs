@@ -10,8 +10,10 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const STATIC_PATH = resolve(__dirname, "static/macro-context.json");
-const OUT_PATH    = resolve(__dirname, "../public/data/macro.json");
+const STATIC_PATH       = resolve(__dirname, "static/macro-context.json");
+const OUT_PATH          = resolve(__dirname, "../public/data/macro.json");
+const TECH_PATH         = resolve(__dirname, "../public/data/technicals.json");
+const FII_HISTORY_PATH  = resolve(__dirname, "../public/data/fii-dii-history.json");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -200,119 +202,104 @@ async function fetchNSEJson(url, attempts = 3) {
 }
 
 async function fetchNSESentimentAll() {
-  const [fii, pcr, breadth] = await Promise.allSettled([
-    fetchFIIDIIFlow(),
-    fetchPutCallRatio(),
-    fetchMarketBreadth(),
-  ]);
   const out = {};
-  if (fii.status === "fulfilled" && fii.value) {
-    Object.assign(out, fii.value);
-  } else {
-    console.log("  FII/DII fetch error:", fii.status === "rejected" ? (fii.reason?.message || String(fii.reason)) : "no data returned");
+
+  // 1) FII/DII: accumulator approach — NSE's /api/fiidiiTradeReact returns
+  //    today's snapshot only. We append it to a committed history file and
+  //    compute the rolling signal from that history.
+  try {
+    const todayRows = await fetchFIIDIITodayRows();
+    const history = appendToFIIHistory(todayRows);
+    const signal = computeFIISignal(history);
+    if (signal) {
+      Object.assign(out, signal);
+      console.log(`  FII flow: ${signal.fii_net_positive_last_20d} (${signal.fii_positive_days}/${signal.fii_total_days} days) — history file has ${history.length} entries`);
+    } else {
+      console.log("  FII flow: not enough history yet to compute signal (history size", history.length + ")");
+    }
+  } catch (err) {
+    console.log("  FII fetch error:", err.message);
   }
-  if (pcr.status === "fulfilled" && pcr.value != null) {
-    out.put_call_ratio = pcr.value;
-    out.put_call_ratio_note = `NIFTY total PE OI / CE OI = ${pcr.value} (live from NSE option chain).`;
-  } else {
-    console.log("  PCR fetch error:    ", pcr.status === "rejected" ? (pcr.reason?.message || String(pcr.reason)) : "no data returned");
+
+  // 2) Market breadth: read from the just-committed technicals.json. Our own
+  //    Nifty 500 universe — no NSE breadth API needed.
+  try {
+    const tech = JSON.parse(readFileSync(TECH_PATH, "utf8"));
+    if (tech.market_breadth && tech.market_breadth.ad_ratio != null) {
+      out.market_breadth_ad_ratio = tech.market_breadth.ad_ratio;
+      out.market_breadth_note = `${tech.market_breadth.advances} advances vs ${tech.market_breadth.declines} declines across ${tech.market_breadth.universe} Nifty 500 stocks (computed from Yahoo OHLCV).`;
+      console.log(`  A/D ratio: ${tech.market_breadth.ad_ratio} (${tech.market_breadth.advances}adv / ${tech.market_breadth.declines}dec)`);
+    } else {
+      console.log("  A/D ratio: technicals.json has no market_breadth block yet — rerun Technicals scrape.");
+    }
+  } catch (err) {
+    console.log("  A/D fetch error: couldn't read technicals.json —", err.message);
   }
-  if (breadth.status === "fulfilled" && breadth.value) {
-    out.market_breadth_ad_ratio = breadth.value.ad_ratio;
-    out.market_breadth_note = `${breadth.value.adv} advances vs ${breadth.value.dec} declines across Nifty 500 (live).`;
-  } else {
-    console.log("  A/D fetch error:    ", breadth.status === "rejected" ? (breadth.reason?.message || String(breadth.reason)) : "no data returned");
-  }
+
+  // 3) PCR: deferred until we have a stable data source. Leave whatever's in
+  //    the static block (typically null with a note).
+  console.log("  PCR: skipped this run (separate follow-up — NSE option-chain API is fragile).");
+
   return out;
 }
 
-async function fetchFIIDIIFlow() {
+async function fetchFIIDIITodayRows() {
   const data = await fetchNSEJson("https://www.nseindia.com/api/fiidiiTradeReact");
-  if (!Array.isArray(data) || !data.length) {
-    console.log("  FII raw response shape:", typeof data, Array.isArray(data) ? `array(${data.length})` : Object.keys(data || {}).join(","));
-    return null;
+  if (!Array.isArray(data) || !data.length) throw new Error("empty response");
+  return data;
+}
+
+function appendToFIIHistory(todayRows) {
+  let history = [];
+  try {
+    history = JSON.parse(readFileSync(FII_HISTORY_PATH, "utf8"));
+    if (!Array.isArray(history)) history = [];
+  } catch { /* file doesn't exist yet — start fresh */ }
+
+  // Append today's rows if not already in history (key by date+category)
+  const seen = new Set(history.map((r) => `${r.date}::${r.category}`));
+  for (const r of todayRows) {
+    const key = `${r.date}::${r.category}`;
+    if (!seen.has(key)) {
+      history.push(r);
+      seen.add(key);
+    }
   }
-  console.log("  FII first row keys:", Object.keys(data[0]).join(", "));
-  console.log("  FII first row:", JSON.stringify(data[0]).slice(0, 200));
-  // Lenient match: any row whose category mentions FII / FPI / Foreign.
-  const fiiRows = data.filter((r) => {
-    const cat = String(r.category || r.Category || "").toLowerCase();
+  // Sort newest-first by date and trim to ~60 days to keep the file bounded
+  history.sort((a, b) => new Date(b.date) - new Date(a.date));
+  history = history.slice(0, 120);   // up to ~60 days × 2 (FII + DII)
+
+  writeFileSync(FII_HISTORY_PATH, JSON.stringify(history, null, 2) + "\n");
+  return history;
+}
+
+function computeFIISignal(history) {
+  const fiiRows = history.filter((r) => {
+    const cat = String(r.category || "").toLowerCase();
     return cat.includes("fii") || cat.includes("fpi") || cat.includes("foreign");
   });
-  if (!fiiRows.length) {
-    console.log("  FII filter matched 0 rows. Categories seen:", [...new Set(data.map((r) => r.category || r.Category))].join(" | "));
-    return null;
+  // Group by date (one row per day) and aggregate netValue
+  const byDate = new Map();
+  for (const r of fiiRows) {
+    const d = r.date;
+    const v = Number(r.netValue ?? r.net ?? 0);
+    byDate.set(d, (byDate.get(d) || 0) + v);
   }
-  const days = fiiRows.length;
-  const positive = fiiRows.filter((r) => Number(r.netValue ?? r.net ?? r.netBuy ?? 0) > 0).length;
+  // Take latest up to 20 days
+  const dates = [...byDate.keys()].sort((a, b) => new Date(b) - new Date(a)).slice(0, 20);
+  const days = dates.length;
+  if (days < 5) return null;
+  const positive = dates.filter((d) => byDate.get(d) > 0).length;
+  const pct = positive / days;
   let signal;
-  if (days >= 5) {
-    const pctPositive = positive / days;
-    if (pctPositive >= 0.5) signal = "yes";
-    else if (pctPositive >= 0.3) signal = "mixed";
-    else signal = "no";
-  } else {
-    return null;
-  }
+  if (pct >= 0.5) signal = "yes";
+  else if (pct >= 0.3) signal = "mixed";
+  else signal = "no";
   return {
     fii_net_positive_last_20d: signal,
     fii_positive_days: positive,
     fii_total_days: days,
-    fii_signal_note: `FII net positive in ${positive} of last ${days} reported trading days (live from NSE daily activity).`,
+    fii_signal_note: `FII net positive in ${positive} of last ${days} reported trading days (auto-computed from rolling daily snapshots).`,
   };
 }
 
-async function fetchPutCallRatio() {
-  // The legacy /api/option-chain-indices endpoint 404s. Try v3 instead.
-  const url = "https://www.nseindia.com/api/option-chain-v3?type=Indices&symbol=NIFTY";
-  const data = await fetchNSEJson(url);
-  if (!data) throw new Error("v3 option chain returned no data");
-  const records = data?.records?.data || data?.data || [];
-  if (!records.length) {
-    console.log("  PCR v3 response keys:", Object.keys(data).join(","));
-    return null;
-  }
-  let ceOI = 0, peOI = 0;
-  for (const r of records) {
-    ceOI += Number(r.CE?.openInterest || 0);
-    peOI += Number(r.PE?.openInterest || 0);
-  }
-  if (ceOI === 0) return null;
-  return Math.round((peOI / ceOI) * 100) / 100;
-}
-
-async function fetchMarketBreadth() {
-  // The /api/equity-stockIndices?index=NIFTY%20500 endpoint 404s. Use the
-  // pre-open snapshot which returns per-stock advances/declines across the
-  // full universe. Falls back to allIndices if that also fails.
-  const candidates = [
-    "https://www.nseindia.com/api/snapshot-capital-market-pre-open?key=NIFTY",
-    "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY+500",
-    "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050",
-  ];
-  let data = null, urlUsed = null;
-  for (const url of candidates) {
-    try {
-      data = await fetchNSEJson(url);
-      urlUsed = url;
-      break;
-    } catch (e) { /* try next */ }
-  }
-  if (!data) throw new Error("all breadth endpoints failed");
-  console.log("  A/D endpoint that worked:", urlUsed);
-  console.log("  A/D response top keys:  ", Object.keys(data).slice(0, 10).join(","));
-  // pre-open shape: { advances, declines, unchanged, data: [...] }
-  if (typeof data.advances === "number" && typeof data.declines === "number") {
-    const adv = data.advances, dec = data.declines;
-    return { adv, dec, ad_ratio: dec === 0 ? null : Math.round((adv / dec) * 100) / 100 };
-  }
-  // equity-stockIndices shape: { data: [...] } with pChange per row
-  const rows = data?.data || [];
-  if (rows.length) {
-    const stocks = rows.filter((r) => r.priority !== 1 && r.symbol);
-    const adv = stocks.filter((r) => Number(r.pChange) > 0).length;
-    const dec = stocks.filter((r) => Number(r.pChange) < 0).length;
-    return { adv, dec, ad_ratio: dec === 0 ? null : Math.round((adv / dec) * 100) / 100 };
-  }
-  return null;
-}
