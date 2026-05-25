@@ -8,6 +8,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATIC_PATH       = resolve(__dirname, "static/macro-context.json");
@@ -270,41 +272,89 @@ async function fetchPCR() {
 }
 
 async function fetchPCRFromFOBhavcopy() {
-  // NSE F&O bhavcopy is a daily CSV at nsearchives.nseindia.com — same
-  // domain we already successfully hit for sec_bhavdata_full. Public, no
-  // cookies. Try yesterday/today and the few previous business days in
-  // case today's hasn't published yet.
+  // NSE's F&O bhavcopy URL has been through several formats. Try the known
+  // ones; whichever returns 200 wins. Public domain (nsearchives), no
+  // cookies. Walk backward through business days if today's file isn't
+  // posted yet.
   const diag = { attempts: [] };
+  const ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36";
+  const headers = { "User-Agent": ua };
+
+  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const today = new Date();
-  for (let d = 0; d < 5; d++) {
+  for (let d = 0; d < 7; d++) {
     const date = new Date(today.getTime() - d * 86400000);
     const dow = date.getUTCDay();
-    if (dow === 0 || dow === 6) continue;     // skip weekends
-    const stamp = `${date.getUTCFullYear()}${String(date.getUTCMonth()+1).padStart(2,"0")}${String(date.getUTCDate()).padStart(2,"0")}`;
-    const url = `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${stamp}_F_0000.csv`;
-    const headers = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" };
-    let attempt = { date: stamp, url };
-    try {
-      const r = await fetch(url, { headers });
-      attempt.http_status = r.status;
-      if (r.status !== 200) { diag.attempts.push(attempt); continue; }
-      const csv = await r.text();
-      attempt.csv_size = csv.length;
-      // Look for NIFTY index options. The new bhavcopy format columns
-      // typically include: TckrSymb, FinInstrmTp, OptnTp, OpnIntrst.
-      const result = parsePCRCsv(csv);
-      attempt.parsed = result.summary;
-      diag.attempts.push(attempt);
-      if (result.pcr != null) {
-        diag.date_used = stamp;
-        return { value: result.pcr, diag };
+    if (dow === 0 || dow === 6) continue;
+
+    const yyyy = date.getUTCFullYear();
+    const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(date.getUTCDate()).padStart(2, "0");
+    const yyyymmdd = `${yyyy}${mm}${dd}`;
+    const ddmmm = `${dd}${monthNames[date.getUTCMonth()]}${yyyy}`;     // 25MAY2026
+    const ddmmmYY = `${dd}${monthNames[date.getUTCMonth()]}${yyyy}`;
+
+    const candidates = [
+      // New CSV format (post-2024)
+      `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${yyyymmdd}_F_0000.csv`,
+      `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${yyyymmdd}_F_0000.csv.zip`,
+      // Legacy zipped format
+      `https://nsearchives.nseindia.com/content/historical/DERIVATIVES/${yyyy}/${monthNames[date.getUTCMonth()]}/fo${ddmmm}bhav.csv.zip`,
+      `https://archives.nseindia.com/content/historical/DERIVATIVES/${yyyy}/${monthNames[date.getUTCMonth()]}/fo${ddmmm}bhav.csv.zip`,
+    ];
+
+    for (const url of candidates) {
+      const attempt = { url };
+      try {
+        const r = await fetch(url, { headers });
+        attempt.http_status = r.status;
+        if (r.status !== 200) { diag.attempts.push(attempt); continue; }
+        // Read body — text for .csv, arrayBuffer for .csv.zip
+        let csv;
+        if (url.endsWith(".zip")) {
+          const buf = Buffer.from(await r.arrayBuffer());
+          attempt.zip_size = buf.length;
+          csv = unzipFirstCsv(buf);
+          if (!csv) { attempt.zip_error = "unzip returned no csv"; diag.attempts.push(attempt); continue; }
+          attempt.csv_size = csv.length;
+        } else {
+          csv = await r.text();
+          attempt.csv_size = csv.length;
+        }
+        const result = parsePCRCsv(csv);
+        attempt.parsed = result.summary;
+        diag.attempts.push(attempt);
+        if (result.pcr != null) {
+          diag.date_used = ddmmm;
+          diag.url_used = url;
+          return { value: result.pcr, diag };
+        }
+      } catch (err) {
+        attempt.error = err.message;
+        diag.attempts.push(attempt);
       }
-    } catch (err) {
-      attempt.error = err.message;
-      diag.attempts.push(attempt);
     }
   }
   return { value: null, diag };
+}
+
+function unzipFirstCsv(zipBuffer) {
+  // Use system `unzip` (available on Ubuntu runners) to avoid adding an
+  // npm dependency. Write the buffer to a temp file, then list + extract
+  // the first .csv inside.
+  const tmp = `${tmpdir()}/fo-${Date.now()}.zip`;
+  writeFileSync(tmp, zipBuffer);
+  try {
+    const listing = spawnSync("unzip", ["-l", tmp], { encoding: "utf8" });
+    if (listing.status !== 0) return null;
+    const csvLine = listing.stdout.split("\n").find((l) => /\.csv\b/i.test(l));
+    if (!csvLine) return null;
+    const csvName = csvLine.trim().split(/\s+/).pop();
+    if (!csvName) return null;
+    const out = spawnSync("unzip", ["-p", tmp, csvName], { encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
+    if (out.status !== 0) return null;
+    return out.stdout;
+  } catch { return null; }
 }
 
 function parsePCRCsv(csv) {
