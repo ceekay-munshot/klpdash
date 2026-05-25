@@ -257,91 +257,95 @@ async function fetchNSESentimentAll() {
 }
 
 async function fetchPCR() {
-  const diag = { yahoo: null, moneycontrol: null };
-  // Try Yahoo options endpoint first
+  const diag = { fo_bhavcopy: null };
   try {
-    const yahooResult = await fetchPCRFromYahoo();
-    diag.yahoo = yahooResult.diag;
-    if (yahooResult.value != null) return { value: yahooResult.value, source: "Yahoo Finance ^NSEI options", note: `NIFTY 50 total PE OI / CE OI = ${yahooResult.value} (live via Yahoo).`, diag };
+    const result = await fetchPCRFromFOBhavcopy();
+    diag.fo_bhavcopy = result.diag;
+    if (result.value != null) return { value: result.value, source: "NSE F&O bhavcopy", note: `NIFTY total PE OI / CE OI = ${result.value} (live from NSE F&O bhavcopy, ${result.diag.date_used}).`, diag };
   } catch (err) {
-    diag.yahoo = { error: err.message };
-    console.log("  PCR (Yahoo): " + err.message);
-  }
-  // Fall back to MoneyControl scrape
-  try {
-    const mcResult = await fetchPCRFromMoneycontrol();
-    diag.moneycontrol = mcResult.diag;
-    if (mcResult.value != null) return { value: mcResult.value, source: "MoneyControl", note: `NIFTY PCR ${mcResult.value} (live via MoneyControl page scrape).`, diag };
-  } catch (err) {
-    diag.moneycontrol = { error: err.message };
-    console.log("  PCR (MoneyControl): " + err.message);
+    diag.fo_bhavcopy = { error: err.message };
+    console.log("  PCR (FO bhavcopy): " + err.message);
   }
   return { value: null, diag };
 }
 
-async function fetchPCRFromYahoo() {
-  const url = "https://query1.finance.yahoo.com/v7/finance/options/%5ENSEI";
-  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" } });
-  const diag = { http_status: r.status };
-  if (!r.ok) {
-    diag.error = `HTTP ${r.status}`;
-    throw new Error(`HTTP ${r.status}`);
+async function fetchPCRFromFOBhavcopy() {
+  // NSE F&O bhavcopy is a daily CSV at nsearchives.nseindia.com — same
+  // domain we already successfully hit for sec_bhavdata_full. Public, no
+  // cookies. Try yesterday/today and the few previous business days in
+  // case today's hasn't published yet.
+  const diag = { attempts: [] };
+  const today = new Date();
+  for (let d = 0; d < 5; d++) {
+    const date = new Date(today.getTime() - d * 86400000);
+    const dow = date.getUTCDay();
+    if (dow === 0 || dow === 6) continue;     // skip weekends
+    const stamp = `${date.getUTCFullYear()}${String(date.getUTCMonth()+1).padStart(2,"0")}${String(date.getUTCDate()).padStart(2,"0")}`;
+    const url = `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${stamp}_F_0000.csv`;
+    const headers = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" };
+    let attempt = { date: stamp, url };
+    try {
+      const r = await fetch(url, { headers });
+      attempt.http_status = r.status;
+      if (r.status !== 200) { diag.attempts.push(attempt); continue; }
+      const csv = await r.text();
+      attempt.csv_size = csv.length;
+      // Look for NIFTY index options. The new bhavcopy format columns
+      // typically include: TckrSymb, FinInstrmTp, OptnTp, OpnIntrst.
+      const result = parsePCRCsv(csv);
+      attempt.parsed = result.summary;
+      diag.attempts.push(attempt);
+      if (result.pcr != null) {
+        diag.date_used = stamp;
+        return { value: result.pcr, diag };
+      }
+    } catch (err) {
+      attempt.error = err.message;
+      diag.attempts.push(attempt);
+    }
   }
-  const j = await r.json();
-  const top = j?.optionChain?.result?.[0];
-  diag.has_result = !!top;
-  diag.result_keys = top ? Object.keys(top).slice(0, 12).join(",") : null;
-  diag.expiry_dates = top?.expirationDates?.length || 0;
-  diag.option_groups = top?.options?.length || 0;
-  const options = top?.options?.[0];
-  diag.has_options = !!options;
-  if (!options) {
-    return { value: null, diag };
-  }
-  const calls = options.calls || [];
-  const puts  = options.puts  || [];
-  diag.calls_count = calls.length;
-  diag.puts_count = puts.length;
-  const ceOI = calls.reduce((s, c) => s + (c.openInterest || 0), 0);
-  const peOI = puts .reduce((s, p) => s + (p.openInterest || 0), 0);
-  diag.ce_oi_total = ceOI;
-  diag.pe_oi_total = peOI;
-  if (ceOI === 0) return { value: null, diag };
-  const pcr = Math.round((peOI / ceOI) * 100) / 100;
-  diag.pcr = pcr;
-  return { value: pcr, diag };
+  return { value: null, diag };
 }
 
-async function fetchPCRFromMoneycontrol() {
-  const url = "https://www.moneycontrol.com/markets/indian-indices/top-nse-pcr/9";
-  const r = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" },
-  });
-  const diag = { http_status: r.status, url };
-  if (!r.ok) {
-    diag.error = `HTTP ${r.status}`;
-    throw new Error(`HTTP ${r.status}`);
+function parsePCRCsv(csv) {
+  const lines = csv.split(/\r?\n/);
+  if (lines.length < 2) return { pcr: null, summary: { lines: lines.length } };
+  const headers = lines[0].split(",").map((h) => h.trim().toUpperCase());
+  // Find column indices defensively — NSE has variants of the same data.
+  const idx = (...names) => {
+    for (const n of names) {
+      const i = headers.indexOf(n);
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+  const iSym = idx("TCKRSYMB", "SYMBOL");
+  const iType = idx("FININSTRMTP", "INSTRUMENT");
+  const iOpt = idx("OPTNTP", "OPTION_TYP", "OPTIONTYPE");
+  const iOI = idx("OPNINTRST", "OPEN_INT", "OPEN_INTEREST");
+  if (iSym < 0 || iType < 0 || iOpt < 0 || iOI < 0) {
+    return { pcr: null, summary: { header_keys: headers.slice(0, 15).join(",") } };
   }
-  const html = await r.text();
-  diag.html_size = html.length;
-  diag.contains_nifty = /NIFTY/i.test(html);
-  diag.contains_pcr_word = /put.?call/i.test(html);
-  // Try to find the NIFTY row
-  const niftyChunk = html.match(/NIFTY[\s\S]{0,500}?<\/tr>/i)?.[0];
-  diag.nifty_chunk_found = !!niftyChunk;
-  if (!niftyChunk) {
-    return { value: null, diag };
+  let ceOI = 0, peOI = 0, rowsMatched = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const c = lines[i].split(",");
+    if (c.length <= iOI) continue;
+    const sym = c[iSym]?.trim().toUpperCase();
+    const fininst = c[iType]?.trim().toUpperCase();
+    const opt = c[iOpt]?.trim().toUpperCase();
+    if (sym !== "NIFTY") continue;
+    if (!/IDX|INDEX|OPTIDX/.test(fininst)) continue;
+    const oi = Number(c[iOI]) || 0;
+    if (opt === "CE") ceOI += oi;
+    else if (opt === "PE") peOI += oi;
+    else continue;
+    rowsMatched++;
   }
-  diag.nifty_chunk_sample = niftyChunk.slice(0, 250).replace(/\s+/g, " ");
-  const nums = [...niftyChunk.matchAll(/>([0-3]\.\d{2,4})</g)].map((m) => Number(m[1]));
-  diag.numeric_candidates = nums;
-  const candidate = nums.find((n) => n >= 0.3 && n <= 3.0);
-  if (candidate == null) {
-    return { value: null, diag };
-  }
-  const pcr = Math.round(candidate * 100) / 100;
-  diag.pcr = pcr;
-  return { value: pcr, diag };
+  if (ceOI === 0) return { pcr: null, summary: { rows_matched: rowsMatched, ce_oi: ceOI, pe_oi: peOI } };
+  return {
+    pcr: Math.round((peOI / ceOI) * 100) / 100,
+    summary: { rows_matched: rowsMatched, ce_oi: ceOI, pe_oi: peOI },
+  };
 }
 
 async function fetchFIIDIITodayRows() {
