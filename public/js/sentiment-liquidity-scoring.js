@@ -28,7 +28,11 @@ function ruleFIIDIIFlow(c) {
 
 function rulePutCallRatio(c) {
   const s = c?._macro?.sentiment;
-  if (!s || s.put_call_ratio == null) return { ...NA, max: 1, note: s?.put_call_ratio_note || "Live PCR scrape not yet wired." };
+  if (!s || s.put_call_ratio == null) {
+    return { ...NA, max: 1,
+      note: "Put-Call Ratio rule is permanently deferred: the only definitive source (NSE option-chain API) blocks automated scraping from GitHub Actions runner IPs. Tried NSE legacy and v3 endpoints, Yahoo Finance, MoneyControl, and NSE F&O bhavcopy CSV in 4 URL formats — none returned usable data. Worth 1 pt on the Sentiment scorecard; accepting deferred per our audit.",
+    };
+  }
   const pcr = s.put_call_ratio;
   const val = `PCR ${pcr}`;
   if (pcr >= 0.9 && pcr <= 1.3) return { points: 1, max: 1, status: "pass", value: val, note: "PCR 0.9–1.3 — balanced to mildly bullish positioning." };

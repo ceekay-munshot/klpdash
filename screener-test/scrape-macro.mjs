@@ -236,116 +236,13 @@ async function fetchNSESentimentAll() {
     console.log("  A/D fetch error: couldn't read technicals.json —", err.message);
   }
 
-  // 3) PCR: try Yahoo Finance options first (no cookies needed). Fall back
-  //    to a MoneyControl HTML scrape if Yahoo doesn't return Indian index
-  //    option chain data.
-  try {
-    const pcr = await fetchPCR();
-    out._pcr_debug = pcr.diag;
-    if (pcr && pcr.value != null) {
-      out.put_call_ratio = pcr.value;
-      out.put_call_ratio_note = pcr.note;
-      console.log(`  PCR: ${pcr.value} (source: ${pcr.source})`);
-    } else {
-      console.log("  PCR: no source returned a usable value — rule stays N/A.");
-    }
-  } catch (err) {
-    console.log("  PCR fetch error:", err.message);
-  }
-
+  // 3) PCR: permanently deferred. We attempted 5 sources (NSE option-chain
+  //    legacy, NSE option-chain v3, Yahoo options, MoneyControl scrape, NSE
+  //    F&O bhavcopy in 4 URL formats) and none returned usable data from a
+  //    GitHub Actions runner IP. NSE is the only definitive source and they
+  //    actively block automated runners. Worth 1 pt — accepting deferred is
+  //    the right call. Rule shows clear N/A note in the dashboard.
   return out;
-}
-
-async function fetchPCR() {
-  const diag = { fo_bhavcopy: null };
-  try {
-    const result = await fetchPCRFromFOBhavcopy();
-    diag.fo_bhavcopy = result.diag;
-    if (result.value != null) return { value: result.value, source: "NSE F&O bhavcopy", note: `NIFTY total PE OI / CE OI = ${result.value} (live from NSE F&O bhavcopy, ${result.diag.date_used}).`, diag };
-  } catch (err) {
-    diag.fo_bhavcopy = { error: err.message };
-    console.log("  PCR (FO bhavcopy): " + err.message);
-  }
-  return { value: null, diag };
-}
-
-async function fetchPCRFromFOBhavcopy() {
-  // NSE F&O bhavcopy is a daily CSV at nsearchives.nseindia.com — same
-  // domain we already successfully hit for sec_bhavdata_full. Public, no
-  // cookies. Try yesterday/today and the few previous business days in
-  // case today's hasn't published yet.
-  const diag = { attempts: [] };
-  const today = new Date();
-  for (let d = 0; d < 5; d++) {
-    const date = new Date(today.getTime() - d * 86400000);
-    const dow = date.getUTCDay();
-    if (dow === 0 || dow === 6) continue;     // skip weekends
-    const stamp = `${date.getUTCFullYear()}${String(date.getUTCMonth()+1).padStart(2,"0")}${String(date.getUTCDate()).padStart(2,"0")}`;
-    const url = `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${stamp}_F_0000.csv`;
-    const headers = { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" };
-    let attempt = { date: stamp, url };
-    try {
-      const r = await fetch(url, { headers });
-      attempt.http_status = r.status;
-      if (r.status !== 200) { diag.attempts.push(attempt); continue; }
-      const csv = await r.text();
-      attempt.csv_size = csv.length;
-      // Look for NIFTY index options. The new bhavcopy format columns
-      // typically include: TckrSymb, FinInstrmTp, OptnTp, OpnIntrst.
-      const result = parsePCRCsv(csv);
-      attempt.parsed = result.summary;
-      diag.attempts.push(attempt);
-      if (result.pcr != null) {
-        diag.date_used = stamp;
-        return { value: result.pcr, diag };
-      }
-    } catch (err) {
-      attempt.error = err.message;
-      diag.attempts.push(attempt);
-    }
-  }
-  return { value: null, diag };
-}
-
-function parsePCRCsv(csv) {
-  const lines = csv.split(/\r?\n/);
-  if (lines.length < 2) return { pcr: null, summary: { lines: lines.length } };
-  const headers = lines[0].split(",").map((h) => h.trim().toUpperCase());
-  // Find column indices defensively — NSE has variants of the same data.
-  const idx = (...names) => {
-    for (const n of names) {
-      const i = headers.indexOf(n);
-      if (i >= 0) return i;
-    }
-    return -1;
-  };
-  const iSym = idx("TCKRSYMB", "SYMBOL");
-  const iType = idx("FININSTRMTP", "INSTRUMENT");
-  const iOpt = idx("OPTNTP", "OPTION_TYP", "OPTIONTYPE");
-  const iOI = idx("OPNINTRST", "OPEN_INT", "OPEN_INTEREST");
-  if (iSym < 0 || iType < 0 || iOpt < 0 || iOI < 0) {
-    return { pcr: null, summary: { header_keys: headers.slice(0, 15).join(",") } };
-  }
-  let ceOI = 0, peOI = 0, rowsMatched = 0;
-  for (let i = 1; i < lines.length; i++) {
-    const c = lines[i].split(",");
-    if (c.length <= iOI) continue;
-    const sym = c[iSym]?.trim().toUpperCase();
-    const fininst = c[iType]?.trim().toUpperCase();
-    const opt = c[iOpt]?.trim().toUpperCase();
-    if (sym !== "NIFTY") continue;
-    if (!/IDX|INDEX|OPTIDX/.test(fininst)) continue;
-    const oi = Number(c[iOI]) || 0;
-    if (opt === "CE") ceOI += oi;
-    else if (opt === "PE") peOI += oi;
-    else continue;
-    rowsMatched++;
-  }
-  if (ceOI === 0) return { pcr: null, summary: { rows_matched: rowsMatched, ce_oi: ceOI, pe_oi: peOI } };
-  return {
-    pcr: Math.round((peOI / ceOI) * 100) / 100,
-    summary: { rows_matched: rowsMatched, ce_oi: ceOI, pe_oi: peOI },
-  };
 }
 
 async function fetchFIIDIITodayRows() {
