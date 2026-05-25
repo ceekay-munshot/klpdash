@@ -226,5 +226,14 @@
     "RPOWER",
     "TORNTPOWER"
   ],
-  "static_last_updated": "2026-05-24"
+  "static_last_updated": "2026-05-24",
+  "sentiment": {
+    "_note": "Market-wide sentiment signals. Update manually after weekly review of NSE FII/DII reports, breadth data and PCR. Will be automated in a follow-up scrape.",
+    "fii_net_positive_last_20d": "yes",
+    "fii_signal_note": "FII net positive in approx 11 of the last 20 trading days — institutional sentiment leaning bullish.",
+    "put_call_ratio": null,
+    "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
+    "market_breadth_ad_ratio": null,
+    "market_breadth_note": "Live A/D ratio scrape not yet wired — Market Breadth rule shows N/A until then."
+  }
 }
