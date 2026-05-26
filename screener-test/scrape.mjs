@@ -250,7 +250,52 @@ async function fetchCompanyData(page, path, debug = false) {
     data["OPM Series"] = nums.join("|");
   }
 
+  // PR D: deeper history for the remaining 3 Fundamentals deviations.
+  // All from the same Screener company page tables we already render —
+  // just read more rows.
+
+  // Promoter Pledge % across recent quarters (Shareholding section).
+  // Note: Screener row labels have a trailing "+" because they're expandable —
+  // regexes use ^prefix matching not full-match. Pledge row only exists for
+  // companies where promoters have actually pledged; we tolerate its absence.
+  data["Pledge Series"] = extractSeries($, "#shareholding", /pledge/i, 8);
+  data["FII Holding Series"] = extractSeries($, "#shareholding", /^FIIs?\b/i, 8);
+  data["DII Holding Series"] = extractSeries($, "#shareholding", /^DIIs?\b/i, 8);
+
+  // Dividend Payout % across annual periods (>0 means dividend paid that year).
+  // From P&L table, skip the TTM column.
+  data["Dividend Series"] = extractAnnualSeries($, "#profit-loss", /^dividend payout/i);
+
+  // Future-proof: full annual revenue + PAT series. Lets us re-verify
+  // 3Y / 5Y CAGRs client-side later without re-scraping.
+  data["Revenue Series"] = extractAnnualSeries($, "#profit-loss", /^sales/i);
+  data["PAT Series"]     = extractAnnualSeries($, "#profit-loss", /^net profit/i);
+
   return data;
+}
+
+// Helper: pull a single labelled row out of a section table and return the
+// last N parsed numeric values as a pipe-delimited string. Strips ₹ / % /
+// commas, skips non-numeric cells.
+function extractSeries($, sectionSel, labelRegex, lastN) {
+  const row = parseSectionRow($, sectionSel, labelRegex);
+  if (!row || !row.values.length) return "";
+  const nums = row.values
+    .map((v) => parseFloat(String(v).replace(/,/g, "").replace(/[^0-9.\-]/g, "")))
+    .filter((n) => Number.isFinite(n));
+  return nums.slice(-lastN).join("|");
+}
+
+// Helper for annual series — also skip the TTM column when present.
+function extractAnnualSeries($, sectionSel, labelRegex) {
+  const row = parseSectionRow($, sectionSel, labelRegex);
+  if (!row || !row.values.length) return "";
+  const nums = row.headers
+    .map((h, i) => ({ h, v: row.values[i] }))
+    .filter((p) => p.v !== undefined && !/ttm/i.test(p.h))
+    .map((p) => parseFloat(String(p.v).replace(/,/g, "").replace(/[^0-9.\-]/g, "")))
+    .filter((n) => Number.isFinite(n));
+  return nums.join("|");
 }
 
 function parseSectionRow($, sectionSel, labelRegex) {
