@@ -1,0 +1,31 @@
+name: Verify indicators math
+
+on:
+  workflow_dispatch:
+  # Chain off Technicals scrape — every time we recompute, we re-verify.
+  workflow_run:
+    workflows: ["Technicals scrape"]
+    types: [completed]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Skip when triggered by a failed upstream run
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install verification library
+        run: npm install technicalindicators@3 --no-save
+
+      - name: Run verifier
+        run: node screener-test/verify-indicators.mjs
