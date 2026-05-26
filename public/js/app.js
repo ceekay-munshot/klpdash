@@ -358,7 +358,16 @@ function renderMeta() {
     });
   }
   $("#meta-count").textContent = `${st.scored.length} companies`;
-  $("#meta-source").textContent = m?.source || (c.label + " · Yahoo Finance EOD");
+  // Render a friendly source label instead of dumping the raw saved-screen URL.
+  $("#meta-source").textContent = sourceFriendly(c, m);
+}
+
+function sourceFriendly(c, m) {
+  if (c.label === "Fundamentals") return "Screener.in saved screen · NSE 500";
+  if (c.label === "Technicals") return "Yahoo Finance EOD · NSE 500";
+  if (c.label === "Macro") return "Multi-source · Yahoo + RBI + curated";
+  if (c.label === "Sentiment & Liquidity") return "Yahoo + NSE + computed breadth";
+  return c.label;
 }
 
 function renderStats() {
