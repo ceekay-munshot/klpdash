@@ -24,8 +24,10 @@ on:
         type: string
         default: "0"
   schedule:
-    # 00:30 UTC == 06:00 IST every day. Fresh data ready before market open.
-    - cron: "30 0 * * *"
+    # 00:23 UTC == 06:23 IST. Off the :00/:15/:30/:45 marks where GitHub's
+    # cron scheduler queues up runs and frequently delays / skips during
+    # high load (per GitHub docs).
+    - cron: "23 0 * * *"
 
 jobs:
   scrape:

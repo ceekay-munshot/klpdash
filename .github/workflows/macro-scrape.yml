@@ -3,9 +3,12 @@ name: Macro scrape
 on:
   workflow_dispatch:
   schedule:
-    # 01:15 UTC == 06:45 IST. Runs after insider trades (01:00 UTC) so the
-    # daily commits land in sequence with no race.
-    - cron: "15 1 * * *"
+    # 01:08 UTC == 06:38 IST + 30 min == 07:08 IST. Off-peak minute.
+    - cron: "8 1 * * *"
+  # Chain off Insider so we don't depend on cron timing.
+  workflow_run:
+    workflows: ["Insider trades scrape"]
+    types: [completed]
 
 jobs:
   scrape:
@@ -13,6 +16,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

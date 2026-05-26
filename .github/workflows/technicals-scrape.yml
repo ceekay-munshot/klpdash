@@ -3,9 +3,13 @@ name: Technicals scrape
 on:
   workflow_dispatch:
   schedule:
-    # 00:45 UTC == 06:15 IST. Runs 15 min after the fundamentals scrape so
-    # it picks up any new companies added by the morning's fundamentals run.
-    - cron: "45 0 * * *"
+    # 00:38 UTC == 06:38 IST. Off-peak minute to dodge GitHub's cron queue.
+    - cron: "38 0 * * *"
+  # Belt-and-suspenders: if Fundamentals completes (manually or on its own
+  # cron), chain into us. If GitHub skipped our schedule, this still fires.
+  workflow_run:
+    workflows: ["Screener scrape test"]
+    types: [completed]
 
 jobs:
   scrape:
@@ -13,6 +17,8 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+    # Skip the chained run if the upstream failed.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
