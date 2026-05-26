@@ -6,30 +6,61 @@
 // scrape-technicals.mjs produced. Fails the workflow if any indicator
 // disagrees with the library by more than the tolerance.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-// technicalindicators is CommonJS — use default import then destructure.
-import indicators from "technicalindicators";
-const { EMA, SMA, RSI, MACD, ADX, ATR } = indicators;
-console.log("Loaded technicalindicators:", Object.keys({ EMA, SMA, RSI, MACD, ADX, ATR }).map((k) => `${k}=${typeof ({ EMA, SMA, RSI, MACD, ADX, ATR })[k]}`).join(", "));
+import { createRequire } from "node:module";
 
+// Tee everything to a debug log file so failures are inspectable even
+// when GitHub workflow logs are auth-gated. The workflow uploads this
+// file as an artifact on always().
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const DEBUG_LOG = resolve(__dirname, "../public/data/verify-debug.log");
 const TECH_PATH = resolve(__dirname, "../public/data/technicals.json");
+let logBuf = [];
+const log = (...args) => {
+  const line = args.map((a) => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ");
+  process.stdout.write(line + "\n");
+  logBuf.push(line);
+};
+
+process.on("exit", () => {
+  try { writeFileSync(DEBUG_LOG, logBuf.join("\n") + "\n"); } catch {}
+});
+
+log("=== verify-indicators starting ===");
+log("Node version:", process.version);
+log("CWD:", process.cwd());
+log("__dirname:", __dirname);
+
+// Use createRequire for bulletproof CJS-from-ESM import (safer than
+// default import shenanigans, especially under Node 20).
+const require = createRequire(import.meta.url);
+let EMA, SMA, RSI, MACD, ADX, ATR;
+try {
+  const ti = require("technicalindicators");
+  ({ EMA, SMA, RSI, MACD, ADX, ATR } = ti);
+  log("Imported technicalindicators OK. Keys present:", Object.keys(ti).slice(0, 12).join(","));
+  log("  EMA type:", typeof EMA, "SMA:", typeof SMA, "RSI:", typeof RSI, "MACD:", typeof MACD, "ADX:", typeof ADX, "ATR:", typeof ATR);
+} catch (err) {
+  log("FAILED to import technicalindicators:", err.message);
+  log("Stack:", err.stack);
+  process.exit(1);
+}
 
 const SAMPLE_SIZE = parseInt(process.env.SAMPLE_SIZE || "8", 10);
 const TOLERANCE_PCT = parseFloat(process.env.TOLERANCE_PCT || "0.5"); // %
 
-run().catch((err) => { console.error("Fatal:", err.stack || err.message); process.exit(1); });
+run().catch((err) => { log("FATAL in run():", err.message); log("Stack:", err.stack); process.exit(1); });
 
 async function run() {
-  console.log("Reading technicals.json from:", TECH_PATH);
+  log("Reading technicals.json from:", TECH_PATH);
   const data = JSON.parse(readFileSync(TECH_PATH, "utf8"));
-  console.log("Loaded", (data.companies || []).length, "company records");
+  log("Loaded", (data.companies || []).length, "company records");
   const candidates = (data.companies || []).filter((c) => !c.error && c.bars_count >= 200);
-  console.log("Eligible candidates (no error, ≥200 bars):", candidates.length);
+  log("Eligible candidates (no error, ≥200 bars):", candidates.length);
   if (candidates.length < SAMPLE_SIZE) {
-    console.error(`Only ${candidates.length} eligible companies — need at least ${SAMPLE_SIZE}.`);
+    log(`Only ${candidates.length} eligible companies — need at least ${SAMPLE_SIZE}.`);
     process.exit(1);
   }
 
@@ -38,8 +69,8 @@ async function run() {
   const shuffled = [...candidates].sort((a, b) => hash(seed + a.ticker) - hash(seed + b.ticker));
   const sample = shuffled.slice(0, SAMPLE_SIZE);
 
-  console.log(`Verifying ${sample.length} tickers against technicalindicators library`);
-  console.log(`Tolerance: ${TOLERANCE_PCT}%\n`);
+  log(`Verifying ${sample.length} tickers against technicalindicators library`);
+  log(`Tolerance: ${TOLERANCE_PCT}%\n`);
 
   const results = [];
   for (const c of sample) {
@@ -47,9 +78,9 @@ async function run() {
     let bars;
     try {
       bars = await fetchBars(`${c.ticker}.NS`, 400);
-      if (bars.length < 250) { console.log(`only ${bars.length} bars, skip`); continue; }
+      if (bars.length < 250) { log(`only ${bars.length} bars, skip`); continue; }
     } catch (err) {
-      console.log(`FETCH FAIL: ${err.message}`);
+      log(`FETCH FAIL: ${err.message}`);
       continue;
     }
     const closes = bars.map((b) => b.close);
@@ -70,29 +101,29 @@ async function run() {
     checks.push(compare("ATR(14) %", c.atr14_pct, atrPctLib));
 
     const failed = checks.filter((x) => x && !x.pass);
-    console.log(`${checks.filter((c) => c).length} checks, ${failed.length} failed`);
+    log(`${checks.filter((c) => c).length} checks, ${failed.length} failed`);
     results.push({ ticker: c.ticker, name: c.name, checks });
   }
 
-  console.log("\n=== Detailed report ===\n");
+  log("\n=== Detailed report ===\n");
   for (const r of results) {
-    console.log(`${r.ticker} · ${r.name}`);
+    log(`${r.ticker} · ${r.name}`);
     for (const ch of r.checks) {
       if (!ch) continue;
       const mark = ch.pass ? "✓" : "✗";
-      console.log(`  ${mark} ${ch.label.padEnd(14)} our: ${fmt(ch.ours).padStart(10)}  lib: ${fmt(ch.lib).padStart(10)}  diff: ${ch.diffPct?.toFixed(3)}%`);
+      log(`  ${mark} ${ch.label.padEnd(14)} our: ${fmt(ch.ours).padStart(10)}  lib: ${fmt(ch.lib).padStart(10)}  diff: ${ch.diffPct?.toFixed(3)}%`);
     }
-    console.log();
+    log();
   }
 
   const totalChecks = results.flatMap((r) => r.checks).filter((c) => c).length;
   const totalFail   = results.flatMap((r) => r.checks).filter((c) => c && !c.pass).length;
-  console.log(`=== Summary: ${totalChecks - totalFail}/${totalChecks} checks passed (tolerance ±${TOLERANCE_PCT}%) ===`);
+  log(`=== Summary: ${totalChecks - totalFail}/${totalChecks} checks passed (tolerance ±${TOLERANCE_PCT}%) ===`);
   if (totalFail > 0) {
-    console.error(`\nFAIL — ${totalFail} indicator(s) differ from technicalindicators library by more than ${TOLERANCE_PCT}%.`);
+    log(`\nFAIL — ${totalFail} indicator(s) differ from technicalindicators library by more than ${TOLERANCE_PCT}%.`);
     process.exit(1);
   } else {
-    console.log("\nAll indicators agree with technicalindicators reference implementation. Math verified.");
+    log("\nAll indicators agree with technicalindicators reference implementation. Math verified.");
   }
 }
 
