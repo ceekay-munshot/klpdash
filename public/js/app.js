@@ -2,6 +2,7 @@ import * as fund from "./scoring.js";
 import * as tech from "./tech-scoring.js";
 import * as macro from "./macro-scoring.js";
 import * as senliq from "./sentiment-liquidity-scoring.js";
+import { META as RULE_META } from "./rule-meta.js";
 
 // ---------------- Tab configuration ----------------
 const CONFIGS = {
@@ -186,6 +187,47 @@ function statusPill(status) {
   }
 }
 function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// Renders 3 small chips on each drill-down rule card:
+//   🔗 Source — opens the actual data source URL in a new tab
+//   🧮 Calculation — expands to show the formula (only when computed)
+//   📋 Scoring Logic — expands to show client's logic; or client-vs-ours if we deviate
+function renderRuleMetaButtons(ruleKey, company) {
+  const tab = state.activeTab;
+  const meta = RULE_META[tab]?.[ruleKey];
+  if (!meta) return "";
+  const src = typeof meta.source === "function" ? meta.source(company || {}) : meta.source;
+  const sourceBtn = src ? `
+    <a href="${escapeHtml(src.url)}" target="_blank" rel="noopener"
+       class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors no-underline"
+       title="${escapeHtml(src.label + (src.section ? " · " + src.section : ""))}">
+      🔗 ${escapeHtml(src.label)}${src.section ? ` <span class="text-indigo-500/70">· ${escapeHtml(src.section)}</span>` : ""}
+    </a>` : "";
+  const calcBtn = meta.calculation ? `
+    <details class="text-[10px] meta-details">
+      <summary class="cursor-pointer list-none inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium">🧮 Calculation</summary>
+      <div class="mt-1 p-2 bg-slate-50 rounded text-[11px] text-slate-700 leading-relaxed border border-slate-200">${escapeHtml(meta.calculation)}</div>
+    </details>` : "";
+  // Logic: if ourLogic null → same as client → just show clientLogic.
+  // If ourLogic != null → show side-by-side comparison.
+  const logicBody = meta.ourLogic
+    ? `<div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Client's scoring logic</div>
+       <div class="text-slate-700 mb-2">${escapeHtml(meta.clientLogic)}</div>
+       <div class="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Our implementation</div>
+       <div class="text-amber-700">${escapeHtml(meta.ourLogic)}</div>`
+    : `<div class="text-slate-700">${escapeHtml(meta.clientLogic)}</div>
+       <div class="text-[9px] text-emerald-600 mt-1 font-medium uppercase tracking-wider">✓ Matches our implementation exactly</div>`;
+  const logicBtn = meta.clientLogic ? `
+    <details class="text-[10px] meta-details">
+      <summary class="cursor-pointer list-none inline-flex items-center gap-1 px-2 py-1 ${meta.ourLogic ? "bg-amber-100 hover:bg-amber-200 text-amber-800" : "bg-slate-100 hover:bg-slate-200 text-slate-700"} rounded-md font-medium">📋 Scoring Logic${meta.ourLogic ? " · client vs ours" : ""}</summary>
+      <div class="mt-1 p-2 bg-slate-50 rounded text-[11px] leading-relaxed border border-slate-200 space-y-1">${logicBody}</div>
+    </details>` : "";
+  if (!sourceBtn && !calcBtn && !logicBtn) return "";
+  return `
+    <div class="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
+      ${sourceBtn}${calcBtn}${logicBtn}
+    </div>`;
+}
 function cfg() { return CONFIGS[state.activeTab]; }
 function tabState() { return state.cache[state.activeTab]; }
 
@@ -465,6 +507,7 @@ function openDrillDown(s) {
               </div>
               <div class="text-sm text-slate-700 mt-2">${b.value == null ? "—" : escapeHtml(b.value)}</div>
               <div class="text-xs text-slate-500 mt-1 italic">${escapeHtml(b.note)}</div>
+              ${renderRuleMetaButtons(r.key, co)}
             </div>
           `;
         }).join("")}
