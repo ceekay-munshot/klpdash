@@ -211,6 +211,15 @@ async function fetchCompanyData(page, path, debug = false) {
     data["Net Profit Qtr (-3)"] = last4[0] ?? "";
   }
 
+  // PR B: deeper history series — last 8 quarters EPS, last 10 yrs CFO,
+  // last 5 yrs OPM. Used by EPS Growth, Operating Cash Flow, and EBITDA
+  // Margin rules to match the client's multi-period framework.
+  const epsQ = parseSectionRow($, "#quarters", /^eps/i);
+  if (epsQ && epsQ.values.length) {
+    const last8 = epsQ.values.slice(-8).map((v) => parseFloat(String(v).replace(/[^0-9.\-]/g, "")));
+    data["EPS Qtr Series"] = last8.filter((n) => Number.isFinite(n)).join("|");
+  }
+
   const cf = parseSectionRow($, "#cash-flow", /cash from operating/i);
   if (cf && cf.values.length) {
     const yearly = cf.headers
@@ -219,6 +228,11 @@ async function fetchCompanyData(page, path, debug = false) {
       .map((p) => p.v);
     data["CF Operations LY"] = yearly[yearly.length - 1] ?? "";
     data["CF Operations PY"] = yearly[yearly.length - 2] ?? "";
+    // Full series (oldest → newest) — up to 10 years.
+    const series = yearly
+      .map((s) => parseFloat(String(s).replace(/,/g, "").replace(/[^0-9.\-]/g, "")))
+      .filter((n) => Number.isFinite(n));
+    data["CF Operations Series"] = series.join("|");
   }
 
   const opm = parseSectionRow($, "#profit-loss", /^opm\s*%/i);
@@ -232,6 +246,8 @@ async function fetchCompanyData(page, path, debug = false) {
     data["OPM 5Year %"] = last5.length
       ? (last5.reduce((a, b) => a + b, 0) / last5.length).toFixed(2)
       : "";
+    // Full OPM series for the EBITDA Margin YoY rule (multi-year contraction check).
+    data["OPM Series"] = nums.join("|");
   }
 
   return data;
