@@ -9,7 +9,10 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { EMA, SMA, RSI, MACD, ADX, ATR } from "technicalindicators";
+// technicalindicators is CommonJS — use default import then destructure.
+import indicators from "technicalindicators";
+const { EMA, SMA, RSI, MACD, ADX, ATR } = indicators;
+console.log("Loaded technicalindicators:", Object.keys({ EMA, SMA, RSI, MACD, ADX, ATR }).map((k) => `${k}=${typeof ({ EMA, SMA, RSI, MACD, ADX, ATR })[k]}`).join(", "));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TECH_PATH = resolve(__dirname, "../public/data/technicals.json");
@@ -20,8 +23,11 @@ const TOLERANCE_PCT = parseFloat(process.env.TOLERANCE_PCT || "0.5"); // %
 run().catch((err) => { console.error("Fatal:", err.stack || err.message); process.exit(1); });
 
 async function run() {
+  console.log("Reading technicals.json from:", TECH_PATH);
   const data = JSON.parse(readFileSync(TECH_PATH, "utf8"));
+  console.log("Loaded", (data.companies || []).length, "company records");
   const candidates = (data.companies || []).filter((c) => !c.error && c.bars_count >= 200);
+  console.log("Eligible candidates (no error, ≥200 bars):", candidates.length);
   if (candidates.length < SAMPLE_SIZE) {
     console.error(`Only ${candidates.length} eligible companies — need at least ${SAMPLE_SIZE}.`);
     process.exit(1);
