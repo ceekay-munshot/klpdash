@@ -295,29 +295,67 @@ function rulePromoterHolding(c) {
 }
 
 function ruleFIIDII(c) {
+  // Per client framework: PASS if FII + DII holding trending up over last
+  // 4 quarters; 1 pt. Sharp FII exit = flag. PR E uses the new quarterly
+  // history series; falls back to the single-quarter change if series is
+  // too short (recent IPOs, mergers).
+  const fiiSer = parseSeries(c["FII Holding Series"]);
+  const diiSer = parseSeries(c["DII Holding Series"]);
+  if (fiiSer.length >= 4 && diiSer.length >= 4) {
+    const f = fiiSer.slice(-4);
+    const d = diiSer.slice(-4);
+    const combined = f.map((v, i) => v + d[i]);
+    const trendUp = combined[3] > combined[0];                // 4-quarter net direction
+    let upTransitions = 0;
+    for (let i = 1; i < combined.length; i++) if (combined[i] > combined[i - 1]) upTransitions++;
+    const sharpFIIExit = (f[3] - f[0]) < -2;                  // FII alone fell >2 pp across the 4 qtrs
+    const val = `FII ${f.join(" → ")}  |  DII ${d.join(" → ")}`;
+    if (trendUp && !sharpFIIExit && upTransitions >= 2) {
+      return { points: 1, max: 1, status: "pass", value: val, note: "FII + DII combined holding trending up over last 4 quarters." };
+    }
+    if (trendUp && sharpFIIExit) {
+      return { points: 1, max: 1, status: "partial", value: val, note: "Combined up but FII fell sharply (>2 pp over 4 quarters) — caution flag." };
+    }
+    if (trendUp) {
+      return { points: 1, max: 1, status: "partial", value: val, note: "Net up over 4 quarters but inconsistent QoQ direction." };
+    }
+    return { points: 0, max: 1, status: "fail", value: val, note: "Institutional holding not trending up over last 4 quarters." };
+  }
+  // Fallback to the single-quarter change ribbon value
   const fii = parsePercent(c["Chg in FII Hold"]);
   const dii = parsePercent(c["Chg in DII Hold"]);
   if (fii == null && dii == null) return naWithReason(c, "fiidii", 1);
   const sum = (fii ?? 0) + (dii ?? 0);
-  const val = `FII ${fmtPct(fii)} | DII ${fmtPct(dii)}`;
+  const val = `FII ${fmtPct(fii)} | DII ${fmtPct(dii)} (single-quarter change — 4-quarter history unavailable)`;
   if (sum > 0) {
-    if (fii != null && fii < -2) {
-      return { points: 1, max: 1, status: "partial", value: val, note: "Combined positive but FII exiting sharply (>2%)." };
-    }
-    return { points: 1, max: 1, status: "pass", value: val, note: "FII + DII holding trending up." };
+    if (fii != null && fii < -2) return { points: 1, max: 1, status: "partial", value: val, note: "Combined positive but FII exiting sharply (>2%)." };
+    return { points: 1, max: 1, status: "pass", value: val, note: "FII + DII holding trending up (single-quarter snapshot)." };
   }
   return { points: 0, max: 1, status: "fail", value: val, note: "Institutional holding not increasing." };
 }
 
 function ruleDividendConsistency(c) {
+  // Per client framework: PASS if dividend paid in at least 3 of last 5 years.
+  // PR E uses the new annual Dividend Series; counts years where payout > 0.
+  const series = parseSeries(c["Dividend Series"]);
+  if (series.length >= 5) {
+    const last5 = series.slice(-5);
+    const paidYears = last5.filter((v) => v > 0).length;
+    const val = `Dividend payout % last 5 years: ${last5.map((n) => Math.round(n) + "%").join(" → ")}`;
+    if (paidYears >= 4) return { points: 1, max: 1, status: "pass", value: val, note: `Paid in ${paidYears} of last 5 years — comfortably consistent.` };
+    if (paidYears >= 3) return { points: 1, max: 1, status: "pass", value: val, note: "Paid in 3 of last 5 years — meets client threshold." };
+    if (paidYears >= 1) return { points: 0, max: 1, status: "fail", value: val, note: `Paid only in ${paidYears} of last 5 years — erratic.` };
+    return { points: 0, max: 1, status: "fail", value: val, note: "No dividend in any of last 5 years." };
+  }
+  // Fallback to ribbon values when history is too short
   const ly = parseNumber(c["Dividend last year"]);
   const py = parseNumber(c["Dividend Prev Ann"]);
   const d5 = parsePercent(c["Div 5Yrs"]);
   if (ly == null && py == null && d5 == null) return naWithReason(c, "div", 1);
-  const val = `LY ${ly ?? "—"} | PY ${py ?? "—"} | 5Y avg ${fmtPct(d5)}`;
+  const val = `LY ${ly ?? "—"} | PY ${py ?? "—"} | 5Y avg ${fmtPct(d5)} (annual history too short)`;
   const lastTwoPaid = (ly ?? 0) > 0 && (py ?? 0) > 0;
   const fiveYrYield = d5 ?? 0;
-  if (lastTwoPaid && fiveYrYield > 0) return { points: 1, max: 1, status: "pass", value: val, note: "Dividend paid consistently (proxy for 3-of-5-years rule)." };
+  if (lastTwoPaid && fiveYrYield > 0) return { points: 1, max: 1, status: "pass", value: val, note: "Dividend paid consistently (ribbon-only proxy — full 5-yr history not available)." };
   if ((ly ?? 0) > 0 || fiveYrYield > 0) return { points: 1, max: 1, status: "partial", value: val, note: "Some dividend history." };
   return { points: 0, max: 1, status: "fail", value: val, note: "No / erratic dividend." };
 }

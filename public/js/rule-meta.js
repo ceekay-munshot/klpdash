@@ -109,7 +109,7 @@ export const META = {
       source: SCREENER_SHAREHOLD,
       calculation: null,
       clientLogic: "PASS if Promoter Pledge < 5%; 2 pts. 5–20% = 1 pt. > 20% = hard fail. Rising pledge trend = red flag.",
-      ourLogic: "We use Screener's latest pledge snapshot. Rising-pledge-trend detection (would compare quarters) not yet implemented.",
+      ourLogic: "Threshold and hard-fail logic match the client exactly. Rising-pledge-trend flag is best-effort: Screener exposes pledge as a sub-row that only appears when promoters have pledged shares, so we don't reliably have multi-quarter pledge history. For companies in the 5–20% range the trend signal is therefore single-snapshot only. Most cases (0% pledge, or >20% hard-fail) are unaffected.",
     },
     ph: {
       source: SCREENER_SHAREHOLD,
@@ -119,9 +119,9 @@ export const META = {
     },
     fiidii: {
       source: SCREENER_SHAREHOLD,
-      calculation: "Sum the 'Chg in FII Hold' + 'Chg in DII Hold' values from Screener Top Ratios. PASS if sum > 0; PARTIAL if combined positive but FII alone falling > 2%; FAIL if institutional holding not increasing.",
+      calculation: "Read FII Holding Series + DII Holding Series (last 8 quarterly snapshots from Screener's Shareholding Pattern). Take last 4 quarters. Sum each quarter. PASS if combined holding is higher at Q-latest than Q-3 AND at least 2 of 3 QoQ transitions are increases. PARTIAL if net up but inconsistent or FII fell >2 pp across the 4 quarters. FAIL if combined trending down. Falls back to single-quarter ribbon change for recent IPOs without 4 quarters of history.",
       clientLogic: "PASS if FII + DII holding increasing trend over last 4 quarters; 1 pt. Sharp FII exit = flag.",
-      ourLogic: "We use a single quarter's holding change rather than the 4-quarter trend the client specifies — Screener exposes the latest change directly.",
+      ourLogic: null,
     },
     insider: {
       source: NSE_PIT,
@@ -131,9 +131,9 @@ export const META = {
     },
     div: {
       source: SCREENER,
-      calculation: null,
+      calculation: "Read Dividend Payout % series from Screener's Profit & Loss table (annual history up to 12 years). Take the last 5 years. PASS if dividend > 0 in at least 3 of those 5 years (per client framework). 4-of-5 or 5-of-5 also pass with a stronger note. FAIL otherwise. Falls back to ribbon's 'Dividend last year' + '5-yr avg yield' when annual history is too short.",
       clientLogic: "PASS if dividend paid in at least 3 of last 5 years; 1 pt. Erratic or nil dividend = 0 pts (discretionary).",
-      ourLogic: "We check 'Dividend last year' + 'Dividend Prev Ann' + 'Div 5Yrs Yield' from Screener as a proxy for the 3-of-5-year rule. PASS if both last two years paid AND 5-yr avg yield > 0.",
+      ourLogic: null,
     },
     auditorRemarks: {
       source: () => ({ url: "https://www.sebi.gov.in/", label: "SEBI / Annual Reports", section: "Auditor's opinion section (deferred)" }),
