@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-05-25T18:27:10.082Z",
+  "generated_at": "2026-05-26T08:22:17.818Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 100.21,
+      "latest": 96.03,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -4.86,
+      "pct_change_30d": -8.83,
       "trend": "falling",
-      "history_bars": 26
+      "history_bars": 25
     },
     "usdinr": {
-      "latest": 95.22,
+      "latest": 95.46,
       "latest_unit": "₹/$",
-      "pct_change_30d": 1.18,
+      "pct_change_30d": 1.29,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 16.7,
+      "latest": 15.99,
       "latest_unit": "",
-      "pct_change_30d": -10.15,
+      "pct_change_30d": -18.87,
       "trend": "falling",
       "history_bars": 25
     }
@@ -48,29 +48,8 @@
     "fii_signal_note": "FII net positive in approx 11 of the last 20 trading days — institutional sentiment leaning bullish.",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": 2.96,
-    "market_breadth_note": "370 advances vs 125 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
-    "_pcr_debug": {
-      "fo_bhavcopy": {
-        "attempts": [
-          {
-            "date": "20260525",
-            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260525_F_0000.csv",
-            "http_status": 404
-          },
-          {
-            "date": "20260522",
-            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260522_F_0000.csv",
-            "http_status": 404
-          },
-          {
-            "date": "20260521",
-            "url": "https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260521_F_0000.csv",
-            "http_status": 404
-          }
-        ]
-      }
-    }
+    "market_breadth_ad_ratio": 0.99,
+    "market_breadth_note": "246 advances vs 249 declines across 495 Nifty 500 stocks (computed from Yahoo OHLCV)."
   },
   "sector_themes": {
     "infra_push": [
