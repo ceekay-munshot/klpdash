@@ -269,6 +269,10 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
     relative_strength_6m: relStrength6m == null ? null : round(relStrength6m, 4),
     beta_1y: beta == null ? null : round(beta, 2),
     bars_count: n,
+    // ----- Batch B: pattern detection -----
+    higher_highs_lows: detectHHHL(high, low, close),
+    consolidation_breakout: detectConsolidationBreakout(high, low, close, vol),
+    base_formation: detectBaseFormation(close),
   };
 }
 
@@ -404,6 +408,85 @@ function dailyReturns(bars) {
   const out = [];
   for (let i = 1; i < bars.length; i++) out.push(bars[i].close / bars[i - 1].close - 1);
   return out;
+}
+
+// ---------- Pattern detection (Batch B) ----------
+
+function detectHHHL(high, low, close, windowDays = 60) {
+  // Compare the latest 3-month window vs the prior 3-month window. If both
+  // the recent high and the recent low are above the prior period's, the
+  // pattern is "Higher Highs + Higher Lows over ~6 months".
+  if (close.length < windowDays * 2) return null;
+  const recHigh = Math.max(...high.slice(-windowDays));
+  const recLow  = Math.min(...low.slice(-windowDays));
+  const prevHigh = Math.max(...high.slice(-windowDays * 2, -windowDays));
+  const prevLow  = Math.min(...low.slice(-windowDays * 2, -windowDays));
+  const higherHigh = recHigh > prevHigh;
+  const higherLow  = recLow > prevLow;
+  return {
+    higher_high: higherHigh,
+    higher_low: higherLow,
+    pattern_present: higherHigh && higherLow,
+    recent_high: round(recHigh),
+    recent_low: round(recLow),
+    prior_high: round(prevHigh),
+    prior_low: round(prevLow),
+  };
+}
+
+function detectConsolidationBreakout(high, low, close, volume, baseDays = 30) {
+  // Look at the last `baseDays + 1` bars. The base is the prior `baseDays`
+  // bars (excluding today). Tight base = base range < 12% of avg price.
+  // Breakout = today's close > prior base high, today's volume > 1.5×
+  // base average. Volume confirmation upgrades the score.
+  if (close.length < baseDays + 1) return null;
+  const baseHi = high.slice(-baseDays - 1, -1);
+  const baseLo = low.slice(-baseDays - 1, -1);
+  const baseClose = close.slice(-baseDays - 1, -1);
+  const baseVol = volume.slice(-baseDays - 1, -1);
+  const baseMax = Math.max(...baseHi);
+  const baseMin = Math.min(...baseLo);
+  const baseAvg = baseClose.reduce((a, b) => a + b, 0) / baseClose.length;
+  const baseAvgVol = baseVol.reduce((a, b) => a + b, 0) / baseVol.length;
+  const rangePct = ((baseMax - baseMin) / baseAvg) * 100;
+  const todayClose = close.at(-1);
+  const todayVol = volume.at(-1);
+  const tightBase = rangePct < 12;
+  const breaksOut = todayClose > baseMax;
+  const volumeConfirm = baseAvgVol > 0 && todayVol > 1.5 * baseAvgVol;
+  return {
+    base_range_pct: round(rangePct, 1),
+    tight_base: tightBase,
+    breaks_out: breaksOut,
+    volume_confirm: volumeConfirm,
+    today_close: round(todayClose),
+    base_max: round(baseMax),
+    today_volume_ratio: baseAvgVol > 0 ? round(todayVol / baseAvgVol, 2) : null,
+    quality: tightBase && breaksOut && volumeConfirm ? "strong"
+           : breaksOut && volumeConfirm ? "weak_base"
+           : breaksOut ? "low_volume"
+           : "no_breakout",
+  };
+}
+
+function detectBaseFormation(close, baseDays = 60) {
+  // Healthy base = drawdown < 15% over ~12 weeks AND tight closing range
+  // (standard deviation of closes < 4% of mean).
+  if (close.length < baseDays) return null;
+  const window = close.slice(-baseDays);
+  const max = Math.max(...window);
+  const min = Math.min(...window);
+  const mean = window.reduce((a, b) => a + b, 0) / window.length;
+  const variance = window.reduce((s, x) => s + (x - mean) ** 2, 0) / window.length;
+  const sd = Math.sqrt(variance);
+  const drawdownPct = ((max - min) / max) * 100;
+  const tightnessPct = (sd / mean) * 100;
+  const healthy = drawdownPct < 15 && tightnessPct < 4;
+  return {
+    drawdown_pct: round(drawdownPct, 1),
+    tightness_pct: round(tightnessPct, 1),
+    healthy_base: healthy,
+  };
 }
 
 function adtv20Cr(bars) {

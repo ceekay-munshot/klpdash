@@ -143,17 +143,42 @@ function ruleDeliveryPercentage(c) {
   return { points: 0, max: 1, status: "fail", value: val, note: "Delivery % flat or declining — weaker holding conviction." };
 }
 
-// ---- deferred (3 — pattern recognition still pending) ----
-const DEFERRED = [
-  { key: "hhhl",          label: "Higher Highs–Higher Lows",   category: "Trend Strength", reason: "Weekly-chart pattern recognition not yet implemented.", max: 1 },
-  { key: "consolidation", label: "Breakout from Consolidation", category: "Breakout",      reason: "6-week base / consolidation pattern detection not yet implemented.", max: 2 },
-  { key: "base",          label: "Base Formation",             category: "Breakout",       reason: "Drawdown + closing-range analysis not yet implemented.", max: 1 },
-];
+function ruleHHHL(c) {
+  const p = c?.higher_highs_lows;
+  if (!p) return { ...NA, max: 1, note: "Insufficient history (need ~6 months of bars) to evaluate HH-HL pattern." };
+  const val = `Recent 3m hi ${fmtNum(p.recent_high, 0)} / lo ${fmtNum(p.recent_low, 0)} vs prior 3m hi ${fmtNum(p.prior_high, 0)} / lo ${fmtNum(p.prior_low, 0)}`;
+  if (p.pattern_present) return { points: 1, max: 1, status: "pass", value: val, note: "Higher highs + higher lows over last ~6 months." };
+  if (p.higher_high || p.higher_low) return { points: 1, max: 1, status: "partial", value: val, note: "Only one side is higher (either highs or lows but not both)." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Neither highs nor lows are advancing — no HH-HL structure." };
+}
+
+function ruleConsolidationBreakout(c) {
+  const p = c?.consolidation_breakout;
+  if (!p) return { ...NA, max: 2, note: "Insufficient history (need 6+ weeks) to evaluate consolidation breakout." };
+  const val = `Base range ${fmtNum(p.base_range_pct, 1)}% · today ₹${fmtNum(p.today_close, 0)} vs base hi ₹${fmtNum(p.base_max, 0)}${p.today_volume_ratio != null ? ` · vol ${fmtNum(p.today_volume_ratio, 1)}×` : ""}`;
+  if (p.quality === "strong")    return { points: 2, max: 2, status: "pass", value: val, note: "Tight 6-week base + breakout + volume confirmation." };
+  if (p.quality === "weak_base") return { points: 1, max: 2, status: "partial", value: val, note: "Breakout with volume but base wasn't tight." };
+  if (p.quality === "low_volume") return { points: 1, max: 2, status: "partial", value: val, note: "Breakout above base high but on low volume — suspect." };
+  return { points: 0, max: 2, status: "fail", value: val, note: "No breakout — price still inside (or below) the recent range." };
+}
+
+function ruleBaseFormation(c) {
+  const p = c?.base_formation;
+  if (!p) return { ...NA, max: 1, note: "Insufficient history (need ~12 weeks) to evaluate base health." };
+  const val = `Drawdown ${fmtNum(p.drawdown_pct, 1)}% · closing-range tightness ${fmtNum(p.tightness_pct, 1)}%`;
+  if (p.healthy_base) return { points: 1, max: 1, status: "pass", value: val, note: "Healthy 12-week base — controlled drawdown (<15%) and tight closing range (<4%)." };
+  if (p.drawdown_pct < 20) return { points: 1, max: 1, status: "partial", value: val, note: "Acceptable base but either drawdown or closing range looser than ideal." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Drawdown > 20% or closing range too wide — no clean base." };
+}
+
+// ---- deferred (0 — all rules now active) ----
+const DEFERRED = [];
 
 const ACTIVE_RULES = [
   { key: "ema50",    label: "Price Above 50 EMA",       category: "Trend Strength", criteria: "CMP > 50 EMA",          fn: rulePriceAbove50EMA },
   { key: "dma200",   label: "Price Above 200 DMA",      category: "Trend Strength", criteria: "CMP > 200 DMA",         fn: rulePriceAbove200DMA },
   { key: "gold",     label: "Golden Cross",             category: "Trend Strength", criteria: "50 DMA > 200 DMA",      fn: ruleGoldenCross },
+  { key: "hhhl",     label: "Higher Highs–Higher Lows", category: "Trend Strength", criteria: "Pattern over ~6 months", fn: ruleHHHL },
   { key: "rsi",      label: "RSI (14)",                 category: "Momentum",       criteria: "55–75",                 fn: ruleRSI },
   { key: "macd",     label: "MACD",                     category: "Momentum",       criteria: "Positive crossover",    fn: ruleMACD },
   { key: "adx",      label: "ADX (14)",                 category: "Momentum",       criteria: "> 25",                  fn: ruleADX },
@@ -162,6 +187,8 @@ const ACTIVE_RULES = [
   { key: "delivery", label: "Delivery Percentage",      category: "Volume",         criteria: "Rising over 30 days",   fn: ruleDeliveryPercentage },
   { key: "instact",  label: "Institutional Activity",   category: "Volume",         criteria: "Net FII + DII buying",  fn: ruleInstitutionalActivity },
   { key: "near52w",  label: "52-Week High Proximity",   category: "Breakout",       criteria: "Within 10%",            fn: rule52WHighProximity },
+  { key: "consolidation", label: "Breakout from Consolidation", category: "Breakout", criteria: "6-week base + volume", fn: ruleConsolidationBreakout },
+  { key: "base",     label: "Base Formation",           category: "Breakout",       criteria: "Drawdown <15% + tight closes", fn: ruleBaseFormation },
   { key: "beta",     label: "Beta",                     category: "Risk",           criteria: "0.7 – 1.3",             fn: ruleBeta },
   { key: "atr",      label: "ATR Stability",            category: "Risk",           criteria: "< 2.5% of price",       fn: ruleATRStability },
 ];
