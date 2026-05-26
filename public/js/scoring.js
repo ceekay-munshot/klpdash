@@ -46,6 +46,11 @@ const parsePercent = (v) => {
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 };
+// Parse a pipe-delimited series like "23.4|24.1|24.8|26.2" into a number[]
+const parseSeries = (v) => {
+  if (!v) return [];
+  return String(v).split("|").map((s) => parseFloat(s)).filter((n) => Number.isFinite(n));
+};
 const parseNumber = (v) => {
   if (v == null) return null;
   const s = String(v).replace(/[,\s]/g, "").replace(/Cr\.?/i, "").trim();
@@ -74,14 +79,39 @@ function ruleROCE(c) {
 }
 
 function ruleEBITDAMargin(c) {
-  // OPM in our data ≈ EBITDA margin proxy
+  // Per client framework: PASS if EBITDA margin improving YoY; FAIL if
+  // contracting 2+ consecutive years. We use OPM (Operating Profit Margin)
+  // as the EBITDA-margin proxy — Screener exposes OPM directly.
+  // OPM Series is pipe-delimited oldest → newest, up to 12 years.
+  const series = parseSeries(c["OPM Series"]);
   const last = parsePercent(c["OPM last year"]);
   const prev = parsePercent(c["OPM preceding year"]);
-  if (last == null || prev == null) return naWithReason(c, "ebitda", 1);
-  const val = `${fmtPct(prev)} → ${fmtPct(last)}`;
-  if (last > prev) return { points: 1, max: 1, status: "pass", value: val, note: "Operating margin improving YoY." };
-  if (last >= prev - 0.5) return { points: 1, max: 1, status: "partial", value: val, note: "Margin roughly stable." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Operating margin contracting." };
+  if (series.length < 3) {
+    // Not enough history for the multi-year rule — fall back to the 2-year
+    // comparison and flag the limitation.
+    if (last == null || prev == null) return naWithReason(c, "ebitda", 1);
+    const val2 = `${fmtPct(prev)} → ${fmtPct(last)}`;
+    if (last > prev) return { points: 1, max: 1, status: "pass", value: val2, note: "Operating margin improving YoY (only 2 years of history available)." };
+    if (last >= prev - 0.5) return { points: 1, max: 1, status: "partial", value: val2, note: "Margin roughly stable (only 2 years of history)." };
+    return { points: 0, max: 1, status: "fail", value: val2, note: "Operating margin contracting (only 2 years of history)." };
+  }
+  const recent = series.slice(-Math.min(series.length, 6));   // up to last 6 years
+  const yrsShown = recent.length;
+  const val = `OPM history (${yrsShown}y): ${recent.map(n => n.toFixed(0) + "%").join(" → ")}`;
+  // Count the longest run of YoY contractions in the recent window
+  let longestContraction = 0, currentRun = 0;
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i] < recent[i - 1]) { currentRun++; longestContraction = Math.max(longestContraction, currentRun); }
+    else currentRun = 0;
+  }
+  const latestImproving = recent.at(-1) > recent.at(-2);
+  if (longestContraction >= 2) {
+    return { points: 0, max: 1, status: "fail", value: val, note: `OPM contracting ${longestContraction} consecutive years — fails per client framework.` };
+  }
+  if (latestImproving) {
+    return { points: 1, max: 1, status: "pass", value: val, note: "Operating margin improving in latest year; no 2-year contraction streak in recent history." };
+  }
+  return { points: 1, max: 1, status: "partial", value: val, note: "Margin not in 2+ year contraction but latest year not improving — partial credit." };
 }
 
 function ruleNPM(c) {
@@ -96,20 +126,41 @@ function ruleNPM(c) {
 }
 
 function ruleCFO(c) {
+  // Per client framework: PASS if positive CFO for 10 consecutive years;
+  // HARD FAIL if any year is negative. Series is oldest → newest.
+  const series = parseSeries(c["CF Operations Series"]);
   const ly = parseNumber(c["CF Operations LY"]);
   const py = parseNumber(c["CF Operations PY"]);
-  if (ly == null && py == null) return naWithReason(c, "cfo", 2);
-  const val = `LY ${ly ?? "—"} | PY ${py ?? "—"}`;
-  if (ly != null && py != null && ly > 0 && py > 0) {
-    return { points: 2, max: 2, status: "pass", value: val, note: "Positive operating cash flow both years (proxy for 10-yr rule)." };
+  if (series.length === 0 && ly == null && py == null) return naWithReason(c, "cfo", 2);
+  if (series.length === 0) {
+    // No history series — fall back to 2-year check with a note
+    const val0 = `LY ${ly ?? "—"} | PY ${py ?? "—"}`;
+    if (ly != null && py != null && ly > 0 && py > 0) {
+      return { points: 2, max: 2, status: "pass", value: val0, note: "Both reported years positive (only 2 years of CFO history available — full 10-year check pending)." };
+    }
+    if (ly != null && ly < 0) {
+      return { points: 0, max: 2, status: "hard_fail", value: val0, note: "Negative CFO in latest year — hard fail regardless of PAT." };
+    }
+    return { points: 0, max: 2, status: "fail", value: val0, note: "CFO not positive." };
   }
-  if (ly != null && ly < 0) {
-    return { points: 0, max: 2, status: "hard_fail", value: val, note: "Negative CFO in latest year — hard fail regardless of PAT." };
+  const recent = series.slice(-10);    // up to last 10 years
+  const yrsCovered = recent.length;
+  const negativeYears = recent.filter((n) => n < 0).length;
+  const latestNeg = recent.at(-1) < 0;
+  const val = `${yrsCovered}y of CFO: ${recent.map((n) => Math.round(n).toLocaleString()).join(" → ")}`;
+  if (latestNeg) {
+    return { points: 0, max: 2, status: "hard_fail", value: val, note: `Negative CFO in latest year (₹${Math.round(recent.at(-1)).toLocaleString()} Cr) — hard fail regardless of PAT.` };
   }
-  if ((ly ?? 0) > 0 || (py ?? 0) > 0) {
-    return { points: 1, max: 2, status: "partial", value: val, note: "One of the two years positive." };
+  if (negativeYears === 0 && yrsCovered >= 10) {
+    return { points: 2, max: 2, status: "pass", value: val, note: "Positive CFO for the full 10-year window — matches client's most stringent test." };
   }
-  return { points: 0, max: 2, status: "fail", value: val, note: "Operating cash flow not positive." };
+  if (negativeYears === 0) {
+    return { points: 2, max: 2, status: "pass", value: val, note: `Positive CFO across all ${yrsCovered} reported years (10-year window not yet available).` };
+  }
+  if (negativeYears <= 2) {
+    return { points: 1, max: 2, status: "partial", value: val, note: `${negativeYears} of last ${yrsCovered} years had negative CFO — partial credit but watch closely.` };
+  }
+  return { points: 0, max: 2, status: "fail", value: val, note: `${negativeYears} of last ${yrsCovered} years had negative CFO — pattern of weak cash generation.` };
 }
 
 // Defensive sectors get a lower 3Y revenue-growth threshold per client
@@ -153,13 +204,33 @@ function rulePATGrowth(c) {
 }
 
 function ruleEPSGrowth(c) {
+  // Per client framework: PASS if EPS positive AND growing consistently
+  // over last 3–4 quarters. Erratic EPS = 0 pts.
+  // EPS Qtr Series is up to last 8 quarters, oldest → newest.
+  const series = parseSeries(c["EPS Qtr Series"]);
   const v3 = parsePercent(c["EPS growth 3Years"]);
   const v5 = parsePercent(c["EPS growth 5Years"]);
-  if (v3 == null && v5 == null) return naWithReason(c, "eps", 1);
-  const val = `3Y ${fmtPct(v3)} | 5Y ${fmtPct(v5)}`;
-  if ((v3 ?? -1) > 0 && (v5 ?? -1) > 0) return { points: 1, max: 1, status: "pass", value: val, note: "EPS positive and growing consistently." };
-  if ((v3 ?? -1) > 0 || (v5 ?? -1) > 0) return { points: 1, max: 1, status: "partial", value: val, note: "EPS positive in one window." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "EPS erratic or declining." };
+  if (series.length < 4 && v3 == null && v5 == null) return naWithReason(c, "eps", 1);
+  if (series.length < 4) {
+    // Fallback to the CAGR-based check
+    const val = `3Y ${fmtPct(v3)} | 5Y ${fmtPct(v5)}`;
+    if ((v3 ?? -1) > 0 && (v5 ?? -1) > 0) return { points: 1, max: 1, status: "pass", value: val, note: "EPS CAGR positive over 3Y + 5Y (only annual data available — quarterly history pending)." };
+    if ((v3 ?? -1) > 0 || (v5 ?? -1) > 0) return { points: 1, max: 1, status: "partial", value: val, note: "EPS CAGR positive in one window (only annual data available)." };
+    return { points: 0, max: 1, status: "fail", value: val, note: "EPS CAGR not positive in either annual window." };
+  }
+  const recent = series.slice(-4);  // latest 4 quarters
+  const val = `EPS last 4q: ${recent.map((n) => n.toFixed(1)).join(" → ")}`;
+  const allPositive = recent.every((n) => n > 0);
+  let monotonicUp = 0;     // count of strictly increasing transitions
+  for (let i = 1; i < recent.length; i++) if (recent[i] > recent[i - 1]) monotonicUp++;
+  // "Consistently growing" = at least 2 of 3 quarter-on-quarter increases AND all positive
+  if (allPositive && monotonicUp >= 2) {
+    return { points: 1, max: 1, status: "pass", value: val, note: `EPS positive and growing over last 4 quarters (${monotonicUp}/3 QoQ increases).` };
+  }
+  if (allPositive) {
+    return { points: 1, max: 1, status: "partial", value: val, note: "EPS positive across all 4 quarters but growth not consistently up." };
+  }
+  return { points: 0, max: 1, status: "fail", value: val, note: "EPS erratic or negative in one or more recent quarters." };
 }
 
 function ruleQuarterlyEarnings(c) {

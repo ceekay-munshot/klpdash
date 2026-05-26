@@ -47,9 +47,9 @@ export const META = {
     },
     ebitda: {
       source: SCREENER,
-      calculation: "Compare OPM (Operating Profit Margin) last year vs preceding year, both fetched from Screener Top Ratios. PASS if latest > preceding; PARTIAL if within 0.5 pp; FAIL if contracting.",
+      calculation: "Read full OPM (Operating Profit Margin) series from Screener's Profit & Loss table (up to 12 years). Take the most recent 6 years. PASS if latest year is improving AND no 2+ year contraction streak in window. FAIL if 2+ consecutive years of contraction detected. Fallback to 2-year comparison only when history is too short.",
       clientLogic: "PASS if EBITDA margin improving YoY; 1 pt. FAIL if contracting 2+ consecutive years (0 pts).",
-      ourLogic: "We use OPM (Operating Profit Margin) as a proxy for EBITDA margin since Screener exposes OPM directly in the ribbon. We only compare 2 years of data (latest vs preceding), not the full 2+ year contraction check the client mentions.",
+      ourLogic: null,
     },
     npm: {
       source: SCREENER,
@@ -59,9 +59,9 @@ export const META = {
     },
     cfo: {
       source: SCREENER_CASHFLOW,
-      calculation: "Compare Cash from Operating Activities for last 2 reported annual periods. PASS if both positive; HARD FAIL if latest year is negative.",
+      calculation: "Read full Cash from Operating Activities series from Screener's Cash Flow Statement (up to 10 years). PASS if positive across all years in the available window. HARD FAIL if latest year is negative — per client framework, that's an automatic disqualification regardless of profitability.",
       clientLogic: "PASS if positive CFO for 10 consecutive years; 2 pts. Negative CFO is a hard fail regardless of PAT.",
-      ourLogic: "We only have 2 years of CFO data from Screener's Cash Flow section, not 10. We treat both-years-positive as a proxy for the 10-year rule.",
+      ourLogic: null,
     },
     rev3y: {
       source: SCREENER,
@@ -76,10 +76,10 @@ export const META = {
       ourLogic: null,
     },
     eps: {
-      source: SCREENER,
-      calculation: "Check EPS growth across both 3Y and 5Y windows from Screener Top Ratios. PASS if both positive; PARTIAL if only one is positive.",
+      source: SCREENER_QUARTERS,
+      calculation: "Read last 4 quarters of EPS from Screener's Quarterly Results table. PASS if all 4 quarters positive AND at least 2 of 3 QoQ transitions are increases. PARTIAL if positive but growth not consistent. FAIL if any negative or erratic. Falls back to 3Y/5Y CAGR check if quarterly history is too short.",
       clientLogic: "PASS if EPS positive and growing consistently over 3–4 quarters; 1 pt. Erratic EPS = 0 pts.",
-      ourLogic: "We check 3Y and 5Y CAGRs (annual scale) rather than quarter-by-quarter EPS consistency — Screener doesn't expose per-quarter EPS in the ribbon.",
+      ourLogic: null,
     },
     qoq: {
       source: SCREENER_QUARTERS,
