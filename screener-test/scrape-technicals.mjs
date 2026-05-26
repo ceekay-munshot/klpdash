@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = resolve(__dirname, "../public/data/technicals.json");
 const COMPANIES_PATH = resolve(__dirname, "../public/data/screener-companies.json");
+const ATR_HISTORY_PATH = resolve(__dirname, "../public/data/atr-history.json");
 
 const HISTORY_DAYS = 400;          // calendar days back; ~280 trading days
 const INDEX_SYMBOL = "^CRSLDX";    // Nifty 500 on Yahoo Finance
@@ -101,10 +102,37 @@ async function run() {
   }
 
   flush(results, indexBars, failures);
+
+  // ATR Stability accumulator: append today's atr14_pct per ticker to a
+  // rolling 30-day history. Used by the Sentiment & Liquidity ATR rule
+  // to detect declining-vs-rising volatility trend (client framework).
+  updateATRHistory(results);
+
   console.log(`\n=== Done ===`);
   console.log(`Companies: ${results.length - failures} OK, ${failures} failed`);
   console.log(`Delivery % coverage: ${Object.keys(deliveryTrends).length} tickers`);
   console.log(`Wrote: ${OUT_PATH}`);
+}
+
+function updateATRHistory(results) {
+  let history = {};
+  try {
+    history = JSON.parse(readFileSync(ATR_HISTORY_PATH, "utf8"));
+    if (typeof history !== "object" || Array.isArray(history)) history = {};
+  } catch { /* file doesn't exist yet — start fresh */ }
+  const today = new Date().toISOString().slice(0, 10);
+  for (const r of results) {
+    if (r.error || r.atr14_pct == null || !r.ticker) continue;
+    if (!history[r.ticker]) history[r.ticker] = [];
+    // Dedupe by date — replace today's entry if it exists
+    history[r.ticker] = history[r.ticker].filter((e) => e.date !== today);
+    history[r.ticker].push({ date: today, atr_pct: r.atr14_pct });
+    // Trim to last 30 days
+    history[r.ticker].sort((a, b) => a.date.localeCompare(b.date));
+    if (history[r.ticker].length > 30) history[r.ticker] = history[r.ticker].slice(-30);
+  }
+  writeFileSync(ATR_HISTORY_PATH, JSON.stringify(history) + "\n");
+  console.log(`ATR history updated: ${Object.keys(history).length} tickers tracked, latest snapshot for today`);
 }
 
 function parsePercentValue(v) {
@@ -412,25 +440,43 @@ function dailyReturns(bars) {
 
 // ---------- Pattern detection (Batch B) ----------
 
-function detectHHHL(high, low, close, windowDays = 60) {
-  // Compare the latest 3-month window vs the prior 3-month window. If both
-  // the recent high and the recent low are above the prior period's, the
-  // pattern is "Higher Highs + Higher Lows over ~6 months".
-  if (close.length < windowDays * 2) return null;
-  const recHigh = Math.max(...high.slice(-windowDays));
-  const recLow  = Math.min(...low.slice(-windowDays));
-  const prevHigh = Math.max(...high.slice(-windowDays * 2, -windowDays));
-  const prevLow  = Math.min(...low.slice(-windowDays * 2, -windowDays));
-  const higherHigh = recHigh > prevHigh;
-  const higherLow  = recLow > prevLow;
+function detectHHHL(high, low, close, daysPerWeek = 5, weeksPerWindow = 13) {
+  // Per client framework: HH-HL visible on the WEEKLY chart over 6+ months.
+  // Aggregate daily bars into weekly bars (max high, min low per 5-day group),
+  // then compare the recent 13-week window vs the prior 13-week window. The
+  // pattern is "present" if both the recent max-high > prior max-high AND
+  // recent min-low > prior min-low.
+  const totalDailyNeeded = daysPerWeek * weeksPerWindow * 2;
+  if (close.length < totalDailyNeeded) return null;
+  // Build weekly bars from the end backward
+  const weeklyHighs = [];
+  const weeklyLows = [];
+  for (let end = high.length; end >= daysPerWeek; end -= daysPerWeek) {
+    weeklyHighs.unshift(Math.max(...high.slice(end - daysPerWeek, end)));
+    weeklyLows.unshift(Math.min(...low.slice(end - daysPerWeek, end)));
+    if (weeklyHighs.length >= weeksPerWindow * 2) break;
+  }
+  if (weeklyHighs.length < weeksPerWindow * 2) return null;
+  const recHi = weeklyHighs.slice(-weeksPerWindow);
+  const prevHi = weeklyHighs.slice(-weeksPerWindow * 2, -weeksPerWindow);
+  const recLo = weeklyLows.slice(-weeksPerWindow);
+  const prevLo = weeklyLows.slice(-weeksPerWindow * 2, -weeksPerWindow);
+  const recentHigh = Math.max(...recHi);
+  const recentLow  = Math.min(...recLo);
+  const priorHigh  = Math.max(...prevHi);
+  const priorLow   = Math.min(...prevLo);
+  const higherHigh = recentHigh > priorHigh;
+  const higherLow  = recentLow > priorLow;
   return {
     higher_high: higherHigh,
     higher_low: higherLow,
     pattern_present: higherHigh && higherLow,
-    recent_high: round(recHigh),
-    recent_low: round(recLow),
-    prior_high: round(prevHigh),
-    prior_low: round(prevLow),
+    recent_high: round(recentHigh),
+    recent_low: round(recentLow),
+    prior_high: round(priorHigh),
+    prior_low: round(priorLow),
+    timeframe: "weekly",
+    window_weeks: weeksPerWindow,
   };
 }
 

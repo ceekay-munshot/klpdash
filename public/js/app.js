@@ -336,6 +336,15 @@ async function loadTab(tabId) {
     for (const row of rows) row._macro = rawMeta;
   }
 
+  // Technicals + Sentiment tabs: merge ATR history per ticker so the ATR
+  // Stability rule can detect declining vs rising volatility trend.
+  if (tabId === "technicals" || tabId === "sentiment") {
+    try {
+      const atrHistory = await fetch("data/atr-history.json").then((r) => r.json());
+      for (const row of rows) if (row.ticker && atrHistory[row.ticker]) row.atr_history = atrHistory[row.ticker];
+    } catch { /* file may not exist yet — accumulator will populate over days */ }
+  }
+
   const scored = rows.map(c.score).sort((a, b) => b.totalPoints - a.totalPoints);
   state.cache[tabId] = { rows, scored, meta, filtered: scored };
 }

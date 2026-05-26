@@ -170,9 +170,9 @@ export const META = {
     },
     hhhl: {
       source: YAHOO,
-      calculation: "Take 6 months of daily highs and lows. Split into two 3-month windows. Compute max(high) and min(low) for each window. Pattern present if both recent max > prior max AND recent min > prior min.",
+      calculation: "Aggregate daily Yahoo OHLCV into weekly bars (max high + min low per 5-day group). Take 26 weekly bars ≈ 6 months. Split into recent 13-week window vs prior 13-week window. Pattern present if recent max(high) > prior max(high) AND recent min(low) > prior min(low).",
       clientLogic: "PASS if HH-HL visible on weekly chart over 6+ months; 1 pt. Lower-lows pattern = 0 pts.",
-      ourLogic: "We compute on daily bars (3-month windows) instead of weekly bars. Same higher-highs + higher-lows logic, just one frequency lower.",
+      ourLogic: null,
     },
     rsi: {
       source: YAHOO,
@@ -188,9 +188,9 @@ export const META = {
     },
     adx: {
       source: YAHOO,
-      calculation: "ADX(14) using Wilder smoothing. Compute True Range, +DM, −DM each day. Smooth to +DI / −DI. DX = 100 × |+DI − −DI| / (+DI + −DI). ADX = 14-period Wilder smoothing of DX.",
+      calculation: "ADX(14) using Wilder smoothing. Compute True Range, +DM, −DM each day. Smooth to +DI / −DI. DX = 100 × |+DI − −DI| / (+DI + −DI). ADX = 14-period Wilder smoothing of DX. Scoring: > 25 = 1 pt, 20–25 = 0.5 pt (per client framework), < 20 = 0.",
       clientLogic: "PASS if ADX > 25 (strong trend); 1 pt. ADX 20–25 = 0.5 pts (developing). ADX < 20 = choppy/no trend = 0 pts.",
-      ourLogic: "We round 0.5 partial credit to 1 pt for the 20–25 range (status 'partial') since the dashboard's points must be integers.",
+      ourLogic: null,
     },
     rs: {
       source: YAHOO,
@@ -224,9 +224,9 @@ export const META = {
     },
     consolidation: {
       source: YAHOO,
-      calculation: "Look at the last 30 daily bars (≈ 6 weeks). Base range % = (max(high) − min(low)) / avg(close) × 100. Tight base = range < 12%. Breakout = today's close > prior 30-day high. Volume confirm = today's volume > 1.5× base avg volume.",
+      calculation: "Look at the last 30 trading days = 6 weeks. Base range % = (max(high) − min(low)) / avg(close) × 100. Tight base = range < 12%. Breakout = today's close > prior 6-week high. Volume confirm = today's volume > 1.5× base avg volume. Strong = all three; partials documented in the note.",
       clientLogic: "PASS if breaking out of at least 6-week base on strong volume; 2 pts. No base = 0 pts.",
-      ourLogic: "We treat base as 30 trading days ≈ 6 weeks. Strong = tight base + breakout + volume confirm. Weak partials: breakout with volume but loose base (1 pt), or breakout on low volume (1 pt).",
+      ourLogic: null,
     },
     base: {
       source: YAHOO,
@@ -242,9 +242,9 @@ export const META = {
     },
     atr: {
       source: YAHOO,
-      calculation: "ATR(14) using Wilder smoothing over True Range values. ATR % of price = ATR / latest close × 100.",
+      calculation: "ATR(14) using Wilder smoothing over True Range values. ATR % = ATR ÷ latest close × 100. Trend assessed from atr_history.json accumulator (≥10 daily snapshots needed for trend): recent-half avg vs older-half avg. Scoring combines absolute level (<2.5% / 2.5–4% / >4%) AND trend direction (declining boosts to PASS, rising downgrades to partial). Accumulator builds 1 snapshot per daily Technicals scrape, so the trend signal strengthens over ~2 weeks.",
       clientLogic: "PASS if 14-day ATR % declining or stable (< 2.5% for large cap); 1 pt. Rising ATR = position-size flag.",
-      ourLogic: "We check the absolute ATR % threshold (< 2.5% = pass, 2.5–4% = partial, > 4% = fail) rather than the declining-vs-stable trend the client mentions. We only have a single ATR snapshot per scrape.",
+      ourLogic: null,
     },
   },
 
