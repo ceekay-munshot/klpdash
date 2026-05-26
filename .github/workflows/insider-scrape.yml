@@ -3,9 +3,12 @@ name: Insider trades scrape
 on:
   workflow_dispatch:
   schedule:
-    # 01:00 UTC == 06:30 IST. Runs after fundamentals (06:00) and technicals
-    # (06:15) so daily commits land in sequence with no race.
-    - cron: "0 1 * * *"
+    # 00:53 UTC == 06:53 IST. Off-peak minute to dodge GitHub's cron queue.
+    - cron: "53 0 * * *"
+  # Chain off Technicals so we don't depend on cron timing.
+  workflow_run:
+    workflows: ["Technicals scrape"]
+    types: [completed]
 
 jobs:
   scrape:
@@ -13,6 +16,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
