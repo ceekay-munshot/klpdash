@@ -188,43 +188,66 @@ function statusPill(status) {
 }
 function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
+// SVG icons (heroicons-style, monoline)
+const ICON_LINK = `<svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>`;
+const ICON_CALC = `<svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h6m-3 4h3M7 21h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/></svg>`;
+const ICON_LOGIC = `<svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"/></svg>`;
+const ICON_CHEVRON = `<svg class="w-2.5 h-2.5 flex-shrink-0 text-slate-400 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>`;
+
 // Renders 3 small chips on each drill-down rule card:
-//   🔗 Source — opens the actual data source URL in a new tab
-//   🧮 Calculation — expands to show the formula (only when computed)
-//   📋 Scoring Logic — expands to show client's logic; or client-vs-ours if we deviate
+//   Source — opens the actual data source in a new tab
+//   Calculation — expands to show the formula (only when computed)
+//   Scoring Logic — expands; if we deviate, chip is amber + shows client vs ours
 function renderRuleMetaButtons(ruleKey, company) {
   const tab = state.activeTab;
   const meta = RULE_META[tab]?.[ruleKey];
   if (!meta) return "";
   const src = typeof meta.source === "function" ? meta.source(company || {}) : meta.source;
+
+  const baseChip = "group inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded-md border transition-colors select-none";
+  const neutralChip = "bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200 hover:border-slate-300";
+  const amberChip   = "bg-amber-50 hover:bg-amber-100 text-amber-800 hover:text-amber-900 border-amber-200 hover:border-amber-300";
+
   const sourceBtn = src ? `
     <a href="${escapeHtml(src.url)}" target="_blank" rel="noopener"
-       class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors no-underline"
-       title="${escapeHtml(src.label + (src.section ? " · " + src.section : ""))}">
-      🔗 ${escapeHtml(src.label)}${src.section ? ` <span class="text-indigo-500/70">· ${escapeHtml(src.section)}</span>` : ""}
+       class="${baseChip} ${neutralChip} no-underline"
+       title="${escapeHtml(src.label + (src.section ? " — " + src.section : ""))}">
+      ${ICON_LINK}<span>${escapeHtml(src.label)}</span>
     </a>` : "";
+
   const calcBtn = meta.calculation ? `
-    <details class="text-[10px] meta-details">
-      <summary class="cursor-pointer list-none inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium">🧮 Calculation</summary>
-      <div class="mt-1 p-2 bg-slate-50 rounded text-[11px] text-slate-700 leading-relaxed border border-slate-200">${escapeHtml(meta.calculation)}</div>
+    <details class="meta-details">
+      <summary class="${baseChip} ${neutralChip} cursor-pointer">
+        ${ICON_CALC}<span>Calculation</span>${ICON_CHEVRON}
+      </summary>
+      <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 leading-relaxed">
+        ${escapeHtml(meta.calculation)}
+      </div>
     </details>` : "";
-  // Logic: if ourLogic null → same as client → just show clientLogic.
-  // If ourLogic != null → show side-by-side comparison.
+
   const logicBody = meta.ourLogic
-    ? `<div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Client's scoring logic</div>
-       <div class="text-slate-700 mb-2">${escapeHtml(meta.clientLogic)}</div>
-       <div class="text-[10px] font-semibold uppercase tracking-wider text-amber-700">Our implementation</div>
-       <div class="text-amber-700">${escapeHtml(meta.ourLogic)}</div>`
-    : `<div class="text-slate-700">${escapeHtml(meta.clientLogic)}</div>
-       <div class="text-[9px] text-emerald-600 mt-1 font-medium uppercase tracking-wider">✓ Matches our implementation exactly</div>`;
+    ? `<div>
+         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Client's scoring logic</div>
+         <div class="text-slate-700 mb-3">${escapeHtml(meta.clientLogic)}</div>
+         <div class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">Our implementation</div>
+         <div class="text-amber-800">${escapeHtml(meta.ourLogic)}</div>
+       </div>`
+    : `<div>
+         <div class="text-slate-700">${escapeHtml(meta.clientLogic)}</div>
+         <div class="text-[10px] text-emerald-600 mt-2 font-bold uppercase tracking-wider">✓ Matches our implementation exactly</div>
+       </div>`;
+
   const logicBtn = meta.clientLogic ? `
-    <details class="text-[10px] meta-details">
-      <summary class="cursor-pointer list-none inline-flex items-center gap-1 px-2 py-1 ${meta.ourLogic ? "bg-amber-100 hover:bg-amber-200 text-amber-800" : "bg-slate-100 hover:bg-slate-200 text-slate-700"} rounded-md font-medium">📋 Scoring Logic${meta.ourLogic ? " · client vs ours" : ""}</summary>
-      <div class="mt-1 p-2 bg-slate-50 rounded text-[11px] leading-relaxed border border-slate-200 space-y-1">${logicBody}</div>
+    <details class="meta-details">
+      <summary class="${baseChip} ${meta.ourLogic ? amberChip : neutralChip} cursor-pointer">
+        ${ICON_LOGIC}<span>Scoring Logic${meta.ourLogic ? " · diff" : ""}</span>${ICON_CHEVRON}
+      </summary>
+      <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-md text-xs leading-relaxed">${logicBody}</div>
     </details>` : "";
+
   if (!sourceBtn && !calcBtn && !logicBtn) return "";
   return `
-    <div class="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-slate-100">
+    <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-100">
       ${sourceBtn}${calcBtn}${logicBtn}
     </div>`;
 }
