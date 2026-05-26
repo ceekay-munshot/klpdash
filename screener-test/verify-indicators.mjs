@@ -74,35 +74,39 @@ async function run() {
 
   const results = [];
   for (const c of sample) {
-    process.stdout.write(`[${c.ticker.padEnd(14)}] fetching... `);
+    log(`\n[${c.ticker}] fetching...`);
     let bars;
     try {
       bars = await fetchBars(`${c.ticker}.NS`, 400);
-      if (bars.length < 250) { log(`only ${bars.length} bars, skip`); continue; }
+      log(`  fetched ${bars.length} bars`);
+      if (bars.length < 250) { log(`  only ${bars.length} bars, skip`); continue; }
     } catch (err) {
-      log(`FETCH FAIL: ${err.message}`);
+      log(`  FETCH FAIL: ${err.message}`);
       continue;
     }
-    const closes = bars.map((b) => b.close);
-    const highs = bars.map((b) => b.high);
-    const lows = bars.map((b) => b.low);
-
-    const checks = [];
-    checks.push(compare("EMA(50)",  c.ema50, EMA.calculate({ period: 50,  values: closes }).at(-1)));
-    checks.push(compare("SMA(50)",  c.sma50, SMA.calculate({ period: 50,  values: closes }).at(-1)));
-    checks.push(compare("SMA(200)", c.sma200, SMA.calculate({ period: 200, values: closes }).at(-1)));
-    checks.push(compare("RSI(14)",  c.rsi14, RSI.calculate({ period: 14, values: closes }).at(-1)));
-    const macdLib = MACD.calculate({ fastPeriod: 12, slowPeriod: 26, signalPeriod: 9, values: closes, SimpleMAOscillator: false, SimpleMASignal: false }).at(-1);
-    checks.push(compare("MACD line",   c.macd?.line,   macdLib?.MACD));
-    checks.push(compare("MACD signal", c.macd?.signal, macdLib?.signal));
-    checks.push(compare("ADX(14)", c.adx14, ADX.calculate({ period: 14, high: highs, low: lows, close: closes }).at(-1)?.adx));
-    const atrLib = ATR.calculate({ period: 14, high: highs, low: lows, close: closes }).at(-1);
-    const atrPctLib = atrLib != null ? (atrLib / closes.at(-1)) * 100 : null;
-    checks.push(compare("ATR(14) %", c.atr14_pct, atrPctLib));
-
-    const failed = checks.filter((x) => x && !x.pass);
-    log(`${checks.filter((c) => c).length} checks, ${failed.length} failed`);
-    results.push({ ticker: c.ticker, name: c.name, checks });
+    try {
+      const closes = bars.map((b) => b.close);
+      const highs = bars.map((b) => b.high);
+      const lows = bars.map((b) => b.low);
+      const checks = [];
+      checks.push(compare("EMA(50)",  c.ema50, EMA.calculate({ period: 50,  values: closes }).at(-1)));
+      checks.push(compare("SMA(50)",  c.sma50, SMA.calculate({ period: 50,  values: closes }).at(-1)));
+      checks.push(compare("SMA(200)", c.sma200, SMA.calculate({ period: 200, values: closes }).at(-1)));
+      checks.push(compare("RSI(14)",  c.rsi14, RSI.calculate({ period: 14, values: closes }).at(-1)));
+      const macdLib = MACD.calculate({ fastPeriod: 12, slowPeriod: 26, signalPeriod: 9, values: closes, SimpleMAOscillator: false, SimpleMASignal: false }).at(-1);
+      checks.push(compare("MACD line",   c.macd?.line,   macdLib?.MACD));
+      checks.push(compare("MACD signal", c.macd?.signal, macdLib?.signal));
+      checks.push(compare("ADX(14)", c.adx14, ADX.calculate({ period: 14, high: highs, low: lows, close: closes }).at(-1)?.adx));
+      const atrLib = ATR.calculate({ period: 14, high: highs, low: lows, close: closes }).at(-1);
+      const atrPctLib = atrLib != null ? (atrLib / closes.at(-1)) * 100 : null;
+      checks.push(compare("ATR(14) %", c.atr14_pct, atrPctLib));
+      const failed = checks.filter((x) => x && !x.pass);
+      log(`  ${checks.filter((x) => x).length} checks, ${failed.length} failed`);
+      results.push({ ticker: c.ticker, name: c.name, checks });
+    } catch (err) {
+      log(`  COMPUTE FAIL: ${err.message}`);
+      log(`  Stack: ${err.stack}`);
+    }
   }
 
   log("\n=== Detailed report ===\n");

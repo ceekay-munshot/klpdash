@@ -40,6 +40,25 @@ jobs:
           path: public/data/verify-debug.log
           if-no-files-found: warn
 
+      - name: Commit debug log on failure
+        if: steps.verify.outcome == 'failure' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p _debug
+          cp public/data/verify-debug.log _debug/verify-debug-$(date -u +%Y%m%d-%H%M%S).log || echo "no log file"
+          git add _debug/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "Verify debug log ($(date -u +%Y-%m-%d_%H%M%S))"
+            for i in 1 2 3; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main && git rebase origin/main || git rebase --abort
+              sleep 2
+            done
+          fi
+
       - name: Re-fail if verifier failed
         if: steps.verify.outcome == 'failure'
         run: exit 1
