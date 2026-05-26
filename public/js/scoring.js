@@ -112,12 +112,36 @@ function ruleCFO(c) {
   return { points: 0, max: 2, status: "fail", value: val, note: "Operating cash flow not positive." };
 }
 
+// Defensive sectors get a lower 3Y revenue-growth threshold per client
+// framework. Typical Indian-market defensive classification — staples,
+// pharma, utilities. Match against Screener's "Broad Industry" or "Sector".
+const DEFENSIVE_SECTORS = new Set([
+  // Consumer staples
+  "Diversified FMCG", "Personal Products", "Food Products", "Beverages",
+  "Cigarettes & Tobacco Products", "Agricultural Food & other Products",
+  // Healthcare
+  "Pharmaceuticals & Biotechnology", "Healthcare Services",
+  "Healthcare Equipment & Supplies",
+  // Utilities
+  "Power", "Gas",
+]);
+
+function isDefensiveSector(c) {
+  const ind = (c["Broad Industry"] || "").trim();
+  const sec = (c["Sector"] || "").trim();
+  return DEFENSIVE_SECTORS.has(ind) || DEFENSIVE_SECTORS.has(sec);
+}
+
 function ruleRevenueGrowth(c) {
   const v = parsePercent(c["Sales growth 3Years"]);
   if (v == null) return naWithReason(c, "rev3y", 2);
-  if (v >= 12) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "3Y revenue CAGR ≥ 12%." };
-  if (v >= 8) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "3Y revenue CAGR 8–12%." };
-  return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: "3Y revenue CAGR < 8%." };
+  const defensive = isDefensiveSector(c);
+  const passT = defensive ? 8 : 12;       // defensives need only 8%+ to PASS
+  const partialT = defensive ? 5 : 8;     // partial range tightens accordingly
+  const sectorNote = defensive ? " (defensive sector — lower threshold applied per client framework)" : "";
+  if (v >= passT) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: `3Y revenue CAGR ≥ ${passT}%${sectorNote}.` };
+  if (v >= partialT) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: `3Y revenue CAGR ${partialT}–${passT}%${sectorNote}.` };
+  return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: `3Y revenue CAGR < ${partialT}%${sectorNote}.` };
 }
 
 function rulePATGrowth(c) {

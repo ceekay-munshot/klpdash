@@ -65,9 +65,9 @@ export const META = {
     },
     rev3y: {
       source: SCREENER,
-      calculation: null,
+      calculation: "Read Sales growth 3Years from Screener Top Ratios. Apply sector-defensive threshold: 8% pass / 5% partial for defensives (FMCG, Pharma, Utilities, Healthcare), 12% pass / 8% partial for everyone else.",
       clientLogic: "PASS if Revenue CAGR (3Y) ≥ 12–15%; 2 pts. 8–12% = 1 pt. < 8% = 0 pts. Sector-adjust for defensives.",
-      ourLogic: "Sector-defensive adjustment not yet applied — same threshold across all sectors.",
+      ourLogic: null,
     },
     pat3y: {
       source: SCREENER,
