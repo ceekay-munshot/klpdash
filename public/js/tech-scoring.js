@@ -58,7 +58,7 @@ function ruleADX(c) {
   if (v == null) return { ...NA, max: 1 };
   const val = `ADX ${fmtNum(v,1)}`;
   if (v > 25) return { points: 1, max: 1, status: "pass", value: val, note: "ADX > 25 — strong trend." };
-  if (v >= 20) return { points: 1, max: 1, status: "partial", value: val, note: "ADX 20–25 — developing trend." };
+  if (v >= 20) return { points: 0.5, max: 1, status: "partial", value: val, note: "ADX 20–25 — developing trend (0.5 pt per client framework)." };
   return { points: 0, max: 1, status: "fail", value: val, note: "ADX < 20 — choppy / no clear trend." };
 }
 
@@ -102,14 +102,46 @@ function ruleBeta(c) {
 }
 
 function ruleATRStability(c) {
+  // Per client framework: PASS if 14-day ATR% is declining or stable AND
+  // < 2.5% for large-caps. We check both the absolute level + the trend
+  // (using atr_history accumulator built up over recent daily scrapes).
   const a = c.atr14_pct;
   if (a == null) return { ...NA, max: 1 };
+  const hist = Array.isArray(c.atr_history) ? c.atr_history : [];
   const val = `ATR(14) = ${fmtNum(a,2)}% of price`;
-  // Client criterion: < 2.5% for large cap, declining/stable. We only have
-  // a single snapshot — approximate using the absolute threshold.
-  if (a < 2.5) return { points: 1, max: 1, status: "pass", value: val, note: "ATR% under 2.5% — controlled volatility." };
-  if (a < 4) return { points: 1, max: 1, status: "partial", value: val, note: "ATR% 2.5–4% — elevated but tolerable." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "ATR% > 4% — high volatility, position-size flag." };
+  // Trend assessment from accumulator (when enough history available)
+  let trend = null;     // "declining" | "stable" | "rising" | null (unknown)
+  let trendNote = "";
+  if (hist.length >= 10) {
+    const half = Math.floor(hist.length / 2);
+    const recent = hist.slice(-half).map((e) => e.atr_pct);
+    const older  = hist.slice(0, half).map((e) => e.atr_pct);
+    const avgR = recent.reduce((x, y) => x + y, 0) / recent.length;
+    const avgO = older.reduce((x, y) => x + y, 0) / older.length;
+    const diff = avgR - avgO;
+    if (diff < -0.1) trend = "declining";
+    else if (diff > 0.2) trend = "rising";
+    else trend = "stable";
+    trendNote = ` · ${hist.length}-day trend ${trend} (${avgO.toFixed(2)}% → ${avgR.toFixed(2)}%)`;
+  } else if (hist.length > 0) {
+    trendNote = ` · only ${hist.length}-day history yet (need ≥ 10 for trend)`;
+  } else {
+    trendNote = " · trend pending (accumulator building from today)";
+  }
+  // Score: absolute level first, then trend modifier
+  if (a < 2.5 && (trend === "declining" || trend === "stable" || trend == null)) {
+    return { points: 1, max: 1, status: "pass", value: val + trendNote, note: "ATR% under 2.5% and not rising — controlled volatility." };
+  }
+  if (a < 2.5 && trend === "rising") {
+    return { points: 0.5, max: 1, status: "partial", value: val + trendNote, note: "ATR% absolutely OK (<2.5%) but trend rising — position-size flag per client framework." };
+  }
+  if (a < 4 && trend === "declining") {
+    return { points: 1, max: 1, status: "pass", value: val + trendNote, note: "ATR% 2.5–4% but trending down — improving volatility profile." };
+  }
+  if (a < 4) {
+    return { points: 0.5, max: 1, status: "partial", value: val + trendNote, note: "ATR% 2.5–4% — elevated but tolerable." };
+  }
+  return { points: 0, max: 1, status: "fail", value: val + trendNote, note: "ATR% > 4% — high volatility, position-size flag." };
 }
 
 function ruleInstitutionalActivity(c) {
