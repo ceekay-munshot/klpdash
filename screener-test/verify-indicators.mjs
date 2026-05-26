@@ -22,11 +22,17 @@ const log = (...args) => {
   const line = args.map((a) => typeof a === "object" ? JSON.stringify(a) : String(a)).join(" ");
   process.stdout.write(line + "\n");
   logBuf.push(line);
+  // Eager write — every log call flushes to disk so a crash never
+  // loses the log. process.on("exit") was unreliable when the runtime
+  // killed the process before handlers fired.
+  try { writeFileSync(DEBUG_LOG, logBuf.join("\n") + "\n"); } catch {}
 };
 
-process.on("exit", () => {
-  try { writeFileSync(DEBUG_LOG, logBuf.join("\n") + "\n"); } catch {}
-});
+// Make sure the file exists immediately so the workflow always has
+// something to commit on failure.
+try { writeFileSync(DEBUG_LOG, "verify-indicators starting — log will accumulate here.\n"); } catch (e) {
+  process.stdout.write("WARN: could not pre-write debug log: " + e.message + "\n");
+}
 
 log("=== verify-indicators starting ===");
 log("Node version:", process.version);
