@@ -32,6 +32,10 @@
       .fade-in { animation: fade-in 0.4s ease-out both; }
       table thead th[data-sort] { cursor: pointer; user-select: none; }
       table thead th[data-sort]:hover { color: #4f46e5; }
+      /* Hide the default <details> triangle so summary chips look clean */
+      .meta-details > summary::-webkit-details-marker { display: none; }
+      .meta-details > summary { list-style: none; }
+      .meta-details > summary::marker { content: ""; }
     </style>
   </head>
   <body class="text-slate-800">
