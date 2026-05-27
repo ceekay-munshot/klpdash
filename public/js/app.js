@@ -3,6 +3,7 @@ import * as tech from "./tech-scoring.js";
 import * as macro from "./macro-scoring.js";
 import * as senliq from "./sentiment-liquidity-scoring.js";
 import { META as RULE_META } from "./rule-meta.js";
+import { exportToExcel as exportToExcelNew } from "./excel-export.js";
 
 // ---------------- Tab configuration ----------------
 const CONFIGS = {
@@ -644,30 +645,16 @@ function closeDrillDown() {
 }
 
 // ---------------- Excel export (active tab) ----------------
-function exportToExcel() {
+async function exportToExcel() {
   const c = cfg(); const st = tabState();
-  const wb = XLSX.utils.book_new();
-  const rows = st.scored.map((s, i) => {
-    const row = {
-      Rank: i + 1,
-      Company: c.name(s.company),
-      "Screener URL": c.screenerUrl(s.company),
-      "Score": s.totalPoints,
-      "Max": s.totalMax,
-      "Score %": s.scorePct,
-      "Hard Fails": s.hardFails.join("; "),
-      "N/A Count": s.naCount,
-    };
-    c.rules.forEach((r) => {
-      const b = s.breakdown.find((x) => x.key === r.key);
-      row[r.label] = !b || b.status === "na" ? "" : `${b.points}/${b.max} ${b.status}`;
-    });
-    return row;
+  if (!st || !st.scored) return;
+  await exportToExcelNew({
+    tab: state.activeTab,
+    tabLabel: c.label,
+    cfg: c,
+    scored: st.scored,
+    ruleMeta: RULE_META,
   });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Scored");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(st.rows), "Raw Data");
-  const today = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `klp-${state.activeTab}-${today}.xlsx`);
 }
 
 // ---------------- wiring ----------------
