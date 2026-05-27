@@ -349,10 +349,10 @@ export const META = {
       ourLogic: null,
     },
     impact: {
-      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication — auto-scraped" }),
-      calculation: "Self-healing scraper probes NSE's archive URL pattern across the last 6 months and a small set of historical filename conventions (imc_MMM_YYYY.csv, imc_MMMYYYY.csv, etc.). First responding URL wins. Result is committed to public/data/impact-cost.json and merged per-ticker into Sentiment tab rows.",
+      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication (permanently deferred)" }),
+      calculation: null,
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
-      ourLogic: null,
+      ourLogic: "Permanently deferred — same bot detection that blocks PCR. We built a self-healing scraper that probes 8 NSE archive URL patterns across 6 months, but every URL returns no data from GitHub Actions runner IPs. Scraper + workflow_dispatch entry are kept in the repo so we can probe occasionally; if NSE ever relaxes, the rule lights up automatically. Worth 2 pts on Sentiment.",
     },
     spread: {
       source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE live order book", section: "Real-time bid-ask spread (deferred)" }),

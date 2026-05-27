@@ -90,14 +90,13 @@ jobs:
         continue-on-error: true
         run: node screener-test/scrape-insider.mjs
 
-      # ---- 4. Impact Cost (NSE monthly CSV) — ~30s, non-fatal ----
-      # Probes ~8 URL patterns × 6 months for the NSE archives CSV.
-      # If everything misses the rule stays N/A — no regression.
-      - name: Run impact cost scraper
-        continue-on-error: true
-        run: node screener-test/scrape-impact-cost.mjs
+      # NB: Impact Cost scraper exists as workflow_dispatch only
+      # (impact-cost-scrape.yml). Daily probe was removed after every
+      # NSE archive URL pattern returned no data from GHA runner IPs
+      # — same bot detection that blocks PCR. Rule treated as
+      # permanently deferred in sentiment-liquidity-scoring.js.
 
-      # ---- 5. Macro (Yahoo + NSE FII/DII) — <1 min, non-fatal ----
+      # ---- 4. Macro (Yahoo + NSE FII/DII) — <1 min, non-fatal ----
       - name: Run macro scraper
         continue-on-error: true
         run: node screener-test/scrape-macro.mjs
@@ -115,7 +114,6 @@ jobs:
             public/data/technicals.json
             public/data/insider-trades.json
             public/data/macro.json
-            public/data/impact-cost.json
             public/data/atr-history.json
             public/data/fii-dii-history.json
           if-no-files-found: warn
@@ -129,7 +127,6 @@ jobs:
           git add public/data/screener-companies.csv public/data/screener-companies.json public/data/metadata.json
           git add public/data/technicals.json
           [ -f public/data/insider-trades.json ] && git add public/data/insider-trades.json || true
-          [ -f public/data/impact-cost.json ] && git add public/data/impact-cost.json || true
           [ -f public/data/macro.json ] && git add public/data/macro.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true

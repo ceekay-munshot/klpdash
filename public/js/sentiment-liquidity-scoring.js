@@ -62,7 +62,11 @@ function ruleADTV(c) {
 }
 
 function ruleImpactCost(c) {
-  if (c?.impact_cost_pct == null) return { ...NA, max: 2, note: "NSE Impact Cost monthly report not yet integrated — rule pending." };
+  if (c?.impact_cost_pct == null) {
+    return { ...NA, max: 2,
+      note: "Impact Cost rule is permanently deferred. NSE's monthly Impact Cost CSV is published in the public archive at archives.nseindia.com / nsearchives.nseindia.com but NSE actively blocks automated requests from GitHub Actions runner IPs. We probe 8 URL patterns across 6 months on every run and consistently get zero hits — same bot detection pattern that blocks PCR. Worth 2 pts on the Sentiment scorecard; accepting deferred is the right call. Workflow stays in place in case NSE relaxes their stance.",
+    };
+  }
   const ic = c.impact_cost_pct;
   const val = `Impact cost ${ic}%`;
   if (ic <= 0.3) return { points: 2, max: 2, status: "pass", value: val, note: "Impact cost ≤ 0.3% — tight execution for mid-cap orders." };
