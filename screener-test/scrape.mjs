@@ -170,6 +170,30 @@ async function fetchCompanyData(page, path, debug = false) {
       })
       .catch(() => {});
     await page.waitForTimeout(patient ? 1200 : 400);
+
+    // Best-effort: expand the Shareholding sub-rows (Pledged shares is the
+    // one we care about — Screener collapses it under the Promoters row
+    // unless promoters have actually pledged). Try a small set of selectors
+    // that have all been seen on Screener over the last year. Failures here
+    // are silent — most companies have no pledge sub-row to expand and we
+    // don't want a missing button to abort the company scrape.
+    try {
+      const expandSelectors = [
+        '#shareholding button[onclick*="shareholding_change"]',
+        '#shareholding button.button-secondary',
+        '#shareholding button:has-text("+")',
+        '#shareholding [data-toggle="collapse"]',
+      ];
+      for (const sel of expandSelectors) {
+        const btns = await page.locator(sel).all().catch(() => []);
+        for (const btn of btns) {
+          await btn.click({ timeout: 1500 }).catch(() => {});
+        }
+        if (btns.length) break; // first matching selector wins
+      }
+      await page.waitForTimeout(300);
+    } catch { /* expander absent — fine */ }
+
     html = await page.content();
     ribbonCount = cheerio.load(html)("#top-ratios li").length;
     if (ribbonCount > 9) break;

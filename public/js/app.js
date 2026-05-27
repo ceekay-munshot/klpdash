@@ -334,9 +334,25 @@ async function loadTab(tabId) {
 
   // Sentiment & Liquidity: tab data is technicals.json (gives us ADTV +
   // F&O eligibility per company), and macro.json provides the market-wide
-  // sentiment context (VIX, FII/DII flow, PCR, breadth). Merge as ._macro.
+  // sentiment context (VIX, FII/DII flow, PCR, breadth). Merge as ._macro,
+  // plus per-company impact cost from impact-cost.json when available.
   if (tabId === "sentiment" && rawMeta) {
-    for (const row of rows) row._macro = rawMeta;
+    let impactByTicker = {};
+    try {
+      const impact = await fetch("data/impact-cost.json").then((r) => r.json());
+      impactByTicker = impact?.companies || {};
+    } catch { /* impact-cost file missing — rule stays N/A */ }
+    for (const row of rows) {
+      row._macro = rawMeta;
+      // Ticker key: prefer the explicit field, else derive from Screener URL slug.
+      let ticker = (row.ticker || row.symbol || "").toUpperCase();
+      if (!ticker) {
+        const m = String(row.screenerUrl || "").match(/\/company\/([^/]+)/);
+        if (m) ticker = m[1].toUpperCase();
+      }
+      const ic = ticker ? impactByTicker[ticker] : null;
+      if (ic && ic.impact_cost_pct != null) row.impact_cost_pct = ic.impact_cost_pct;
+    }
   }
 
   // Technicals + Sentiment tabs: merge ATR history per ticker so the ATR
