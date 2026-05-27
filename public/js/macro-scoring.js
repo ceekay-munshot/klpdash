@@ -60,15 +60,23 @@ function ruleChinaPlusOne(c) {
   if (!m) return { ...NA, max: 2 };
   const na = naIfNoSector(c, 2); if (na) return na;
   const active = m.regime?.china_plus_one_active;
-  const isBenef = inTheme(c, "china_plus_one");
+  const onCompanyList = !!c?.in_china_plus_one;
+  const inSectorList = inTheme(c, "china_plus_one");
   const sector = getSector(c);
-  // NB: client's spec is "company derives >15% revenue from China+1". We
-  // can't see segment-level revenue from Screener, so this rule uses
-  // SECTOR membership as a proxy. Flag the approximation in the note.
-  const proxyNote = "(Sector-level proxy — client spec asks for >15% revenue exposure, which requires segment data we don't yet capture.)";
-  if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: `China+1 theme not flagged as active. ${proxyNote}` };
-  if (isBenef) return { points: 2, max: 2, status: "pass", value: sector, note: `${m.regime?.china_plus_one_note || "In a sector benefiting from China+1 reorientation."} ${proxyNote}` };
-  return { points: 0, max: 2, status: "fail", value: sector, note: `Sector not in the China+1 / EMS theme list. ${proxyNote}` };
+  if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active in macro context." };
+  // Primary path: curated company list (~50 names with confirmed >15%
+  // China+1 / EMS exposure). Full 2 pts.
+  if (onCompanyList) {
+    return { points: 2, max: 2, status: "pass", value: sector,
+      note: `${m.regime?.china_plus_one_note || "Benefiting from China+1 reorientation."} On curated company list with material China+1 / EMS revenue.` };
+  }
+  // Fallback path: sector membership only. Half credit, since we can't
+  // verify the >15% threshold without segment-level revenue.
+  if (inSectorList) {
+    return { points: 1, max: 2, status: "partial", value: sector,
+      note: `Sector benefits from China+1 theme but company not on the curated >15%-revenue list — partial credit.` };
+  }
+  return { points: 0, max: 2, status: "fail", value: sector, note: "Neither on the curated company list nor in a China+1-benefiting sector." };
 }
 
 function ruleRuralRecovery(c) {
@@ -147,11 +155,13 @@ function ruleBondYields(c) {
   const na = naIfNoSector(c, 1); if (na) return na;
   const y = m.economic.gsec10y;
   const trend = m.economic.gsec10y_trend;
+  const src = m.economic.gsec10y_source || "macro-context.json";
   const sector = getSector(c);
   const benefitsFall = inTheme(c, "bond_falling_benefit");
   const val = `10Y G-Sec ${y}% (${trend})`;
-  if (trend === "declining" && benefitsFall) return { points: 1, max: 1, status: "pass", value: val, note: "Falling 10Y yield — spread compression eases for Banks/NBFCs/Realty." };
-  if (trend === "rising" && benefitsFall) return { points: 0, max: 1, status: "fail", value: val, note: "Rising yields compress NIMs for rate-sensitive financials." };
+  const srcNote = src.toLowerCase().includes("macro-context") ? "" : ` Source: ${src}.`;
+  if (trend === "declining" && benefitsFall) return { points: 1, max: 1, status: "pass", value: val, note: "Falling 10Y yield — spread compression eases for Banks/NBFCs/Realty." + srcNote };
+  if (trend === "rising" && benefitsFall) return { points: 0, max: 1, status: "fail", value: val, note: "Rising yields compress NIMs for rate-sensitive financials." + srcNote };
   return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly bond-yield-sensitive — rule doesn't apply to ${sector}.` };
 }
 

@@ -263,9 +263,9 @@ export const META = {
     },
     chinaplus1: {
       source: (c) => ({ url: "https://www.dpiit.gov.in/", label: "DPIIT / Ministry of Commerce", section: "PLI scheme + China+1 substitution disclosures" }),
-      calculation: "Check if company's Broad Industry is in china_plus_one beneficiary list (Specialty Chemicals, Pharma, Electric Equipment, Electronics).",
+      calculation: "Primary: company NSE ticker on curated china_plus_one_companies list (~50 names — EMS, specialty chemicals, pharma APIs, bearings, auto components with significant China+1 share gain). Fallback: Broad Industry membership in china_plus_one sector theme (Specialty Chemicals, Pharma, Electric Equipment, Electronics).",
       clientLogic: "PASS if company derives > 15% revenue from China+1 substitution or EMS theme; 2 pts.",
-      ourLogic: "Sector-level proxy. The client wants company-level revenue analysis (>15% revenue from China+1) which requires segment-level data we don't yet capture from Screener. We approximate by sector membership.",
+      ourLogic: "Hybrid approach. Primary path: curated company list (~50 names with material China+1 / EMS revenue exposure — full 2 pts on match). Fallback path: sector membership for companies not on the explicit list (1 pt partial credit). Closes the previous sector-only proxy.",
     },
     rural: {
       source: (c) => ({ url: "https://nabard.org/", label: "NABARD / IMD", section: "Rural recovery + monsoon indicators" }),
@@ -301,7 +301,7 @@ export const META = {
       source: (c) => ({ url: "https://www.ccilindia.com/", label: "CCIL / RBI", section: "10-year G-Sec yield + trend" }),
       calculation: null,
       clientLogic: "PASS for Banks / NBFCs if 10Y yield declining; 1 pt. Rising yields compress NIMs = 0 pts.",
-      ourLogic: "10Y yield value + trend is currently set manually in macro-context.json (slow-changing input). Live G-Sec scrape is a future enhancement.",
+      ourLogic: "Live G-Sec yield is fetched daily from a small chain of public sources (Yahoo Finance under several candidate symbols, then a worldgovernmentbonds.com HTML scrape). Falls back to the static value in macro-context.json if all live fetches fail. Trend is computed from the 30-day window when Yahoo returns history; from the same-day change column when scraping worldgovernmentbonds.",
     },
     pli: {
       source: PIB_PLI,

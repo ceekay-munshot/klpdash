@@ -316,17 +316,19 @@ async function loadTab(tabId) {
   }
 
   // Macro tab: merge the loaded macro.json into each row as ._macro, and
-  // set per-company convenience flags in_pli / in_renewable based on NSE
-  // ticker (extracted from Screener URL slug).
+  // set per-company convenience flags in_pli / in_renewable / in_china_plus_one
+  // based on NSE ticker (extracted from Screener URL slug).
   if (tabId === "macro" && rawMeta) {
     const pli = new Set((rawMeta.pli_companies || []).map((s) => String(s).toUpperCase()));
     const renew = new Set((rawMeta.renewable_companies || []).map((s) => String(s).toUpperCase()));
+    const cp1 = new Set((rawMeta.china_plus_one_companies || []).map((s) => String(s).toUpperCase()));
     for (const row of rows) {
       const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
       const ticker = m ? m[1].toUpperCase() : null;
       row._macro = rawMeta;
       row.in_pli = ticker ? pli.has(ticker) : false;
       row.in_renewable = ticker ? renew.has(ticker) : false;
+      row.in_china_plus_one = ticker ? cp1.has(ticker) : false;
     }
   }
 
