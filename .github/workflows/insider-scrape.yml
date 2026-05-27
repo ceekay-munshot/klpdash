@@ -1,14 +1,8 @@
 name: Insider trades scrape
 
 on:
+  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns.
   workflow_dispatch:
-  schedule:
-    # 00:53 UTC == 06:53 IST. Off-peak minute to dodge GitHub's cron queue.
-    - cron: "53 0 * * *"
-  # Chain off Technicals so we don't depend on cron timing.
-  workflow_run:
-    workflows: ["Technicals scrape"]
-    types: [completed]
 
 jobs:
   scrape:
@@ -16,7 +10,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
