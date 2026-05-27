@@ -49,12 +49,12 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Install dependencies (Playwright + cheerio)
         run: |
@@ -98,7 +98,7 @@ jobs:
       # ---- Artifacts (always upload, even on partial failure) ----
       - name: Upload all data artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: daily-refresh-data
           path: |
