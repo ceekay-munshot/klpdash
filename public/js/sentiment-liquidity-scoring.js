@@ -91,18 +91,29 @@ function ruleFnOAvailability(c) {
 
 // ---- master ----
 
+// PCR / Impact Cost / Bid-Ask Spread are part of the client's framework
+// but their data sources (NSE option chain, NSE monthly Impact Cost CSV,
+// NSE real-time order book) all block GitHub Actions runner IPs. We
+// keep the rule functions above so the dashboard auto-lights up if data
+// ever becomes available; for now they live in DEFERRED so they render
+// in the amber "Pending Data Source" panel rather than as N/A clutter
+// in the main scoring grid, and they don't drag down total Max points.
 const ACTIVE_RULES = [
   { key: "vix",      label: "India VIX",         category: "Sentiment", criteria: "< 15 (risk-on)",          fn: ruleIndiaVIX },
   { key: "fiidii",   label: "FII / DII Flow",    category: "Sentiment", criteria: "Net positive 10/20 days", fn: ruleFIIDIIFlow },
-  { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
-  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for mid-cap",      fn: ruleImpactCost },
-  { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
 
-const DEFERRED = [];   // Deferred rules surface as N/A via their own functions
+const DEFERRED = [
+  { key: "pcr",    label: "Put Call Ratio", category: "Sentiment", max: 1,
+    reason: "NSE option-chain API blocks GitHub Actions runner IPs. Tried 5 sources (NSE v1/v3, Yahoo, MoneyControl, NSE F&O bhavcopy in 4 URL formats) — none returned usable data. Permanently deferred until a paid feed or browser-resident relay." },
+  { key: "impact", label: "Impact Cost",    category: "Liquidity", max: 2,
+    reason: "NSE's monthly Impact Cost CSV is gated by bot detection from CI environments. Self-healing scraper probes 8 URL patterns × 6 months on every run — zero hits in production. Permanently deferred." },
+  { key: "spread", label: "Bid-Ask Spread", category: "Liquidity", max: 1,
+    reason: "Requires real-time NSE order-book feed (paid market-data vendor). Permanently deferred — bad effort/value ratio for 1 point. Will light up immediately if you ever wire in a paid feed." },
+];
 
 export function scoreCompany(c) {
   if (c?.error) {
