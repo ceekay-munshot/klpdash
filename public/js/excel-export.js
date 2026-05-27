@@ -111,22 +111,85 @@ function styleHeaderRow(row) {
   });
 }
 
+// Extract the displayed text from a cell value (handles hyperlink objects).
+function cellText(value) {
+  if (value == null) return "";
+  if (typeof value === "object") return value.text || value.richText?.map((r) => r.text).join("") || "";
+  return String(value);
+}
+
+// After data is in place, walk the sheet and:
+//   1. Widen each column to fit its actual longest content (clamped by
+//      minWidth/maxWidth), respecting any preset width that's already wider.
+//   2. Grow each data-row height enough to show wrapped multi-line content.
+// This is our best ExcelJS substitute for "auto-fit columns / rows" — the
+// library has no native equivalent, and our previous fixed heights of 22pt
+// were truncating wrapped trend cells like
+// "FII 18.56 → 18.14 → 18.51 → 19.51 → DII 25.45 → 23.6" into adjacent rows.
+function autoFitSheet(sheet, opts = {}) {
+  const minWidth     = opts.minWidth     ?? 10;
+  const maxWidth     = opts.maxWidth     ?? 40;
+  const headerHeight = opts.headerHeight ?? 28;
+  const minRowHeight = opts.minRowHeight ?? 22;
+  const lineHeight   = opts.lineHeight   ?? 14;
+
+  // Pass 1: determine max content length per column.
+  const colMaxLen = {};
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    row.eachCell({ includeEmpty: false }, (cell, col) => {
+      const text = cellText(cell.value);
+      const lineLens = text.split(/\n/).map((s) => s.length);
+      const longest = Math.max(0, ...lineLens);
+      if (longest > (colMaxLen[col] || 0)) colMaxLen[col] = longest;
+    });
+  });
+  // Apply widths (don't shrink columns that were explicitly set wider).
+  Object.entries(colMaxLen).forEach(([col, len]) => {
+    const target = Math.max(minWidth, Math.min(maxWidth, len + 2));
+    const c = sheet.getColumn(Number(col));
+    c.width = Math.max(c.width || 0, target);
+  });
+
+  // Pass 2: row heights based on wrap-line estimate.
+  sheet.eachRow({ includeEmpty: false }, (row, rowIdx) => {
+    if (rowIdx === 1) { row.height = headerHeight; return; }
+    let maxLines = 1;
+    row.eachCell({ includeEmpty: false }, (cell, col) => {
+      const text = cellText(cell.value);
+      if (!text) return;
+      const wrapText = cell.alignment?.wrapText !== false;
+      const colWidth = sheet.getColumn(col).width || minWidth;
+      // Lines come from explicit \n plus, if wrapping, ceil(line / colWidth).
+      const explicitLines = text.split(/\n/);
+      let total = 0;
+      for (const line of explicitLines) {
+        if (wrapText) total += Math.max(1, Math.ceil(line.length / Math.max(1, colWidth - 1)));
+        else total += 1;
+      }
+      if (total > maxLines) maxLines = total;
+    });
+    row.height = Math.max(minRowHeight, maxLines * lineHeight + 6);
+  });
+}
+
 // ---------------- Sheet 1: Ranked Companies ----------------
 function buildRankedSheet(wb, tab, cfg, scored, ruleMetaForTab) {
   const sheet = wb.addWorksheet("Ranked Companies", {
     views: [{ state: "frozen", xSplit: 2, ySplit: 1 }],
   });
 
-  // Build column definitions.
+  // Build column definitions. Widths are tentative — the auto-fit pass at
+  // the end of buildRankedSheet will widen narrow columns based on actual
+  // content and grow row heights to accommodate wrapped text.
   const columns = [
     { header: "Rank",       key: "rank",      width: 7 },
     { header: "Company",    key: "company",   width: 34 },
     { header: "Score",      key: "score",     width: 9 },
     { header: "Score %",    key: "scorePct",  width: 11 },
-    { header: "Hard Fails", key: "hardFails", width: 18 },
+    { header: "Hard Fails", key: "hardFails", width: 22 },
   ];
   cfg.rules.forEach((r) => {
-    columns.push({ header: r.label, key: r.key, width: Math.max(14, r.label.length + 2) });
+    columns.push({ header: r.label, key: r.key, width: Math.max(18, r.label.length + 2) });
   });
   sheet.columns = columns;
 
@@ -203,7 +266,7 @@ function buildRankedSheet(wb, tab, cfg, scored, ruleMetaForTab) {
         }
       });
     }
-    row.height = 22;
+    // Row height is set by the autoFitSheet pass after all data is in place.
   });
 
   // Heat-map color scale on total Score column (col C = index 3).
@@ -243,6 +306,8 @@ function buildRankedSheet(wb, tab, cfg, scored, ruleMetaForTab) {
     from: { row: 1, column: 1 },
     to:   { row: lastRow, column: columns.length },
   };
+
+  autoFitSheet(sheet, { minWidth: 10, maxWidth: 38, lineHeight: 14, minRowHeight: 24 });
 }
 
 // ---------------- Sheet 2: Scoring Framework ----------------
@@ -279,7 +344,6 @@ function buildFrameworkSheet(wb, tab, cfg, ruleMetaForTab) {
         row.getCell(k).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR.bandFill } };
       });
     }
-    row.height = 36;
   });
 
   // Deferred rules section (if any) - appended below.
@@ -303,9 +367,10 @@ function buildFrameworkSheet(wb, tab, cfg, ruleMetaForTab) {
         const cur = row.getCell(k).font || {};
         row.getCell(k).font = { ...cur, color: { argb: COLOR.naText } };
       });
-      row.height = 26;
     });
   }
+
+  autoFitSheet(sheet, { minWidth: 12, maxWidth: 80, lineHeight: 14, minRowHeight: 28 });
 }
 
 // ---------------- Sheet 3: Distribution ----------------
@@ -364,7 +429,6 @@ function buildDistributionSheet(wb, cfg, scored) {
     if (i % 2 === 0) {
       row.getCell("rule").fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR.bandFill } };
     }
-    row.height = 22;
   });
 
   // Heat-map on the pass-rate column (G).
@@ -385,6 +449,8 @@ function buildDistributionSheet(wb, cfg, scored) {
       ],
     }],
   });
+
+  autoFitSheet(sheet, { minWidth: 10, maxWidth: 30, lineHeight: 14, minRowHeight: 22 });
 }
 
 // ---------------- Sheet 4: Top 25 ----------------
@@ -440,7 +506,6 @@ function buildTop25Sheet(wb, cfg, scored) {
       hfCell.alignment = { horizontal: "center" };
       hfCell.font = { color: { argb: COLOR.naText } };
     }
-    row.height = 22;
   });
 
   // Heat-map on Score column (E).
@@ -472,6 +537,8 @@ function buildTop25Sheet(wb, cfg, scored) {
       }],
     });
   }
+
+  autoFitSheet(sheet, { minWidth: 8, maxWidth: 36, lineHeight: 14, minRowHeight: 22 });
 }
 
 // ---------------- Public API ----------------
