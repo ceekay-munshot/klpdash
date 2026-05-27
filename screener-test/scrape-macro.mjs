@@ -45,6 +45,18 @@ async function run() {
   console.log("  USD/INR:    ", live.usdinr.latest, "(30d change:", live.usdinr.pct_change_30d + "%)");
   console.log("  India VIX:  ", live.india_vix.latest);
 
+  // 10Y G-Sec yield — try a small chain of public sources. If all fail we
+  // silently fall through to the static `gsec10y` value baked into
+  // macro-context.json (so the dashboard never goes blank).
+  console.log("\nFetching India 10Y G-Sec yield...");
+  const gsec = await fetchGSec10Y();
+  if (gsec) {
+    live.gsec10y = gsec;
+    console.log(`  10Y yield: ${gsec.latest}% (${gsec.trend}) via ${gsec.source}`);
+  } else {
+    console.log("  10Y yield: live fetch failed — falling back to static macro-context.json value.");
+  }
+
   // Live NSE sentiment fetches — FII/DII flow, PCR, A/D ratio. Each is
   // best-effort: if NSE blocks our IP we fall back to the static value
   // (or null) and the Sentiment tab rule shows the right N/A note.
@@ -63,16 +75,25 @@ async function run() {
   // Merge: prefer live values where present, fall back to static
   const sentiment = { ...(stat.sentiment || {}), ...liveSentiment };
 
+  // Economic block — overlay live 10Y yield on top of static values if we got it.
+  const economic = { ...stat.economic };
+  if (live.gsec10y) {
+    economic.gsec10y = live.gsec10y.latest;
+    economic.gsec10y_trend = live.gsec10y.trend;
+    economic.gsec10y_source = live.gsec10y.source;
+  }
+
   const payload = {
     generated_at: new Date().toISOString(),
     source: "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
     live,
-    economic: stat.economic,
+    economic,
     regime: stat.regime,
     sentiment,
     sector_themes: stat.sector_themes,
     pli_companies: stat.pli_companies,
     renewable_companies: stat.renewable_companies,
+    china_plus_one_companies: stat.china_plus_one_companies || [],
     static_last_updated: stat._last_manual_update || null,
   };
 
@@ -96,6 +117,7 @@ function writeStaticOnly(reason) {
       sector_themes: stat.sector_themes,
       pli_companies: stat.pli_companies,
       renewable_companies: stat.renewable_companies,
+      china_plus_one_companies: stat.china_plus_one_companies || [],
       static_last_updated: stat._last_manual_update || null,
     };
     mkdirSync(dirname(OUT_PATH), { recursive: true });
@@ -104,6 +126,63 @@ function writeStaticOnly(reason) {
   } catch (e) {
     console.error("Couldn't even write static-only:", e.message);
   }
+}
+
+// India 10Y G-Sec yield — public sources are unreliable from CI IPs, so we
+// try a small chain and accept whichever responds first. If all fail we
+// return null and the static value in macro-context.json wins.
+async function fetchGSec10Y() {
+  // Path 1: Yahoo Finance under any of the symbols the community has used
+  // for India 10Y bond yield. None of these is officially documented; we
+  // probe and use whichever returns a non-empty close series.
+  const yahooSymbols = ["INDGB10Y=X", "^IN10Y", "^IN10YT", "IN10YT-RR", "^IND10Y"];
+  for (const sym of yahooSymbols) {
+    try {
+      const closes = await fetchYahoo(sym, 35);
+      if (closes && closes.length >= 5) {
+        const summary = trendSummary(closes, "%");
+        return { latest: summary.latest, trend: summary.trend, history_bars: closes.length, source: `Yahoo (${sym})` };
+      }
+    } catch { /* try next */ }
+  }
+
+  // Path 2: scrape worldgovernmentbonds.com — simple static HTML, no JS.
+  // The 10Y row sits in a table; we look for the yield percentage adjacent
+  // to the "10 years" anchor.
+  try {
+    const r = await fetch("https://www.worldgovernmentbonds.com/country/india/", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9",
+      },
+    });
+    if (r.ok) {
+      const html = await r.text();
+      // The page renders a table row like:
+      //   <tr><td>10 years</td><td>6.95%</td><td>...</td><td>+0.01</td>...</tr>
+      // We grab the first percentage in the row containing "10 years".
+      const rowMatch = html.match(/10\s*years?[\s\S]{0,400}?<\/tr>/i);
+      if (rowMatch) {
+        const pctMatch = rowMatch[0].match(/(\d+\.\d{1,3})\s*%/);
+        const changeMatch = rowMatch[0].match(/([+-]?\d+\.\d{1,4})\s*<\/td>/);
+        if (pctMatch) {
+          const value = Number(pctMatch[1]);
+          // The change column on WGB is a 1-day move, so we don't have a
+          // robust 30d trend from a single fetch. Approximate trend from
+          // sign of recent change column if present, else "stable".
+          let trend = "stable";
+          if (changeMatch) {
+            const change = Number(changeMatch[1]);
+            if (change > 0.05) trend = "rising";
+            else if (change < -0.05) trend = "declining";
+          }
+          return { latest: value, trend, history_bars: 1, source: "worldgovernmentbonds.com" };
+        }
+      }
+    }
+  } catch { /* fall through */ }
+
+  return null;
 }
 
 async function fetchYahoo(symbol, days) {
