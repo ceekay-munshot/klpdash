@@ -23,11 +23,9 @@ on:
         required: false
         type: string
         default: "0"
-  schedule:
-    # 00:23 UTC == 06:23 IST. Off the :00/:15/:30/:45 marks where GitHub's
-    # cron scheduler queues up runs and frequently delays / skips during
-    # high load (per GitHub docs).
-    - cron: "23 0 * * *"
+  # Scheduled runs live in daily-refresh.yml. This workflow is now
+  # workflow_dispatch-only — kept for manual single-scraper reruns
+  # (e.g. resuming a partial fundamentals scrape via start_at).
 
 jobs:
   scrape:

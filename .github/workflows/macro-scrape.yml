@@ -1,14 +1,8 @@
 name: Macro scrape
 
 on:
+  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns.
   workflow_dispatch:
-  schedule:
-    # 01:08 UTC == 06:38 IST + 30 min == 07:08 IST. Off-peak minute.
-    - cron: "8 1 * * *"
-  # Chain off Insider so we don't depend on cron timing.
-  workflow_run:
-    workflows: ["Insider trades scrape"]
-    types: [completed]
 
 jobs:
   scrape:
@@ -16,7 +10,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

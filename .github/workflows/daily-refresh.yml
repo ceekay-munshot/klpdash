@@ -1,0 +1,143 @@
+name: Daily refresh (all scrapers)
+
+# One workflow, one cron, all four scrapers in sequence.
+#
+# Why this exists: previously we had four separate workflows each on its own
+# cron schedule, chained via workflow_run. GitHub Actions consistently delayed
+# the scheduled triggers by 4-6 hours under load, and the workflow_run chain
+# added queueing overhead between handoffs. Consolidating into a single
+# workflow eliminates the chain races and reduces our exposure to GitHub's
+# cron queue (one fire instead of four).
+#
+# Total runtime budget: ~55 min (Fundamentals ~50, Technicals ~4, Insider ~1,
+# Macro <1). Well under the 6-hour job timeout.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Screener saved-screen URL"
+        required: true
+        type: string
+        default: "https://www.screener.in/screens/3675531/fundareal-klp-final/"
+      max_companies:
+        description: "How many companies to scrape (0 = all)"
+        required: false
+        type: string
+        default: "0"
+      max_pages:
+        description: "Safety cap on screen pages to read"
+        required: false
+        type: string
+        default: "30"
+      start_at:
+        description: "Resume index for fundamentals (0 = start from the first company)"
+        required: false
+        type: string
+        default: "0"
+  schedule:
+    # 00:23 UTC == 05:53 IST. Off the :00/:15/:30/:45 marks where GitHub's
+    # cron scheduler queues up runs and frequently delays / skips during
+    # high load.
+    - cron: "23 0 * * *"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies (Playwright + cheerio)
+        run: |
+          npm install playwright@1 cheerio@1 --no-save
+          npx playwright install --with-deps chromium
+
+      # ---- 1. Fundamentals (Screener.in) — the slow one (~50 min) ----
+      - name: Run fundamentals scraper
+        env:
+          SCREENER_EMAIL: ${{ secrets.SCREENER_EMAIL }}
+          SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
+          SCREEN_URL: ${{ inputs.url || 'https://www.screener.in/screens/3675531/fundareal-klp-final/' }}
+          MAX_COMPANIES: ${{ inputs.max_companies || '0' }}
+          MAX_PAGES: ${{ inputs.max_pages || '30' }}
+          START_AT: ${{ inputs.start_at || '0' }}
+        run: node screener-test/scrape.mjs
+
+      - name: Sync fundamentals into public/data
+        run: |
+          mkdir -p public/data
+          cp screener-test/output/screener-companies.csv public/data/
+          cp screener-test/output/screener-companies.json public/data/
+          cp screener-test/output/metadata.json public/data/
+
+      # ---- 2. Technicals (Yahoo) — ~4 min ----
+      - name: Run technicals scraper
+        run: node screener-test/scrape-technicals.mjs
+
+      # ---- 3. Insider trades (NSE PIT) — ~1 min, non-fatal ----
+      # NSE occasionally returns 403/empty on bot detection. Don't kill
+      # the whole daily refresh over insider data — surface as a warning.
+      - name: Run insider scraper
+        continue-on-error: true
+        run: node screener-test/scrape-insider.mjs
+
+      # ---- 4. Macro (Yahoo + NSE FII/DII) — <1 min, non-fatal ----
+      - name: Run macro scraper
+        continue-on-error: true
+        run: node screener-test/scrape-macro.mjs
+
+      # ---- Artifacts (always upload, even on partial failure) ----
+      - name: Upload all data artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-refresh-data
+          path: |
+            public/data/screener-companies.csv
+            public/data/screener-companies.json
+            public/data/metadata.json
+            public/data/technicals.json
+            public/data/insider-trades.json
+            public/data/macro.json
+            public/data/atr-history.json
+            public/data/fii-dii-history.json
+          if-no-files-found: warn
+
+      # ---- One commit, one push ----
+      - name: Commit refreshed data to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/screener-companies.csv public/data/screener-companies.json public/data/metadata.json
+          git add public/data/technicals.json
+          [ -f public/data/insider-trades.json ] && git add public/data/insider-trades.json || true
+          [ -f public/data/macro.json ] && git add public/data/macro.json || true
+          [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
+          [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+            exit 0
+          fi
+          git commit -m "Daily refresh ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push still failing after 4 attempts."
+          exit 1
