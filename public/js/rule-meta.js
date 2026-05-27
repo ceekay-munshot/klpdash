@@ -91,7 +91,7 @@ export const META = {
       source: SCREENER,
       calculation: null,
       clientLogic: "PASS if Debt/Equity < 0.5; 2 pts. 0.5–1.0 = 1 pt. > 1.0 = 0 pts. Exclude financial sector.",
-      ourLogic: "Financial-sector exclusion is applied: if company's Broad Sector is 'Financial Services', the rule is marked N/A with explanation.",
+      ourLogic: null,
     },
     icr: {
       source: SCREENER,
@@ -109,7 +109,7 @@ export const META = {
       source: SCREENER_SHAREHOLD,
       calculation: null,
       clientLogic: "PASS if Promoter Pledge < 5%; 2 pts. 5–20% = 1 pt. > 20% = hard fail. Rising pledge trend = red flag.",
-      ourLogic: "Threshold and hard-fail logic match the client exactly. Rising-pledge-trend flag is best-effort: Screener exposes pledge as a sub-row that only appears when promoters have pledged shares, so we don't reliably have multi-quarter pledge history. For companies in the 5–20% range the trend signal is therefore single-snapshot only. Most cases (0% pledge, or >20% hard-fail) are unaffected.",
+      ourLogic: null,
     },
     ph: {
       source: SCREENER_SHAREHOLD,
@@ -349,10 +349,10 @@ export const META = {
       ourLogic: null,
     },
     impact: {
-      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication (deferred)" }),
-      calculation: null,
+      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication — auto-scraped" }),
+      calculation: "Self-healing scraper probes NSE's archive URL pattern across the last 6 months and a small set of historical filename conventions (imc_MMM_YYYY.csv, imc_MMMYYYY.csv, etc.). First responding URL wins. Result is committed to public/data/impact-cost.json and merged per-ticker into Sentiment tab rows.",
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
-      ourLogic: "Deferred. NSE's monthly Impact Cost CSV has a dynamic URL pattern that changes per month — risky to scrape without manual maintenance. Could revisit in a follow-up.",
+      ourLogic: null,
     },
     spread: {
       source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE live order book", section: "Real-time bid-ask spread (deferred)" }),

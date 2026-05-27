@@ -281,9 +281,31 @@ function ruleCurrentRatio(c) {
 function rulePledge(c) {
   const v = parsePercent(c["Pledged percentage"]);
   if (v == null) return naWithReason(c, "pledge", 2);
-  if (v < 5) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "Promoter pledge < 5%." };
-  if (v <= 20) return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "Promoter pledge 5–20%." };
-  return { points: 0, max: 2, status: "hard_fail", value: fmtPct(v), note: "Promoter pledge > 20% — hard fail." };
+  // Rising-pledge red flag: client spec says rising trend = downgrade.
+  // We only have a multi-quarter series when Screener exposed the pledge
+  // sub-row (i.e. promoters have actually pledged). For 0% companies the
+  // series is empty and the trend check is a no-op.
+  const series = parseSeries(c["Pledge Series"]);
+  let trendNote = "";
+  let rising = false;
+  if (series.length >= 2) {
+    const first = series[0];
+    const last = series[series.length - 1];
+    if (last > first + 0.5) {
+      rising = true;
+      trendNote = ` Rising trend ${first}% → ${last}% across ${series.length} quarters — flagged per client framework.`;
+    } else if (last < first - 0.5) {
+      trendNote = ` Trend declining ${first}% → ${last}%.`;
+    } else {
+      trendNote = ` Trend roughly stable.`;
+    }
+  }
+  if (v < 5) return { points: 2, max: 2, status: "pass", value: fmtPct(v), note: "Promoter pledge < 5%." + trendNote };
+  if (v <= 20) {
+    if (rising) return { points: 0, max: 2, status: "fail", value: fmtPct(v), note: `Promoter pledge ${fmtPct(v)} and rising — red flag per client framework.` + trendNote };
+    return { points: 1, max: 2, status: "partial", value: fmtPct(v), note: "Promoter pledge 5–20%." + trendNote };
+  }
+  return { points: 0, max: 2, status: "hard_fail", value: fmtPct(v), note: "Promoter pledge > 20% — hard fail." + trendNote };
 }
 
 function rulePromoterHolding(c) {
