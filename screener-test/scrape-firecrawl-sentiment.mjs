@@ -111,87 +111,58 @@ async function firecrawl(url, { formats = ["html"], timeoutMs = 45000 } = {}) {
 // ---------- 1. Put-Call Ratio ----------
 
 async function fetchPCR() {
-  // Path A: NSE's official option-chain JSON. Firecrawl can render the
-  // response and return the raw HTML/text — for a JSON endpoint that's
-  // the JSON wrapped in a <pre> tag.
-  const nseUrl = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY";
-  console.log("PCR path A: NSE option-chain API via Firecrawl...");
-  const r1 = await firecrawl(nseUrl, { formats: ["rawHtml", "html"] });
-  if (r1) {
-    const raw = r1.rawHtml || r1.html || "";
-    console.log(`  Response sample (first 300 chars): ${raw.slice(0, 300)}`);
-    // The endpoint returns JSON. Firecrawl may wrap it in <html><body><pre>{...}</pre></body></html>.
-    const jsonMatch = raw.match(/\{[\s\S]*"records"[\s\S]*"filtered"[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        const data = JSON.parse(jsonMatch[0]);
-        const rows = data?.filtered?.data || data?.records?.data || [];
-        console.log(`  Parsed JSON — ${rows.length} option-chain rows`);
-        let totalPE = 0, totalCE = 0;
-        for (const row of rows) {
-          totalPE += Number(row?.PE?.openInterest || 0);
-          totalCE += Number(row?.CE?.openInterest || 0);
-        }
-        if (totalCE > 0) {
-          const pcr = Math.round((totalPE / totalCE) * 100) / 100;
-          return { value: pcr, source: "NSE option-chain API (via Firecrawl)", basis: `${totalPE.toLocaleString()} PE / ${totalCE.toLocaleString()} CE` };
-        }
-        console.log(`  PCR couldn't be computed — totalCE=${totalCE}, totalPE=${totalPE}`);
-      } catch (e) {
-        console.log("  Could not parse NSE JSON:", e.message);
-      }
-    } else {
-      console.log("  NSE response didn't contain expected JSON structure.");
-    }
-  }
+  // After the 28 May 2026 diagnostic run we learned NSE's `/api/option-
+  // chain-indices` endpoint now 404s, Trendlyne gates with a CAPTCHA and
+  // Sensibull's `/screeners/pcr` returned a 404. So this revision walks
+  // a different set of currently-working sources, all rendered through
+  // Firecrawl's headless browser so JS-only content is captured.
 
-  // Path B: Trendlyne PCR widget. Simple HTML page that publishes a number.
-  console.log("PCR path B: Trendlyne fallback...");
-  const tlUrl = "https://trendlyne.com/macro-data/derivatives/pcr/nifty/";
-  const r2 = await firecrawl(tlUrl, { formats: ["markdown", "html"] });
-  if (r2) {
-    const md = (r2.markdown || "");
-    const html = (r2.html || "");
-    console.log(`  Markdown sample (first 300 chars): ${md.slice(0, 300)}`);
-    // Try multiple regex patterns — Trendlyne's page layout has changed
-    // a few times in the past.
-    const patterns = [
-      /(?:Nifty\s*PCR|Put[-\s]Call\s*Ratio)[^0-9]{0,30}(\d+\.\d{1,3})/i,
-      /(?:PCR|put.call.ratio)\D{0,20}(\d+\.\d{1,3})/i,
-      /(\d+\.\d{1,3})\s*(?:PCR|Put.Call)/i,
-    ];
-    const text = md + "\n" + html;
-    for (const pat of patterns) {
-      const m = text.match(pat);
-      if (m) {
-        const pcr = Number(m[1]);
-        if (pcr > 0 && pcr < 5) {
-          console.log(`  Matched pattern: ${pat} -> ${pcr}`);
-          return { value: pcr, source: "Trendlyne (via Firecrawl)", basis: "page scrape" };
-        }
-      }
-    }
-    console.log("  None of the Trendlyne regex patterns matched.");
-  }
+  // Path A: NSE's human-facing option chain page. Firecrawl renders the
+  // SPA — the PCR is shown in a "Put Call Ratio: X.YZ" widget on the
+  // page after the JS executes.
+  const nseUrl = "https://www.nseindia.com/option-chain";
+  console.log("PCR path A: NSE option-chain HTML page via Firecrawl...");
+  const r1 = await firecrawl(nseUrl, { formats: ["markdown", "html"], timeoutMs: 60000 });
+  const pcr1 = extractPCRFromText(r1, /(?:Put\s*Call\s*Ratio|PCR)[^0-9]{0,40}(\d+\.\d{1,3})/i);
+  if (pcr1) return { ...pcr1, source: "NSE option-chain page (via Firecrawl)" };
 
-  // Path C: Sensibull NIFTY page — alternative public source for PCR.
-  console.log("PCR path C: Sensibull fallback...");
-  const sbUrl = "https://www.sensibull.com/screeners/pcr";
-  const r3 = await firecrawl(sbUrl, { formats: ["markdown", "html"] });
-  if (r3) {
-    const text = (r3.markdown || "") + "\n" + (r3.html || "");
-    console.log(`  Sensibull sample (first 300 chars): ${text.slice(0, 300)}`);
-    // Sensibull tables show "NIFTY 50  ...  1.03" - grab the number near "NIFTY 50".
-    const m = text.match(/NIFTY\s*50[^0-9]{0,80}(\d+\.\d{2,3})/i);
-    if (m) {
-      const pcr = Number(m[1]);
-      if (pcr > 0 && pcr < 5) {
-        return { value: pcr, source: "Sensibull (via Firecrawl)", basis: "screener table" };
-      }
-    }
-  }
+  // Path B: MoneyControl markets summary. Shows "Nifty 50 PCR: X.YZ" in
+  // their derivatives section. Static HTML, low risk of captcha.
+  const mcUrl = "https://www.moneycontrol.com/stocks/marketstats/nse_pcr.php";
+  console.log("PCR path B: MoneyControl PCR page via Firecrawl...");
+  const r2 = await firecrawl(mcUrl, { formats: ["markdown", "html"], timeoutMs: 45000 });
+  const pcr2 = extractPCRFromText(r2, /(?:Nifty\s*50|NIFTY)[^0-9]{0,60}(\d+\.\d{1,3})/i);
+  if (pcr2) return { ...pcr2, source: "MoneyControl (via Firecrawl)" };
+
+  // Path C: Upstox option-chain. The public page displays a PCR figure
+  // alongside the NIFTY chain. JS-rendered, so we need Firecrawl.
+  const upstoxUrl = "https://upstox.com/option-chain/NIFTY/";
+  console.log("PCR path C: Upstox option-chain via Firecrawl...");
+  const r3 = await firecrawl(upstoxUrl, { formats: ["markdown", "html"], timeoutMs: 60000 });
+  const pcr3 = extractPCRFromText(r3, /(?:PCR|Put.?Call)[^0-9]{0,40}(\d+\.\d{1,3})/i);
+  if (pcr3) return { ...pcr3, source: "Upstox (via Firecrawl)" };
+
+  // Path D: NiftyTrader — long-running free public site with NIFTY PCR.
+  const ntUrl = "https://niftytrader.in/openinterest/option-chain.aspx";
+  console.log("PCR path D: NiftyTrader fallback...");
+  const r4 = await firecrawl(ntUrl, { formats: ["markdown", "html"], timeoutMs: 60000 });
+  const pcr4 = extractPCRFromText(r4, /(?:PCR|Put.?Call.?Ratio)[^0-9]{0,40}(\d+\.\d{1,3})/i);
+  if (pcr4) return { ...pcr4, source: "NiftyTrader (via Firecrawl)" };
 
   return null;
+}
+
+// Tries a regex against (markdown ?? "") + "\n" + (html ?? "") and
+// returns { value, basis } if a plausible PCR number is found.
+function extractPCRFromText(firecrawlData, regex) {
+  if (!firecrawlData) return null;
+  const text = (firecrawlData.markdown || "") + "\n" + (firecrawlData.html || "");
+  if (!text.trim()) return null;
+  const m = text.match(regex);
+  if (!m) return null;
+  const pcr = Number(m[1]);
+  if (!Number.isFinite(pcr) || pcr <= 0 || pcr >= 5) return null;
+  return { value: pcr, basis: `regex match around "${m[0].slice(0, 80)}"` };
 }
 
 // ---------- 2. Impact Cost ----------
@@ -247,39 +218,63 @@ function parseImpactCostCSV(text) {
 }
 
 async function fetchImpactCost() {
-  // Budget: don't burn many Firecrawl credits chasing this. Try the most
-  // likely months (recent 4) with the 4 most common URL patterns each.
-  // Stop on first parseable response.
-  const months = recentMonths(4);
-  console.log(`Impact cost: probing months ${months.map(m => m.abbr+" "+m.year).join(", ")}`);
-  for (const month of months) {
-    for (const url of urlCandidates(month).slice(0, 4)) {
-      console.log(`  via Firecrawl: ${url}`);
-      const res = await firecrawl(url, { formats: ["rawHtml"], timeoutMs: 30000 });
-      if (!res) { continue; }
-      const text = res.rawHtml || "";
-      console.log(`    body length: ${text.length}, first 200 chars: ${text.slice(0, 200).replace(/\n/g, " ")}`);
-      if (!text || text.length < 200) {
-        console.log("    empty body");
-        continue;
-      }
-      if (/<!doctype html/i.test(text.slice(0, 50))) {
-        console.log("    body is HTML — wrong format for a CSV endpoint");
-        continue;
-      }
-      const parsed = parseImpactCostCSV(text);
-      if (parsed) {
-        console.log(`    PARSED: ${Object.keys(parsed).length} tickers`);
-        return {
-          period: `${month.abbr} ${month.year}`,
-          source: url,
-          companies: Object.fromEntries(Object.entries(parsed).map(([s, v]) => [s, v])),
-        };
-      }
-      console.log("    got body, couldn't parse as Impact Cost CSV");
-      await sleep(200);
-    }
+  // After May 2026 diagnostic runs we learned every speculative CSV path
+  // returned a 404 page from nseindia. Instead of guessing more URL
+  // patterns, scrape the human-facing Impact Cost product page and
+  // extract whatever CSV/file links it actually publishes. Then download
+  // the most-recent one through Firecrawl.
+  const productsUrl = "https://www.nseindia.com/products-services/equity-market-impact-cost";
+  console.log("Impact cost: discovering current CSV URL from NSE product page...");
+  const idx = await firecrawl(productsUrl, { formats: ["html", "markdown", "links"], timeoutMs: 60000 });
+  if (!idx) {
+    console.log("  Could not load Impact Cost product page.");
+    return null;
   }
+
+  // Firecrawl returns extracted links in idx.links — but we also fall back
+  // to regex-scanning the raw HTML if links is empty.
+  const collected = new Set();
+  for (const l of (idx.links || [])) collected.add(String(l));
+  const html = idx.html || "";
+  for (const m of html.matchAll(/href=["']([^"']+)["']/gi)) collected.add(m[1]);
+
+  // Filter to anything that looks like an impact-cost data file.
+  const candidates = [...collected].filter((u) => /impact[_\-\s]?cost/i.test(u) && /\.(csv|xlsx|zip)/i.test(u));
+  console.log(`  Found ${candidates.length} candidate impact-cost links on the product page.`);
+  candidates.slice(0, 8).forEach((u, i) => console.log(`    [${i}] ${u}`));
+
+  // Resolve relative URLs and try each in order — the page typically lists
+  // newest first.
+  const baseUrl = new URL(productsUrl);
+  const fullUrls = candidates.map((u) => {
+    try { return new URL(u, baseUrl).href; } catch { return null; }
+  }).filter(Boolean);
+
+  for (const url of fullUrls) {
+    console.log(`  Trying candidate: ${url}`);
+    const res = await firecrawl(url, { formats: ["rawHtml"], timeoutMs: 45000 });
+    if (!res) continue;
+    const text = res.rawHtml || "";
+    if (!text || text.length < 200) continue;
+    if (/<!doctype html/i.test(text.slice(0, 50))) {
+      console.log("    body is HTML — not the CSV we wanted");
+      continue;
+    }
+    const parsed = parseImpactCostCSV(text);
+    if (parsed) {
+      console.log(`    PARSED: ${Object.keys(parsed).length} tickers`);
+      // Period inferred from filename if possible (e.g. imc_Apr_2026.csv).
+      const periodMatch = url.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[_\-]?(\d{4})/i);
+      const period = periodMatch ? `${periodMatch[1]} ${periodMatch[2]}` : "recent";
+      return {
+        period,
+        source: url,
+        companies: Object.fromEntries(Object.entries(parsed).map(([s, v]) => [s, v])),
+      };
+    }
+    console.log("    got body, couldn't parse as Impact Cost CSV");
+  }
+  console.log("  No candidate URL produced a parseable impact-cost CSV.");
   return null;
 }
 
