@@ -58,13 +58,12 @@ async function run() {
   const deliveryTrends = await buildDeliveryTrends();
   console.log(`  Got delivery trends for ${Object.keys(deliveryTrends).length} tickers`);
 
-  // Yahoo v7 quote endpoint — supports up to 100 symbols per call and
-  // returns live bid/ask alongside CMP. Chart-meta (used by fetchBars)
-  // doesn't carry these for NSE tickers, so this is the only Yahoo path
-  // that gets us spread data without burning Firecrawl credits per stock.
-  console.log(`\nFetching Yahoo v7 quote bid/ask snapshots...`);
-  const spreadByTicker = await fetchYahooSpreads(companies);
-  console.log(`  Got spread data for ${Object.keys(spreadByTicker).length} / ${companies.length} tickers`);
+  // NB: previously called Yahoo v7 /finance/quote here for bid/ask. Two
+  // production runs confirmed Yahoo doesn't carry NSE Level-1 quote
+  // data (0/506 coverage on both chart-meta and v7 endpoints). Bid-Ask
+  // Spread is now marked deferred in sentiment-liquidity-scoring.js
+  // until you wire in a paid market-data feed.
+  const spreadByTicker = {};
 
   const results = [];
   let failures = 0;
@@ -191,53 +190,8 @@ function extractTicker(url) {
   return m ? m[1].toUpperCase() : null;
 }
 
-// Yahoo Finance v7 quote endpoint — accepts up to 100 symbols per call
-// (we batch in 100s) and returns regularMarketBid / regularMarketAsk
-// for any ticker Yahoo has Level-1 data for. Returns a map of
-// { TICKER -> spread_pct_of_mid }. Tickers Yahoo omits are simply
-// absent from the map.
-async function fetchYahooSpreads(companies) {
-  const out = {};
-  const tickers = companies
-    .map((c) => extractTicker(c["Screener URL"]))
-    .filter(Boolean);
-  const symbols = tickers.map((t) => `${t}.NS`);
-  const batchSize = 100;
-  for (let i = 0; i < symbols.length; i += batchSize) {
-    const batch = symbols.slice(i, i + batchSize);
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(batch.join(","))}`;
-    const headers = { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" };
-    try {
-      const r = await fetch(url, { headers });
-      if (!r.ok) {
-        process.stdout.write(`  batch ${Math.floor(i/batchSize)+1}: HTTP ${r.status}\n`);
-        continue;
-      }
-      const j = await r.json();
-      const results = j?.quoteResponse?.result || [];
-      for (const q of results) {
-        const sym = q.symbol; // e.g. "RELIANCE.NS"
-        const ticker = sym?.replace(/\.NS$/, "").toUpperCase();
-        if (!ticker) continue;
-        const bid = Number(q.bid ?? q.regularMarketBid);
-        const ask = Number(q.ask ?? q.regularMarketAsk);
-        if (!Number.isFinite(bid) || !Number.isFinite(ask)) continue;
-        if (bid <= 0 || ask <= 0 || ask <= bid) continue;
-        const mid = (bid + ask) / 2;
-        out[ticker] = Math.round(((ask - bid) / mid) * 100 * 1000) / 1000;
-      }
-    } catch (err) {
-      console.log(`  batch ${Math.floor(i/batchSize)+1} error: ${err.message}`);
-    }
-    await sleep(300);
-  }
-  return out;
-}
-
-// Bid-ask spread as % of mid-price from Yahoo's chart-meta snapshot.
-// Yahoo includes `bid` + `ask` (real numbers) for some NSE tickers and
-// returns 0 / missing for others. We return null when either side is
-// missing so the Bid-Ask Spread rule degrades to a clean N/A.
+// Bid-Ask spread helper. Kept around so the rule auto-recovers if
+// Yahoo ever starts populating bid/ask for NSE tickers in chart-meta.
 function spreadFromMeta(meta) {
   if (!meta) return null;
   const bid = Number(meta.bid);

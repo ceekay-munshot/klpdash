@@ -355,10 +355,10 @@ export const META = {
       ourLogic: "Deferred. NSE removed the public Impact Cost distribution — we confirmed via Firecrawl (which bypasses bot detection) that the product page itself returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Will light up if NSE restores public access or you wire in a paid market-data feed.",
     },
     spread: {
-      source: () => ({ url: "https://finance.yahoo.com/", label: "Yahoo Finance", section: "Chart-meta snapshot (bid + ask)" }),
-      calculation: "Computed from Yahoo Finance's chart-meta snapshot in the same response that drives our daily OHLCV pull (no extra fetch, no Firecrawl credit). Spread % = (ask − bid) / mid × 100, where mid = (ask + bid) / 2. Companies for which Yahoo omits bid/ask in the snapshot degrade to a clean N/A.",
+      source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE Level-1 quote feed", section: "Paywalled — no public source" }),
+      calculation: null,
       clientLogic: "PASS if bid-ask spread < 0.1% of CMP; 1 pt. Wide spread (> 0.3%) signals thin order book = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Deferred. Yahoo Finance returns 0/506 coverage on both v8 chart-meta and v7 quote endpoints for NSE tickers — they don't have NSE Level-1 data. Per-stock Firecrawl scraping would cost ~15K credits/month (bad effort:value for 1 pt). Bid/ask is genuinely paywalled behind NSE market-data licensing. Will light up if you wire in a paid feed (Refinitiv / Bloomberg / direct NSE).",
     },
     fno: {
       source: NSE_FNO_LIST,
