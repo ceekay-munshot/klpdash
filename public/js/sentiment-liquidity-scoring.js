@@ -30,16 +30,33 @@ function rulePutCallRatio(c) {
   const s = c?._macro?.sentiment;
   if (!s || s.put_call_ratio == null) {
     return { ...NA, max: 1,
-      note: "Put-Call Ratio not available today. Sourced via Firecrawl from NSE option-chain / Trendlyne fallback — both paths missed this run. Rule will auto-recover on the next successful sentiment-extras scrape.",
+      note: "Put-Call Ratio not available today. Sourced via Firecrawl LLM extract from NSE option-chain. Rule will auto-recover on the next successful sentiment-extras scrape.",
     };
   }
   const pcr = s.put_call_ratio;
   const stale = s.put_call_ratio_stale ? " (yesterday's value — today's fetch failed)" : "";
   const val = `PCR ${pcr}${stale}`;
-  if (pcr >= 0.9 && pcr <= 1.3) return { points: 1, max: 1, status: "pass", value: val, note: "PCR 0.9–1.3 — balanced to mildly bullish positioning." };
-  if (pcr < 0.8) return { points: 0, max: 1, status: "fail", value: val, note: "PCR < 0.8 — overly bullish, caution flag." };
-  if (pcr > 1.5) return { points: 0, max: 1, status: "fail", value: val, note: "PCR > 1.5 — panic levels." };
-  return { points: 0, max: 1, status: "partial", value: val, note: "PCR in transitional range." };
+  // Strict client logic: pass only inside 0.9-1.3 band. Everything else
+  // is 0 pts; the note distinguishes "overly bullish caution" (< 0.8),
+  // "panic" (> 1.5), and the transitional zones that the spec doesn't
+  // name explicitly.
+  if (pcr >= 0.9 && pcr <= 1.3) {
+    return { points: 1, max: 1, status: "pass", value: val,
+      note: "PCR within 0.9–1.3 (balanced to mildly bullish) — full credit per client framework." };
+  }
+  if (pcr < 0.8) {
+    return { points: 0, max: 1, status: "fail", value: val,
+      note: "PCR < 0.8 — overly bullish positioning, caution flag per client framework." };
+  }
+  if (pcr > 1.5) {
+    return { points: 0, max: 1, status: "fail", value: val,
+      note: "PCR > 1.5 — panic levels per client framework." };
+  }
+  // 0.8 ≤ PCR < 0.9 or 1.3 < PCR ≤ 1.5 — transitional zones the spec
+  // doesn't define separately. Default to fail (0 pts).
+  const zone = pcr < 0.9 ? "0.8–0.9 (between caution and balanced)" : "1.3–1.5 (between balanced and panic)";
+  return { points: 0, max: 1, status: "fail", value: val,
+    note: `PCR in transitional zone ${zone} — outside the 0.9–1.3 pass band, no points awarded.` };
 }
 
 function ruleMarketBreadth(c) {
@@ -76,12 +93,26 @@ function ruleImpactCost(c) {
 }
 
 function ruleBidAskSpread(c) {
-  if (c?.bid_ask_spread_pct == null) return { ...NA, max: 1, note: "Bid-ask spread not available — Yahoo's snapshot meta didn't carry live bid/ask for this ticker on this run. NSE's real-time order book stays paywalled, so we accept gaps when Yahoo omits it." };
+  if (c?.bid_ask_spread_pct == null) {
+    return { ...NA, max: 1,
+      note: "Bid-ask spread not available — Yahoo's snapshot meta didn't carry live bid/ask for this ticker on this run. NSE's real-time order book stays paywalled, so we accept gaps when Yahoo omits it." };
+  }
   const sp = c.bid_ask_spread_pct;
   const val = `Bid-ask spread ${sp}% of CMP`;
-  if (sp < 0.1) return { points: 1, max: 1, status: "pass", value: val, note: "Spread < 0.1% — tight order book." };
-  if (sp <= 0.3) return { points: 0, max: 1, status: "partial", value: val, note: "Spread 0.1–0.3% — passable." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Spread > 0.3% — thin order book." };
+  // Strict client logic: pass only when spread < 0.1%. > 0.3% is named
+  // "thin order book" (0 pts). The 0.1–0.3% zone isn't defined in the
+  // spec — default to fail (0 pts) to stay binary.
+  if (sp < 0.1) {
+    return { points: 1, max: 1, status: "pass", value: val,
+      note: "Spread < 0.1% — tight order book, full credit per client framework." };
+  }
+  if (sp > 0.3) {
+    return { points: 0, max: 1, status: "fail", value: val,
+      note: "Spread > 0.3% — thin order book per client framework." };
+  }
+  // 0.1% ≤ spread ≤ 0.3% — transitional zone the spec doesn't define.
+  return { points: 0, max: 1, status: "fail", value: val,
+    note: `Spread ${sp}% in transitional zone (0.1–0.3%) — outside the < 0.1% pass band, no points awarded.` };
 }
 
 function ruleFnOAvailability(c) {

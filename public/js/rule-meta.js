@@ -332,9 +332,9 @@ export const META = {
     },
     pcr: {
       source: () => ({ url: "https://www.nseindia.com/option-chain", label: "NSE option chain", section: "NIFTY weekly + monthly option chain (deferred)" }),
-      calculation: null,
+      calculation: "Sourced via Firecrawl LLM extract from NSE's option-chain HTML page (https://www.nseindia.com/option-chain). Firecrawl renders the JS-heavy page through a headless browser, then passes the rendered DOM to an LLM with a `nifty_pcr` schema to extract the number — robust to layout changes. Yesterday's value is cached and surfaced (marked stale) when today's fetch fails. Refreshed daily.",
       clientLogic: "PASS if PCR 0.9–1.3 (balanced to bullish); 1 pt. PCR < 0.8 = overly bullish caution. PCR > 1.5 = panic.",
-      ourLogic: "Sourced via Firecrawl from NSE's NIFTY option-chain JSON endpoint, with a Trendlyne HTML fallback if NSE refuses. Firecrawl proxies through residential IPs / headless browser, bypassing the bot detection that blocks direct GHA-runner fetches. Yesterday's value is cached and surfaced (marked stale) when today's fetch fails. Refreshed daily.",
+      ourLogic: null,
     },
     breadth: {
       source: YAHOO_NIFTY500,
@@ -355,10 +355,10 @@ export const META = {
       ourLogic: "Deferred. NSE removed the public Impact Cost distribution — we confirmed via Firecrawl (which bypasses bot detection) that the product page itself returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Will light up if NSE restores public access or you wire in a paid market-data feed.",
     },
     spread: {
-      source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE live order book", section: "Real-time bid-ask spread (deferred)" }),
-      calculation: null,
+      source: () => ({ url: "https://finance.yahoo.com/", label: "Yahoo Finance", section: "Chart-meta snapshot (bid + ask)" }),
+      calculation: "Computed from Yahoo Finance's chart-meta snapshot in the same response that drives our daily OHLCV pull (no extra fetch, no Firecrawl credit). Spread % = (ask − bid) / mid × 100, where mid = (ask + bid) / 2. Companies for which Yahoo omits bid/ask in the snapshot degrade to a clean N/A.",
       clientLogic: "PASS if bid-ask spread < 0.1% of CMP; 1 pt. Wide spread (> 0.3%) signals thin order book = 0 pts.",
-      ourLogic: "Read from Yahoo Finance chart-meta snapshot (bid + ask fields) — Yahoo populates these intermittently for NSE tickers, so coverage isn't full and individual companies degrade to N/A when Yahoo omits the snapshot. This is a free path that piggybacks on the existing 500-call/day OHLCV fetch — no Firecrawl credits burned.",
+      ourLogic: null,
     },
     fno: {
       source: NSE_FNO_LIST,
