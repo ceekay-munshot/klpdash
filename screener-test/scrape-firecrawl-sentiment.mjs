@@ -35,6 +35,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Wraps the Firecrawl /v1/scrape call. Returns { markdown, html, json, status }
 // or null on failure. `formats` is one of ["markdown", "html", "rawHtml"].
+// On failure we log the response status + body sample so we can diagnose
+// from the workflow log without re-running the API.
 async function firecrawl(url, { formats = ["html"], timeoutMs = 45000 } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -48,16 +50,32 @@ async function firecrawl(url, { formats = ["html"], timeoutMs = 45000 } = {}) {
       signal: ctrl.signal,
       body: JSON.stringify({ url, formats, onlyMainContent: false }),
     });
+    const bodyText = await r.text();
     if (!r.ok) {
-      console.log(`  Firecrawl HTTP ${r.status} for ${url}`);
+      console.log(`  Firecrawl HTTP ${r.status} for ${url} — body: ${bodyText.slice(0, 200)}`);
       return null;
     }
-    const j = await r.json();
+    let j;
+    try { j = JSON.parse(bodyText); }
+    catch (e) {
+      console.log(`  Firecrawl non-JSON response for ${url}: ${bodyText.slice(0, 200)}`);
+      return null;
+    }
     if (!j?.success) {
-      console.log(`  Firecrawl failed for ${url}: ${j?.error || "no error message"}`);
+      console.log(`  Firecrawl success=false for ${url}: ${JSON.stringify(j).slice(0, 300)}`);
       return null;
     }
-    return j.data || null;
+    const data = j.data || null;
+    if (!data) {
+      console.log(`  Firecrawl success but data is null for ${url}: ${JSON.stringify(j).slice(0, 300)}`);
+    } else {
+      const htmlLen = (data.html || "").length;
+      const rawLen = (data.rawHtml || "").length;
+      const mdLen = (data.markdown || "").length;
+      const statusCode = data.metadata?.statusCode || data.metadata?.["sourceURL-status"] || "?";
+      console.log(`  Firecrawl OK for ${url} — upstream status=${statusCode}, html=${htmlLen}B rawHtml=${rawLen}B md=${mdLen}B`);
+    }
+    return data;
   } catch (err) {
     console.log(`  Firecrawl error for ${url}: ${err.message}`);
     return null;
@@ -77,12 +95,14 @@ async function fetchPCR() {
   const r1 = await firecrawl(nseUrl, { formats: ["rawHtml", "html"] });
   if (r1) {
     const raw = r1.rawHtml || r1.html || "";
+    console.log(`  Response sample (first 300 chars): ${raw.slice(0, 300)}`);
     // The endpoint returns JSON. Firecrawl may wrap it in <html><body><pre>{...}</pre></body></html>.
     const jsonMatch = raw.match(/\{[\s\S]*"records"[\s\S]*"filtered"[\s\S]*\}/);
     if (jsonMatch) {
       try {
         const data = JSON.parse(jsonMatch[0]);
         const rows = data?.filtered?.data || data?.records?.data || [];
+        console.log(`  Parsed JSON — ${rows.length} option-chain rows`);
         let totalPE = 0, totalCE = 0;
         for (const row of rows) {
           totalPE += Number(row?.PE?.openInterest || 0);
@@ -92,6 +112,7 @@ async function fetchPCR() {
           const pcr = Math.round((totalPE / totalCE) * 100) / 100;
           return { value: pcr, source: "NSE option-chain API (via Firecrawl)", basis: `${totalPE.toLocaleString()} PE / ${totalCE.toLocaleString()} CE` };
         }
+        console.log(`  PCR couldn't be computed — totalCE=${totalCE}, totalPE=${totalPE}`);
       } catch (e) {
         console.log("  Could not parse NSE JSON:", e.message);
       }
@@ -105,13 +126,43 @@ async function fetchPCR() {
   const tlUrl = "https://trendlyne.com/macro-data/derivatives/pcr/nifty/";
   const r2 = await firecrawl(tlUrl, { formats: ["markdown", "html"] });
   if (r2) {
-    const text = (r2.markdown || "") + "\n" + (r2.html || "");
-    // The page shows "Nifty PCR: 1.03" or similar in its main hero block.
-    const m = text.match(/(?:Nifty\s*PCR|Put[-\s]Call\s*Ratio)[^0-9]{0,30}(\d+\.\d{1,3})/i);
+    const md = (r2.markdown || "");
+    const html = (r2.html || "");
+    console.log(`  Markdown sample (first 300 chars): ${md.slice(0, 300)}`);
+    // Try multiple regex patterns — Trendlyne's page layout has changed
+    // a few times in the past.
+    const patterns = [
+      /(?:Nifty\s*PCR|Put[-\s]Call\s*Ratio)[^0-9]{0,30}(\d+\.\d{1,3})/i,
+      /(?:PCR|put.call.ratio)\D{0,20}(\d+\.\d{1,3})/i,
+      /(\d+\.\d{1,3})\s*(?:PCR|Put.Call)/i,
+    ];
+    const text = md + "\n" + html;
+    for (const pat of patterns) {
+      const m = text.match(pat);
+      if (m) {
+        const pcr = Number(m[1]);
+        if (pcr > 0 && pcr < 5) {
+          console.log(`  Matched pattern: ${pat} -> ${pcr}`);
+          return { value: pcr, source: "Trendlyne (via Firecrawl)", basis: "page scrape" };
+        }
+      }
+    }
+    console.log("  None of the Trendlyne regex patterns matched.");
+  }
+
+  // Path C: Sensibull NIFTY page — alternative public source for PCR.
+  console.log("PCR path C: Sensibull fallback...");
+  const sbUrl = "https://www.sensibull.com/screeners/pcr";
+  const r3 = await firecrawl(sbUrl, { formats: ["markdown", "html"] });
+  if (r3) {
+    const text = (r3.markdown || "") + "\n" + (r3.html || "");
+    console.log(`  Sensibull sample (first 300 chars): ${text.slice(0, 300)}`);
+    // Sensibull tables show "NIFTY 50  ...  1.03" - grab the number near "NIFTY 50".
+    const m = text.match(/NIFTY\s*50[^0-9]{0,80}(\d+\.\d{2,3})/i);
     if (m) {
       const pcr = Number(m[1]);
       if (pcr > 0 && pcr < 5) {
-        return { value: pcr, source: "Trendlyne (via Firecrawl)", basis: "page scrape" };
+        return { value: pcr, source: "Sensibull (via Firecrawl)", basis: "screener table" };
       }
     }
   }
@@ -173,30 +224,35 @@ function parseImpactCostCSV(text) {
 
 async function fetchImpactCost() {
   // Budget: don't burn many Firecrawl credits chasing this. Try the most
-  // likely months (recent 4) with the 2 most common URL patterns first.
+  // likely months (recent 4) with the 4 most common URL patterns each.
   // Stop on first parseable response.
   const months = recentMonths(4);
   console.log(`Impact cost: probing months ${months.map(m => m.abbr+" "+m.year).join(", ")}`);
   for (const month of months) {
     for (const url of urlCandidates(month).slice(0, 4)) {
-      process.stdout.write(`  via Firecrawl: ${url} ... `);
+      console.log(`  via Firecrawl: ${url}`);
       const res = await firecrawl(url, { formats: ["rawHtml"], timeoutMs: 30000 });
-      if (!res) { console.log("miss"); continue; }
+      if (!res) { continue; }
       const text = res.rawHtml || "";
-      if (!text || text.length < 200 || /<!doctype html/i.test(text.slice(0, 50))) {
-        console.log("empty/HTML — wrong format");
+      console.log(`    body length: ${text.length}, first 200 chars: ${text.slice(0, 200).replace(/\n/g, " ")}`);
+      if (!text || text.length < 200) {
+        console.log("    empty body");
+        continue;
+      }
+      if (/<!doctype html/i.test(text.slice(0, 50))) {
+        console.log("    body is HTML — wrong format for a CSV endpoint");
         continue;
       }
       const parsed = parseImpactCostCSV(text);
       if (parsed) {
-        console.log(`OK, ${Object.keys(parsed).length} tickers`);
+        console.log(`    PARSED: ${Object.keys(parsed).length} tickers`);
         return {
           period: `${month.abbr} ${month.year}`,
           source: url,
           companies: Object.fromEntries(Object.entries(parsed).map(([s, v]) => [s, v])),
         };
       }
-      console.log("got body, couldn't parse");
+      console.log("    got body, couldn't parse as Impact Cost CSV");
       await sleep(200);
     }
   }
