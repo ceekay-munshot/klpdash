@@ -33,6 +33,16 @@ const FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Diagnostics that survive the workflow run — appended to the committed
+// sentiment-extras.json under `_debug` so we can inspect them without
+// needing access to the GHA log viewer. Trimmed to ~20 entries to keep
+// file size sane.
+const DEBUG_CALLS = [];
+function pushDebug(entry) {
+  DEBUG_CALLS.push({ at: new Date().toISOString(), ...entry });
+  if (DEBUG_CALLS.length > 30) DEBUG_CALLS.shift();
+}
+
 // Wraps the Firecrawl /v1/scrape call. Returns { markdown, html, json, status }
 // or null on failure. `formats` is one of ["markdown", "html", "rawHtml"].
 // On failure we log the response status + body sample so we can diagnose
@@ -53,27 +63,41 @@ async function firecrawl(url, { formats = ["html"], timeoutMs = 45000 } = {}) {
     const bodyText = await r.text();
     if (!r.ok) {
       console.log(`  Firecrawl HTTP ${r.status} for ${url} — body: ${bodyText.slice(0, 200)}`);
+      pushDebug({ url, fc_status: r.status, fc_body_sample: bodyText.slice(0, 250), outcome: "fc_http_error" });
       return null;
     }
     let j;
     try { j = JSON.parse(bodyText); }
     catch (e) {
       console.log(`  Firecrawl non-JSON response for ${url}: ${bodyText.slice(0, 200)}`);
+      pushDebug({ url, fc_status: r.status, fc_body_sample: bodyText.slice(0, 250), outcome: "fc_non_json" });
       return null;
     }
     if (!j?.success) {
       console.log(`  Firecrawl success=false for ${url}: ${JSON.stringify(j).slice(0, 300)}`);
+      pushDebug({ url, fc_status: r.status, fc_response: j, outcome: "fc_success_false" });
       return null;
     }
     const data = j.data || null;
     if (!data) {
       console.log(`  Firecrawl success but data is null for ${url}: ${JSON.stringify(j).slice(0, 300)}`);
+      pushDebug({ url, fc_status: r.status, outcome: "fc_data_null" });
     } else {
       const htmlLen = (data.html || "").length;
       const rawLen = (data.rawHtml || "").length;
       const mdLen = (data.markdown || "").length;
       const statusCode = data.metadata?.statusCode || data.metadata?.["sourceURL-status"] || "?";
       console.log(`  Firecrawl OK for ${url} — upstream status=${statusCode}, html=${htmlLen}B rawHtml=${rawLen}B md=${mdLen}B`);
+      pushDebug({
+        url,
+        fc_status: r.status,
+        upstream_status: statusCode,
+        html_len: htmlLen,
+        raw_len: rawLen,
+        md_len: mdLen,
+        body_sample: ((data.rawHtml || data.html || data.markdown) || "").slice(0, 400),
+        outcome: "ok",
+      });
     }
     return data;
   } catch (err) {
@@ -305,6 +329,14 @@ async function main() {
   } else {
     console.log("Impact cost: all probes missed and no cached value.");
   }
+
+  // Stamp diagnostics into the output so we can inspect from the
+  // committed JSON file without needing GHA log access.
+  out._debug = {
+    api_key_set: !!API_KEY,
+    api_key_prefix: API_KEY ? API_KEY.slice(0, 6) + "..." : null,
+    calls: DEBUG_CALLS,
+  };
 
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(out, null, 2) + "\n");
