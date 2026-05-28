@@ -1,65 +1,25 @@
 {
-  "generated_at": "2026-05-28T07:26:06.294Z",
-  "pcr": null,
+  "generated_at": "2026-05-28T07:33:50.187Z",
+  "pcr": {
+    "value": 0.7,
+    "source": "NSE option-chain (via Firecrawl LLM extract)",
+    "basis": "LLM-extracted",
+    "fetched_at": "2026-05-28T07:34:03.939Z"
+  },
   "impact_cost": null,
   "_debug": {
     "api_key_set": true,
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-05-28T07:26:09.171Z",
+        "at": "2026-05-28T07:34:03.939Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 200,
-        "upstream_status": 200,
-        "html_len": 482423,
-        "raw_len": 0,
-        "md_len": 138836,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n  <body class=\"notranslate showBand\" direction=\"rtl\" style=\"padding-top: 9689.78px;\">\n    <!-- Google Tag Manager (noscript) -->\n\n\n    \n<!-- End Google Tag Manager (noscript) -->\n    \n    <div id=\"pageLoader\"><div class=\"loader-wrp\"><div class=\"spin-loader\" aria-hidden=\"true\"></div></div></div>\n    \n\n<div id=\"betaVerBand\">\n    <!-- <span id=\"betaVderBandText\">YOU AR",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:26:11.466Z",
-        "url": "https://www.moneycontrol.com/stocks/marketstats/nse_pcr.php",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 764829,
-        "raw_len": 0,
-        "md_len": 53407,
-        "body_sample": "<!--header start--><!DOCTYPE html><html lang=\"en\"><body class=\"container1280\"><!-- headeer start here --><div id=\"mcloginpopup\"></div><!--header start--><!-- Moneycontrol Common header -> Start --><!-- Credit Score Cashback Offer CSS -> Start --><!-- End <- Credit Score Cashback Offer CSS --><div style=\"display:none;\"><table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tbody><tr><td><link rel=\"alte",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:26:12.858Z",
-        "url": "https://upstox.com/option-chain/NIFTY/",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 1040,
-        "raw_len": 0,
-        "md_len": 145,
-        "body_sample": "<!DOCTYPE html><html class=\"__className_031f1f\" lang=\"en\"><body><div class=\"mx-auto flex h-screen items-center justify-center\"><div class=\"flex flex-col items-center justify-center\"><img alt=\"404 - Not found\" loading=\"lazy\" width=\"350\" height=\"159\" decoding=\"async\" data-nimg=\"1\" src=\"https://upstox.com/next-futures-options-assets/404.png\" style=\"color: transparent;\"><p class=\"mt-8 text-2xl\">Sorry,",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:26:18.895Z",
-        "url": "https://niftytrader.in/openinterest/option-chain.aspx",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 177252,
-        "raw_len": 0,
-        "md_len": 24046,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><body style=\"overflow-y:auto\" class=\"light-theme\"><div id=\"__next\"><div class=\"__variable_6bee3b\" style=\"font-family:var(--font-poppins)\"><div class=\"wrapper\"><div id=\"content\" class=\"d-flex flex-column min-vh-100\"><div class=\"Toastify\"></div><div class=\"min-h-lg-header\"><div class=\"d-none lg-d-block\" style=\"min-height:36px\"><div><div class=\"alert nifty-announcement-",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:26:20.450Z",
-        "url": "https://www.nseindia.com/products-services/equity-market-impact-cost",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 195,
-        "raw_len": 0,
-        "md_len": 18,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n<body style=\"background-color: #e8e8e8;\">\n  <div style=\"font-size: 32px; padding: 50px 25px; text-align: center;\">\n    Resource not found\n  </div>\n\n\n</body></html>",
-        "outcome": "ok"
+        "outcome": "extract_ok",
+        "extract_keys": [
+          "nifty_pcr"
+        ],
+        "extract_value": "{\"nifty_pcr\":0.7}"
       }
     ]
   }
