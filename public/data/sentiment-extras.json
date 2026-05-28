@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-28T07:17:53.993Z",
+  "generated_at": "2026-05-28T07:26:06.294Z",
   "pcr": null,
   "impact_cost": null,
   "_debug": {
@@ -7,212 +7,58 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-05-28T07:17:54.571Z",
-        "url": "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY",
+        "at": "2026-05-28T07:26:09.171Z",
+        "url": "https://www.nseindia.com/option-chain",
+        "fc_status": 200,
+        "upstream_status": 200,
+        "html_len": 482423,
+        "raw_len": 0,
+        "md_len": 138836,
+        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n  <body class=\"notranslate showBand\" direction=\"rtl\" style=\"padding-top: 9689.78px;\">\n    <!-- Google Tag Manager (noscript) -->\n\n\n    \n<!-- End Google Tag Manager (noscript) -->\n    \n    <div id=\"pageLoader\"><div class=\"loader-wrp\"><div class=\"spin-loader\" aria-hidden=\"true\"></div></div></div>\n    \n\n<div id=\"betaVerBand\">\n    <!-- <span id=\"betaVderBandText\">YOU AR",
+        "outcome": "ok"
+      },
+      {
+        "at": "2026-05-28T07:26:11.466Z",
+        "url": "https://www.moneycontrol.com/stocks/marketstats/nse_pcr.php",
+        "fc_status": 200,
+        "upstream_status": 404,
+        "html_len": 764829,
+        "raw_len": 0,
+        "md_len": 53407,
+        "body_sample": "<!--header start--><!DOCTYPE html><html lang=\"en\"><body class=\"container1280\"><!-- headeer start here --><div id=\"mcloginpopup\"></div><!--header start--><!-- Moneycontrol Common header -> Start --><!-- Credit Score Cashback Offer CSS -> Start --><!-- End <- Credit Score Cashback Offer CSS --><div style=\"display:none;\"><table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tbody><tr><td><link rel=\"alte",
+        "outcome": "ok"
+      },
+      {
+        "at": "2026-05-28T07:26:12.858Z",
+        "url": "https://upstox.com/option-chain/NIFTY/",
+        "fc_status": 200,
+        "upstream_status": 404,
+        "html_len": 1040,
+        "raw_len": 0,
+        "md_len": 145,
+        "body_sample": "<!DOCTYPE html><html class=\"__className_031f1f\" lang=\"en\"><body><div class=\"mx-auto flex h-screen items-center justify-center\"><div class=\"flex flex-col items-center justify-center\"><img alt=\"404 - Not found\" loading=\"lazy\" width=\"350\" height=\"159\" decoding=\"async\" data-nimg=\"1\" src=\"https://upstox.com/next-futures-options-assets/404.png\" style=\"color: transparent;\"><p class=\"mt-8 text-2xl\">Sorry,",
+        "outcome": "ok"
+      },
+      {
+        "at": "2026-05-28T07:26:18.895Z",
+        "url": "https://niftytrader.in/openinterest/option-chain.aspx",
+        "fc_status": 200,
+        "upstream_status": 404,
+        "html_len": 177252,
+        "raw_len": 0,
+        "md_len": 24046,
+        "body_sample": "<!DOCTYPE html><html lang=\"en\"><body style=\"overflow-y:auto\" class=\"light-theme\"><div id=\"__next\"><div class=\"__variable_6bee3b\" style=\"font-family:var(--font-poppins)\"><div class=\"wrapper\"><div id=\"content\" class=\"d-flex flex-column min-vh-100\"><div class=\"Toastify\"></div><div class=\"min-h-lg-header\"><div class=\"d-none lg-d-block\" style=\"min-height:36px\"><div><div class=\"alert nifty-announcement-",
+        "outcome": "ok"
+      },
+      {
+        "at": "2026-05-28T07:26:20.450Z",
+        "url": "https://www.nseindia.com/products-services/equity-market-impact-cost",
         "fc_status": 200,
         "upstream_status": 404,
         "html_len": 195,
-        "raw_len": 454,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n  \n  <title>Resource not found</title>\n</head>\n<body style=\"background-color: #e8e8e8;\">\n  <div style=\"font-size: 32px; padding: 50px 25px; text-align: center;\">\n    Resource not found\n  </div>\n<script type=\"text/javascript\" src=\"https://www.nseindia.com/-diU0StE1/eZE/6dH/TzvHULb_JEf0/9rb3mwDQV",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:17:58.415Z",
-        "url": "https://trendlyne.com/macro-data/derivatives/pcr/nifty/",
-        "fc_status": 200,
-        "upstream_status": 405,
-        "html_len": 4949,
         "raw_len": 0,
-        "md_len": 594,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n<body>\n    <div id=\"captcha-container\" dir=\"ltr\" style=\"width: 320px; margin: 0px auto;\"><div id=\"root\" style=\"font-family: &quot;Amazon Ember&quot;, Helvetica, Arial, sans-serif; width: 100%;\"><div style=\"padding: 50px 0px; text-align: center; border-top: 1px solid rgb(204, 204, 204); border-bottom: 1px solid rgb(204, 204, 204); margin: 0px auto; max-width: 500px; ",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:17:58.951Z",
-        "url": "https://www.sensibull.com/screeners/pcr",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 70174,
-        "raw_len": 0,
-        "md_len": 7206,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\" class=\"min-h-screen\"> <body class=\"bg-web min-h-screen\"> <header data-navbar=\"\" class=\"z-sticky bg-section sticky top-0 mx-auto transition-colors duration-200\" data-astro-cid-xu5ykefq=\"\"> <nav class=\"px-4 py-2 lg:px-8\" data-astro-cid-xu5ykefq=\"\"> <div class=\"flex items-center justify-between\" data-astro-cid-xu5ykefq=\"\"> <div class=\"flex items-center justify-start gap",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:17:59.286Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_May_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:17:59.744Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_May_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:17:59.963Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_May2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:00.248Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_May2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:00.587Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Apr_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:00.875Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Apr_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:01.225Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Apr2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:01.498Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Apr2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:01.693Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Mar_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:01.945Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Mar_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:02.447Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Mar2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:02.764Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Mar2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2871,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:03.058Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Feb_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:03.396Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Feb_2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2871,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:03.618Z",
-        "url": "https://archives.nseindia.com/content/equities/impact_cost/imc_Feb2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2484,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
-        "outcome": "ok"
-      },
-      {
-        "at": "2026-05-28T07:18:03.953Z",
-        "url": "https://nsearchives.nseindia.com/content/equities/impact_cost/imc_Feb2026.csv",
-        "fc_status": 200,
-        "upstream_status": 404,
-        "html_len": 0,
-        "raw_len": 2872,
-        "md_len": 0,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style rel=\"stylesheet\" type=\"text/css\">@charset \"utf-8\";\r\n\r\nbody { display: flex; align-items: center; flex-direction: column; height: 90vh; justify-content: center; }\r\n\r\n.errorContainer h2 { font-size: 260px; color: rgb(233, 126, 98); font-family: Montserrat; font-weight: bold; margin: 0px 10p",
+        "md_len": 18,
+        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n<body style=\"background-color: #e8e8e8;\">\n  <div style=\"font-size: 32px; padding: 50px 25px; text-align: center;\">\n    Resource not found\n  </div>\n\n\n</body></html>",
         "outcome": "ok"
       }
     ]
