@@ -58,6 +58,14 @@ async function run() {
   const deliveryTrends = await buildDeliveryTrends();
   console.log(`  Got delivery trends for ${Object.keys(deliveryTrends).length} tickers`);
 
+  // Yahoo v7 quote endpoint — supports up to 100 symbols per call and
+  // returns live bid/ask alongside CMP. Chart-meta (used by fetchBars)
+  // doesn't carry these for NSE tickers, so this is the only Yahoo path
+  // that gets us spread data without burning Firecrawl credits per stock.
+  console.log(`\nFetching Yahoo v7 quote bid/ask snapshots...`);
+  const spreadByTicker = await fetchYahooSpreads(companies);
+  console.log(`  Got spread data for ${Object.keys(spreadByTicker).length} / ${companies.length} tickers`);
+
   const results = [];
   let failures = 0;
   for (let i = 0; i < companies.length; i++) {
@@ -89,10 +97,10 @@ async function run() {
         // Sentiment & Liquidity tab data: 20-day ADTV in ₹ crores + F&O eligibility
         adtv_20d_cr: adtv20Cr(bars),
         fno_eligible: fnoSet.has(ticker),
-        // Bid-Ask spread from Yahoo snapshot meta. Yahoo populates this
-        // intermittently for NSE tickers — when present it's the live
-        // bid/ask at the time of fetch, expressed as % of mid-price.
-        bid_ask_spread_pct: spreadFromMeta(bars.meta),
+        // Bid-Ask spread: prefer the batched v7 quote result (populated
+        // for most NSE tickers); fall back to chart-meta if v7 didn't
+        // carry this ticker. Degrades to null when Yahoo has nothing.
+        bid_ask_spread_pct: spreadByTicker[ticker] ?? spreadFromMeta(bars.meta),
         ...indicators,
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
@@ -181,6 +189,49 @@ function extractTicker(url) {
   // /company/ICICIAMC/ or /company/ICICIAMC/consolidated/ → ICICIAMC
   const m = String(url || "").match(/\/company\/([^/]+)/);
   return m ? m[1].toUpperCase() : null;
+}
+
+// Yahoo Finance v7 quote endpoint — accepts up to 100 symbols per call
+// (we batch in 100s) and returns regularMarketBid / regularMarketAsk
+// for any ticker Yahoo has Level-1 data for. Returns a map of
+// { TICKER -> spread_pct_of_mid }. Tickers Yahoo omits are simply
+// absent from the map.
+async function fetchYahooSpreads(companies) {
+  const out = {};
+  const tickers = companies
+    .map((c) => extractTicker(c["Screener URL"]))
+    .filter(Boolean);
+  const symbols = tickers.map((t) => `${t}.NS`);
+  const batchSize = 100;
+  for (let i = 0; i < symbols.length; i += batchSize) {
+    const batch = symbols.slice(i, i + batchSize);
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(batch.join(","))}`;
+    const headers = { "User-Agent": "Mozilla/5.0 (compatible; KLPDashboardBot/1.0)" };
+    try {
+      const r = await fetch(url, { headers });
+      if (!r.ok) {
+        process.stdout.write(`  batch ${Math.floor(i/batchSize)+1}: HTTP ${r.status}\n`);
+        continue;
+      }
+      const j = await r.json();
+      const results = j?.quoteResponse?.result || [];
+      for (const q of results) {
+        const sym = q.symbol; // e.g. "RELIANCE.NS"
+        const ticker = sym?.replace(/\.NS$/, "").toUpperCase();
+        if (!ticker) continue;
+        const bid = Number(q.bid ?? q.regularMarketBid);
+        const ask = Number(q.ask ?? q.regularMarketAsk);
+        if (!Number.isFinite(bid) || !Number.isFinite(ask)) continue;
+        if (bid <= 0 || ask <= 0 || ask <= bid) continue;
+        const mid = (bid + ask) / 2;
+        out[ticker] = Math.round(((ask - bid) / mid) * 100 * 1000) / 1000;
+      }
+    } catch (err) {
+      console.log(`  batch ${Math.floor(i/batchSize)+1} error: ${err.message}`);
+    }
+    await sleep(300);
+  }
+  return out;
 }
 
 // Bid-ask spread as % of mid-price from Yahoo's chart-meta snapshot.
