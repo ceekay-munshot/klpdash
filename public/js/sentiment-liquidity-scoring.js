@@ -123,23 +123,25 @@ function ruleFnOAvailability(c) {
 
 // ---- master ----
 
-// 7 active rules. PCR is sourced via Firecrawl LLM extract from NSE's
-// option-chain HTML page. Bid-Ask Spread reads from Yahoo's chart-meta
-// snapshot. Impact Cost stays in DEFERRED — NSE removed the public CSV
-// distribution (confirmed via Firecrawl: product page itself 404s).
+// 6 active rules. PCR sourced via Firecrawl LLM extract from NSE option-
+// chain page. Bid-Ask Spread + Impact Cost stay in DEFERRED because the
+// only data sources are paywalled (NSE Level-1 quote + NSE removed the
+// public Impact Cost CSV). Both proven via runs that returned 0 / 506
+// coverage on free sources.
 const ACTIVE_RULES = [
   { key: "vix",      label: "India VIX",         category: "Sentiment", criteria: "< 15 (risk-on)",          fn: ruleIndiaVIX },
   { key: "fiidii",   label: "FII / DII Flow",    category: "Sentiment", criteria: "Net positive 10/20 days", fn: ruleFIIDIIFlow },
   { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
-  { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
 
 const DEFERRED = [
   { key: "impact", label: "Impact Cost", category: "Liquidity", max: 2,
-    reason: "NSE removed the public Impact Cost CSV distribution. We confirmed via Firecrawl that the product page (/products-services/equity-market-impact-cost) itself returns 404 server-side, and no third-party aggregator republishes the per-ticker numbers. Worth 2 pts; need paid market-data feed or NSE to restore public access." },
+    reason: "NSE removed the public Impact Cost CSV distribution. We confirmed via Firecrawl that the product page (/products-services/equity-market-impact-cost) returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Worth 2 pts; needs paid market-data feed or NSE to restore public access." },
+  { key: "spread", label: "Bid-Ask Spread", category: "Liquidity", max: 1,
+    reason: "Yahoo Finance doesn't carry NSE Level-1 quote data — confirmed 0/506 coverage on both v8 chart-meta and v7 quote endpoints. Bid/ask is paywalled behind NSE's market-data licensing. Worth 1 pt; needs a paid market-data vendor (Refinitiv, Bloomberg, or direct NSE feed)." },
 ];
 
 export function scoreCompany(c) {
