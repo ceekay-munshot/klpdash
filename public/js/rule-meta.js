@@ -334,7 +334,7 @@ export const META = {
       source: () => ({ url: "https://www.nseindia.com/option-chain", label: "NSE option chain", section: "NIFTY weekly + monthly option chain (deferred)" }),
       calculation: null,
       clientLogic: "PASS if PCR 0.9–1.3 (balanced to bullish); 1 pt. PCR < 0.8 = overly bullish caution. PCR > 1.5 = panic.",
-      ourLogic: "Permanently deferred. We tried 5 sources (NSE option-chain legacy + v3, Yahoo options, MoneyControl scrape, NSE F&O bhavcopy in 4 URL formats). All blocked, gated, or returned wrong data from GitHub Actions runner IPs. Worth 1 pt — moved to deferred per audit.",
+      ourLogic: "Sourced via Firecrawl from NSE's NIFTY option-chain JSON endpoint, with a Trendlyne HTML fallback if NSE refuses. Firecrawl proxies through residential IPs / headless browser, bypassing the bot detection that blocks direct GHA-runner fetches. Yesterday's value is cached and surfaced (marked stale) when today's fetch fails. Refreshed daily.",
     },
     breadth: {
       source: YAHOO_NIFTY500,
@@ -349,16 +349,16 @@ export const META = {
       ourLogic: null,
     },
     impact: {
-      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication (permanently deferred)" }),
-      calculation: null,
+      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication — Firecrawl-sourced" }),
+      calculation: "Firecrawl probes NSE's monthly Impact Cost CSV across the last 4 months × 6 URL patterns. First parseable response wins. Per-ticker impact cost percentages are merged into Sentiment tab rows.",
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
-      ourLogic: "Permanently deferred — same bot detection that blocks PCR. We built a self-healing scraper that probes 8 NSE archive URL patterns across 6 months, but every URL returns no data from GitHub Actions runner IPs. Scraper + workflow_dispatch entry are kept in the repo so we can probe occasionally; if NSE ever relaxes, the rule lights up automatically. Worth 2 pts on Sentiment.",
+      ourLogic: null,
     },
     spread: {
       source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE live order book", section: "Real-time bid-ask spread (deferred)" }),
       calculation: null,
       clientLogic: "PASS if bid-ask spread < 0.1% of CMP; 1 pt. Wide spread (> 0.3%) signals thin order book = 0 pts.",
-      ourLogic: "Permanently deferred per audit — needs real-time NSE order-book feed. Bad effort:value ratio for 1 point.",
+      ourLogic: "Read from Yahoo Finance chart-meta snapshot (bid + ask fields) — Yahoo populates these intermittently for NSE tickers, so coverage isn't full and individual companies degrade to N/A when Yahoo omits the snapshot. This is a free path that piggybacks on the existing 500-call/day OHLCV fetch — no Firecrawl credits burned.",
     },
     fno: {
       source: NSE_FNO_LIST,

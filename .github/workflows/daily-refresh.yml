@@ -90,13 +90,18 @@ jobs:
         continue-on-error: true
         run: node screener-test/scrape-insider.mjs
 
-      # NB: Impact Cost scraper exists as workflow_dispatch only
-      # (impact-cost-scrape.yml). Daily probe was removed after every
-      # NSE archive URL pattern returned no data from GHA runner IPs
-      # — same bot detection that blocks PCR. Rule treated as
-      # permanently deferred in sentiment-liquidity-scoring.js.
+      # ---- 4. Sentiment extras via Firecrawl (PCR + Impact Cost) — ~1 min, non-fatal ----
+      # NSE blocks direct GHA-runner fetches for option-chain (PCR) and the
+      # monthly Impact Cost archive. Firecrawl proxies through residential IPs
+      # and a headless browser, which bypasses that block. Yesterday's PCR is
+      # cached and re-served (marked stale) if today's fetch fails.
+      - name: Run Firecrawl sentiment extras (PCR + Impact Cost)
+        continue-on-error: true
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: node screener-test/scrape-firecrawl-sentiment.mjs
 
-      # ---- 4. Macro (Yahoo + NSE FII/DII) — <1 min, non-fatal ----
+      # ---- 5. Macro (Yahoo + NSE FII/DII) — <1 min, non-fatal ----
       - name: Run macro scraper
         continue-on-error: true
         run: node screener-test/scrape-macro.mjs
@@ -113,6 +118,7 @@ jobs:
             public/data/metadata.json
             public/data/technicals.json
             public/data/insider-trades.json
+            public/data/sentiment-extras.json
             public/data/macro.json
             public/data/atr-history.json
             public/data/fii-dii-history.json
@@ -127,6 +133,7 @@ jobs:
           git add public/data/screener-companies.csv public/data/screener-companies.json public/data/metadata.json
           git add public/data/technicals.json
           [ -f public/data/insider-trades.json ] && git add public/data/insider-trades.json || true
+          [ -f public/data/sentiment-extras.json ] && git add public/data/sentiment-extras.json || true
           [ -f public/data/macro.json ] && git add public/data/macro.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true

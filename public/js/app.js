@@ -91,8 +91,8 @@ const CONFIGS = {
       { label: "CMP",     get: (c) => c.cmp ? "₹" + Math.round(c.cmp).toLocaleString("en-IN") : "—" },
     ],
     stats: {
-      rules: "5 / 8",    rulesNote: "Active rules",
-      maxScore: "8 pts", maxNote: "After deferred: 12 pts",
+      rules: "8 / 8",    rulesNote: "Active rules",
+      maxScore: "12 pts", maxNote: "PCR + Impact Cost via Firecrawl",
     },
     drillHeaderStats: (c) => [
       { label: "ADTV · F&O",
@@ -333,15 +333,22 @@ async function loadTab(tabId) {
   }
 
   // Sentiment & Liquidity: tab data is technicals.json (gives us ADTV +
-  // F&O eligibility per company), and macro.json provides the market-wide
-  // sentiment context (VIX, FII/DII flow, PCR, breadth). Merge as ._macro,
-  // plus per-company impact cost from impact-cost.json when available.
+  // F&O eligibility + bid/ask snapshot per company), and macro.json provides
+  // the market-wide sentiment context (VIX, FII/DII flow, breadth). Plus
+  // we fold in sentiment-extras.json — Firecrawl-sourced PCR + per-ticker
+  // Impact Cost map (NSE blocks our IPs directly; Firecrawl proxies through).
   if (tabId === "sentiment" && rawMeta) {
-    let impactByTicker = {};
-    try {
-      const impact = await fetch("data/impact-cost.json").then((r) => r.json());
-      impactByTicker = impact?.companies || {};
-    } catch { /* impact-cost file missing — rule stays N/A */ }
+    let extras = null;
+    try { extras = await fetch("data/sentiment-extras.json").then((r) => r.json()); }
+    catch { /* sentiment-extras.json missing — rules stay deferred */ }
+    const impactByTicker = extras?.impact_cost?.companies || {};
+    // Stamp PCR onto the macro object so the rule reads from a stable place.
+    if (rawMeta && extras?.pcr?.value != null) {
+      rawMeta.sentiment = rawMeta.sentiment || {};
+      rawMeta.sentiment.put_call_ratio = extras.pcr.value;
+      rawMeta.sentiment.put_call_ratio_source = extras.pcr.source;
+      rawMeta.sentiment.put_call_ratio_stale = !!extras.pcr.stale;
+    }
     for (const row of rows) {
       row._macro = rawMeta;
       // Ticker key: prefer the explicit field, else derive from Screener URL slug.
@@ -351,7 +358,11 @@ async function loadTab(tabId) {
         if (m) ticker = m[1].toUpperCase();
       }
       const ic = ticker ? impactByTicker[ticker] : null;
-      if (ic && ic.impact_cost_pct != null) row.impact_cost_pct = ic.impact_cost_pct;
+      // impact_cost map values can be either a bare number or { impact_cost_pct }
+      if (typeof ic === "number") row.impact_cost_pct = ic;
+      else if (ic && ic.impact_cost_pct != null) row.impact_cost_pct = ic.impact_cost_pct;
+      // bid_ask_spread_pct already arrives on each technicals row when Yahoo's
+      // snapshot meta carried it — nothing extra to do here.
     }
   }
 

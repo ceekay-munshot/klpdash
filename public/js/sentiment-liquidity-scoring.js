@@ -30,11 +30,12 @@ function rulePutCallRatio(c) {
   const s = c?._macro?.sentiment;
   if (!s || s.put_call_ratio == null) {
     return { ...NA, max: 1,
-      note: "Put-Call Ratio rule is permanently deferred: the only definitive source (NSE option-chain API) blocks automated scraping from GitHub Actions runner IPs. Tried NSE legacy and v3 endpoints, Yahoo Finance, MoneyControl, and NSE F&O bhavcopy CSV in 4 URL formats — none returned usable data. Worth 1 pt on the Sentiment scorecard; accepting deferred per our audit.",
+      note: "Put-Call Ratio not available today. Sourced via Firecrawl from NSE option-chain / Trendlyne fallback — both paths missed this run. Rule will auto-recover on the next successful sentiment-extras scrape.",
     };
   }
   const pcr = s.put_call_ratio;
-  const val = `PCR ${pcr}`;
+  const stale = s.put_call_ratio_stale ? " (yesterday's value — today's fetch failed)" : "";
+  const val = `PCR ${pcr}${stale}`;
   if (pcr >= 0.9 && pcr <= 1.3) return { points: 1, max: 1, status: "pass", value: val, note: "PCR 0.9–1.3 — balanced to mildly bullish positioning." };
   if (pcr < 0.8) return { points: 0, max: 1, status: "fail", value: val, note: "PCR < 0.8 — overly bullish, caution flag." };
   if (pcr > 1.5) return { points: 0, max: 1, status: "fail", value: val, note: "PCR > 1.5 — panic levels." };
@@ -64,7 +65,7 @@ function ruleADTV(c) {
 function ruleImpactCost(c) {
   if (c?.impact_cost_pct == null) {
     return { ...NA, max: 2,
-      note: "Impact Cost rule is permanently deferred. NSE's monthly Impact Cost CSV is published in the public archive at archives.nseindia.com / nsearchives.nseindia.com but NSE actively blocks automated requests from GitHub Actions runner IPs. We probe 8 URL patterns across 6 months on every run and consistently get zero hits — same bot detection pattern that blocks PCR. Worth 2 pts on the Sentiment scorecard; accepting deferred is the right call. Workflow stays in place in case NSE relaxes their stance.",
+      note: "Impact cost not available for this ticker in the most recent NSE monthly CSV. Sourced via Firecrawl (proxies past the bot detection that blocks direct GHA runner access). Either the file isn't yet published for this month or this ticker wasn't on it.",
     };
   }
   const ic = c.impact_cost_pct;
@@ -75,7 +76,7 @@ function ruleImpactCost(c) {
 }
 
 function ruleBidAskSpread(c) {
-  if (c?.bid_ask_spread_pct == null) return { ...NA, max: 1, note: "Live bid-ask spread not yet fetched — needs NSE order-book feed." };
+  if (c?.bid_ask_spread_pct == null) return { ...NA, max: 1, note: "Bid-ask spread not available — Yahoo's snapshot meta didn't carry live bid/ask for this ticker on this run. NSE's real-time order book stays paywalled, so we accept gaps when Yahoo omits it." };
   const sp = c.bid_ask_spread_pct;
   const val = `Bid-ask spread ${sp}% of CMP`;
   if (sp < 0.1) return { points: 1, max: 1, status: "pass", value: val, note: "Spread < 0.1% — tight order book." };
@@ -91,29 +92,23 @@ function ruleFnOAvailability(c) {
 
 // ---- master ----
 
-// PCR / Impact Cost / Bid-Ask Spread are part of the client's framework
-// but their data sources (NSE option chain, NSE monthly Impact Cost CSV,
-// NSE real-time order book) all block GitHub Actions runner IPs. We
-// keep the rule functions above so the dashboard auto-lights up if data
-// ever becomes available; for now they live in DEFERRED so they render
-// in the amber "Pending Data Source" panel rather than as N/A clutter
-// in the main scoring grid, and they don't drag down total Max points.
+// All 8 client-framework rules are active. PCR / Impact Cost get their
+// data from Firecrawl (residential-proxy fetch that bypasses the NSE
+// bot detection that blocked our direct scrapes). Bid-Ask Spread reads
+// from Yahoo's chart-meta snapshot — populated for some NSE tickers,
+// degrades to N/A per company when Yahoo omits it.
 const ACTIVE_RULES = [
   { key: "vix",      label: "India VIX",         category: "Sentiment", criteria: "< 15 (risk-on)",          fn: ruleIndiaVIX },
   { key: "fiidii",   label: "FII / DII Flow",    category: "Sentiment", criteria: "Net positive 10/20 days", fn: ruleFIIDIIFlow },
+  { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
+  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for mid-cap",      fn: ruleImpactCost },
+  { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
 
-const DEFERRED = [
-  { key: "pcr",    label: "Put Call Ratio", category: "Sentiment", max: 1,
-    reason: "NSE option-chain API blocks GitHub Actions runner IPs. Tried 5 sources (NSE v1/v3, Yahoo, MoneyControl, NSE F&O bhavcopy in 4 URL formats) — none returned usable data. Permanently deferred until a paid feed or browser-resident relay." },
-  { key: "impact", label: "Impact Cost",    category: "Liquidity", max: 2,
-    reason: "NSE's monthly Impact Cost CSV is gated by bot detection from CI environments. Self-healing scraper probes 8 URL patterns × 6 months on every run — zero hits in production. Permanently deferred." },
-  { key: "spread", label: "Bid-Ask Spread", category: "Liquidity", max: 1,
-    reason: "Requires real-time NSE order-book feed (paid market-data vendor). Permanently deferred — bad effort/value ratio for 1 point. Will light up immediately if you ever wire in a paid feed." },
-];
+const DEFERRED = [];
 
 export function scoreCompany(c) {
   if (c?.error) {

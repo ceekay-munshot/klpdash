@@ -89,6 +89,10 @@ async function run() {
         // Sentiment & Liquidity tab data: 20-day ADTV in ₹ crores + F&O eligibility
         adtv_20d_cr: adtv20Cr(bars),
         fno_eligible: fnoSet.has(ticker),
+        // Bid-Ask spread from Yahoo snapshot meta. Yahoo populates this
+        // intermittently for NSE tickers — when present it's the live
+        // bid/ask at the time of fetch, expressed as % of mid-price.
+        bid_ask_spread_pct: spreadFromMeta(bars.meta),
         ...indicators,
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);
@@ -179,10 +183,28 @@ function extractTicker(url) {
   return m ? m[1].toUpperCase() : null;
 }
 
+// Bid-ask spread as % of mid-price from Yahoo's chart-meta snapshot.
+// Yahoo includes `bid` + `ask` (real numbers) for some NSE tickers and
+// returns 0 / missing for others. We return null when either side is
+// missing so the Bid-Ask Spread rule degrades to a clean N/A.
+function spreadFromMeta(meta) {
+  if (!meta) return null;
+  const bid = Number(meta.bid);
+  const ask = Number(meta.ask);
+  if (!Number.isFinite(bid) || !Number.isFinite(ask)) return null;
+  if (bid <= 0 || ask <= 0 || ask <= bid) return null;
+  const mid = (bid + ask) / 2;
+  const pct = ((ask - bid) / mid) * 100;
+  return Math.round(pct * 1000) / 1000; // 3 decimal places
+}
+
 async function fetchBars(symbol, start, end) {
   // Yahoo Chart v8 API — public, no auth. Returns parallel arrays of
   // timestamps + OHLCV; we zip them into bar objects and drop any nulls
-  // (Yahoo occasionally inserts null at non-trading days).
+  // (Yahoo occasionally inserts null at non-trading days). Also exposes
+  // a `.meta` property on the returned array carrying snapshot fields
+  // like bid/ask/regularMarketPrice when Yahoo populates them — used
+  // by the Bid-Ask Spread sentiment rule.
   const p1 = Math.floor(start.getTime() / 1000);
   const p2 = Math.floor(end.getTime() / 1000);
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${p1}&period2=${p2}&interval=1d&events=history`;
@@ -211,6 +233,8 @@ async function fetchBars(symbol, start, end) {
           close, volume,
         });
       }
+      // Surface Yahoo's snapshot meta for use by downstream sentiment rules.
+      out.meta = result.meta || {};
       return out;
     } catch (err) {
       lastErr = err;
