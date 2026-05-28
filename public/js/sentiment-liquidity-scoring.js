@@ -92,23 +92,24 @@ function ruleFnOAvailability(c) {
 
 // ---- master ----
 
-// All 8 client-framework rules are active. PCR / Impact Cost get their
-// data from Firecrawl (residential-proxy fetch that bypasses the NSE
-// bot detection that blocked our direct scrapes). Bid-Ask Spread reads
-// from Yahoo's chart-meta snapshot — populated for some NSE tickers,
-// degrades to N/A per company when Yahoo omits it.
+// 7 active rules. PCR is sourced via Firecrawl LLM extract from NSE's
+// option-chain HTML page. Bid-Ask Spread reads from Yahoo's chart-meta
+// snapshot. Impact Cost stays in DEFERRED — NSE removed the public CSV
+// distribution (confirmed via Firecrawl: product page itself 404s).
 const ACTIVE_RULES = [
   { key: "vix",      label: "India VIX",         category: "Sentiment", criteria: "< 15 (risk-on)",          fn: ruleIndiaVIX },
   { key: "fiidii",   label: "FII / DII Flow",    category: "Sentiment", criteria: "Net positive 10/20 days", fn: ruleFIIDIIFlow },
   { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
-  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for mid-cap",      fn: ruleImpactCost },
   { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
 
-const DEFERRED = [];
+const DEFERRED = [
+  { key: "impact", label: "Impact Cost", category: "Liquidity", max: 2,
+    reason: "NSE removed the public Impact Cost CSV distribution. We confirmed via Firecrawl that the product page (/products-services/equity-market-impact-cost) itself returns 404 server-side, and no third-party aggregator republishes the per-ticker numbers. Worth 2 pts; need paid market-data feed or NSE to restore public access." },
+];
 
 export function scoreCompany(c) {
   if (c?.error) {

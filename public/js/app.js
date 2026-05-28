@@ -91,8 +91,8 @@ const CONFIGS = {
       { label: "CMP",     get: (c) => c.cmp ? "₹" + Math.round(c.cmp).toLocaleString("en-IN") : "—" },
     ],
     stats: {
-      rules: "8 / 8",    rulesNote: "Active rules",
-      maxScore: "12 pts", maxNote: "PCR + Impact Cost via Firecrawl",
+      rules: "7 / 8",    rulesNote: "Active rules",
+      maxScore: "10 pts", maxNote: "After Impact Cost deferred: 12 pts",
     },
     drillHeaderStats: (c) => [
       { label: "ADTV · F&O",

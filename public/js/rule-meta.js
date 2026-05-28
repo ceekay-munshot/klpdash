@@ -349,10 +349,10 @@ export const META = {
       ourLogic: null,
     },
     impact: {
-      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Monthly publication — Firecrawl-sourced" }),
-      calculation: "Firecrawl probes NSE's monthly Impact Cost CSV across the last 4 months × 6 URL patterns. First parseable response wins. Per-ticker impact cost percentages are merged into Sentiment tab rows.",
+      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Public CSV removed by NSE" }),
+      calculation: null,
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
-      ourLogic: null,
+      ourLogic: "Deferred. NSE removed the public Impact Cost distribution — we confirmed via Firecrawl (which bypasses bot detection) that the product page itself returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Will light up if NSE restores public access or you wire in a paid market-data feed.",
     },
     spread: {
       source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE live order book", section: "Real-time bid-ask spread (deferred)" }),
