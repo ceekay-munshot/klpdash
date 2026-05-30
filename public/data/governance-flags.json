@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-05-30T12:03:06.574Z",
+  "source_count": 3,
+  "total_entities_seen": 0,
+  "flagged_companies": {},
+  "unmatched_sample": [],
+  "sources": [
+    {
+      "url": "https://www.sebi.gov.in/enforcement/orders.html",
+      "label": "SEBI — orders listing",
+      "at": "2026-05-30T12:02:47.678Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted": 10,
+      "after_filter_count": 0,
+      "sample": []
+    },
+    {
+      "url": "https://www.sebi.gov.in/sebi_data/recent.html",
+      "label": "SEBI — recent activity",
+      "at": "2026-05-30T12:02:59.228Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": null,
+      "total_extracted": 0,
+      "after_filter_count": 0,
+      "sample": []
+    },
+    {
+      "url": "https://www.sebi.gov.in/media/press-releases.html",
+      "label": "SEBI — press releases",
+      "at": "2026-05-30T12:03:04.278Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 404,
+      "total_extracted": 0,
+      "after_filter_count": 0,
+      "sample": []
+    }
+  ]
+}
