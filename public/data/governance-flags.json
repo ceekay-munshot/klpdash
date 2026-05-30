@@ -1,40 +1,116 @@
 {
-  "generated_at": "2026-05-30T12:03:06.574Z",
-  "source_count": 3,
-  "total_entities_seen": 0,
+  "generated_at": "2026-05-30T12:47:12.053Z",
+  "source_count": 4,
+  "total_entities_seen": 3,
   "flagged_companies": {},
-  "unmatched_sample": [],
+  "unmatched_sample": [
+    {
+      "name": "XYZ Industries Ltd.",
+      "type": "adjudication",
+      "source": "SEBI — recent activity"
+    },
+    {
+      "name": "LMN Corporation",
+      "type": "investigation",
+      "source": "SEBI — recent activity"
+    },
+    {
+      "name": "PQR Limited",
+      "type": "appeal",
+      "source": "SEBI — recent activity"
+    }
+  ],
   "sources": [
     {
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing",
-      "at": "2026-05-30T12:02:47.678Z",
+      "at": "2026-05-30T12:46:27.806Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted": 10,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "sample": []
     },
     {
       "url": "https://www.sebi.gov.in/sebi_data/recent.html",
       "label": "SEBI — recent activity",
-      "at": "2026-05-30T12:02:59.228Z",
+      "at": "2026-05-30T12:46:30.061Z",
       "fc_status": 200,
       "outcome": "ok",
-      "upstream_status": null,
-      "total_extracted": 0,
-      "after_filter_count": 0,
-      "sample": []
+      "upstream_status": 404,
+      "total_extracted": 4,
+      "prefilter_sample": [
+        {
+          "name": "XYZ Industries Ltd.",
+          "order_type": "adjudication",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "received a show-cause notice regarding alleged irregularities."
+        },
+        {
+          "name": "ABC Fintech Ltd.",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "is_active_proceeding": false,
+          "snippet": "entered into a settlement agreement with SEBI."
+        },
+        {
+          "name": "LMN Corporation",
+          "order_type": "investigation",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "is under investigation concerning market manipulation practices."
+        },
+        {
+          "name": "PQR Limited",
+          "order_type": "appeal",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "filed an appeal against SEBI's prior orders."
+        }
+      ],
+      "after_filter_count": 3,
+      "sample": [
+        {
+          "name": "XYZ Industries Ltd.",
+          "order_type": "adjudication",
+          "snippet": "received a show-cause notice regarding alleged irregularities."
+        },
+        {
+          "name": "LMN Corporation",
+          "order_type": "investigation",
+          "snippet": "is under investigation concerning market manipulation practices."
+        },
+        {
+          "name": "PQR Limited",
+          "order_type": "appeal",
+          "snippet": "filed an appeal against SEBI's prior orders."
+        }
+      ]
     },
     {
-      "url": "https://www.sebi.gov.in/media/press-releases.html",
-      "label": "SEBI — press releases",
-      "at": "2026-05-30T12:03:04.278Z",
+      "url": "https://www.sebi.gov.in/media-and-notifications/press-releases.html",
+      "label": "SEBI — press releases (new path)",
+      "at": "2026-05-30T12:46:47.111Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 404,
       "total_extracted": 0,
+      "prefilter_sample": [],
+      "after_filter_count": 0,
+      "sample": []
+    },
+    {
+      "url": "https://www.sebi.gov.in/enforcement/adjudication-orders.html",
+      "label": "SEBI — adjudication orders",
+      "at": "2026-05-30T12:46:59.369Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 404,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "sample": []
     }
