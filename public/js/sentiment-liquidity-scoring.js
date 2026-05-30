@@ -80,39 +80,40 @@ function ruleADTV(c) {
 }
 
 function ruleImpactCost(c) {
-  if (c?.impact_cost_pct == null) {
-    return { ...NA, max: 2,
-      note: "Impact cost not available for this ticker in the most recent NSE monthly CSV. Sourced via Firecrawl (proxies past the bot detection that blocks direct GHA runner access). Either the file isn't yet published for this month or this ticker wasn't on it.",
-    };
-  }
-  const ic = c.impact_cost_pct;
-  const val = `Impact cost ${ic}%`;
-  if (ic <= 0.3) return { points: 2, max: 2, status: "pass", value: val, note: "Impact cost ≤ 0.3% — tight execution for mid-cap orders." };
-  if (ic <= 0.5) return { points: 1, max: 2, status: "partial", value: val, note: "Impact cost 0.3–0.5% — acceptable slippage." };
-  return { points: 0, max: 2, status: "fail", value: val, note: "Impact cost > 0.5% — high slippage risk." };
+  // Prefer a real, vendor-sourced impact cost if/when it ever populates
+  // (e.g. a future Upstox / TrueData integration); fall back to the
+  // Amihud-derived estimate we compute from daily OHLCV.
+  const real = c?.impact_cost_pct;
+  const est  = c?.impact_cost_pct_est_1cr;
+  const ic   = (typeof real === "number" && real >= 0) ? real : est;
+  if (ic == null) return { ...NA, max: 2,
+    note: "Impact cost not yet computable — Technicals scrape needs ≥ 30 days of OHLCV bars + non-zero volume." };
+  const isEst = !(typeof real === "number" && real >= 0);
+  const label = isEst ? `Impact cost ${ic}% (est., ₹1 Cr order)` : `Impact cost ${ic}%`;
+  const tail  = isEst
+    ? " Estimated via Amihud illiquidity ratio over last 30 trading days (NSE's official monthly Impact Cost CSV was discontinued July 2024)."
+    : "";
+  if (ic <= 0.3) return { points: 2, max: 2, status: "pass",    value: label, note: "Impact cost ≤ 0.3% — tight execution for mid-cap orders." + tail };
+  if (ic <= 0.5) return { points: 1, max: 2, status: "partial", value: label, note: "Impact cost 0.3–0.5% — acceptable slippage." + tail };
+  return            { points: 0, max: 2, status: "fail",    value: label, note: "Impact cost > 0.5% — high slippage risk." + tail };
 }
 
 function ruleBidAskSpread(c) {
-  if (c?.bid_ask_spread_pct == null) {
-    return { ...NA, max: 1,
-      note: "Bid-ask spread not available — Yahoo's snapshot meta didn't carry live bid/ask for this ticker on this run. NSE's real-time order book stays paywalled, so we accept gaps when Yahoo omits it." };
-  }
-  const sp = c.bid_ask_spread_pct;
-  const val = `Bid-ask spread ${sp}% of CMP`;
-  // Strict client logic: pass only when spread < 0.1%. > 0.3% is named
-  // "thin order book" (0 pts). The 0.1–0.3% zone isn't defined in the
-  // spec — default to fail (0 pts) to stay binary.
-  if (sp < 0.1) {
-    return { points: 1, max: 1, status: "pass", value: val,
-      note: "Spread < 0.1% — tight order book, full credit per client framework." };
-  }
-  if (sp > 0.3) {
-    return { points: 0, max: 1, status: "fail", value: val,
-      note: "Spread > 0.3% — thin order book per client framework." };
-  }
-  // 0.1% ≤ spread ≤ 0.3% — transitional zone the spec doesn't define.
-  return { points: 0, max: 1, status: "fail", value: val,
-    note: `Spread ${sp}% in transitional zone (0.1–0.3%) — outside the < 0.1% pass band, no points awarded.` };
+  // Prefer a real bid/ask spread if any source ever provides one;
+  // fall back to the Abdi-Ranaldo CHL estimate from daily OHLCV.
+  const real = c?.bid_ask_spread_pct;
+  const est  = c?.bid_ask_spread_pct_est;
+  const sp   = (typeof real === "number" && real >= 0) ? real : est;
+  if (sp == null) return { ...NA, max: 1,
+    note: "Bid-ask spread not yet computable — Technicals scrape needs ≥ 30 days of high/low/close bars." };
+  const isEst = !(typeof real === "number" && real >= 0);
+  const label = isEst ? `Bid-ask spread ${sp}% of CMP (est.)` : `Bid-ask spread ${sp}% of CMP`;
+  const tail  = isEst
+    ? " Estimated via Abdi-Ranaldo (2017) close/high/low proxy — daily OHLCV stand-in for NSE Level-1 quotes, which Yahoo doesn't carry."
+    : "";
+  if (sp < 0.1) return { points: 1, max: 1, status: "pass", value: label, note: "Spread < 0.1% — tight order book, full credit per client framework." + tail };
+  if (sp > 0.3) return { points: 0, max: 1, status: "fail", value: label, note: "Spread > 0.3% — thin order book per client framework." + tail };
+  return            { points: 0, max: 1, status: "fail", value: label, note: `Spread ${sp}% in transitional zone (0.1–0.3%) — outside the < 0.1% pass band.` + tail };
 }
 
 function ruleFnOAvailability(c) {
@@ -123,26 +124,24 @@ function ruleFnOAvailability(c) {
 
 // ---- master ----
 
-// 6 active rules. PCR sourced via Firecrawl LLM extract from NSE option-
-// chain page. Bid-Ask Spread + Impact Cost stay in DEFERRED because the
-// only data sources are paywalled (NSE Level-1 quote + NSE removed the
-// public Impact Cost CSV). Both proven via runs that returned 0 / 506
-// coverage on free sources.
+// All 8 client-framework rules are active. PCR sourced via Firecrawl
+// LLM extract from NSE option-chain. Bid-Ask Spread + Impact Cost are
+// computed from daily OHLCV using validated academic estimators
+// (Abdi-Ranaldo for spread, Amihud for impact) — NSE Level-1 quotes
+// and the official Impact Cost CSV are both behind paywalls / were
+// discontinued, and Yahoo doesn't carry NSE bid/ask.
 const ACTIVE_RULES = [
   { key: "vix",      label: "India VIX",         category: "Sentiment", criteria: "< 15 (risk-on)",          fn: ruleIndiaVIX },
   { key: "fiidii",   label: "FII / DII Flow",    category: "Sentiment", criteria: "Net positive 10/20 days", fn: ruleFIIDIIFlow },
   { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
+  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for ₹1 Cr",        fn: ruleImpactCost },
+  { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
 
-const DEFERRED = [
-  { key: "impact", label: "Impact Cost", category: "Liquidity", max: 2,
-    reason: "NSE removed the public Impact Cost CSV distribution. We confirmed via Firecrawl that the product page (/products-services/equity-market-impact-cost) returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Worth 2 pts; needs paid market-data feed or NSE to restore public access." },
-  { key: "spread", label: "Bid-Ask Spread", category: "Liquidity", max: 1,
-    reason: "Yahoo Finance doesn't carry NSE Level-1 quote data — confirmed 0/506 coverage on both v8 chart-meta and v7 quote endpoints. Bid/ask is paywalled behind NSE's market-data licensing. Worth 1 pt; needs a paid market-data vendor (Refinitiv, Bloomberg, or direct NSE feed)." },
-];
+const DEFERRED = [];
 
 export function scoreCompany(c) {
   if (c?.error) {
