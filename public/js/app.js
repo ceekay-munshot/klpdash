@@ -32,8 +32,8 @@ const CONFIGS = {
     ],
     // 3 stat-card values for the header strip
     stats: {
-      rules: "17 / 19",   rulesNote: "Active rules",
-      maxScore: "25 pts", maxNote: "After deferred: 29 pts",
+      rules: "18 / 19",   rulesNote: "Active rules",
+      maxScore: "27 pts", maxNote: "After Auditor Remarks deferred: 29 pts",
     },
     drillHeaderStats: (c) => [
       { label: "Market Cap", main: c["Market Cap"] || "—", sub: `CMP ${c["Current Price"] || "—"}` },
@@ -288,31 +288,47 @@ async function loadTab(tabId) {
   const rows = parsed.rows || parsed;
   const meta = parsed.meta || rawMeta || rawData;
 
-  // Fundamentals tab: merge insider-trades.json onto each row by NSE ticker
-  // (extracted from Screener URL slug). If insider data is missing or empty,
-  // ruleInsiderBuying degrades to a clear N/A explanation.
+  // Fundamentals tab: merge insider-trades.json + governance-flags.json
+  // onto each row by NSE ticker. Both files are best-effort — missing
+  // or empty file degrades cleanly to N/A in the associated rule.
   if (tabId === "fundamentals") {
+    let insiderByTicker = {};
+    let insiderLoaded = false;
     try {
       const insider = await fetch("data/insider-trades.json").then((r) => r.json());
-      const byTicker = insider?.companies || {};
-      const insiderLoaded = Object.keys(byTicker).length > 0;
-      for (const row of rows) {
-        const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
-        const ticker = m ? m[1].toUpperCase() : null;
-        const data = ticker ? byTicker[ticker] : null;
-        row.insider_loaded = insiderLoaded;
-        if (data) {
-          row.insider_net_shares  = data.net_shares;
-          row.insider_net_value   = data.net_value;
-          row.insider_buy_shares  = data.buy_shares;
-          row.insider_sell_shares = data.sell_shares;
-          row.insider_transactions = data.transactions;
-          row.insider_last_date   = data.last_date;
-        } else {
-          row.insider_transactions = 0;
-        }
+      insiderByTicker = insider?.companies || {};
+      insiderLoaded = Object.keys(insiderByTicker).length > 0;
+    } catch { /* insider file missing — rule shows N/A */ }
+
+    let governanceByTicker = {};
+    let governanceLoaded = false;
+    try {
+      const gov = await fetch("data/governance-flags.json").then((r) => r.json());
+      governanceByTicker = gov?.flagged_companies || {};
+      // Treat the file as "loaded" whenever it parses — even an empty
+      // flagged_companies map is a real signal ("no SEBI proceedings"),
+      // not "data missing".
+      governanceLoaded = !!gov && !gov.error;
+    } catch { /* governance file missing — rule shows N/A */ }
+
+    for (const row of rows) {
+      const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
+      const ticker = m ? m[1].toUpperCase() : null;
+      const insiderData = ticker ? insiderByTicker[ticker] : null;
+      row.insider_loaded = insiderLoaded;
+      if (insiderData) {
+        row.insider_net_shares  = insiderData.net_shares;
+        row.insider_net_value   = insiderData.net_value;
+        row.insider_buy_shares  = insiderData.buy_shares;
+        row.insider_sell_shares = insiderData.sell_shares;
+        row.insider_transactions = insiderData.transactions;
+        row.insider_last_date   = insiderData.last_date;
+      } else {
+        row.insider_transactions = 0;
       }
-    } catch { /* insider file missing — rule shows N/A with explanation */ }
+      row.governance_loaded = governanceLoaded;
+      row.governance_flag = ticker && governanceByTicker[ticker] ? governanceByTicker[ticker] : null;
+    }
   }
 
   // Macro tab: merge the loaded macro.json into each row as ._macro, and

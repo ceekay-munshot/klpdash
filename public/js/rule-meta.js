@@ -141,11 +141,11 @@ export const META = {
       clientLogic: "PASS if clean unqualified opinion; 2 pts. Any qualification or emphasis-of-matter = 1 pt. Adverse opinion or disclaimer = hard fail.",
       ourLogic: "Deferred. Requires either a curated list maintained by your team (companies with adverse/qualified opinions in latest AR) or LLM-based extraction from annual report PDFs. Will populate as Batch C2.",
     },
-    governanceIssues: {
-      source: () => ({ url: "https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=27&smid=0", label: "SEBI Orders Database", section: "Active proceedings + litigation flags (deferred)" }),
-      calculation: null,
+    governance: {
+      source: () => ({ url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI Orders + Press Releases", section: "Auto-refresh via Firecrawl LLM extract (weekly)" }),
+      calculation: "Weekly Firecrawl + LLM extract on 3 SEBI sources (enforcement orders listing, recent activity, press releases). Schema asks the LLM for 'listed Indian companies named as noticees / respondents in ACTIVE proceedings' — explicitly excludes individuals, foreign entities, third-party mentions, and concluded matters. Fuzzy name matcher resolves extracted names to NSE 500 tickers. Result is committed to public/data/governance-flags.json and merged per-ticker on Fundamentals tab load.",
       clientLogic: "PASS if no active SEBI proceedings or litigation flags; 2 pts. Any active investigation = 0 pts (hard fail).",
-      ourLogic: "Deferred. Will be a curated list maintained from SEBI Orders Database — typically 10–15 NSE 500 names with active proceedings at any given time.",
+      ourLogic: null,
     },
   },
 
