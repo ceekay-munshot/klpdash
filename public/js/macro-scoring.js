@@ -38,9 +38,11 @@ function ruleInfraPush(c) {
   const active = m.regime?.gov_capex_active;
   const isBenef = inTheme(c, "infra_push");
   const sector = getSector(c);
+  // Rule doesn't apply to non-infra sectors — return N/A with max:0 so
+  // the company isn't penalised for being outside the theme.
+  if (!isBenef) return { points: 0, max: 0, status: "na", value: sector, note: `Sector not on the infra-beneficiary list — rule doesn't apply to ${sector}.` };
   if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "Government capex push not flagged as active in macro context." };
-  if (isBenef) return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.gov_capex_note || "In a sector benefiting from active government capex push." };
-  return { points: 0, max: 2, status: "fail", value: sector, note: "Sector not on the infra-beneficiary list — no exposure to the current capex theme." };
+  return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.gov_capex_note || "In a sector benefiting from active government capex push." };
 }
 
 function ruleRateCuts(c) {
@@ -50,9 +52,10 @@ function ruleRateCuts(c) {
   const inCycle = m.regime?.rate_cut_cycle;
   const isBenef = inTheme(c, "rate_sensitive");
   const sector = getSector(c);
+  // Non-rate-sensitive sectors: rule doesn't apply, N/A with max:0.
+  if (!isBenef) return { points: 0, max: 0, status: "na", value: sector, note: `Sector not rate-sensitive — rule doesn't apply to ${sector}.` };
   if (!inCycle) return { points: 1, max: 2, status: "partial", value: sector, note: "RBI not in rate-cut cycle — neutral for rate-sensitive sectors." };
-  if (isBenef) return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.rate_cut_cycle_note || "Rate-sensitive sector benefiting from RBI rate-cut cycle." };
-  return { points: 1, max: 2, status: "partial", value: sector, note: "Sector neutral to rate cuts." };
+  return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.rate_cut_cycle_note || "Rate-sensitive sector benefiting from RBI rate-cut cycle." };
 }
 
 function ruleChinaPlusOne(c) {
@@ -63,20 +66,22 @@ function ruleChinaPlusOne(c) {
   const onCompanyList = !!c?.in_china_plus_one;
   const inSectorList = inTheme(c, "china_plus_one");
   const sector = getSector(c);
-  if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active in macro context." };
   // Primary path: curated company list (~50 names with confirmed >15%
   // China+1 / EMS exposure). Full 2 pts.
   if (onCompanyList) {
+    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active — even curated-list companies score 0." };
     return { points: 2, max: 2, status: "pass", value: sector,
       note: `${m.regime?.china_plus_one_note || "Benefiting from China+1 reorientation."} On curated company list with material China+1 / EMS revenue.` };
   }
   // Fallback path: sector membership only. Half credit, since we can't
   // verify the >15% threshold without segment-level revenue.
   if (inSectorList) {
+    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active — sector match alone scores 0." };
     return { points: 1, max: 2, status: "partial", value: sector,
       note: `Sector benefits from China+1 theme but company not on the curated >15%-revenue list — partial credit.` };
   }
-  return { points: 0, max: 2, status: "fail", value: sector, note: "Neither on the curated company list nor in a China+1-benefiting sector." };
+  // Neither on the list nor in a benefiting sector — rule doesn't apply.
+  return { points: 0, max: 0, status: "na", value: sector, note: `Neither on the China+1 curated company list nor in a benefiting sector — rule doesn't apply to ${sector}.` };
 }
 
 function ruleRuralRecovery(c) {
@@ -86,7 +91,8 @@ function ruleRuralRecovery(c) {
   const signal = m.regime?.rural_recovery_signal || "neutral";
   const isBenef = inTheme(c, "rural_recovery");
   const sector = getSector(c);
-  if (!isBenef) return { points: 0, max: 1, status: "fail", value: sector, note: "Not a rural-facing sector." };
+  // Non-rural-facing sector: rule doesn't apply.
+  if (!isBenef) return { points: 0, max: 0, status: "na", value: sector, note: `Sector not rural-facing — rule doesn't apply to ${sector}.` };
   if (signal === "good") return { points: 1, max: 1, status: "pass", value: sector, note: m.regime?.rural_recovery_note || "Rural indicators improving — favourable for FMCG/Tractors/Agro." };
   if (signal === "neutral") return { points: 1, max: 1, status: "partial", value: sector, note: "Rural-facing sector but indicators are mixed." };
   return { points: 0, max: 1, status: "fail", value: sector, note: "Rural signal weak / drought risk flagged." };
@@ -128,7 +134,8 @@ function ruleCrudeOil(c) {
   const val = `Brent $${crude}/bbl (${trend})`;
   if (crude < 85 && benefitsLow) return { points: 1, max: 1, status: "pass", value: val, note: `Crude below $85 — favourable for ${sector}.` };
   if (crude > 90 && hurtsHigh) return { points: 0, max: 1, status: "fail", value: val, note: `Crude above $90 — input-cost headwind for ${sector}.` };
-  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly crude-sensitive — rule doesn't apply to ${sector}.` };
+  // Non-crude-sensitive sector: rule doesn't apply (max:0 so it doesn't drag down score%).
+  return { points: 0, max: 0, status: "na", value: val, note: `Sector not directly crude-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 function ruleINRUSD(c) {
@@ -146,7 +153,8 @@ function ruleINRUSD(c) {
   if (inrWeakening && exporter) return { points: 1, max: 1, status: "pass", value: val, note: `INR weakening trend — adds ~70 bps margin tailwind for ${sector} exporters.` };
   if (inrStrengthening && exporter) return { points: 0, max: 1, status: "fail", value: val, note: `Strong INR hurts ${sector} exporters.` };
   if (inrWeakening && importer) return { points: 0, max: 1, status: "fail", value: val, note: `INR weakening hurts ${sector} importers.` };
-  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly INR-sensitive — rule doesn't apply to ${sector}.` };
+  // Non-INR-sensitive sector: rule doesn't apply.
+  return { points: 0, max: 0, status: "na", value: val, note: `Sector not directly INR-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 function ruleBondYields(c) {
@@ -162,7 +170,8 @@ function ruleBondYields(c) {
   const srcNote = src.toLowerCase().includes("macro-context") ? "" : ` Source: ${src}.`;
   if (trend === "declining" && benefitsFall) return { points: 1, max: 1, status: "pass", value: val, note: "Falling 10Y yield — spread compression eases for Banks/NBFCs/Realty." + srcNote };
   if (trend === "rising" && benefitsFall) return { points: 0, max: 1, status: "fail", value: val, note: "Rising yields compress NIMs for rate-sensitive financials." + srcNote };
-  return { points: 0, max: 1, status: "na", value: val, note: `Sector not directly bond-yield-sensitive — rule doesn't apply to ${sector}.` };
+  // Non-bond-yield-sensitive sector: rule doesn't apply.
+  return { points: 0, max: 0, status: "na", value: val, note: `Sector not directly bond-yield-sensitive — rule doesn't apply to ${sector}.` };
 }
 
 // ---- Government Policy (4 pts) ----
