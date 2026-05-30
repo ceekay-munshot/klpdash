@@ -1,93 +1,12 @@
 {
-  "generated_at": "2026-05-30T12:54:03.523Z",
+  "generated_at": "2026-05-30T15:28:23.117Z",
   "source_count": 4,
-  "total_entities_seen": 15,
-  "flagged_companies": {
-    "LINDEINDIA": {
-      "primary_name": "Linde India Ltd",
-      "order_type": "Result",
-      "snippet": "Audited Standalone And Consolidated Financial Results For The Financial Year Ended 31 March 2026",
-      "source_url": "https://www.bseindia.com/corporates/ann.html",
-      "source_label": "BSE — corporate announcements (recent)",
-      "mentions": [
-        {
-          "source": "BSE — corporate announcements (recent)",
-          "order_type": "Result",
-          "snippet": "Audited Standalone And Consolidated Financial Results For The Financial Year Ended 31 March 2026"
-        }
-      ],
-      "first_seen_at": "2026-05-30T12:54:03.522Z"
-    }
-  },
+  "total_entities_seen": 1,
+  "flagged_companies": {},
   "unmatched_sample": [
     {
-      "name": "Zodiac-JRD-MKJ Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Inflame Appliances Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Jeena Sikho Lifecare Ltd",
-      "type": "Board Meeting",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "HOMRE Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Mercury Trade Links Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "K S Oils Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Shentracon Chemicals Ltd",
-      "type": "Board Meeting",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Gujarat Investa Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Registered under Regulation 30 (LODR)-Change in Management",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Integrated Capital Services Ltd",
-      "type": "Board Meeting",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Royale Manor Hotels & Industries Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Tejassvi Aaharam Ltd",
-      "type": "Board Meeting",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Hinduja Global Solutions Ltd",
-      "type": "Company Update",
-      "source": "BSE — corporate announcements (recent)"
-    },
-    {
-      "name": "Coral Newsprints Ltd",
-      "type": "Board Meeting",
+      "name": "Dee Development Engineers Ltd",
+      "type": "insider trading",
       "source": "BSE — corporate announcements (recent)"
     }
   ],
@@ -95,177 +14,110 @@
     {
       "url": "https://www.bseindia.com/corporates/ann.html",
       "label": "BSE — corporate announcements (recent)",
-      "at": "2026-05-30T12:53:35.719Z",
+      "at": "2026-05-30T15:28:03.463Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 15,
-      "total_extracted": 15,
+      "total_extracted_raw": 11,
+      "total_extracted": 11,
       "prefilter_sample": [
         {
-          "name": "Zodiac-JRD-MKJ Ltd",
-          "order_type": "Company Update",
+          "name": "Dee Development Engineers Ltd",
+          "order_type": "insider trading",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Announcement under Regulation 30 (LODR)-Resignation of Company Secretary / Compliance Officer"
+          "snippet": "Closure of Trading Window"
         },
         {
-          "name": "Linde India Ltd",
-          "order_type": "Result",
+          "name": "Haria Apparels Ltd",
+          "order_type": "result",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Audited Standalone And Consolidated Financial Results For The Financial Year Ended 31 March 2026"
+          "snippet": "Outcome Of Board Meeting And Submission Of Audited Financial Results For The Year Ended March 31St 2026."
         },
         {
-          "name": "Inflame Appliances Ltd",
-          "order_type": "Company Update",
+          "name": "Bonlon Industries Ltd",
+          "order_type": "board meeting",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Announcement under Regulation 30 (LODR)-Investor Presentation"
+          "snippet": "Outcome for OUTCOME OF BOARD MEETING"
         },
         {
-          "name": "Jeena Sikho Lifecare Ltd",
-          "order_type": "Board Meeting",
+          "name": "Pakka Ltd",
+          "order_type": "board meeting",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Board Meeting Outcome for Declaration Of Audited Financial Results for the Quarter And Financial Year Ended 31St March, 2026."
+          "snippet": "Outcome Of Board Meeting Held On 30Th May, 2026"
         },
         {
-          "name": "HOMRE Ltd",
-          "order_type": "Company Update",
+          "name": "3B Films Ltd",
+          "order_type": "company update",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "Regulation 30 (LODR)-Resignation of Director"
+        },
+        {
+          "name": "Sree Rayalaseema Hi-Strength Hypo Ltd",
+          "order_type": "result",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "Submission Of Standalone And Consolidated Audited Financial Results For 4Th Quarter / Year Ending 31.03.2026"
+        },
+        {
+          "name": "Unison Metals Ltd",
+          "order_type": "result",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "STANDALONE AND CONSOLIDATED AUDITED FINANCIAL RESULT FOR THE QUARTER AND YEAR ENDED 31 MARCH 2026"
+        },
+        {
+          "name": "Procal Electronics India Ltd",
+          "order_type": "board meeting",
+          "is_listed_entity": true,
+          "is_active_proceeding": true,
+          "snippet": "Outcome Of Board Meeting Of The Company Held On Today I.E. 30.05.2026"
+        },
+        {
+          "name": "Aarnav Fashions Ltd",
+          "order_type": "company update",
           "is_listed_entity": true,
           "is_active_proceeding": true,
           "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
         },
         {
-          "name": "Mercury Trade Links Ltd",
-          "order_type": "Company Update",
+          "name": "Samrat Pharmachem Ltd",
+          "order_type": "result",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
+          "snippet": "Audited Financial Results For The Quarter And Year Ended 31 March, 2026"
         },
         {
-          "name": "K S Oils Ltd",
-          "order_type": "Company Update",
+          "name": "Repono Ltd",
+          "order_type": "company update",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
-        },
-        {
-          "name": "Shentracon Chemicals Ltd",
-          "order_type": "Board Meeting",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Board Meeting Outcome for Outcome Of The Board Meeting Held On Saturday, 30Th May, 2026."
-        },
-        {
-          "name": "Gujarat Investa Ltd",
-          "order_type": "Company Update",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Compliance Certificate Pursuant To Regulation 3(5) And 3(6) Of SEBI."
-        },
-        {
-          "name": "Registered under Regulation 30 (LODR)-Change in Management",
-          "order_type": "Company Update",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Announcement under Regulation 30 (LODR)-Change in Management"
-        },
-        {
-          "name": "Integrated Capital Services Ltd",
-          "order_type": "Board Meeting",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Board Meeting Outcome for Outcome Of Bord Meeting Held On 30.05.2026"
-        },
-        {
-          "name": "Royale Manor Hotels & Industries Ltd",
-          "order_type": "Company Update",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
-        },
-        {
-          "name": "Tejassvi Aaharam Ltd",
-          "order_type": "Board Meeting",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Board Meeting Outcome for OUTCOME OF BOARD MEETING HELD ON MAY 30, 2026."
-        },
-        {
-          "name": "Hinduja Global Solutions Ltd",
-          "order_type": "Company Update",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Board Meeting Intimation To Consider Dividend And Continuation Of Closure Of Trading Window"
-        },
-        {
-          "name": "Coral Newsprints Ltd",
-          "order_type": "Board Meeting",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Board Meeting Outcome for Outcome Board Meeting Held On 30.05.2026 At Registered Office Of The Company"
+          "snippet": "Intimation Under Regulation 30 Of SEBI (Listing Obligations And Disclosure Requirements) Regulations, 2015"
         }
       ],
-      "after_filter_count": 15,
+      "after_filter_count": 1,
+      "dropped_counts": {
+        "not_listed": 0,
+        "not_active": 0,
+        "routine_type": 10,
+        "no_sebi_signal": 0
+      },
       "sample": [
         {
-          "name": "Zodiac-JRD-MKJ Ltd",
-          "order_type": "Company Update",
-          "snippet": "Announcement under Regulation 30 (LODR)-Resignation of Company Secretary / Compliance Officer"
-        },
-        {
-          "name": "Linde India Ltd",
-          "order_type": "Result",
-          "snippet": "Audited Standalone And Consolidated Financial Results For The Financial Year Ended 31 March 2026"
-        },
-        {
-          "name": "Inflame Appliances Ltd",
-          "order_type": "Company Update",
-          "snippet": "Announcement under Regulation 30 (LODR)-Investor Presentation"
-        },
-        {
-          "name": "Jeena Sikho Lifecare Ltd",
-          "order_type": "Board Meeting",
-          "snippet": "Board Meeting Outcome for Declaration Of Audited Financial Results for the Quarter And Financial Yea"
-        },
-        {
-          "name": "HOMRE Ltd",
-          "order_type": "Company Update",
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
-        },
-        {
-          "name": "Mercury Trade Links Ltd",
-          "order_type": "Company Update",
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
-        },
-        {
-          "name": "K S Oils Ltd",
-          "order_type": "Company Update",
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
-        },
-        {
-          "name": "Shentracon Chemicals Ltd",
-          "order_type": "Board Meeting",
-          "snippet": "Board Meeting Outcome for Outcome Of The Board Meeting Held On Saturday, 30Th May, 2026."
-        },
-        {
-          "name": "Gujarat Investa Ltd",
-          "order_type": "Company Update",
-          "snippet": "Compliance Certificate Pursuant To Regulation 3(5) And 3(6) Of SEBI."
-        },
-        {
-          "name": "Registered under Regulation 30 (LODR)-Change in Management",
-          "order_type": "Company Update",
-          "snippet": "Announcement under Regulation 30 (LODR)-Change in Management"
+          "name": "Dee Development Engineers Ltd",
+          "order_type": "insider trading",
+          "snippet": "Closure of Trading Window"
         }
       ]
     },
     {
       "url": "https://www.bseindia.com/markets/MarketInfo/PressRelease.aspx",
       "label": "BSE — press releases",
-      "at": "2026-05-30T12:53:49.568Z",
+      "at": "2026-05-30T15:28:12.736Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -273,12 +125,18 @@
       "total_extracted": 0,
       "prefilter_sample": [],
       "after_filter_count": 0,
+      "dropped_counts": {
+        "not_listed": 0,
+        "not_active": 0,
+        "routine_type": 0,
+        "no_sebi_signal": 0
+      },
       "sample": []
     },
     {
       "url": "https://www.nseindia.com/companies-listing/corporate-filings-announcements",
       "label": "NSE — corporate filings & announcements",
-      "at": "2026-05-30T12:53:59.799Z",
+      "at": "2026-05-30T15:28:15.624Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -286,12 +144,18 @@
       "total_extracted": 0,
       "prefilter_sample": [],
       "after_filter_count": 0,
+      "dropped_counts": {
+        "not_listed": 0,
+        "not_active": 0,
+        "routine_type": 0,
+        "no_sebi_signal": 0
+      },
       "sample": []
     },
     {
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
-      "at": "2026-05-30T12:54:01.311Z",
+      "at": "2026-05-30T15:28:17.135Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -299,6 +163,12 @@
       "total_extracted": 0,
       "prefilter_sample": [],
       "after_filter_count": 0,
+      "dropped_counts": {
+        "not_listed": 0,
+        "not_active": 0,
+        "routine_type": 0,
+        "no_sebi_signal": 0
+      },
       "sample": []
     }
   ]
