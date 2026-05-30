@@ -31,7 +31,10 @@ if (!API_KEY) {
 const SOURCES = [
   { url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI — orders listing" },
   { url: "https://www.sebi.gov.in/sebi_data/recent.html", label: "SEBI — recent activity" },
-  { url: "https://www.sebi.gov.in/media/press-releases.html", label: "SEBI — press releases" },
+  // Previous URL (/media/press-releases.html) returned upstream 404.
+  // Try a couple of working alternates.
+  { url: "https://www.sebi.gov.in/media-and-notifications/press-releases.html", label: "SEBI — press releases (new path)" },
+  { url: "https://www.sebi.gov.in/enforcement/adjudication-orders.html", label: "SEBI — adjudication orders" },
 ];
 
 // LLM extract schema. The "is_listed_entity" + "is_active_proceeding"
@@ -43,17 +46,17 @@ const SCHEMA = {
   properties: {
     flagged_entities: {
       type: "array",
-      description: "Listed Indian companies named as noticees / respondents / parties in ACTIVE SEBI enforcement proceedings on this page. EXCLUDE: individuals (people), foreign companies, third-party mentions (auditors / bankers / regulators just mentioned in context), already-concluded matters where penalty has been paid in full and case is closed. INCLUDE: ongoing investigations, show-cause notices, in-progress adjudication, current appeals.",
+      description: "Any Indian COMPANY (not individual person) mentioned on this page in a SEBI enforcement context — orders, adjudications, settlement notices, show-cause notices, investigations, appeals, press releases about action against the entity. The page is from sebi.gov.in. Include every company appearing as the subject (noticee / respondent / party) of SEBI action even if the order looks recent or concluded — we'll do our own filtering downstream. EXCLUDE individuals (people named in their personal capacity, like 'Mr. ABC'). EXCLUDE foreign companies. EXCLUDE third-party mentions that are clearly just contextual (auditors, banks named as regulators only).",
       items: {
         type: "object",
         properties: {
-          name: { type: "string", description: "Company name as written" },
-          order_type: { type: "string", description: "One of: show-cause | adjudication | settlement-pending | investigation | appeal | press-release" },
-          is_listed_entity: { type: "boolean", description: "true if the entity is a publicly listed Indian company" },
-          is_active_proceeding: { type: "boolean", description: "true if the matter is currently active (not closed/settled in full)" },
-          context_snippet: { type: "string", description: "10-25 word snippet from the page describing the issue" },
+          name: { type: "string", description: "Company name as written, e.g. 'Reliance Industries Ltd.'" },
+          order_type: { type: "string", description: "Best guess: adjudication | settlement | show-cause | investigation | appeal | press-release | other" },
+          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company (most have Ltd / Limited suffix)" },
+          is_active_proceeding: { type: "boolean", description: "true if the matter looks like it is currently active (not fully closed and settled). When ambiguous, default to true." },
+          context_snippet: { type: "string", description: "10-30 word snippet describing what SEBI is doing about this company" },
         },
-        required: ["name", "is_listed_entity", "is_active_proceeding"],
+        required: ["name", "is_listed_entity"],
       },
     },
   },
@@ -101,7 +104,17 @@ async function firecrawlExtract(url, label) {
     entry.outcome = "ok";
     entry.upstream_status = data?.metadata?.statusCode || null;
     entry.total_extracted = items.length;
-    // Filter to LISTED + ACTIVE before counting & sampling.
+    // Save BEFORE-filter samples too — when post-filter is 0 this is the
+    // only way to see what the LLM actually extracted and why we
+    // rejected it.
+    entry.prefilter_sample = items.slice(0, 15).map((it) => ({
+      name: it.name,
+      order_type: it.order_type,
+      is_listed_entity: it.is_listed_entity,
+      is_active_proceeding: it.is_active_proceeding,
+      snippet: (it.context_snippet || "").slice(0, 150),
+    }));
+    // Filter to LISTED + ACTIVE before counting.
     const filtered = items.filter((it) => it.is_listed_entity !== false && it.is_active_proceeding !== false);
     entry.after_filter_count = filtered.length;
     entry.sample = filtered.slice(0, 10).map((it) => ({ name: it.name, order_type: it.order_type, snippet: (it.context_snippet || "").slice(0, 100) }));
