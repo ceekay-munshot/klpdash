@@ -28,13 +28,36 @@ if (!API_KEY) {
 // Source URLs. SEBI's site is structured around chronological order
 // archives; the orders page is the primary one. We hit a small set so
 // the Firecrawl bill stays sane.
+// Sources. We switched from SEBI-only after the May 30 diagnostic run:
+//
+//   - SEBI's enforcement/orders.html listing page works (200 OK) but
+//     the listing itself doesn't carry noticee names — only order titles
+//     + PDF links. We'd need to drill into individual PDFs (~50 extra
+//     Firecrawl calls/week) to get company names from SEBI directly.
+//   - Three other SEBI URLs we tried (recent.html, two press-release
+//     paths, adjudication-orders.html) all returned upstream 404.
+//   - Worse, the LLM hallucinated "XYZ Industries Ltd / ABC Fintech Ltd"
+//     etc. when fed an empty 404 page. The hallucination guard below
+//     now rejects any Firecrawl response with upstream_status != 200.
+//
+// New strategy: BSE + NSE Corporate Announcements. Under SEBI LODR
+// regulations, listed companies must disclose SEBI inquiries /
+// investigations / show-cause notices to BSE and NSE within 24 hours.
+// That's a much cleaner stream of governance signal:
+//   - Real disclosures published by the company itself (no third-party
+//     hearsay)
+//   - Direct link between disclosure and ticker
+//   - Easier for the LLM to spot (the disclosure subject line typically
+//     contains "Disclosure under Reg 30 of SEBI LODR" + nature)
+//
+// We retain SEBI's orders.html as a low-priority backup; if the listing
+// gains noticee data in future or has a parseable structure we don't
+// see today, the LLM will surface it.
 const SOURCES = [
-  { url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI — orders listing" },
-  { url: "https://www.sebi.gov.in/sebi_data/recent.html", label: "SEBI — recent activity" },
-  // Previous URL (/media/press-releases.html) returned upstream 404.
-  // Try a couple of working alternates.
-  { url: "https://www.sebi.gov.in/media-and-notifications/press-releases.html", label: "SEBI — press releases (new path)" },
-  { url: "https://www.sebi.gov.in/enforcement/adjudication-orders.html", label: "SEBI — adjudication orders" },
+  { url: "https://www.bseindia.com/corporates/ann.html", label: "BSE — corporate announcements (recent)" },
+  { url: "https://www.bseindia.com/markets/MarketInfo/PressRelease.aspx", label: "BSE — press releases" },
+  { url: "https://www.nseindia.com/companies-listing/corporate-filings-announcements", label: "NSE — corporate filings & announcements" },
+  { url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI — orders listing (backup)" },
 ];
 
 // LLM extract schema. The "is_listed_entity" + "is_active_proceeding"
@@ -46,15 +69,15 @@ const SCHEMA = {
   properties: {
     flagged_entities: {
       type: "array",
-      description: "Any Indian COMPANY (not individual person) mentioned on this page in a SEBI enforcement context — orders, adjudications, settlement notices, show-cause notices, investigations, appeals, press releases about action against the entity. The page is from sebi.gov.in. Include every company appearing as the subject (noticee / respondent / party) of SEBI action even if the order looks recent or concluded — we'll do our own filtering downstream. EXCLUDE individuals (people named in their personal capacity, like 'Mr. ABC'). EXCLUDE foreign companies. EXCLUDE third-party mentions that are clearly just contextual (auditors, banks named as regulators only).",
+      description: "Listed Indian companies on this page that have disclosed or been subject to a SEBI / NSE / BSE governance issue. INCLUDE only entries where the page clearly shows: a SEBI inquiry / investigation / show-cause notice / adjudication / settlement, OR a LODR Regulation 30 disclosure of the same, OR a securities-law / market-conduct litigation flag. EXCLUDE all routine corporate filings (board-meeting outcomes, dividend declarations, quarterly results, AGM notices, change-of-director appointments). EXCLUDE individuals named in their personal capacity. EXCLUDE foreign companies. IMPORTANT: only return entities that are actually named on the page text — DO NOT invent placeholder names like 'XYZ Industries' or 'ABC Limited' if the page is empty or shows an error.",
       items: {
         type: "object",
         properties: {
-          name: { type: "string", description: "Company name as written, e.g. 'Reliance Industries Ltd.'" },
-          order_type: { type: "string", description: "Best guess: adjudication | settlement | show-cause | investigation | appeal | press-release | other" },
-          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company (most have Ltd / Limited suffix)" },
-          is_active_proceeding: { type: "boolean", description: "true if the matter looks like it is currently active (not fully closed and settled). When ambiguous, default to true." },
-          context_snippet: { type: "string", description: "10-30 word snippet describing what SEBI is doing about this company" },
+          name: { type: "string", description: "Exact company name as written on the page, e.g. 'Reliance Industries Ltd.'. Must be a name actually present in the source page content." },
+          order_type: { type: "string", description: "Best guess: SEBI-inquiry | SEBI-investigation | show-cause | adjudication | settlement | LODR-disclosure | press-release | other" },
+          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company (BSE/NSE listed, typically with Ltd / Limited suffix)" },
+          is_active_proceeding: { type: "boolean", description: "true if the matter looks active (not fully closed). When ambiguous, default to true." },
+          context_snippet: { type: "string", description: "10-30 word verbatim snippet from the page describing the governance issue. If you can't quote the page, leave blank." },
         },
         required: ["name", "is_listed_entity"],
       },
@@ -100,10 +123,33 @@ async function firecrawlExtract(url, label) {
     }
     const data = j?.data || null;
     const extract = data?.json || data?.llm_extraction || data?.extract || {};
-    const items = Array.isArray(extract.flagged_entities) ? extract.flagged_entities : [];
+    let items = Array.isArray(extract.flagged_entities) ? extract.flagged_entities : [];
     entry.outcome = "ok";
     entry.upstream_status = data?.metadata?.statusCode || null;
+    entry.total_extracted_raw = items.length;
+
+    // Hallucination guard #1: Firecrawl says it succeeded but the
+    // upstream URL returned a 4xx/5xx. The LLM was extracting names
+    // from SEBI's HTML 404 page in the previous run and inventing
+    // placeholders like "XYZ Industries Ltd." to satisfy the schema.
+    // Reject the whole response when upstream is not 200.
+    if (entry.upstream_status && entry.upstream_status !== 200) {
+      entry.dropped_reason = `upstream_status=${entry.upstream_status} — refusing LLM output to avoid hallucination`;
+      items = [];
+    }
+
+    // Hallucination guard #2: classic placeholder patterns. The LLM has
+    // been observed to emit "XYZ Industries", "ABC Fintech", "LMN Corp"
+    // etc. when the page has no real content. Strip any entity whose
+    // name reads like a textbook example.
+    const PLACEHOLDER = /\b(XYZ|ABC|LMN|PQR|Foo|Bar|Sample|Example|Placeholder)\b/i;
+    const filteredOutPlaceholders = items.filter((it) => PLACEHOLDER.test(String(it.name || "")));
+    if (filteredOutPlaceholders.length) {
+      entry.dropped_placeholders = filteredOutPlaceholders.map((it) => it.name);
+      items = items.filter((it) => !PLACEHOLDER.test(String(it.name || "")));
+    }
     entry.total_extracted = items.length;
+
     // Save BEFORE-filter samples too — when post-filter is 0 this is the
     // only way to see what the LLM actually extracted and why we
     // rejected it.
