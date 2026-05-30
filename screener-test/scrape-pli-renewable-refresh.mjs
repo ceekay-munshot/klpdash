@@ -15,6 +15,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STATIC_PATH   = resolve(__dirname, "static/macro-context.json");
 const SCREENER_PATH = resolve(__dirname, "../public/data/screener-companies.json");
+const STATUS_PATH   = resolve(__dirname, "../public/data/pli-renewable-refresh-status.json");
+
+// Diagnostic sidecar — written on every run regardless of whether the
+// lists changed. Lets us audit Firecrawl behaviour without access to
+// the GHA log viewer.
+const DEBUG_PER_SOURCE = [];
 
 const FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape";
 const API_KEY = process.env.FIRECRAWL_API_KEY;
@@ -68,8 +74,9 @@ const COMPANY_EXTRACT_SCHEMA = {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function firecrawlExtract(url, label) {
+async function firecrawlExtract(url, label, category) {
   console.log(`  Firecrawl LLM extract on: ${url}`);
+  const entry = { url, label, category, at: new Date().toISOString() };
   try {
     const r = await fetch(FIRECRAWL_URL, {
       method: "POST",
@@ -81,17 +88,37 @@ async function firecrawlExtract(url, label) {
         onlyMainContent: false,
       }),
     });
+    entry.fc_status = r.status;
+    const text = await r.text();
     if (!r.ok) {
-      const text = await r.text();
+      entry.outcome = "fc_http_error";
+      entry.error_body = text.slice(0, 300);
       console.log(`    Firecrawl HTTP ${r.status}: ${text.slice(0, 200)}`);
+      DEBUG_PER_SOURCE.push(entry);
       return [];
     }
-    const j = await r.json();
-    const extract = j?.data?.json || j?.data?.llm_extraction || {};
+    let j;
+    try { j = JSON.parse(text); }
+    catch (e) {
+      entry.outcome = "non_json_response";
+      entry.error_body = text.slice(0, 300);
+      DEBUG_PER_SOURCE.push(entry);
+      return [];
+    }
+    const data = j?.data || null;
+    const extract = data?.json || data?.llm_extraction || data?.extract || {};
     const names = Array.isArray(extract.company_names) ? extract.company_names : [];
+    entry.outcome = "ok";
+    entry.upstream_status = data?.metadata?.statusCode || data?.metadata?.["sourceURL-status"] || null;
+    entry.candidates_count = names.length;
+    entry.candidates_sample = names.slice(0, 20); // first 20 for audit
     console.log(`    Extracted ${names.length} candidate names from ${label}`);
+    DEBUG_PER_SOURCE.push(entry);
     return names;
   } catch (err) {
+    entry.outcome = "fetch_error";
+    entry.error = err.message;
+    DEBUG_PER_SOURCE.push(entry);
     console.log(`    Error: ${err.message}`);
     return [];
   }
@@ -172,7 +199,7 @@ async function main() {
   console.log("\n=== PLI sources ===");
   const pliCandidates = new Set();
   for (const src of PLI_SOURCES) {
-    const names = await firecrawlExtract(src.url, src.label);
+    const names = await firecrawlExtract(src.url, src.label, "pli");
     const matched = matchToTickers(names, nameMap);
     matched.forEach((t) => pliCandidates.add(t));
     console.log(`    Matched ${matched.size} of ${names.length} to NSE 500 tickers.`);
@@ -182,7 +209,7 @@ async function main() {
   console.log("\n=== Renewable sources ===");
   const renewableCandidates = new Set();
   for (const src of RENEWABLE_SOURCES) {
-    const names = await firecrawlExtract(src.url, src.label);
+    const names = await firecrawlExtract(src.url, src.label, "renewable");
     const matched = matchToTickers(names, nameMap);
     matched.forEach((t) => renewableCandidates.add(t));
     console.log(`    Matched ${matched.size} of ${names.length} to NSE 500 tickers.`);
@@ -201,8 +228,28 @@ async function main() {
   console.log(`Renewable: ${currentRenewable.size} existing, ${renewableCandidates.size} discovered, ${addedRenewable.length} new`);
   if (addedRenewable.length) console.log(`  New Renewable tickers: ${addedRenewable.join(", ")}`);
 
+  // Always write the diagnostic sidecar — committed every run so we can
+  // audit Firecrawl behaviour by reading the JSON instead of needing
+  // GHA log access.
+  const status = {
+    generated_at: new Date().toISOString(),
+    pli: {
+      existing: currentPLI.size,
+      discovered: pliCandidates.size,
+      added: addedPLI,
+    },
+    renewable: {
+      existing: currentRenewable.size,
+      discovered: renewableCandidates.size,
+      added: addedRenewable,
+    },
+    sources: DEBUG_PER_SOURCE,
+  };
+  writeFileSync(STATUS_PATH, JSON.stringify(status, null, 2) + "\n");
+  console.log(`\nWrote status sidecar to ${STATUS_PATH}`);
+
   if (!addedPLI.length && !addedRenewable.length) {
-    console.log("\nNo new beneficiaries to add. Exiting cleanly.");
+    console.log("No new beneficiaries to add to macro-context.json — exiting cleanly.");
     return;
   }
 
@@ -216,7 +263,7 @@ async function main() {
   };
 
   writeFileSync(STATIC_PATH, JSON.stringify(stat, null, 2) + "\n");
-  console.log(`\nWrote updated macro-context.json with ${addedPLI.length} new PLI + ${addedRenewable.length} new Renewable entries.`);
+  console.log(`Wrote updated macro-context.json with ${addedPLI.length} new PLI + ${addedRenewable.length} new Renewable entries.`);
 }
 
 main().catch((err) => {
