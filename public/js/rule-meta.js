@@ -305,15 +305,15 @@ export const META = {
     },
     pli: {
       source: PIB_PLI,
-      calculation: "Look up company's NSE ticker in our curated PLI beneficiary list (~79 names across electronics, pharma, auto, textiles, food processing, steel, batteries — sourced from DPIIT and PIB releases).",
+      calculation: "Look up company's NSE ticker in our PLI beneficiary list (~175 names across electronics, pharma, auto, textiles, food processing, steel, batteries, drones — sourced from DPIIT, PIB, and MNRE press releases). List auto-refreshes quarterly via the pli-renewable-refresh workflow: Firecrawl + LLM extract on PIB and DPIIT 'what's new' pages, names matched fuzzily against the NSE 500 universe, new entries appended (purely additive).",
       clientLogic: "PASS if company has approved PLI allocation or confirmed PLI-scheme revenue; 2 pts.",
-      ourLogic: "Curated static list. PASS = ticker is in the list. Updated quarterly as DPIIT approves new beneficiaries.",
+      ourLogic: null,
     },
     renewable: {
       source: MNRE,
-      calculation: "Look up company's NSE ticker in our curated renewable-energy participants list (~20 names — solar, wind, hydro, green hydrogen — from MNRE tender announcements + corporate disclosures).",
+      calculation: "Look up company's NSE ticker in our renewable-energy participants list (~54 names — solar OEMs, wind OEMs, hydro PSUs, green hydrogen aspirants, power electronics suppliers). List auto-refreshes quarterly via the pli-renewable-refresh workflow: Firecrawl + LLM extract on MNRE 'what's new' and press releases pages, names matched against the NSE 500 universe.",
       clientLogic: "PASS if company is a direct participant in renewable capacity addition pipeline; 2 pts.",
-      ourLogic: "Curated static list, same shape as PLI.",
+      ourLogic: null,
     },
   },
 
