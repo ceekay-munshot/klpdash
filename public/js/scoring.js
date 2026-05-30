@@ -421,10 +421,29 @@ function formatShares(n) {
   return n.toString();
 }
 
+// ---- governance: SEBI orders + active proceedings ----
+function ruleGovernanceIssues(c) {
+  // c.governance_flag is set by app.js merging governance-flags.json
+  // when the loaded file's flagged_companies map contains this ticker.
+  if (!c?.governance_loaded) return naWithReason(c, "governance", 2);
+  const flag = c?.governance_flag;
+  if (!flag) {
+    return { points: 2, max: 2, status: "pass", value: "No active SEBI proceedings",
+      note: "No SEBI enforcement orders or press-release mentions naming this company as an active noticee." };
+  }
+  // Active proceeding flagged → hard fail per client spec.
+  const typeLabel = flag.order_type ? ` (${flag.order_type})` : "";
+  const snippet = flag.snippet ? ` — "${String(flag.snippet).slice(0, 120)}"` : "";
+  return {
+    points: 0, max: 2, status: "hard_fail",
+    value: `Active SEBI proceeding${typeLabel}`,
+    note: `${flag.primary_name || c.Company} flagged in SEBI ${flag.source_label || "enforcement listing"}${snippet}. Hard fail per client framework.`,
+  };
+}
+
 // ---- deferred parameters (data source pending) ----
 const DEFERRED = [
   { key: "auditorRemarks", label: "Auditor Remarks", category: "Governance", reason: "Annual-report parsing not yet integrated.", max: 2 },
-  { key: "governanceIssues", label: "Corporate Governance Issues", category: "Governance", reason: "SEBI orders / litigation feed not yet integrated.", max: 2 },
 ];
 
 // ---- master ----
@@ -446,6 +465,7 @@ const ACTIVE_RULES = [
   { key: "fiidii", label: "FII + DII Holding", category: "Shareholding", criteria: "Increasing", fn: ruleFIIDII },
   { key: "insider", label: "Insider Buying", category: "Shareholding", criteria: "Net buying in last 6 mo", fn: ruleInsiderBuying },
   { key: "div", label: "Dividend Consistency", category: "Governance", criteria: "Positive", fn: ruleDividendConsistency },
+  { key: "governance", label: "Corporate Governance Issues", category: "Governance", criteria: "No active SEBI proceedings", fn: ruleGovernanceIssues },
 ];
 
 export function scoreCompany(company) {
