@@ -7,6 +7,7 @@
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { abdiRanaldoSpreadPct, amihudImpactPct1Cr, liquidityTier } from "./lib/liquidity-estimators.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = resolve(__dirname, "../public/data/technicals.json");
@@ -96,10 +97,18 @@ async function run() {
         // Sentiment & Liquidity tab data: 20-day ADTV in ₹ crores + F&O eligibility
         adtv_20d_cr: adtv20Cr(bars),
         fno_eligible: fnoSet.has(ticker),
-        // Bid-Ask spread: prefer the batched v7 quote result (populated
-        // for most NSE tickers); fall back to chart-meta if v7 didn't
-        // carry this ticker. Degrades to null when Yahoo has nothing.
+        // Bid-Ask spread: prefer the batched v7 quote result (Yahoo has no
+        // NSE Level-1 in practice — confirmed 0/506 — but we keep the
+        // path open in case that changes). Fall back to the
+        // Abdi-Ranaldo daily-OHLCV ESTIMATE so the rule always scores.
         bid_ask_spread_pct: spreadByTicker[ticker] ?? spreadFromMeta(bars.meta),
+        bid_ask_spread_pct_est: abdiRanaldoSpreadPct(bars, 30),
+        // Impact cost (% price move expected on a ₹1 crore order),
+        // estimated from the Amihud illiquidity ratio over the last 30
+        // trading days. This is a proxy — NSE's official monthly
+        // Impact Cost CSV was discontinued July 2024 (circular 62424).
+        impact_cost_pct_est_1cr: amihudImpactPct1Cr(bars, 30),
+        liquidity_tier: liquidityTier(adtv20Cr(bars)),
         ...indicators,
       });
       console.log(`OK  RSI ${indicators.rsi14}  MACD ${indicators.macd.line.toFixed(1)}  ADX ${indicators.adx14}`);

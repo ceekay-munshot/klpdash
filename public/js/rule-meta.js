@@ -349,16 +349,16 @@ export const META = {
       ourLogic: null,
     },
     impact: {
-      source: () => ({ url: "https://www.nseindia.com/products-services/equity-market-impact-cost", label: "NSE Impact Cost report", section: "Public CSV removed by NSE" }),
-      calculation: null,
+      source: YAHOO,
+      calculation: "Estimated from daily OHLCV using the Amihud (2002) illiquidity ratio over the last 30 trading days: ILLIQ = mean(|daily_return| / daily_rupee_volume). Expected impact for a ₹1 crore order ≈ ILLIQ × 1e7 × 100 (as %). Amihud is the proxy that won the Goyenko-Holden-Trzcinka (2009) horse-race for daily-data price-impact accuracy. NSE's official monthly Impact Cost CSV was discontinued July 2024 (circular 62424) — this estimator is the practical replacement until we wire a paid feed (Upstox Full Market Quote can deliver the real number from 5-level depth in a single API call covering all 500 tickers).",
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
-      ourLogic: "Deferred. NSE removed the public Impact Cost distribution — we confirmed via Firecrawl (which bypasses bot detection) that the product page itself returns 404 server-side and 16 candidate CSV filenames across 4 months also 404. No aggregator republishes the per-ticker numbers. Will light up if NSE restores public access or you wire in a paid market-data feed.",
+      ourLogic: "Computed estimate, not the official NSE number. Cross-sectional ranking is reliable (~0.7-0.9 correlation in published validations); absolute level is noisier for very liquid large caps. Borderline cases near 0.3% / 0.5% cutoffs may misclassify — flag for manual review on critical names.",
     },
     spread: {
-      source: () => ({ url: "https://www.nseindia.com/market-data/live-equity-market", label: "NSE Level-1 quote feed", section: "Paywalled — no public source" }),
-      calculation: null,
+      source: YAHOO,
+      calculation: "Estimated from daily close/high/low using the Abdi-Ranaldo (2017) CHL spread estimator over a 30-day window: S = 2·√mean[(c_t − η_t)(c_t − η_{t+1})], where c = ln(close) and η = (ln H + ln L)/2. Best of the classic low-frequency proxies — ~0.74 monthly cross-sectional correlation with TAQ effective spreads. NSE Level-1 (bid/ask) is genuinely paywalled and Yahoo doesn't carry it for India (confirmed 0/506 coverage on v8 chart-meta and v7 quote endpoints). Upstox Full Market Quote can deliver the real top-of-book bid/ask in a single 500-instrument call when we wire the integration.",
       clientLogic: "PASS if bid-ask spread < 0.1% of CMP; 1 pt. Wide spread (> 0.3%) signals thin order book = 0 pts.",
-      ourLogic: "Deferred. Yahoo Finance returns 0/506 coverage on both v8 chart-meta and v7 quote endpoints for NSE tickers — they don't have NSE Level-1 data. Per-stock Firecrawl scraping would cost ~15K credits/month (bad effort:value for 1 pt). Bid/ask is genuinely paywalled behind NSE market-data licensing. Will light up if you wire in a paid feed (Refinitiv / Bloomberg / direct NSE).",
+      ourLogic: "Computed estimate, not a live bid/ask. Rank-orders liquidity well; absolute level for very liquid large caps is noisy and can come in near zero or even slightly negative (clamped). Borderline cases near 0.1% / 0.3% cutoffs may misclassify.",
     },
     fno: {
       source: NSE_FNO_LIST,
