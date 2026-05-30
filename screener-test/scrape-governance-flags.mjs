@@ -69,22 +69,28 @@ const SCHEMA = {
   properties: {
     flagged_entities: {
       type: "array",
-      description: "Listed Indian companies on this page that have disclosed or been subject to a SEBI / NSE / BSE governance issue. INCLUDE only entries where the page clearly shows: a SEBI inquiry / investigation / show-cause notice / adjudication / settlement, OR a LODR Regulation 30 disclosure of the same, OR a securities-law / market-conduct litigation flag. EXCLUDE all routine corporate filings (board-meeting outcomes, dividend declarations, quarterly results, AGM notices, change-of-director appointments). EXCLUDE individuals named in their personal capacity. EXCLUDE foreign companies. IMPORTANT: only return entities that are actually named on the page text — DO NOT invent placeholder names like 'XYZ Industries' or 'ABC Limited' if the page is empty or shows an error.",
+      description: "Listed Indian companies on this page that have disclosed (under SEBI LODR Reg 30) or been the subject of a SEBI action involving WRONGDOING. INCLUDE ONLY entries where the page text clearly contains at least one of: 'SEBI', 'show-cause', 'adjudication', 'investigation', 'enforcement', 'violation', 'penalty', 'insider trading', 'fraud', 'misrepresentation', 'consent order', 'noticee', 'WTM order', 'AO order'. STRICTLY EXCLUDE all routine corporate filings — these are NOT governance issues even though they appear on the same announcements feed: outcome of board meeting, board-meeting intimation, quarterly / annual financial results, audited results, dividend declaration / record date, AGM / EGM notice, change in director / KMP, allotment of securities, code of conduct, newspaper publication of results, transfer of unclaimed dividend, related-party transactions report, registered office change, postal ballot, scheme of arrangement, ESOP allotment, voting results, share transfer, statement of investor complaints. STRICTLY EXCLUDE individuals named in their personal capacity. STRICTLY EXCLUDE foreign companies. EMPTY OK: if the page shows only routine filings or is an error page, return an empty array — DO NOT invent placeholder names ('XYZ Industries', 'ABC Limited' etc.) just to populate the schema.",
       items: {
         type: "object",
         properties: {
-          name: { type: "string", description: "Exact company name as written on the page, e.g. 'Reliance Industries Ltd.'. Must be a name actually present in the source page content." },
-          order_type: { type: "string", description: "Best guess: SEBI-inquiry | SEBI-investigation | show-cause | adjudication | settlement | LODR-disclosure | press-release | other" },
-          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company (BSE/NSE listed, typically with Ltd / Limited suffix)" },
-          is_active_proceeding: { type: "boolean", description: "true if the matter looks active (not fully closed). When ambiguous, default to true." },
-          context_snippet: { type: "string", description: "10-30 word verbatim snippet from the page describing the governance issue. If you can't quote the page, leave blank." },
+          name: { type: "string", description: "Exact company name as written on the page. Must be a name actually present in the source page content." },
+          order_type: { type: "string", description: "Best guess from this list ONLY: sebi-inquiry | sebi-investigation | show-cause | adjudication | settlement | lodr-violation-disclosure | enforcement-order | other. Do NOT use this field for routine filing categories like 'board meeting' or 'result'." },
+          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company" },
+          is_active_proceeding: { type: "boolean", description: "true if the matter looks active. When ambiguous, default to true." },
+          context_snippet: { type: "string", description: "10-30 word VERBATIM snippet from the page that contains the SEBI / violation / penalty / investigation keyword. Required for the entry to be valid — if you can't quote that, do not include this entity." },
         },
-        required: ["name", "is_listed_entity"],
+        required: ["name", "is_listed_entity", "context_snippet"],
       },
     },
   },
   required: ["flagged_entities"],
 };
+
+// Post-LLM safety net: even with the prompt tightened, the model
+// sometimes still labels routine filings as "lodr-violation". Reject
+// entries whose order_type or snippet smells routine.
+const ROUTINE_TYPE_RE = /^(result|outcome|board\s*meeting|board\s*update|company\s*update|dividend|agm|egm|scheme|allotment|esop|voting|share\s*transfer|director\s*change|change\s*in\s*kmp|code\s*of\s*conduct|registered\s*office|newspaper)/i;
+const SEBI_SIGNAL_RE = /\b(sebi|show[- ]?cause|adjudicat\w+|investigat\w+|enforcement|violation|penalty|insider[- ]?trading|fraud|misrepresent\w+|consent\s+order|noticee|wtm\s+order|ao\s+order)\b/i;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -160,11 +166,28 @@ async function firecrawlExtract(url, label) {
       is_active_proceeding: it.is_active_proceeding,
       snippet: (it.context_snippet || "").slice(0, 150),
     }));
-    // Filter to LISTED + ACTIVE before counting.
-    const filtered = items.filter((it) => it.is_listed_entity !== false && it.is_active_proceeding !== false);
+    // Filter: must be listed + active. Then run the safety net to
+    // drop routine corporate filings the LLM mislabelled as
+    // governance issues (BSE / NSE announcement pages are flooded
+    // with board-meeting / financial-result / dividend filings —
+    // the prior run flagged every single one of them).
+    const dropped = { not_listed: 0, not_active: 0, routine_type: 0, no_sebi_signal: 0 };
+    const filtered = items.filter((it) => {
+      if (it.is_listed_entity === false) { dropped.not_listed++; return false; }
+      if (it.is_active_proceeding === false) { dropped.not_active++; return false; }
+      const type = String(it.order_type || "").trim();
+      const snippet = String(it.context_snippet || "");
+      if (type && ROUTINE_TYPE_RE.test(type)) { dropped.routine_type++; return false; }
+      // The snippet has to mention SEBI / violation / show-cause /
+      // adjudication / etc. — if the LLM couldn't quote SEBI-specific
+      // language from the page, this isn't a real governance flag.
+      if (!SEBI_SIGNAL_RE.test(snippet) && !SEBI_SIGNAL_RE.test(type)) { dropped.no_sebi_signal++; return false; }
+      return true;
+    });
     entry.after_filter_count = filtered.length;
+    entry.dropped_counts = dropped;
     entry.sample = filtered.slice(0, 10).map((it) => ({ name: it.name, order_type: it.order_type, snippet: (it.context_snippet || "").slice(0, 100) }));
-    console.log(`    Extracted ${items.length} entities, ${filtered.length} after listed+active filter`);
+    console.log(`    Extracted ${items.length} entities, ${filtered.length} after governance-signal filter (dropped: ${JSON.stringify(dropped)})`);
     DEBUG_PER_SOURCE.push(entry);
     return filtered;
   } catch (err) {
