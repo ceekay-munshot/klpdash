@@ -28,8 +28,8 @@ const AGENT_LIBRARY_ID  = "0789b5f8-48f2-49db-9490-399dcdc294ba";
 const STOCK_COUNTRY     = "IN";
 const TIMEZONE          = "Asia/Kolkata";
 const CACHE_MAX_AGE_DAYS = 30;
-const BATCH_SIZE        = 20;
-const PER_CALL_TIMEOUT_MS = 120_000;
+const BATCH_SIZE        = 50;
+const PER_CALL_TIMEOUT_MS = 360_000;
 
 const TOKEN = process.env.MUNS_ACCESS_TOKEN;
 const FORCE_REFRESH = String(process.env.FORCE_REFRESH || "").toLowerCase() === "true";
