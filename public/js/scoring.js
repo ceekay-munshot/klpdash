@@ -441,10 +441,51 @@ function ruleGovernanceIssues(c) {
   };
 }
 
+// ---- auditor remarks: Muns Auditor Opinion agent ----
+// Pulls the latest annual report's auditor opinion classification per
+// company from public/data/auditor-opinions.json (refreshed daily by the
+// "Auditor opinions refresh" workflow, which calls the Muns agent in
+// parallel batches and caches each opinion for 30 days).
+function ruleAuditorOpinion(c) {
+  if (!c?.auditor_opinions_loaded) {
+    return naWithReason(c, "auditorRemarks", 2);
+  }
+  const op = c.auditor_opinion;
+  const src = c.auditor_opinion_source;
+  if (!op) {
+    return { points: 0, max: 2, status: "na", value: "—",
+      note: "Most recent annual report's auditor opinion not disclosed by the agent — will retry on next 30-day refresh cycle." };
+  }
+  const opLower = String(op).toLowerCase();
+  // "Not disclosed" / "Not provided" / similar non-answers → N/A (cached
+  // for 30 days so we don't spam the API, but rendered as pending).
+  if (/\bnot\s+(disclosed|provided|available|stated|known|reported|specified|mentioned)\b|^n\/?a$|^unknown$|^none$/.test(opLower)) {
+    return { points: 0, max: 2, status: "na", value: op,
+      note: "Auditor opinion not disclosed for this company in the agent's source set — will retry on next 30-day refresh cycle." };
+  }
+  // Adverse opinion or disclaimer → hard fail per client framework.
+  if (/\b(adverse|disclaimer)\b/.test(opLower)) {
+    return { points: 0, max: 2, status: "hard_fail", value: op,
+      note: `${op} per the most recent annual report. Hard fail per client framework.${src ? ` Source: ${src}` : ""}` };
+  }
+  // Qualified opinion or emphasis-of-matter → 1 pt partial.
+  if (/\bqualified\b|emphasis[- ]of[- ]matter|emphasis matter/.test(opLower) && !/un\s*-?\s*qualified/.test(opLower)) {
+    return { points: 1, max: 2, status: "partial", value: op,
+      note: `${op} flagged in the most recent annual report — 1 pt per client framework (qualification or emphasis-of-matter).${src ? ` Source: ${src}` : ""}` };
+  }
+  // Unqualified opinion → full 2 pts.
+  if (/\bunqualified\b|\bclean\b/.test(opLower)) {
+    return { points: 2, max: 2, status: "pass", value: op,
+      note: `Clean ${op.toLowerCase().includes("unqualified") ? "unqualified opinion" : op} from the most recent annual report.${src ? ` Source: ${src}` : ""}` };
+  }
+  // Anything else: keep as N/A so we don't accidentally penalise a
+  // misclassified-but-clean opinion.
+  return { points: 0, max: 2, status: "na", value: op,
+    note: `Auditor opinion text ("${op}") didn't match a known classification — review manually.${src ? ` Source: ${src}` : ""}` };
+}
+
 // ---- deferred parameters (data source pending) ----
-const DEFERRED = [
-  { key: "auditorRemarks", label: "Auditor Remarks", category: "Governance", reason: "Annual-report parsing not yet integrated.", max: 2 },
-];
+const DEFERRED = [];
 
 // ---- master ----
 const ACTIVE_RULES = [
@@ -466,6 +507,7 @@ const ACTIVE_RULES = [
   { key: "insider", label: "Insider Buying", category: "Shareholding", criteria: "Net buying in last 6 mo", fn: ruleInsiderBuying },
   { key: "div", label: "Dividend Consistency", category: "Governance", criteria: "Positive", fn: ruleDividendConsistency },
   { key: "governance", label: "Corporate Governance Issues", category: "Governance", criteria: "No active SEBI proceedings", fn: ruleGovernanceIssues },
+  { key: "auditorRemarks", label: "Auditor Remarks", category: "Governance", criteria: "Clean unqualified opinion", fn: ruleAuditorOpinion },
 ];
 
 export function scoreCompany(company) {

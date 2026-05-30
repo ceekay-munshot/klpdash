@@ -32,8 +32,8 @@ const CONFIGS = {
     ],
     // 3 stat-card values for the header strip
     stats: {
-      rules: "18 / 19",   rulesNote: "Active rules",
-      maxScore: "27 pts", maxNote: "After Auditor Remarks deferred: 29 pts",
+      rules: "19 / 19",   rulesNote: "Active rules",
+      maxScore: "29 pts", maxNote: "All rules active",
     },
     drillHeaderStats: (c) => [
       { label: "Market Cap", main: c["Market Cap"] || "—", sub: `CMP ${c["Current Price"] || "—"}` },
@@ -311,6 +311,14 @@ async function loadTab(tabId) {
       governanceLoaded = !!gov && !gov.error;
     } catch { /* governance file missing — rule shows N/A */ }
 
+    let auditorByTicker = {};
+    let auditorLoaded = false;
+    try {
+      const aud = await fetch("data/auditor-opinions.json").then((r) => r.json());
+      auditorByTicker = aud?.companies || {};
+      auditorLoaded = !!aud && Object.keys(auditorByTicker).length > 0;
+    } catch { /* file missing — rule shows N/A until first refresh writes it */ }
+
     for (const row of rows) {
       const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
       const ticker = m ? m[1].toUpperCase() : null;
@@ -328,6 +336,10 @@ async function loadTab(tabId) {
       }
       row.governance_loaded = governanceLoaded;
       row.governance_flag = ticker && governanceByTicker[ticker] ? governanceByTicker[ticker] : null;
+      row.auditor_opinions_loaded = auditorLoaded;
+      const auditEntry = ticker ? auditorByTicker[ticker] : null;
+      row.auditor_opinion = auditEntry?.opinion || null;
+      row.auditor_opinion_source = auditEntry?.source || null;
     }
   }
 

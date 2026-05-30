@@ -136,10 +136,10 @@ export const META = {
       ourLogic: null,
     },
     auditorRemarks: {
-      source: () => ({ url: "https://www.sebi.gov.in/", label: "SEBI / Annual Reports", section: "Auditor's opinion section (deferred)" }),
-      calculation: null,
+      source: () => ({ url: "https://devde.muns.io/agents/run", label: "Muns Auditor Opinion agent", section: "Independent Auditor's Report (latest AR), classified by agent" }),
+      calculation: "Daily after the screener CSV refresh, the 'Auditor opinions refresh' workflow calls the Muns Auditor Opinion agent (user_index 124, agent_library_id 0789b5f8-…) once per company in parallel batches of 50. Per-call payload: stock_ticker, stock_company_name, context_company_name, stock_country=IN, to_date=today, timezone=Asia/Kolkata. The agent's <conclusion> block returns a markdown table — we extract the middle column (Auditor's Opinion) and cache per ticker in public/data/auditor-opinions.json for 30 days. Errors and 'Not disclosed' responses are handled separately (errors retry immediately; 'Not disclosed' is cached as N/A and re-tried after 30 days).",
       clientLogic: "PASS if clean unqualified opinion; 2 pts. Any qualification or emphasis-of-matter = 1 pt. Adverse opinion or disclaimer = hard fail.",
-      ourLogic: "Deferred. Requires either a curated list maintained by your team (companies with adverse/qualified opinions in latest AR) or LLM-based extraction from annual report PDFs. Will populate as Batch C2.",
+      ourLogic: "Live via Muns agent. Opinion text matched against keywords: 'unqualified' → pass (2 pts), 'qualified' / 'emphasis of matter' → partial (1 pt), 'adverse' / 'disclaimer' → hard fail (0 pts). 'Not disclosed' or unmatched text stays N/A so we don't accidentally penalise a clean company the agent couldn't classify.",
     },
     governance: {
       source: () => ({ url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI Orders + Press Releases", section: "Auto-refresh via Firecrawl LLM extract (weekly)" }),
