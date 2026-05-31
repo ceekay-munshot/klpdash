@@ -136,7 +136,7 @@ const ACTIVE_RULES = [
   { key: "pcr",      label: "Put Call Ratio",    category: "Sentiment", criteria: "0.9 – 1.3",               fn: rulePutCallRatio },
   { key: "breadth",  label: "Market Breadth",    category: "Sentiment", criteria: "A/D > 1.5",               fn: ruleMarketBreadth },
   { key: "adtv",     label: "Avg Daily Traded Value", category: "Liquidity", criteria: "≥ ₹10 Cr (20-day)", fn: ruleADTV },
-  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for ₹1 Cr",        fn: ruleImpactCost },
+  { key: "impact",   label: "Impact Cost",       category: "Liquidity", criteria: "≤ 0.3% for ₹5 Cr",        fn: ruleImpactCost },
   { key: "spread",   label: "Bid-Ask Spread",    category: "Liquidity", criteria: "< 0.1% of CMP",           fn: ruleBidAskSpread },
   { key: "fno",      label: "F&O Availability",  category: "Liquidity", criteria: "On NSE F&O list",         fn: ruleFnOAvailability },
 ];
