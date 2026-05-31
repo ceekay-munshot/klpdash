@@ -154,13 +154,23 @@ const CONFIGS = {
     industry: (co) => co?.["Broad Industry"] || null,
     // Column getters read from co._composite which loadTab stashes on each row.
     columns: [
-      { label: "Composite", get: (co) => co._composite?.composite == null ? "—" : co._composite.composite.toFixed(1) },
-      { label: "Rating",    get: (co) => co._composite?.rating || "—" },
-      { label: "Fund",      get: (co) => `${co._composite?.pillars?.fundamentals?.raw ?? "—"}/29` },
-      { label: "Tech",      get: (co) => co._composite?.pillars?.technicals?.raw == null ? "—" : `${co._composite.pillars.technicals.raw}/${co._composite.pillars.technicals.max}` },
-      { label: "Macro",     get: (co) => `${co._composite?.pillars?.macro?.raw ?? "—"}/17` },
-      { label: "Sent",      get: (co) => co._composite?.pillars?.sentiment?.raw == null ? "—" : `${co._composite.pillars.sentiment.raw}/${co._composite.pillars.sentiment.max}` },
-      { label: "Liq",       get: (co) => co._composite?.pillars?.liquidity?.raw == null ? "—" : `${co._composite.pillars.liquidity.raw}/${co._composite.pillars.liquidity.max}` },
+      { label: "Composite", html: true, get: (co) => {
+        const v = co._composite?.composite;
+        if (v == null) return `<span class="text-slate-400">—</span>`;
+        const tone = v >= 75 ? "text-emerald-700" : v >= 60 ? "text-blue-700" : v >= 45 ? "text-amber-700" : "text-rose-700";
+        return `<span class="font-bold ${tone}">${v.toFixed(1)}</span>`;
+      } },
+      { label: "Rating", html: true, get: (co) => {
+        const r = co._composite?.rating;
+        if (!r) return `<span class="text-slate-400">—</span>`;
+        const cls = composite.ratingClass(r);
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ring-1 ${cls}">${escapeHtml(r)}</span>`;
+      } },
+      { label: "Fund", get: (co) => `${co._composite?.pillars?.fundamentals?.raw ?? "—"}/29` },
+      { label: "Tech", get: (co) => co._composite?.pillars?.technicals?.raw == null ? "—" : `${co._composite.pillars.technicals.raw}/${co._composite.pillars.technicals.max}` },
+      { label: "Macro", get: (co) => `${co._composite?.pillars?.macro?.raw ?? "—"}/17` },
+      { label: "Sent", get: (co) => co._composite?.pillars?.sentiment?.raw == null ? "—" : `${co._composite.pillars.sentiment.raw}/${co._composite.pillars.sentiment.max}` },
+      { label: "Liq", get: (co) => co._composite?.pillars?.liquidity?.raw == null ? "—" : `${co._composite.pillars.liquidity.raw}/${co._composite.pillars.liquidity.max}` },
     ],
     stats: {
       rules: "5 pillars",  rulesNote: "Weighted: 40 · 35 · 15 · 5 · 5",
@@ -549,6 +559,7 @@ function sourceFriendly(c, m) {
   if (c.label === "Technicals") return "Yahoo Finance EOD · NSE 500";
   if (c.label === "Macro") return "Multi-source · Yahoo + RBI + curated";
   if (c.label === "Sentiment & Liquidity") return "Yahoo + NSE + computed breadth";
+  if (c.label === "SPIP Basket") return "Composite — 5-pillar weighted (40 · 35 · 15 · 5 · 5)";
   return c.label;
 }
 
@@ -572,7 +583,8 @@ function renderStats() {
     $("#stat-max-note").textContent = `Hard-failed (excluded)${counts.unrated ? ` · ${counts.unrated} unrated (no OHLCV)` : ""}`;
     $("#deferred-count").textContent = counts.avoid;
     $("#deferred-summary").textContent = `${counts.avoid} stocks rated AVOID (composite < 45)`;
-    $("#top-cards-title").textContent = "SPIP Basket — Top 10 by Composite Score";
+    // Rich title — uses innerHTML so the trophy can render properly.
+    $("#top-cards-title").innerHTML = `<span class="text-amber-500">🏆</span> SPIP Basket — Top 10 Picks <span class="ml-2 text-xs font-normal text-slate-500">composite-weighted, hard-fails excluded</span>`;
     return;
   }
   $("#stat-rules").textContent = c.stats.rules;
@@ -599,6 +611,7 @@ function renderDeferredList() {
 
 function renderTopCards() {
   const c = cfg(); const st = tabState();
+  if (c.composite) return renderCompositeTopCards();
   const top = st.scored.slice(0, 10);
   $("#top-cards").innerHTML = top.map((s, i) => {
     const name = c.name(s.company);
@@ -624,6 +637,132 @@ function renderTopCards() {
       </button>
     `;
   }).join("");
+  $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
+}
+
+// SPIP Basket — premium overview: a rating-distribution strip
+// (visual breakdown across STRONG / BUY / WATCH / AVOID / FILTERED)
+// plus a hero card grid for the top 10 picks. Designed for impact.
+function renderCompositeTopCards() {
+  const st = tabState();
+  const all = st.scored;
+  // 6-bucket count (filtered + unrated separated from rated tiers)
+  const counts = { strong: 0, buy: 0, watch: 0, avoid: 0, filtered: 0, unrated: 0 };
+  for (const s of all) {
+    if (s.hardFailed) counts.filtered++;
+    else if (s.unrated) counts.unrated++;
+    else if (s.rating === "STRONG BUY") counts.strong++;
+    else if (s.rating === "BUY") counts.buy++;
+    else if (s.rating === "WATCH") counts.watch++;
+    else counts.avoid++;
+  }
+  const total = all.length;
+  const inBasket = counts.strong + counts.buy + counts.watch;
+
+  // Rating distribution as a single 100%-width segmented bar plus labelled cards
+  const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
+  const pctOf = (n) => total ? (n / total) * 100 : 0;
+  const distributionStrip = `
+    <div class="mb-3">
+      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
+        ${seg(pctOf(counts.strong),   "bg-gradient-to-r from-emerald-500 to-teal-500")}
+        ${seg(pctOf(counts.buy),      "bg-gradient-to-r from-blue-500 to-indigo-500")}
+        ${seg(pctOf(counts.watch),    "bg-gradient-to-r from-amber-500 to-orange-500")}
+        ${seg(pctOf(counts.avoid),    "bg-gradient-to-r from-rose-500 to-pink-500")}
+        ${seg(pctOf(counts.unrated),  "bg-slate-300")}
+        ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-500 to-slate-600")}
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
+      ${[
+        { count: counts.strong,   label: "STRONG BUY", from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",   accent: "text-emerald-700" },
+        { count: counts.buy,      label: "BUY",        from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",    accent: "text-blue-700" },
+        { count: counts.watch,    label: "WATCH",      from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",   accent: "text-amber-700" },
+        { count: counts.avoid,    label: "AVOID",      from: "from-rose-500",    to: "to-pink-500",    soft: "from-rose-50 to-pink-50",      accent: "text-rose-700" },
+        { count: counts.unrated,  label: "UNRATED",    from: "from-slate-400",   to: "to-slate-500",   soft: "from-slate-50 to-slate-100",   accent: "text-slate-600" },
+        { count: counts.filtered, label: "FILTERED",   from: "from-slate-500",   to: "to-slate-600",   soft: "from-slate-100 to-slate-200",  accent: "text-slate-700" },
+      ].map((b) => `
+        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-3">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full bg-gradient-to-br ${b.from} ${b.to}"></span>
+            <span class="text-[10px] font-bold uppercase tracking-wider ${b.accent}">${b.label}</span>
+          </div>
+          <div class="text-3xl font-bold ${b.accent}">${b.count}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
+        </div>
+      `).join("")}
+    </div>
+    <!-- Funnel: universe → basket → top picks -->
+    <div class="flex items-center justify-center gap-3 mb-6 text-xs">
+      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-white ring-1 ring-slate-200">
+        <div class="text-2xl font-bold text-slate-900">${total}</div>
+        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">Universe</div>
+      </div>
+      <div class="text-slate-400 text-lg">→</div>
+      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 ring-1 ring-indigo-200">
+        <div class="text-2xl font-bold text-indigo-700">${inBasket}</div>
+        <div class="text-[10px] text-indigo-600 uppercase tracking-wider mt-0.5">In SPIP Basket</div>
+      </div>
+      <div class="text-slate-400 text-lg">→</div>
+      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 ring-1 ring-emerald-200">
+        <div class="text-2xl font-bold text-emerald-700">${counts.strong}</div>
+        <div class="text-[10px] text-emerald-600 uppercase tracking-wider mt-0.5">STRONG BUY</div>
+      </div>
+    </div>
+  `;
+
+  // Premium hero cards for top 10 (basket only — exclude filtered/unrated/AVOID).
+  const top = all.filter((s) => !s.hardFailed && !s.unrated && s.rating !== "AVOID").slice(0, 10);
+  const heroCards = top.map((s, i) => {
+    const co = s.company;
+    const name = co.Company || "—";
+    const { color, initials } = avatarFor(name);
+    const theme = composite.ratingTheme(s.rating);
+    const ratingTone = s.rating === "STRONG BUY" ? "text-emerald-700" : s.rating === "BUY" ? "text-blue-700" : s.rating === "WATCH" ? "text-amber-700" : "text-slate-700";
+    const ribbon = i === 0 ? `<div class="absolute top-0 left-0 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-br-lg shadow">🏆 #1</div>` : `<div class="absolute top-2 right-2 text-xs font-bold text-slate-400">#${i+1}</div>`;
+    // Mini pillar bars
+    const pillarBars = ["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => {
+      const p = s.pillars?.[k];
+      const pct = p?.pct ?? 0;
+      const tier = pct >= 75 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : pct >= 45 ? "bg-amber-500" : "bg-rose-500";
+      return `<div class="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden"><div class="${tier} h-full rounded-full" style="width:${Math.min(100,pct)}%"></div></div>`;
+    }).join("");
+    return `
+      <button data-idx="${i}" class="top-card group text-left bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 rounded-2xl p-4 shadow-sm ring-1 ring-slate-100 relative overflow-hidden">
+        <!-- Top accent line tinted by rating -->
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.from} ${theme.to}"></div>
+        ${ribbon}
+        <div class="flex items-center gap-3 mb-3 mt-1">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-slate-900 truncate text-sm">${escapeHtml(name)}</div>
+            <div class="text-[11px] text-slate-500 truncate">${escapeHtml(co.Sector || "")}</div>
+          </div>
+        </div>
+        <div class="flex items-baseline gap-1 mb-1">
+          <span class="text-3xl font-bold text-slate-900">${s.composite.toFixed(1)}</span>
+          <span class="text-xs text-slate-400">/ 100</span>
+        </div>
+        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-[10px] font-bold uppercase tracking-wider shadow-sm mb-3">
+          <span class="w-1 h-1 rounded-full bg-white"></span>
+          ${escapeHtml(s.rating)}
+        </div>
+        <div class="flex items-center gap-0.5" title="Pillar scores: Fund · Tech · Macro · Sent · Liq">
+          ${pillarBars}
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1 flex justify-between">
+          <span>F</span><span>T</span><span>M</span><span>S</span><span>L</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  $("#top-cards").innerHTML = `
+    <div class="col-span-full">
+      ${distributionStrip}
+    </div>
+    ${heroCards}
+  `;
   $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
 }
 
@@ -702,7 +841,7 @@ function renderTable() {
           </div>
         </td>
         <td class="px-4 py-3"><div class="flex items-center gap-1">${breakdownIcons}</div></td>
-        ${c.columns.map((col) => `<td class="px-4 py-3 text-sm text-slate-700">${escapeHtml(col.get(s.company))}</td>`).join("")}
+        ${c.columns.map((col) => `<td class="px-4 py-3 text-sm text-slate-700">${col.html ? col.get(s.company) : escapeHtml(col.get(s.company))}</td>`).join("")}
         <td class="px-4 py-3 text-right">
           <a href="${escapeHtml(c.screenerUrl(s.company) || "")}" target="_blank" rel="noopener" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium" onclick="event.stopPropagation()">↗</a>
         </td>
@@ -833,152 +972,272 @@ function openDrillDown(s) {
   $("#drill-overlay").classList.remove("hidden");
   $("#drill-close").addEventListener("click", closeDrillDown);
 }
-// SPIP Basket drill: pillar heatmap + weighted contribution table.
-// Shows how the 5 pillars sum to the composite, plus any hard-fail
-// reasons that excluded the stock from the basket.
+// Render a circular progress gauge as inline SVG. Returns an HTML
+// string with the score number centred inside the ring.
+function renderScoreGauge(score, theme, max = 100, size = 144) {
+  const r = (size - 16) / 2;
+  const cx = size / 2; const cy = size / 2;
+  const circ = 2 * Math.PI * r;
+  const pct = score == null ? 0 : Math.max(0, Math.min(100, (score / max) * 100));
+  const dash = (pct / 100) * circ;
+  // Gradient stops keyed off the rating theme. Tailwind gradient
+  // classes don't apply to SVG strokes, so we hardcode the hexes per
+  // rating tier here.
+  const gradMap = {
+    "from-emerald-500 to-teal-500":   ["#10b981", "#14b8a6"],
+    "from-blue-500 to-indigo-500":    ["#3b82f6", "#6366f1"],
+    "from-amber-500 to-orange-500":   ["#f59e0b", "#f97316"],
+    "from-rose-500 to-pink-500":      ["#f43f5e", "#ec4899"],
+    "from-slate-500 to-slate-600":    ["#64748b", "#475569"],
+    "from-slate-400 to-slate-500":    ["#94a3b8", "#64748b"],
+  };
+  const key = `${theme.from} ${theme.to}`;
+  const [c1, c2] = gradMap[key] || ["#94a3b8", "#64748b"];
+  const id = `g${Math.random().toString(36).slice(2,8)}`;
+  return `
+    <div class="relative" style="width:${size}px;height:${size}px">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="-rotate-90">
+        <defs>
+          <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${c1}"/>
+            <stop offset="100%" stop-color="${c2}"/>
+          </linearGradient>
+        </defs>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="10"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+                stroke="url(#${id})" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="${dash} ${circ}" />
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div class="text-4xl font-bold text-slate-900 leading-none">${score == null ? "—" : score.toFixed(1)}</div>
+        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">/ ${max}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Pillar card — premium card per pillar showing raw score, %, weight, and
+// weighted contribution. Used in the SPIP Basket drill view.
+function renderPillarCard(label, p, weight) {
+  if (!p || p.raw == null) {
+    return `
+      <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/40 p-3">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(label)}</div>
+        <div class="mt-1.5 text-slate-300 text-2xl font-bold">—</div>
+        <div class="text-[10px] text-slate-400 mt-1">no data</div>
+        <div class="mt-2 h-1.5 rounded-full bg-slate-100"></div>
+        <div class="mt-2 flex items-baseline justify-between border-t border-slate-200 pt-2">
+          <span class="text-[10px] text-slate-400 uppercase tracking-wider">${weight}% weight</span>
+          <span class="font-bold text-slate-300 text-sm">+0.0</span>
+        </div>
+      </div>
+    `;
+  }
+  const pct = p.pct ?? 0;
+  const tier = pct >= 75 ? "emerald" : pct >= 60 ? "blue" : pct >= 45 ? "amber" : "rose";
+  const barFill = ({ emerald: "bg-emerald-500", blue: "bg-blue-500", amber: "bg-amber-500", rose: "bg-rose-500" })[tier];
+  const accent  = ({ emerald: "text-emerald-700", blue: "text-blue-700", amber: "text-amber-700", rose: "text-rose-700" })[tier];
+  const bg      = ({ emerald: "bg-emerald-50/60", blue: "bg-blue-50/60", amber: "bg-amber-50/60", rose: "bg-rose-50/60" })[tier];
+  return `
+    <div class="rounded-xl ring-1 ring-slate-200 ${bg} p-3 hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(label)}</div>
+      <div class="mt-1.5 flex items-baseline gap-1.5">
+        <span class="text-2xl font-bold text-slate-900">${p.raw}</span>
+        <span class="text-sm text-slate-400">/${p.max}</span>
+        <span class="ml-auto text-xs font-semibold ${accent}">${pct}%</span>
+      </div>
+      <div class="mt-2 h-1.5 rounded-full bg-white/60 overflow-hidden ring-1 ring-slate-200">
+        <div class="${barFill} h-1.5 rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
+      </div>
+      <div class="mt-2.5 flex items-baseline justify-between border-t border-slate-200/80 pt-2">
+        <span class="text-[10px] text-slate-500 uppercase tracking-wider">${weight}% weight</span>
+        <span class="font-bold text-slate-900 text-sm">+${(p.weighted ?? 0).toFixed(1)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// SPIP Basket drill: hero composite gauge + decision panel + 5-card
+// pillar grid + per-pillar drill-deeper shortcuts. Designed to be the
+// "elite" client-facing view — when a CEO opens a stock, this is the
+// page that should make them go "wow".
 function openCompositeDrill(s) {
   const co = s.company || {};
   const name = co.Company || "—";
   const { color, initials } = avatarFor(name);
   const sector = co.Sector || ""; const industry = co["Broad Industry"] || "";
   const url = co["Screener URL"] || null;
+  const theme = composite.ratingTheme(s.rating);
+  const decision = composite.decisionFor(s.rating);
 
-  // Pillar grid — visual heatmap-style row per pillar
-  const pillarRow = (key, label, weight) => {
-    const p = s.pillars?.[key];
-    if (!p || p.raw == null) {
-      return `<tr class="border-t border-slate-100">
-        <td class="py-2 pr-4 font-semibold text-slate-800">${escapeHtml(label)}</td>
-        <td class="py-2 pr-4 text-slate-400 text-sm">no data</td>
-        <td class="py-2 pr-4 text-slate-400 text-sm">—</td>
-        <td class="py-2 pr-4 text-right text-slate-400 text-sm">${weight}% weight</td>
-        <td class="py-2 pr-2 text-right font-semibold text-slate-400">—</td>
-      </tr>`;
-    }
-    const pct = p.pct ?? 0;
-    const barColor = pct >= 75 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : pct >= 45 ? "bg-amber-500" : "bg-rose-500";
-    return `<tr class="border-t border-slate-100">
-      <td class="py-2 pr-4 font-semibold text-slate-800">${escapeHtml(label)}</td>
-      <td class="py-2 pr-4 text-sm text-slate-700 whitespace-nowrap">${p.raw}/${p.max} <span class="text-slate-400">(${pct}%)</span></td>
-      <td class="py-2 pr-4">
-        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-          <div class="${barColor} h-2 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
+  // --- Hero header: gradient banner + avatar + identity strip
+  const heroHeader = `
+    <div class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br ${theme.from} ${theme.to} opacity-95"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]"></div>
+      <button id="drill-close" class="absolute top-3 right-3 z-10 text-white/80 hover:text-white text-2xl leading-none w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">×</button>
+      <div class="relative p-5 ${theme.textOn}">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/30 flex items-center justify-center text-white font-bold text-lg shadow-lg">${initials}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-2xl truncate">${escapeHtml(name)}</div>
+            ${(sector || industry) ? `<div class="text-sm opacity-90 truncate mt-0.5">${escapeHtml(sector)}${sector && industry ? " · " : ""}${escapeHtml(industry)}</div>` : ""}
+            <div class="flex items-center gap-3 mt-1.5 text-xs">
+              ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="opacity-95 hover:opacity-100 underline decoration-white/40 hover:decoration-white">View on Screener.in ↗</a>` : ""}
+              <span class="opacity-80">·</span>
+              <span class="opacity-95">${escapeHtml(co["Market Cap"] || "—")} mkt cap</span>
+              <span class="opacity-80">·</span>
+              <span class="opacity-95">CMP ${escapeHtml(co["Current Price"] || "—")}</span>
+            </div>
+          </div>
         </div>
-      </td>
-      <td class="py-2 pr-4 text-right text-slate-500 text-sm">${weight}% weight</td>
-      <td class="py-2 pr-2 text-right font-bold text-slate-900">+${(p.weighted ?? 0).toFixed(1)}</td>
-    </tr>`;
-  };
-
-  const pillarTable = `
-    <div class="mb-6 bg-white rounded-xl ring-1 ring-slate-200 p-4">
-      <div class="flex items-baseline justify-between mb-3">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
-        <div class="text-xs text-slate-500">Weighted Score Contribution</div>
       </div>
-      <table class="w-full text-sm">
-        <tbody>
-          ${pillarRow("fundamentals", "Fundamentals", 40)}
-          ${pillarRow("technicals",   "Technicals",   35)}
-          ${pillarRow("macro",        "Macro / Sector", 15)}
-          ${pillarRow("sentiment",    "Sentiment",    5)}
-          ${pillarRow("liquidity",    "Liquidity",    5)}
-          <tr class="border-t-2 border-slate-300 bg-slate-50">
-            <td colspan="4" class="py-3 pr-4 font-bold text-slate-900 text-right">Composite Score (sum)</td>
-            <td class="py-3 pr-2 text-right font-bold text-2xl ${s.composite != null && s.composite >= 75 ? "text-emerald-600" : s.composite != null && s.composite >= 60 ? "text-blue-600" : s.composite != null && s.composite >= 45 ? "text-amber-600" : "text-rose-600"}">
-              ${s.composite != null ? s.composite.toFixed(1) : "—"}
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   `;
 
-  // Hard-fail panel — explains exactly which rules excluded the stock
-  const hardFailPanel = s.hardFails.length ? `
-    <div class="mb-6 p-4 bg-rose-50 rounded-xl ring-1 ring-rose-200">
-      <div class="flex items-start gap-3 mb-3">
-        <div class="text-rose-500 text-2xl leading-none">⚠</div>
-        <div class="flex-1">
-          <div class="font-bold text-rose-900">Excluded from SPIP Basket</div>
-          <div class="text-xs text-rose-700/80 mt-0.5">Hard fail per client framework — stock exits pipeline regardless of composite score.</div>
+  // --- Hero panel: gauge on the left, decision card on the right
+  const heroPanel = `
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
+      <!-- Composite gauge -->
+      <div class="lg:col-span-2 bg-white rounded-2xl ring-1 ring-slate-200 p-5 flex items-center gap-5">
+        ${renderScoreGauge(s.composite, theme)}
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Composite Score</div>
+          <div class="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-xs font-bold shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            ${escapeHtml(s.rating)}
+          </div>
+          <div class="text-xs text-slate-500 mt-2 leading-snug">${escapeHtml(decision.profile)}</div>
         </div>
       </div>
-      <ul class="space-y-1.5 ml-9 list-disc text-sm text-rose-800">
-        ${s.hardFails.map((h) => `<li class="font-semibold">${escapeHtml(h)}</li>`).join("")}
-      </ul>
+      <!-- Decision card -->
+      <div class="lg:col-span-3 bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider ${theme.accent}">Recommended Action — Per Client Framework</div>
+          <span class="text-[10px] text-slate-500">SPIP · Section C</span>
+        </div>
+        <div class="text-base font-bold text-slate-900 mb-3">${escapeHtml(decision.action)}</div>
+        <div class="grid grid-cols-3 gap-3 text-xs">
+          <div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Position Size</div>
+            <div class="font-semibold text-slate-900">${escapeHtml(decision.size)}</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Review</div>
+            <div class="font-semibold text-slate-900">${escapeHtml(decision.review)}</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Exit Trigger</div>
+            <div class="font-semibold text-slate-900 text-[11px] leading-tight">${escapeHtml(decision.exit)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // --- Hard-fail panel (only when triggered)
+  const hardFailPanel = s.hardFails.length ? `
+    <div class="mb-5 p-4 bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl ring-1 ring-rose-200">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="w-9 h-9 rounded-lg bg-rose-500 text-white flex items-center justify-center text-lg flex-shrink-0">⚠</div>
+        <div class="flex-1">
+          <div class="font-bold text-rose-900 text-base">Excluded from SPIP Basket</div>
+          <div class="text-xs text-rose-700/90 mt-0.5">Hard fail per client framework · stock exits pipeline regardless of composite score</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-${s.hardFails.length > 2 ? 3 : 2} gap-2">
+        ${s.hardFails.map((h) => `
+          <div class="bg-white rounded-lg p-3 ring-1 ring-rose-100">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Red Flag</div>
+            <div class="text-sm font-bold text-rose-900 mt-0.5">${escapeHtml(h)}</div>
+          </div>
+        `).join("")}
+      </div>
     </div>
   ` : "";
 
   const unratedPanel = (!s.hardFails.length && s.unrated) ? `
-    <div class="mb-6 p-4 bg-amber-50 rounded-xl ring-1 ring-amber-200">
+    <div class="mb-5 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl ring-1 ring-amber-200">
       <div class="flex items-start gap-3">
-        <div class="text-amber-500 text-2xl leading-none">ℹ</div>
+        <div class="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0">ℹ</div>
         <div class="flex-1">
-          <div class="font-bold text-amber-900">Unrated — Technicals data missing</div>
-          <div class="text-xs text-amber-800 mt-0.5">Yahoo Finance returned no OHLCV for this ticker, so Technicals + Sentiment/Liquidity pillars couldn't score. Common cause: REIT/InvIT or very-recent listing. Composite will populate once a vendor with NSE coverage (e.g. Upstox) is wired.</div>
+          <div class="font-bold text-amber-900 text-base">Unrated — Technicals Data Missing</div>
+          <div class="text-xs text-amber-800/90 mt-0.5">Yahoo doesn't carry OHLCV for this ticker (typical for REITs / InvITs / very-recent listings). Composite will populate when a vendor with NSE coverage is wired.</div>
         </div>
       </div>
     </div>
   ` : "";
 
-  // Side-by-side pillar tab shortcuts for digging deeper
-  const tabShortcuts = `
-    <div class="mb-6">
-      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Drill Deeper Into Each Pillar</div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        ${["fundamentals","technicals","macro","sentiment"].map((tab) => `
-          <button class="composite-jump px-3 py-2 rounded-lg bg-slate-50 hover:bg-indigo-50 ring-1 ring-slate-200 hover:ring-indigo-300 text-xs font-semibold text-slate-700 hover:text-indigo-700 transition-colors text-left"
-                  data-jump-tab="${tab}">
-            ${escapeHtml(CONFIGS[tab].label)} →
-          </button>
-        `).join("")}
+  // --- Pillar composition: 5-card grid
+  const pillarCards = `
+    <div class="mb-5">
+      <div class="flex items-baseline justify-between mb-3">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
+        <div class="text-xs text-slate-500">Sum of weighted contributions = Composite</div>
       </div>
-      <div class="text-[11px] text-slate-500 mt-1.5">Each pillar tab shows the per-rule breakdown that fed into the score above.</div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        ${renderPillarCard("Fundamentals",   s.pillars?.fundamentals, 40)}
+        ${renderPillarCard("Technicals",     s.pillars?.technicals,   35)}
+        ${renderPillarCard("Macro / Sector", s.pillars?.macro,        15)}
+        ${renderPillarCard("Sentiment",      s.pillars?.sentiment,    5)}
+        ${renderPillarCard("Liquidity",      s.pillars?.liquidity,    5)}
+      </div>
+      <!-- Sum row -->
+      <div class="mt-3 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl px-4 py-3 ring-1 ring-slate-200">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Composite Score</span>
+          <span class="text-[10px] text-slate-400">(weighted sum)</span>
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span class="text-2xl font-bold ${theme.accent}">${s.composite != null ? s.composite.toFixed(1) : "—"}</span>
+          <span class="text-sm text-slate-400">/ 100</span>
+        </div>
+      </div>
     </div>
   `;
 
-  const ratingPillClass = composite.ratingClass(s.rating);
-  $("#drill-content").innerHTML = `
-    <div class="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 p-5 z-10">
-      <button id="drill-close" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
-      <div class="flex items-center gap-4 pr-8">
-        <div class="w-14 h-14 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-md">${initials}</div>
-        <div class="flex-1 min-w-0">
-          <div class="font-bold text-xl text-slate-900 truncate">${escapeHtml(name)}</div>
-          ${(sector || industry) ? `<div class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(sector)}${sector && industry ? " · " : ""}${escapeHtml(industry)}</div>` : ""}
-          ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-800">View on Screener.in ↗</a>` : ""}
-        </div>
-      </div>
-      <div class="grid grid-cols-3 gap-3 mt-4">
-        <div class="bg-slate-50 rounded-lg p-3">
-          <div class="text-xs text-slate-500 font-medium">Composite Score</div>
-          <div class="text-3xl font-bold text-slate-900">${s.composite != null ? s.composite.toFixed(1) : "—"}<span class="text-base text-slate-400">/100</span></div>
-          <div class="text-xs text-slate-500">SPIP weighted</div>
-        </div>
-        <div class="bg-slate-50 rounded-lg p-3">
-          <div class="text-xs text-slate-500 font-medium">Rating</div>
-          <div class="mt-1 inline-flex px-2.5 py-1 rounded-full text-sm font-bold ring-1 ${ratingPillClass}">${s.rating}</div>
-          <div class="text-xs text-slate-500 mt-1">${s.hardFailed ? "Hard fail → excluded" : s.unrated ? "Data incomplete" : "Per client framework"}</div>
-        </div>
-        <div class="bg-slate-50 rounded-lg p-3">
-          <div class="text-xs text-slate-500 font-medium">Market Cap</div>
-          <div class="text-base font-bold text-slate-900 truncate">${escapeHtml(co["Market Cap"] || "—")}</div>
-          <div class="text-xs text-slate-500 truncate">CMP ${escapeHtml(co["Current Price"] || "—")}</div>
-        </div>
+  // --- Drill-deeper shortcuts: polished cards with pillar count + icon
+  const PILLAR_INFO = {
+    fundamentals: { icon: "📊", label: "Fundamentals", count: "19 rules", color: "from-violet-500 to-purple-500" },
+    technicals:   { icon: "📈", label: "Technicals",   count: "16 rules", color: "from-sky-500 to-blue-500" },
+    macro:        { icon: "🌐", label: "Macro",        count: "11 rules", color: "from-emerald-500 to-teal-500" },
+    sentiment:    { icon: "💹", label: "Sentiment",    count: "8 rules",  color: "from-amber-500 to-orange-500" },
+  };
+  const tabShortcuts = `
+    <div class="mb-3">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Drill Deeper Into Each Pillar</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        ${Object.entries(PILLAR_INFO).map(([tab, info]) => `
+          <button class="composite-jump group relative overflow-hidden rounded-xl ring-1 ring-slate-200 hover:ring-slate-300 bg-white hover:shadow-md transition-all text-left p-3"
+                  data-jump-tab="${tab}">
+            <div class="absolute inset-0 bg-gradient-to-br ${info.color} opacity-0 group-hover:opacity-5 transition-opacity"></div>
+            <div class="relative flex items-start gap-2.5">
+              <div class="w-9 h-9 rounded-lg bg-gradient-to-br ${info.color} text-white flex items-center justify-center text-sm shadow-sm flex-shrink-0">${info.icon}</div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-slate-900 text-sm">${escapeHtml(info.label)}</div>
+                <div class="text-[10px] text-slate-500">${info.count} → see breakdown</div>
+              </div>
+              <div class="text-slate-300 group-hover:text-slate-500 transition-colors text-sm">→</div>
+            </div>
+          </button>
+        `).join("")}
       </div>
     </div>
+  `;
+
+  $("#drill-content").innerHTML = `
+    ${heroHeader}
     <div class="p-5">
       ${hardFailPanel}
       ${unratedPanel}
-      ${pillarTable}
+      ${heroPanel}
+      ${pillarCards}
       ${tabShortcuts}
     </div>
   `;
   $("#drill-panel").classList.remove("translate-x-full");
   $("#drill-overlay").classList.remove("hidden");
   $("#drill-close").addEventListener("click", closeDrillDown);
-  // Wire the "drill deeper" buttons — close composite drill and switch tab.
   $$(".composite-jump").forEach((btn) => {
     btn.addEventListener("click", () => {
       closeDrillDown();
