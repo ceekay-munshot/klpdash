@@ -198,7 +198,8 @@ const ICON_CHEVRON = `<svg class="w-2.5 h-2.5 flex-shrink-0 text-slate-400 trans
 // Renders 3 small chips on each drill-down rule card:
 //   Source — opens the actual data source in a new tab
 //   Calculation — expands to show the formula (only when computed)
-//   Scoring Logic — expands; if we deviate, chip is amber + shows client vs ours
+//   Implementation — expands; if we deviate from client (source, calc,
+//   or scoring), chip is amber + shows client logic vs our implementation
 function renderRuleMetaButtons(ruleKey, company) {
   const tab = state.activeTab;
   const meta = RULE_META[tab]?.[ruleKey];
@@ -241,7 +242,7 @@ function renderRuleMetaButtons(ruleKey, company) {
   const logicBtn = meta.clientLogic ? `
     <details class="meta-details">
       <summary class="${baseChip} ${meta.ourLogic ? amberChip : neutralChip} cursor-pointer">
-        ${ICON_LOGIC}<span>Scoring Logic${meta.ourLogic ? " · diff" : ""}</span>${ICON_CHEVRON}
+        ${ICON_LOGIC}<span>Implementation${meta.ourLogic ? " · diff" : ""}</span>${ICON_CHEVRON}
       </summary>
       <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-md text-xs leading-relaxed">${logicBody}</div>
     </details>` : "";
