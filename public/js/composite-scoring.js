@@ -61,6 +61,75 @@ export function ratingClass(rating) {
   }
 }
 
+// Gradient + accent palette used by the SPIP Basket drill / hero cards.
+// Each entry: { from, to, accent (text), ring, dot (solid color for chips) }
+export function ratingTheme(rating) {
+  switch (rating) {
+    case "STRONG BUY": return { from: "from-emerald-500", to: "to-teal-500", soft: "from-emerald-50 to-teal-50", accent: "text-emerald-700", textOn: "text-white", ring: "ring-emerald-200", dot: "bg-emerald-500" };
+    case "BUY":        return { from: "from-blue-500",    to: "to-indigo-500", soft: "from-blue-50 to-indigo-50", accent: "text-blue-700",    textOn: "text-white", ring: "ring-blue-200",    dot: "bg-blue-500" };
+    case "WATCH":      return { from: "from-amber-500",   to: "to-orange-500", soft: "from-amber-50 to-orange-50", accent: "text-amber-700",   textOn: "text-white", ring: "ring-amber-200",   dot: "bg-amber-500" };
+    case "AVOID":      return { from: "from-rose-500",    to: "to-pink-500", soft: "from-rose-50 to-pink-50", accent: "text-rose-700",    textOn: "text-white", ring: "ring-rose-200",    dot: "bg-rose-500" };
+    case "FILTERED":   return { from: "from-slate-500",   to: "to-slate-600", soft: "from-slate-50 to-slate-100", accent: "text-slate-700",   textOn: "text-white", ring: "ring-slate-300",   dot: "bg-slate-500" };
+    default:           return { from: "from-slate-400",   to: "to-slate-500", soft: "from-slate-50 to-slate-100", accent: "text-slate-700",   textOn: "text-white", ring: "ring-slate-200",   dot: "bg-slate-400" };
+  }
+}
+
+// Decision-framework text taken verbatim from SPIP_Stock_Selection_Model_v1.xlsx
+// Scoring_Model · Section C. The analyst-facing recommendation that pairs with
+// each rating band — what to do, how big, how often to review, when to exit.
+export function decisionFor(rating) {
+  switch (rating) {
+    case "STRONG BUY": return {
+      verdict: "Include in SPIP Basket",
+      action: "Initiate FULL position",
+      size: "8–10% of basket",
+      review: "Monthly",
+      exit: "Score drops below 60 OR hard fail triggered",
+      profile: "Passes all hard filters · strong fundamentals + technical momentum + macro tailwind",
+    };
+    case "BUY": return {
+      verdict: "Include with monitoring",
+      action: "Initiate 50–75% of target position",
+      size: "5–7% of basket",
+      review: "Bi-weekly",
+      exit: "Score drops below 50 OR technical breakdown",
+      profile: "Strong on 3 of 5 pillars · minor gaps in 1–2 parameters",
+    };
+    case "WATCH": return {
+      verdict: "Watchlist · do not initiate",
+      action: "No new position · hold if already invested",
+      size: "3–5% max",
+      review: "Weekly",
+      exit: "Score does not improve within 2 months",
+      profile: "Mixed signals · fundamentals OK but technicals or macro lagging",
+    };
+    case "AVOID": return {
+      verdict: "Exclude from SPIP Basket",
+      action: "Exit existing position · no fresh entry",
+      size: "Zero allocation",
+      review: "Immediate",
+      exit: "Already triggered — exit now",
+      profile: "Fails multiple pillar thresholds",
+    };
+    case "FILTERED": return {
+      verdict: "Filtered out of pipeline",
+      action: "Stock excluded · address red flag before reconsidering",
+      size: "Zero allocation",
+      review: "On red-flag resolution",
+      exit: "Stock exits pipeline regardless of composite score",
+      profile: "Hard-fail rule triggered (per client framework, Section A)",
+    };
+    default: return {
+      verdict: "Unrated",
+      action: "Data incomplete — composite cannot be computed",
+      size: "—",
+      review: "—",
+      exit: "—",
+      profile: "Technicals / sentiment / liquidity data missing for this ticker",
+    };
+  }
+}
+
 // Split the senliq breakdown into Sentiment vs Liquidity sub-pillars
 // (they live in the same module but have separate weights per spec).
 function splitSenliq(senliqResult) {
