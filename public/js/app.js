@@ -306,13 +306,19 @@ function tabState() { return state.cache[state.activeTab]; }
 // ---------------- load / switch tab ----------------
 async function switchTab(tabId) {
   if (!CONFIGS[tabId]) return;
-  // toggle nav
+  // Toggle nav — both border-indigo-600 (active) and border-transparent
+  // (inactive) need to be flipped, otherwise inactive tabs lose their
+  // bottom border colour and the newly-active tab ends up with both
+  // classes fighting (depending on Tailwind class order, the underline
+  // sometimes doesn't render at all).
   $$(".tab-btn").forEach((b) => {
     const active = b.dataset.tab === tabId;
     b.classList.toggle("text-indigo-600", active);
     b.classList.toggle("border-indigo-600", active);
     b.classList.toggle("text-slate-500", !active);
     b.classList.toggle("hover:text-slate-700", !active);
+    b.classList.toggle("border-transparent", !active);
+    b.classList.toggle("is-active", active);
   });
   state.activeTab = tabId;
   state.search = "";
