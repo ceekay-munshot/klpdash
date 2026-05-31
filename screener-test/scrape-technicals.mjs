@@ -7,7 +7,9 @@
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { abdiRanaldoSpreadPct, amihudImpactPct1Cr, liquidityTier } from "./lib/liquidity-estimators.mjs";
+import { abdiRanaldoSpreadPct, amihudImpactPct, liquidityTier } from "./lib/liquidity-estimators.mjs";
+
+const IMPACT_COST_ORDER_SIZE_RUPEES = 5e7;   // ₹5 crore — standardized institutional position
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = resolve(__dirname, "../public/data/technicals.json");
@@ -72,10 +74,27 @@ async function run() {
     const c = companies[i];
     const ticker = extractTicker(c["Screener URL"]);
     if (!ticker) { failures++; continue; }
-    const yahooSym = `${ticker}.NS`;
-    process.stdout.write(`[${i + 1}/${companies.length}] ${c.Company.padEnd(28).slice(0, 28)} ${yahooSym.padEnd(16)} `);
+    // Numeric tickers (e.g. "504346") are BSE codes for stocks without
+    // an NSE listing — go straight to .BO and skip the doomed .NS call.
+    const tickerIsNumeric = /^\d+$/.test(ticker);
+    const primarySym = tickerIsNumeric ? `${ticker}.BO` : `${ticker}.NS`;
+    process.stdout.write(`[${i + 1}/${companies.length}] ${c.Company.padEnd(28).slice(0, 28)} ${primarySym.padEnd(16)} `);
     try {
-      const bars = await fetchBars(yahooSym, start, end);
+      let bars = await fetchBars(primarySym, start, end);
+      let usedSym = primarySym;
+      // Yahoo sometimes returns a stub (1-2 bars) for live NSE tickers
+      // whose history was migrated under a different symbol — fall back
+      // to the BSE .BO ticker before giving up. Costs one extra HTTP
+      // call only for the handful of NSE failures per run.
+      if (!tickerIsNumeric && bars.length < 60) {
+        const altSym = `${ticker}.BO`;
+        const alt = await fetchBars(altSym, start, end).catch(() => []);
+        if (alt.length > bars.length) {
+          process.stdout.write(`(fallback ${altSym}) `);
+          bars = alt;
+          usedSym = altSym;
+        }
+      }
       if (bars.length < 60) throw new Error(`only ${bars.length} bars`);
       const indicators = computeIndicators(bars, indexBars, indexReturns, indexClose);
       const delivery = deliveryTrends[ticker] || null;
@@ -103,11 +122,14 @@ async function run() {
         // Abdi-Ranaldo daily-OHLCV ESTIMATE so the rule always scores.
         bid_ask_spread_pct: spreadByTicker[ticker] ?? spreadFromMeta(bars.meta),
         bid_ask_spread_pct_est: abdiRanaldoSpreadPct(bars, 30),
-        // Impact cost (% price move expected on a ₹1 crore order),
+        // Impact cost (% price move expected on a ₹5 crore order),
         // estimated from the Amihud illiquidity ratio over the last 30
-        // trading days. This is a proxy — NSE's official monthly
-        // Impact Cost CSV was discontinued July 2024 (circular 62424).
-        impact_cost_pct_est_1cr: amihudImpactPct1Cr(bars, 30),
+        // trading days. ₹5 cr is the standardized institutional-position
+        // size where the client's three-band scoring actually
+        // discriminates across Nifty 500 (₹1 cr was too small — 98% pass).
+        // NSE's official monthly Impact Cost CSV was discontinued
+        // July 2024 (circular 62424).
+        impact_cost_pct_est_5cr: amihudImpactPct(bars, 30, IMPACT_COST_ORDER_SIZE_RUPEES),
         liquidity_tier: liquidityTier(adtv20Cr(bars)),
         ...indicators,
       });

@@ -82,16 +82,16 @@ function ruleADTV(c) {
 function ruleImpactCost(c) {
   // Prefer a real, vendor-sourced impact cost if/when it ever populates
   // (e.g. a future Upstox / TrueData integration); fall back to the
-  // Amihud-derived estimate we compute from daily OHLCV.
+  // Amihud-derived estimate we compute from daily OHLCV at ₹5 Cr.
   const real = c?.impact_cost_pct;
-  const est  = c?.impact_cost_pct_est_1cr;
+  const est  = c?.impact_cost_pct_est_5cr;
   const ic   = (typeof real === "number" && real >= 0) ? real : est;
   if (ic == null) return { ...NA, max: 2,
     note: "Impact cost not yet computable — Technicals scrape needs ≥ 30 days of OHLCV bars + non-zero volume." };
   const isEst = !(typeof real === "number" && real >= 0);
-  const label = isEst ? `Impact cost ${ic}% (est., ₹1 Cr order)` : `Impact cost ${ic}%`;
+  const label = isEst ? `Impact cost ${ic}% (est., ₹5 Cr order)` : `Impact cost ${ic}%`;
   const tail  = isEst
-    ? " Estimated via Amihud illiquidity ratio over last 30 trading days (NSE's official monthly Impact Cost CSV was discontinued July 2024)."
+    ? " Estimated via Amihud illiquidity ratio over last 30 trading days, modelled at a ₹5 Cr institutional position size (NSE's official monthly Impact Cost CSV was discontinued July 2024)."
     : "";
   if (ic <= 0.3) return { points: 2, max: 2, status: "pass",    value: label, note: "Impact cost ≤ 0.3% — tight execution for mid-cap orders." + tail };
   if (ic <= 0.5) return { points: 1, max: 2, status: "partial", value: label, note: "Impact cost 0.3–0.5% — acceptable slippage." + tail };
