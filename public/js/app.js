@@ -770,13 +770,59 @@ function renderCompositeTopCards() {
     `;
   }).join("");
 
+  // Print cover — only renders on @media print. Title + date + key
+  // counts in a clean A4-friendly layout.
+  const printCover = `
+    <div class="print-only print-cover">
+      <div style="padding: 30mm 10mm; text-align: center;">
+        <div style="font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: #64748b;">LKP Stock Screener · SPIP Brief</div>
+        <h1 style="font-size: 42px; font-weight: 800; margin: 12px 0 8px; color: #0f172a;">SPIP Basket</h1>
+        <p style="font-size: 14px; color: #64748b; margin: 0;">5-pillar weighted composite · NSE 500 universe · ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</p>
+        <div style="margin: 36px auto 0; max-width: 480px; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%);">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div>
+              <div style="font-size: 28px; font-weight: 800; color: #10b981;">${counts.strong}</div>
+              <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b;">Strong Buy</div>
+            </div>
+            <div>
+              <div style="font-size: 28px; font-weight: 800; color: #3b82f6;">${counts.buy}</div>
+              <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b;">Buy</div>
+            </div>
+            <div>
+              <div style="font-size: 28px; font-weight: 800; color: #f59e0b;">${counts.watch}</div>
+              <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b;">Watch</div>
+            </div>
+          </div>
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #cbd5e1; font-size: 11px; color: #64748b;">
+            ${inBasket} of ${total} stocks in basket · ${counts.filtered} hard-failed · ${counts.unrated} unrated
+          </div>
+        </div>
+        <p style="font-size: 11px; color: #94a3b8; margin-top: 36px;">For internal use only · LKP Research</p>
+      </div>
+    </div>
+  `;
+
+  // Export PDF button — sits above the distribution strip on the
+  // SPIP basket tab, prints the page using the @media print CSS.
+  const printBtn = `
+    <div class="flex items-center justify-end gap-2 mb-3 print-hide">
+      <button id="print-pdf-btn" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50 text-xs font-semibold text-slate-700 hover:text-indigo-700 transition-colors shadow-sm">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Export PDF
+      </button>
+    </div>
+  `;
+
   $("#top-cards").innerHTML = `
+    ${printCover}
     <div class="col-span-full">
+      ${printBtn}
       ${distributionStrip}
     </div>
     ${heroCards}
   `;
   $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
+  $("#print-pdf-btn")?.addEventListener("click", () => window.print());
 }
 
 // ---------------- filtering / sorting ----------------
@@ -1019,10 +1065,11 @@ function renderScoreGauge(score, theme, max = 100, size = 144) {
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="10"/>
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
                 stroke="url(#${id})" stroke-width="10" stroke-linecap="round"
-                stroke-dasharray="${dash} ${circ}" />
+                stroke-dasharray="${dash} ${circ}"
+                data-gauge-arc="${dash} ${circ}" />
       </svg>
       <div class="absolute inset-0 flex flex-col items-center justify-center">
-        <div class="text-4xl font-bold text-slate-900 leading-none">${score == null ? "—" : score.toFixed(1)}</div>
+        <div class="text-4xl font-bold text-slate-900 leading-none">${score == null ? "—" : `<span class="count-up" data-target="${score}" data-decimals="1">0.0</span>`}</div>
         <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">/ ${max}</div>
       </div>
     </div>
@@ -1064,7 +1111,7 @@ function renderPillarCard(label, p, weight) {
       <div class="mt-1.5 text-xs font-semibold ${accent}">${pct}%</div>
       <!-- Progress bar -->
       <div class="mt-2.5 h-2 rounded-full bg-white/70 overflow-hidden ring-1 ring-slate-200/80">
-        <div class="${barFill} h-2 rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
+        <div class="${barFill} h-2 rounded-full" data-bar-width="${Math.min(100, pct)}%" style="width: ${Math.min(100, pct)}%"></div>
       </div>
       <!-- Weight + contribution footer -->
       <div class="mt-3 pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
@@ -1073,6 +1120,301 @@ function renderPillarCard(label, p, weight) {
       </div>
     </div>
   `;
+}
+
+// ---------------- SPIP Basket — radar / thesis / animation / magazine ----------------
+
+// 5-axis pillar radar (Fund / Tech / Macro / Sent / Liq) rendered as
+// inline SVG. Concentric rings at 20/40/60/80/100, axes at 5 vertices,
+// data polygon coloured to match the rating tier. Each axis is labelled
+// at the perimeter with the pillar's raw/max + percentage.
+function renderPillarRadar(s, theme, size = 280) {
+  const cx = size / 2, cy = size / 2;
+  const r = size / 2 - 44;   // leave room for axis labels
+  // 5 axes — start at top (-90°) and step every 72°
+  const axes = [
+    { key: "fundamentals", label: "FUND", short: "F" },
+    { key: "technicals",   label: "TECH", short: "T" },
+    { key: "macro",        label: "MACRO", short: "M" },
+    { key: "sentiment",    label: "SENT", short: "S" },
+    { key: "liquidity",    label: "LIQ", short: "L" },
+  ];
+  const ptAt = (axisIdx, pct) => {
+    const angle = -Math.PI / 2 + (axisIdx * 2 * Math.PI / 5);
+    return { x: cx + Math.cos(angle) * r * (pct / 100), y: cy + Math.sin(angle) * r * (pct / 100) };
+  };
+
+  // Concentric guide rings (20/40/60/80/100 %)
+  const rings = [20, 40, 60, 80, 100].map((p) => {
+    const pts = axes.map((_, i) => ptAt(i, p)).map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(" ");
+    return `<polygon points="${pts}" fill="none" stroke="#e2e8f0" stroke-width="1"/>`;
+  }).join("");
+
+  // Axis lines (centre → vertex at 100%)
+  const axisLines = axes.map((_, i) => {
+    const p = ptAt(i, 100);
+    return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1"/>`;
+  }).join("");
+
+  // Data polygon — animated via a scaling transform centred on the
+  // chart middle. The polygon is at full size in markup; transform
+  // animates from scale(0) → scale(1) on entrance.
+  const dataPts = axes.map((a, i) => {
+    const pct = s.pillars?.[a.key]?.pct ?? 0;
+    const p = ptAt(i, pct);
+    return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+  }).join(" ");
+
+  // Gradient stops keyed off the theme — same hexes as the gauge.
+  const gradMap = {
+    "from-emerald-500 to-teal-500":   ["#10b981", "#14b8a6"],
+    "from-blue-500 to-indigo-500":    ["#3b82f6", "#6366f1"],
+    "from-amber-500 to-orange-500":   ["#f59e0b", "#f97316"],
+    "from-rose-500 to-pink-500":      ["#f43f5e", "#ec4899"],
+    "from-slate-500 to-slate-600":    ["#64748b", "#475569"],
+    "from-slate-400 to-slate-500":    ["#94a3b8", "#64748b"],
+  };
+  const key = `${theme.from} ${theme.to}`;
+  const [c1, c2] = gradMap[key] || ["#94a3b8", "#64748b"];
+  const gid = `rg${Math.random().toString(36).slice(2, 8)}`;
+
+  // Axis labels — pushed past the perimeter a touch
+  const labels = axes.map((a, i) => {
+    const labelP = ptAt(i, 118);
+    const p = s.pillars?.[a.key];
+    const pct = p?.pct ?? 0;
+    const raw = p?.raw ?? "—";
+    const max = p?.max ?? "—";
+    const align = i === 0 ? "middle" : (labelP.x > cx ? "start" : "end");
+    return `
+      <g text-anchor="${align}">
+        <text x="${labelP.x.toFixed(1)}" y="${labelP.y.toFixed(1)}" class="font-bold" font-size="10" fill="#64748b" letter-spacing="0.06em">${a.label}</text>
+        <text x="${labelP.x.toFixed(1)}" y="${(labelP.y + 12).toFixed(1)}" font-size="11" font-weight="700" fill="#0f172a">${raw}/${max}</text>
+        <text x="${labelP.x.toFixed(1)}" y="${(labelP.y + 23).toFixed(1)}" font-size="9" fill="#94a3b8">${pct}%</text>
+      </g>
+    `;
+  }).join("");
+
+  // Vertex dots on the data polygon
+  const vertices = axes.map((a, i) => {
+    const pct = s.pillars?.[a.key]?.pct ?? 0;
+    const p = ptAt(i, pct);
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#fff" stroke="${c1}" stroke-width="2"/>`;
+  }).join("");
+
+  return `
+    <div class="relative" style="width:${size}px;height:${size}px" data-radar="1">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <defs>
+          <linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${c1}" stop-opacity="0.65"/>
+            <stop offset="100%" stop-color="${c2}" stop-opacity="0.35"/>
+          </linearGradient>
+        </defs>
+        ${rings}
+        ${axisLines}
+        <g class="radar-data" style="transform-origin: ${cx}px ${cy}px; transform: scale(0); transition: transform 700ms cubic-bezier(0.34, 1.56, 0.64, 1);">
+          <polygon points="${dataPts}" fill="url(#${gid})" stroke="${c1}" stroke-width="2.5"/>
+          ${vertices}
+        </g>
+        ${labels}
+      </svg>
+    </div>
+  `;
+}
+
+// Count-up animator. Animates `.count-up` elements from 0 to their
+// data-target value over ~900ms with ease-out. Call after the modal
+// content is mounted; the same call also fires the radar scale-in
+// (CSS transition) and the gauge dash sweep.
+function animateScoreEntrance(root = document) {
+  // Count-up numbers
+  root.querySelectorAll(".count-up").forEach((el) => {
+    const target = parseFloat(el.dataset.target);
+    const decimals = parseInt(el.dataset.decimals || "0", 10);
+    if (!Number.isFinite(target)) return;
+    const start = performance.now();
+    const dur = 900;
+    function tick(now) {
+      const t = Math.min(1, (now - start) / dur);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = (target * eased).toFixed(decimals);
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = target.toFixed(decimals);
+    }
+    requestAnimationFrame(tick);
+  });
+  // Gauge ring sweep: start at 0 dasharray, transition to final
+  root.querySelectorAll("[data-gauge-arc]").forEach((arc) => {
+    const finalDash = arc.dataset.gaugeArc;
+    arc.setAttribute("stroke-dasharray", "0 100000");
+    requestAnimationFrame(() => {
+      arc.style.transition = "stroke-dasharray 1100ms cubic-bezier(0.34, 1.56, 0.64, 1)";
+      arc.setAttribute("stroke-dasharray", finalDash);
+    });
+  });
+  // Radar polygon scale-in (transform set inline; just kick the property)
+  root.querySelectorAll(".radar-data").forEach((el) => {
+    requestAnimationFrame(() => { el.style.transform = "scale(1)"; });
+  });
+  // Pillar bar width sweep
+  root.querySelectorAll("[data-bar-width]").forEach((bar) => {
+    const finalWidth = bar.dataset.barWidth;
+    bar.style.width = "0%";
+    requestAnimationFrame(() => {
+      bar.style.transition = "width 900ms cubic-bezier(0.34, 1.56, 0.64, 1)";
+      bar.style.width = finalWidth;
+    });
+  });
+}
+
+// Synthesised "thesis" — short narrative built from the actual scoring
+// data. Picks the strongest pillar contribution, the weakest pillar,
+// and the recommended action; assembles them into 2–3 sentences. No
+// LLM call, no fabricated numbers; everything reads from `s`.
+function synthesizeThesis(s) {
+  const p = s.pillars || {};
+  const valid = Object.entries(p).filter(([_, v]) => v.raw != null && v.pct != null);
+  if (!valid.length) return "Scoring data incomplete — thesis unavailable.";
+  const labelMap = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro tailwind", sentiment: "Sentiment", liquidity: "Liquidity" };
+  // Strongest = highest percentage; weakest = lowest percentage among those that scored.
+  const sorted = [...valid].sort((a, b) => b[1].pct - a[1].pct);
+  const top = sorted[0];
+  const bot = sorted[sorted.length - 1];
+  const composite = s.composite != null ? s.composite.toFixed(1) : "—";
+  const rating = s.rating || "—";
+
+  const sentences = [];
+  sentences.push(`Composite scores <strong>${composite}/100</strong> — ${rating} territory per the SPIP framework.`);
+  if (top && top[1].pct >= 75) {
+    sentences.push(`Anchored by <strong>${labelMap[top[0]] || top[0]}</strong> at <strong>${top[1].raw}/${top[1].max}</strong> (${top[1].pct}%), contributing <strong>+${(top[1].weighted ?? 0).toFixed(1)}</strong> of the composite.`);
+  } else if (top) {
+    sentences.push(`Leading contributor: ${labelMap[top[0]] || top[0]} at ${top[1].raw}/${top[1].max} (${top[1].pct}%).`);
+  }
+  if (bot && bot[1].pct < 50 && bot[0] !== top[0]) {
+    const isMarketWide = (bot[0] === "sentiment" || bot[0] === "macro");
+    const qualifier = isMarketWide ? " (market-wide factor — not company-specific)" : "";
+    sentences.push(`Watch: <strong>${labelMap[bot[0]] || bot[0]}</strong> drags at ${bot[1].pct}%${qualifier}.`);
+  }
+  if (s.hardFails && s.hardFails.length) {
+    sentences.push(`<strong>Hard-fail triggered:</strong> ${s.hardFails.join(", ")} — stock excluded from basket regardless of composite.`);
+  }
+  return sentences.join(" ");
+}
+
+// Magazine ("Full Story") drill — fullscreen takeover with a hero,
+// pillar radar, by-the-numbers sidebar, thesis pull-quote, and
+// recommended action. Triggered from the standard drill via the
+// "View Full Story" button (only when not hard-failed).
+function openMagazineDrill(s) {
+  const co = s.company || {};
+  const name = co.Company || "—";
+  const sector = co.Sector || "";
+  const theme = composite.ratingTheme(s.rating);
+  const decision = composite.decisionFor(s.rating);
+  const thesis = synthesizeThesis(s);
+
+  // "By the numbers" — pull whatever ratios are available from the
+  // fundamentals row. Each cell falls back to "—" when missing.
+  const ratios = [
+    { label: "Composite",       value: s.composite != null ? s.composite.toFixed(1) : "—",  sub: "/ 100" },
+    { label: "Rating",          value: s.rating,                                              sub: "" },
+    { label: "Market Cap",      value: co["Market Cap"] || "—",                               sub: "" },
+    { label: "CMP",             value: co["Current Price"] ? `₹${co["Current Price"]}` : "—", sub: "Current Mkt Price" },
+    { label: "P/E",             value: co["Stock P/E"] || "—",                                sub: "" },
+    { label: "ROE",             value: co["ROE"] || "—",                                      sub: "" },
+    { label: "ROCE",            value: co["ROCE"] || "—",                                     sub: "" },
+    { label: "Debt / Equity",   value: co["Debt to equity"] || "—",                           sub: "" },
+    { label: "Rev 3Y CAGR",     value: co["Sales growth 3Years"] || "—",                      sub: "" },
+    { label: "PAT 3Y CAGR",     value: co["Profit Var 3Yrs"] || "—",                          sub: "" },
+  ];
+
+  openModal(`
+    <div class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br ${theme.from} ${theme.to}"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.20),transparent_55%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.10),transparent_60%)]"></div>
+      <button id="modal-close" class="absolute top-4 right-4 z-10 text-white/85 hover:text-white text-2xl leading-none w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center transition-colors">×</button>
+      <div class="relative p-8 ${theme.textOn}">
+        <div class="flex items-center gap-2 text-xs uppercase tracking-[0.2em] opacity-80">
+          <span>SPIP Brief</span>
+          <span>·</span>
+          <span>${escapeHtml(s.rating)}</span>
+          <span>·</span>
+          <span>${escapeHtml(sector || "—")}</span>
+        </div>
+        <h1 class="font-display font-extrabold text-4xl sm:text-5xl mt-2 leading-tight">${escapeHtml(name)}</h1>
+        <p class="text-sm sm:text-base opacity-95 mt-3 max-w-3xl leading-relaxed">${thesis}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 max-h-[calc(95vh-260px)] overflow-y-auto">
+      <!-- LEFT 2/3 — radar + decision -->
+      <div class="lg:col-span-2 p-7 border-r border-slate-100">
+        <div class="flex items-baseline justify-between mb-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
+          <div class="text-[11px] text-slate-500">Weighted 40 · 35 · 15 · 5 · 5</div>
+        </div>
+        <div class="flex items-center justify-center py-4">
+          ${renderPillarRadar(s, theme, 320)}
+        </div>
+
+        <!-- Decision band (action / size / review / exit) -->
+        <div class="mt-5 bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] font-bold uppercase tracking-wider ${theme.accent}">Recommended Action</div>
+            <span class="text-[10px] text-slate-500">SPIP · Section C</span>
+          </div>
+          <div class="text-lg font-bold text-slate-900 mb-4">${escapeHtml(decision.action)}</div>
+          <div class="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Size</div>
+              <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.size)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Review</div>
+              <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.review)}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Exit Trigger</div>
+              <div class="font-semibold text-slate-900 leading-snug text-[11px]">${escapeHtml(decision.exit)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT 1/3 — by the numbers -->
+      <div class="p-7 bg-slate-50/40">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">By the Numbers</div>
+        <div class="space-y-3">
+          ${ratios.map((r) => `
+            <div class="flex items-baseline justify-between gap-3 pb-2 border-b border-slate-200/70 last:border-0">
+              <div>
+                <div class="text-xs text-slate-500">${escapeHtml(r.label)}</div>
+                ${r.sub ? `<div class="text-[10px] text-slate-400">${escapeHtml(r.sub)}</div>` : ""}
+              </div>
+              <div class="font-bold text-slate-900 text-right">${escapeHtml(r.value || "—")}</div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-slate-200">
+          <button id="mag-back" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+            ← Back to standard view
+          </button>
+        </div>
+      </div>
+    </div>
+  `, { size: "magazine" });
+
+  // Wire close / back / dismiss + run the entrance animations
+  $("#modal-close")?.addEventListener("click", closeModal);
+  $("#mag-back")?.addEventListener("click", () => { closeModal(); openCompositeDrill(s); });
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
+  // Fire animations on the radar (gauge isn't on this view)
+  requestAnimationFrame(() => animateScoreEntrance($("#modal-content")));
 }
 
 // SPIP Basket drill — opens as a CENTRED MODAL (not the side panel).
@@ -1236,17 +1578,54 @@ function openCompositeDrill(s) {
     </div>
   `;
 
+  // Pillar radar — sits centred between the hero panel and pillar cards
+  // when there's data to chart (skip on hard-fails / unrated to keep
+  // the message focused on the exclusion reason).
+  const hasPillarData = Object.values(s.pillars || {}).some((p) => p && p.raw != null);
+  const radarSection = (!s.hardFails.length && !s.unrated && hasPillarData) ? `
+    <div class="mb-6 bg-white rounded-2xl ring-1 ring-slate-200 p-5">
+      <div class="flex items-baseline justify-between mb-2">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Shape</div>
+        <div class="text-[11px] text-slate-500">Visual read on the 5-pillar profile</div>
+      </div>
+      <div class="flex items-center justify-center pt-2 pb-3">
+        ${renderPillarRadar(s, theme, 300)}
+      </div>
+    </div>
+  ` : "";
+
+  // "View Full Story" button — opens the magazine layout. Offered for
+  // any rated stock that didn't hard-fail. Strong-buy gets a louder pill.
+  const magazineCta = (!s.hardFails.length && !s.unrated) ? `
+    <div class="mb-6 flex items-center justify-between gap-4 p-4 bg-gradient-to-br from-slate-50 to-indigo-50/60 rounded-2xl ring-1 ring-slate-200">
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-slate-900 text-sm">Magazine Brief</div>
+        <div class="text-xs text-slate-500 mt-0.5">Full-page presentation with hero, thesis, by-the-numbers — built for sharing.</div>
+      </div>
+      <button id="open-magazine" class="px-4 py-2 rounded-lg bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-sm font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 flex-shrink-0">
+        View Full Story <span class="text-base leading-none">→</span>
+      </button>
+    </div>
+  ` : "";
+
   openModal(`
     ${heroHeader}
     <div class="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
       ${hardFailPanel}
       ${unratedPanel}
       ${heroPanel}
+      ${radarSection}
       ${pillarCards}
+      ${magazineCta}
       ${tabShortcuts}
     </div>
   `, { size: "wide" });
 
+  // Entrance animation: gauge sweep, radar polygon scale-in, pillar
+  // bars sweep, composite number counts up.
+  requestAnimationFrame(() => animateScoreEntrance($("#modal-content")));
+
+  $("#open-magazine")?.addEventListener("click", () => { closeModal(); openMagazineDrill(s); });
   $("#modal-close")?.addEventListener("click", closeModal);
   $("#modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "modal-overlay") closeModal();
@@ -1284,7 +1663,7 @@ function closeDrillDown() {
 // full attention of the page, so they open in a centred modal.
 
 function openModal(innerHtml, opts = {}) {
-  const sizeClass = opts.size === "wide" ? "max-w-5xl" : "max-w-4xl";
+  const sizeClass = opts.size === "magazine" ? "max-w-6xl" : opts.size === "wide" ? "max-w-5xl" : "max-w-4xl";
   const container = $("#modal-container");
   container.className = `relative bg-white rounded-3xl shadow-2xl w-full ${sizeClass} my-8 scale-95 opacity-0 transition-all duration-200 overflow-hidden`;
   $("#modal-content").innerHTML = innerHtml;

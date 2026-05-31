@@ -38,6 +38,40 @@
       .meta-details > summary::-webkit-details-marker { display: none; }
       .meta-details > summary { list-style: none; }
       .meta-details > summary::marker { content: ""; }
+
+      /* ---------------- Print stylesheet — "Export PDF" button on
+         the SPIP Basket tab triggers window.print() and lets the user
+         save as PDF from the browser dialog. We hide nav, controls,
+         scrollbars, and the modal layer; keep the header strip + top
+         cards + table so the printout reads like a hand-out. */
+      @media print {
+        @page { size: A4; margin: 12mm; }
+        html, body {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+        body > header, nav, #modal-overlay, #drill-panel, #drill-overlay,
+        details, .print-hide, #export-btn, .tab-btn,
+        #score-filter, #search {
+          display: none !important;
+        }
+        .print-only { display: block !important; }
+        main { padding: 0 !important; max-width: 100% !important; }
+        section { break-inside: avoid; page-break-inside: avoid; }
+        .print-cover {
+          break-after: page;
+          page-break-after: always;
+        }
+        a { color: inherit !important; text-decoration: none !important; }
+        /* Force gradients to render in print (Chrome/Safari) */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        /* Top-cards grid: shrink the gap so more fits per page */
+        #top-cards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; }
+        .top-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+        /* Hide search/filter controls row entirely */
+        #top-cards-title + * { display: none; }
+      }
+      .print-only { display: none; }
     </style>
   </head>
   <body class="text-slate-800">
