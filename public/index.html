@@ -72,6 +72,29 @@
         #top-cards-title + * { display: none; }
       }
       .print-only { display: none; }
+
+      /* Tab nav — unmistakable active indicator. The bottom border
+         draws a thick indigo underline for the active tab; inactive
+         tabs get a faint hover background. Animated via a left/right
+         scale so it feels intentional. */
+      .tab-btn { position: relative; }
+      .tab-btn::after {
+        content: "";
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: -1px;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+        background: linear-gradient(90deg, #6366f1, #a855f7);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .tab-btn.is-active::after { transform: scaleX(1); }
+      .tab-btn.is-active {
+        background: linear-gradient(180deg, transparent 60%, rgba(99, 102, 241, 0.05) 100%);
+      }
     </style>
   </head>
   <body class="text-slate-800">
