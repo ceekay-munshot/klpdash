@@ -19,21 +19,33 @@
 // especially for the most liquid large caps. Notes in the consuming
 // rules make this caveat explicit.
 
-// Abdi-Ranaldo (CHL) spread estimator. Returns proportional spread —
-// e.g. 0.0023 means a 0.23% spread of mid. Inputs: array of bar
-// objects with .high, .low, .close (last N days, oldest to newest).
-// Returns null if not enough data or the data is malformed.
+// Abdi-Ranaldo (CHL) spread estimator. Returns spread as % of mid-price
+// (e.g. 0.23 means 0.23%). Inputs: array of bar objects with .high,
+// .low, .close — oldest to newest. Returns null if not enough data.
+//
+// Corporate-action guard: pairs of consecutive days where the close-to-
+// close return exceeds ±15% are skipped. Indian circuit-breaker rules
+// cap normal intraday moves at 10% (20% for index stocks on extreme
+// days), so anything outside ±15% is almost certainly a dividend, stock
+// split, demerger, or bonus issue — those create overnight close gaps
+// that aren't real spread. Without this guard the estimator misreads
+// the gap as a wide spread, producing values like 5%+ on otherwise
+// highly-liquid stocks (e.g. Vedanta during its 2024 capital reduction).
 export function abdiRanaldoSpreadPct(bars, windowSize = 30) {
   if (!Array.isArray(bars) || bars.length < 5) return null;
   const slice = bars.slice(-Math.max(windowSize + 1, 6));
   const products = [];
+  const CORP_ACTION_RETURN_THRESHOLD = 0.15;
   for (let t = 0; t < slice.length - 1; t++) {
     const b1 = slice[t];
     const b2 = slice[t + 1];
     if (!b1 || !b2) continue;
     const h1 = Number(b1.high), l1 = Number(b1.low), c1 = Number(b1.close);
-    const h2 = Number(b2.high), l2 = Number(b2.low);
-    if (!(h1 > 0) || !(l1 > 0) || !(c1 > 0) || !(h2 > 0) || !(l2 > 0)) continue;
+    const h2 = Number(b2.high), l2 = Number(b2.low), c2 = Number(b2.close);
+    if (!(h1 > 0) || !(l1 > 0) || !(c1 > 0) || !(h2 > 0) || !(l2 > 0) || !(c2 > 0)) continue;
+    // Skip pairs that straddle a corporate action.
+    const c2c = Math.abs((c2 - c1) / c1);
+    if (c2c > CORP_ACTION_RETURN_THRESHOLD) continue;
     const lnC1 = Math.log(c1);
     const eta1 = (Math.log(h1) + Math.log(l1)) / 2;
     const eta2 = (Math.log(h2) + Math.log(l2)) / 2;
@@ -50,10 +62,13 @@ export function abdiRanaldoSpreadPct(bars, windowSize = 30) {
 }
 
 // Amihud illiquidity ratio expressed as the expected % price impact of
-// a ₹1 crore (1e7 rupee) order. ILLIQ = mean(|return| / rupee_volume)
-// across the window; impact% = ILLIQ * 1e7 * 100. Returns null when
-// data is too sparse or volumes are zero.
-export function amihudImpactPct1Cr(bars, windowSize = 30, orderSizeRupees = 1e7) {
+// an order of size `orderSizeRupees`. ILLIQ = mean(|return| / rupee_volume)
+// across the window; impact% = ILLIQ * orderSizeRupees * 100. Returns
+// null when data is too sparse or volumes are zero. Default order size
+// is ₹5 crore — the size where the client's three-band scoring
+// (≤0.3 pass / 0.3-0.5 partial / >0.5 fail) actually discriminates
+// across the Nifty 500 universe; ₹1 cr is too small (98% pass).
+export function amihudImpactPct(bars, windowSize = 30, orderSizeRupees = 5e7) {
   if (!Array.isArray(bars) || bars.length < 6) return null;
   const slice = bars.slice(-Math.max(windowSize + 1, 6));
   const ratios = [];
@@ -63,13 +78,16 @@ export function amihudImpactPct1Cr(bars, windowSize = 30, orderSizeRupees = 1e7)
     const vol   = Number(slice[t].volume);
     if (!(cPrev > 0) || !(cNow > 0) || !(vol > 0)) continue;
     const r = (cNow - cPrev) / cPrev;
+    // Same corporate-action guard as the spread estimator — a 30%
+    // dividend-driven overnight gap shouldn't be misread as a real
+    // price move that consumed liquidity.
+    if (Math.abs(r) > 0.15) continue;
     const rupeeVolume = cNow * vol;
     if (rupeeVolume <= 0) continue;
     ratios.push(Math.abs(r) / rupeeVolume);
   }
   if (ratios.length < 5) return null;
   const meanRatio = ratios.reduce((s, x) => s + x, 0) / ratios.length;
-  // Impact % for the given order size.
   const impactPct = meanRatio * orderSizeRupees * 100;
   return Math.round(impactPct * 1000) / 1000;
 }
