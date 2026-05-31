@@ -259,7 +259,8 @@ function ruleDebtEquity(c) {
   if (v == null) return naWithReason(c, "de", 2);
   if (v < 0.5) return { points: 2, max: 2, status: "pass", value: v.toString(), note: "D/E < 0.5 — comfortably low leverage." };
   if (v <= 1.0) return { points: 1, max: 2, status: "partial", value: v.toString(), note: "D/E 0.5–1.0 — moderate leverage." };
-  return { points: 0, max: 2, status: "fail", value: v.toString(), note: "D/E > 1.0 — elevated leverage." };
+  if (v <= 2.0) return { points: 0, max: 2, status: "fail", value: v.toString(), note: "D/E > 1.0 — elevated leverage." };
+  return { points: 0, max: 2, status: "hard_fail", value: v.toString(), note: "D/E > 2 — extreme leverage, hard fail per client framework (stock excluded from SPIP basket)." };
 }
 
 function ruleInterestCoverage(c) {

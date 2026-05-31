@@ -19,8 +19,8 @@ function rulePriceAbove50EMA(c) {
 function rulePriceAbove200DMA(c) {
   if (c.cmp == null || c.sma200 == null) return { ...NA, max: 2, note: "Less than 200 trading days of history — primary trend cannot be evaluated." };
   const val = `CMP ${fmtNum(c.cmp,0)} vs 200 DMA ${fmtNum(c.sma200,0)}`;
-  if (c.above_200dma) return { points: 2, max: 2, status: "pass", value: val, note: "Above 200 DMA — primary trend filter passes (stock exits pipeline if this fails)." };
-  return { points: 0, max: 2, status: "fail", value: val, note: "Below 200 DMA — primary trend filter fail." };
+  if (c.above_200dma) return { points: 2, max: 2, status: "pass", value: val, note: "Above 200 DMA — primary trend filter passes." };
+  return { points: 0, max: 2, status: "hard_fail", value: val, note: "Below 200 DMA — primary trend filter fail. Client framework: 'Price < 200 DMA = immediate fail — stock exits pipeline.' Excluded from SPIP basket." };
 }
 
 function ruleGoldenCross(c) {
@@ -238,11 +238,12 @@ export function scoreCompany(c) {
   const totalPoints = breakdown.reduce((s, b) => s + b.points, 0);
   const totalMax = breakdown.reduce((s, b) => s + b.max, 0);
   const naCount = breakdown.filter((b) => b.status === "na").length;
+  const hardFails = breakdown.filter((b) => b.status === "hard_fail").map((b) => b.label);
   return {
     company: c, breakdown, deferred: DEFERRED,
     totalPoints, totalMax,
     scorePct: totalMax ? Math.round((totalPoints / totalMax) * 100) : 0,
-    hardFails: [],   // no client-defined hard fails on technicals
+    hardFails,
     naCount,
   };
 }
