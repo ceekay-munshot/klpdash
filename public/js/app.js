@@ -1397,16 +1397,34 @@ function buildHelpModal(tabId) {
   };
   const grad = headerColors[tabId] || "from-slate-500 to-slate-700";
 
+  // META holds the verbatim client scoring sheet text — surfaces the
+  // full point-band breakdown (pass / partial / fail) per rule so the
+  // user sees not just the headline threshold but the full structure.
+  const metaForTab = RULE_META[tabId] || {};
+
   const ruleRow = (r) => {
-    // Probe the rule for its max (most return a constant max regardless of input).
     let max = 0;
     try { max = r.fn ? (r.fn({}).max || 0) : 0; } catch { max = 0; }
+    // Max-point tier styling so 2 pts pops more than 1 pt.
+    const pointStyle = max >= 2
+      ? "bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-sm"
+      : max === 1
+        ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200"
+        : "bg-slate-100 text-slate-500";
+    const clientLogic = metaForTab[r.key]?.clientLogic || "";
     return `
-      <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
-        <div class="w-7 h-7 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold flex-shrink-0">${max}</div>
+      <div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
         <div class="flex-1 min-w-0">
-          <div class="font-semibold text-slate-900 text-sm">${escapeHtml(r.label)}</div>
-          <div class="text-[11px] text-slate-500">${escapeHtml(r.criteria || "")}</div>
+          <div class="flex items-center justify-between gap-3 mb-1">
+            <div class="font-semibold text-slate-900 text-sm">${escapeHtml(r.label)}</div>
+            <div class="inline-flex items-baseline gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-bold ${pointStyle} flex-shrink-0">
+              <span>${max}</span>
+              <span class="opacity-90">pt${max === 1 ? "" : "s"}</span>
+              <span class="opacity-75 ml-0.5 text-[9px] font-semibold uppercase tracking-wider">max</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500"><span class="font-semibold text-slate-600">Threshold:</span> ${escapeHtml(r.criteria || "—")}</div>
+          ${clientLogic ? `<div class="text-[11px] text-slate-600 mt-1 leading-snug bg-slate-50 rounded-md px-2 py-1.5 ring-1 ring-slate-100">${escapeHtml(clientLogic)}</div>` : ""}
         </div>
       </div>
     `;
