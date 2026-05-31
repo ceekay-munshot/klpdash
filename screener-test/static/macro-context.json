@@ -20,9 +20,9 @@
     "rural_recovery_note": "Above-normal monsoon outlook + MSP hike + stable kharif sowing."
   },
   "sentiment": {
-    "_note": "Market-wide sentiment signals. Update manually after weekly review of NSE FII/DII reports, breadth data and PCR. Will be automated in a follow-up scrape.",
-    "fii_net_positive_last_20d": "yes",
-    "fii_signal_note": "FII net positive in approx 11 of the last 20 trading days — institutional sentiment leaning bullish.",
+    "_note": "Market-wide sentiment signals. FII/DII flow + market breadth are auto-computed by scrape-macro.mjs; these seed values are deliberately neutral so the dashboard never shows an asserted signal before live data is computed.",
+    "fii_net_positive_last_20d": null,
+    "fii_signal_note": "FII/DII flow signal not yet available — accumulating daily snapshots (goes live once ≥ 5 trading days are gathered).",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
     "market_breadth_ad_ratio": null,
