@@ -2,6 +2,7 @@ import * as fund from "./scoring.js";
 import * as tech from "./tech-scoring.js";
 import * as macro from "./macro-scoring.js";
 import * as senliq from "./sentiment-liquidity-scoring.js";
+import * as composite from "./composite-scoring.js";
 import { META as RULE_META } from "./rule-meta.js";
 import { exportToExcel as exportToExcelNew } from "./excel-export.js";
 
@@ -61,7 +62,7 @@ const CONFIGS = {
     ],
     stats: {
       rules: "11 / 11",   rulesNote: "Active rules",
-      maxScore: "15 pts", maxNote: "Sector overlays + macro context",
+      maxScore: "17 pts", maxNote: "Sector overlays + macro context",
     },
     drillHeaderStats: (c) => [
       { label: "Sector · Industry", main: c["Sector"] || "—",
@@ -133,6 +134,42 @@ const CONFIGS = {
         sub: c.high_52w ? `52W ₹${Math.round(c.high_52w).toLocaleString("en-IN")}` : "" },
       { label: "RSI · ADX · Beta", main: `${c.rsi14 ?? "—"} · ${c.adx14 ?? "—"} · ${c.beta_1y ?? "—"}`,
         sub: c.relative_strength_6m == null ? "" : `RS 6M ${(c.relative_strength_6m * 100).toFixed(1)}%` },
+    ],
+  },
+  composite: {
+    label: "SPIP Basket",
+    composite: true,                  // marker — special loading + drill
+    // Loaded specially in loadTab (fuses fundamentals + technicals + macro).
+    dataUrl: "data/screener-companies.json",
+    metaUrl: "data/macro.json",
+    parseData: (raw) => raw,
+    rules: [],                        // no per-rule breakdown — pillars instead
+    deferred: [],
+    score: (x) => x,                  // identity — scoring is done in loadTab
+    // Accessors receive s.company (the fund row), matching all other tabs.
+    name: (co) => co?.Company || "",
+    marketCap: (co) => co?.["Market Cap"] || "",
+    screenerUrl: (co) => co?.["Screener URL"],
+    sector: (co) => co?.["Sector"] || null,
+    industry: (co) => co?.["Broad Industry"] || null,
+    // Column getters read from co._composite which loadTab stashes on each row.
+    columns: [
+      { label: "Composite", get: (co) => co._composite?.composite == null ? "—" : co._composite.composite.toFixed(1) },
+      { label: "Rating",    get: (co) => co._composite?.rating || "—" },
+      { label: "Fund",      get: (co) => `${co._composite?.pillars?.fundamentals?.raw ?? "—"}/29` },
+      { label: "Tech",      get: (co) => co._composite?.pillars?.technicals?.raw == null ? "—" : `${co._composite.pillars.technicals.raw}/${co._composite.pillars.technicals.max}` },
+      { label: "Macro",     get: (co) => `${co._composite?.pillars?.macro?.raw ?? "—"}/17` },
+      { label: "Sent",      get: (co) => co._composite?.pillars?.sentiment?.raw == null ? "—" : `${co._composite.pillars.sentiment.raw}/${co._composite.pillars.sentiment.max}` },
+      { label: "Liq",       get: (co) => co._composite?.pillars?.liquidity?.raw == null ? "—" : `${co._composite.pillars.liquidity.raw}/${co._composite.pillars.liquidity.max}` },
+    ],
+    stats: {
+      rules: "5 pillars",  rulesNote: "Weighted: 40 · 35 · 15 · 5 · 5",
+      maxScore: "100 pts", maxNote: "≥75 STRONG BUY · 60 BUY · 45 WATCH",
+    },
+    drillHeaderStats: (co) => [
+      { label: "Market Cap", main: co["Market Cap"] || "—", sub: `CMP ${co["Current Price"] || "—"}` },
+      { label: "Rating",     main: co._composite?.rating || "—",
+        sub: co._composite?.composite != null ? `Composite ${co._composite.composite.toFixed(1)} / 100` : "Unrated — data missing" },
     ],
   },
 };
@@ -281,6 +318,83 @@ async function switchTab(tabId) {
 
 async function loadTab(tabId) {
   const c = CONFIGS[tabId];
+
+  // Composite (SPIP Basket) tab: fuse fundamentals + technicals + macro
+  // (the same enrichments the per-pillar tabs do) and run the weighted
+  // composite scorer. The output rows are composite-result objects, not
+  // plain companies — drill/table renderers branch on c.composite.
+  if (c.composite) {
+    const [fundData, techData, macroData] = await Promise.all([
+      fetch("data/screener-companies.json").then((r) => r.json()),
+      fetch("data/technicals.json").then((r) => r.json()),
+      fetch("data/macro.json").then((r) => r.json()),
+    ]);
+    const fundCompanies = Array.isArray(fundData) ? fundData : (fundData.companies || []);
+    const techCompanies = techData.companies || [];
+
+    // Apply the same per-tab enrichments so each pillar scores identically
+    // to the standalone tab. Best-effort fetches.
+    let insiderByTicker = {}, governanceByTicker = {}, auditorByTicker = {};
+    let insiderLoaded = false, governanceLoaded = false, auditorLoaded = false;
+    try { const j = await fetch("data/insider-trades.json").then((r) => r.json()); insiderByTicker = j?.companies || {}; insiderLoaded = Object.keys(insiderByTicker).length > 0; } catch {}
+    try { const j = await fetch("data/governance-flags.json").then((r) => r.json()); governanceByTicker = j?.flagged_companies || {}; governanceLoaded = !!j && !j.error; } catch {}
+    try { const j = await fetch("data/auditor-opinions.json").then((r) => r.json()); auditorByTicker = j?.companies || {}; auditorLoaded = !!j && Object.keys(auditorByTicker).length > 0; } catch {}
+    const pli   = new Set((macroData.pli_companies || []).map((s) => String(s).toUpperCase()));
+    const renew = new Set((macroData.renewable_companies || []).map((s) => String(s).toUpperCase()));
+    const cp1   = new Set((macroData.china_plus_one_companies || []).map((s) => String(s).toUpperCase()));
+    for (const row of fundCompanies) {
+      const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
+      const ticker = m ? m[1].toUpperCase() : null;
+      // Insider / governance / auditor (Fundamentals enrichments)
+      const ins = ticker ? insiderByTicker[ticker] : null;
+      row.insider_loaded = insiderLoaded;
+      if (ins) {
+        row.insider_net_shares = ins.net_shares; row.insider_net_value = ins.net_value;
+        row.insider_buy_shares = ins.buy_shares; row.insider_sell_shares = ins.sell_shares;
+        row.insider_transactions = ins.transactions; row.insider_last_date = ins.last_date;
+      } else { row.insider_transactions = 0; }
+      row.governance_loaded = governanceLoaded;
+      row.governance_flag = ticker && governanceByTicker[ticker] ? governanceByTicker[ticker] : null;
+      row.auditor_opinions_loaded = auditorLoaded;
+      const aud = ticker ? auditorByTicker[ticker] : null;
+      row.auditor_opinion = aud?.opinion || null;
+      row.auditor_opinion_source = aud?.source || null;
+      // Macro sector overlays
+      row.in_pli = ticker ? pli.has(ticker) : false;
+      row.in_renewable = ticker ? renew.has(ticker) : false;
+      row.in_china_plus_one = ticker ? cp1.has(ticker) : false;
+    }
+    // ATR history for technicals
+    try {
+      const atrHistory = await fetch("data/atr-history.json").then((r) => r.json());
+      for (const row of techCompanies) if (row.ticker && atrHistory[row.ticker]) row.atr_history = atrHistory[row.ticker];
+    } catch {}
+
+    const compositeResults = composite.scoreCompositeBatch(fundCompanies, techCompanies, macroData);
+    // Stash composite result on the company so column getters can reach it,
+    // and map to the score-shape existing renderers expect.
+    const scored = compositeResults.map((r) => {
+      r.company._composite = r;
+      return {
+        company: r.company,
+        composite: r.composite,
+        rating: r.rating,
+        pillars: r.pillars,
+        pillarResults: r.pillarResults,
+        hardFails: r.hardFails,
+        hardFailed: r.hardFailed,
+        unrated: !r.dataComplete,
+        totalPoints: r.composite ?? 0,
+        totalMax: 100,
+        scorePct: r.composite != null ? Math.round(r.composite) : 0,
+        breakdown: [],
+        naCount: 0,
+      };
+    });
+    state.cache[tabId] = { rows: fundCompanies, scored, meta: macroData, filtered: scored };
+    return;
+  }
+
   const [rawData, rawMeta] = await Promise.all([
     fetch(c.dataUrl).then((r) => r.json()),
     c.metaUrl ? fetch(c.metaUrl).then((r) => r.json()) : Promise.resolve(null),
@@ -439,7 +553,28 @@ function sourceFriendly(c, m) {
 }
 
 function renderStats() {
-  const c = cfg();
+  const c = cfg(); const st = tabState();
+  // Composite tab overrides the stat cards with basket-population counts.
+  if (c.composite && st) {
+    const counts = { strong: 0, buy: 0, watch: 0, avoid: 0, filtered: 0, unrated: 0 };
+    for (const s of st.scored) {
+      if (s.hardFailed) counts.filtered++;
+      else if (s.unrated) counts.unrated++;
+      else if (s.rating === "STRONG BUY") counts.strong++;
+      else if (s.rating === "BUY") counts.buy++;
+      else if (s.rating === "WATCH") counts.watch++;
+      else counts.avoid++;
+    }
+    const inBasket = counts.strong + counts.buy + counts.watch;
+    $("#stat-rules").textContent = `${inBasket} / ${st.scored.length}`;
+    $("#stat-rules-note").textContent = `In basket · ${counts.strong} STRONG BUY · ${counts.buy} BUY · ${counts.watch} WATCH`;
+    $("#stat-max").textContent = `${counts.filtered}`;
+    $("#stat-max-note").textContent = `Hard-failed (excluded)${counts.unrated ? ` · ${counts.unrated} unrated (no OHLCV)` : ""}`;
+    $("#deferred-count").textContent = counts.avoid;
+    $("#deferred-summary").textContent = `${counts.avoid} stocks rated AVOID (composite < 45)`;
+    $("#top-cards-title").textContent = "SPIP Basket — Top 10 by Composite Score";
+    return;
+  }
   $("#stat-rules").textContent = c.stats.rules;
   $("#stat-rules-note").textContent = c.stats.rulesNote;
   $("#stat-max").textContent = c.stats.maxScore;
@@ -581,6 +716,7 @@ function renderTable() {
 function openDrillDown(s) {
   if (!s) return;
   const c = cfg();
+  if (c.composite) return openCompositeDrill(s);
   const name = c.name(s.company);
   const { color, initials } = avatarFor(name);
   const co = s.company;
@@ -697,6 +833,160 @@ function openDrillDown(s) {
   $("#drill-overlay").classList.remove("hidden");
   $("#drill-close").addEventListener("click", closeDrillDown);
 }
+// SPIP Basket drill: pillar heatmap + weighted contribution table.
+// Shows how the 5 pillars sum to the composite, plus any hard-fail
+// reasons that excluded the stock from the basket.
+function openCompositeDrill(s) {
+  const co = s.company || {};
+  const name = co.Company || "—";
+  const { color, initials } = avatarFor(name);
+  const sector = co.Sector || ""; const industry = co["Broad Industry"] || "";
+  const url = co["Screener URL"] || null;
+
+  // Pillar grid — visual heatmap-style row per pillar
+  const pillarRow = (key, label, weight) => {
+    const p = s.pillars?.[key];
+    if (!p || p.raw == null) {
+      return `<tr class="border-t border-slate-100">
+        <td class="py-2 pr-4 font-semibold text-slate-800">${escapeHtml(label)}</td>
+        <td class="py-2 pr-4 text-slate-400 text-sm">no data</td>
+        <td class="py-2 pr-4 text-slate-400 text-sm">—</td>
+        <td class="py-2 pr-4 text-right text-slate-400 text-sm">${weight}% weight</td>
+        <td class="py-2 pr-2 text-right font-semibold text-slate-400">—</td>
+      </tr>`;
+    }
+    const pct = p.pct ?? 0;
+    const barColor = pct >= 75 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : pct >= 45 ? "bg-amber-500" : "bg-rose-500";
+    return `<tr class="border-t border-slate-100">
+      <td class="py-2 pr-4 font-semibold text-slate-800">${escapeHtml(label)}</td>
+      <td class="py-2 pr-4 text-sm text-slate-700 whitespace-nowrap">${p.raw}/${p.max} <span class="text-slate-400">(${pct}%)</span></td>
+      <td class="py-2 pr-4">
+        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div class="${barColor} h-2 rounded-full" style="width: ${Math.min(100, pct)}%"></div>
+        </div>
+      </td>
+      <td class="py-2 pr-4 text-right text-slate-500 text-sm">${weight}% weight</td>
+      <td class="py-2 pr-2 text-right font-bold text-slate-900">+${(p.weighted ?? 0).toFixed(1)}</td>
+    </tr>`;
+  };
+
+  const pillarTable = `
+    <div class="mb-6 bg-white rounded-xl ring-1 ring-slate-200 p-4">
+      <div class="flex items-baseline justify-between mb-3">
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
+        <div class="text-xs text-slate-500">Weighted Score Contribution</div>
+      </div>
+      <table class="w-full text-sm">
+        <tbody>
+          ${pillarRow("fundamentals", "Fundamentals", 40)}
+          ${pillarRow("technicals",   "Technicals",   35)}
+          ${pillarRow("macro",        "Macro / Sector", 15)}
+          ${pillarRow("sentiment",    "Sentiment",    5)}
+          ${pillarRow("liquidity",    "Liquidity",    5)}
+          <tr class="border-t-2 border-slate-300 bg-slate-50">
+            <td colspan="4" class="py-3 pr-4 font-bold text-slate-900 text-right">Composite Score (sum)</td>
+            <td class="py-3 pr-2 text-right font-bold text-2xl ${s.composite != null && s.composite >= 75 ? "text-emerald-600" : s.composite != null && s.composite >= 60 ? "text-blue-600" : s.composite != null && s.composite >= 45 ? "text-amber-600" : "text-rose-600"}">
+              ${s.composite != null ? s.composite.toFixed(1) : "—"}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Hard-fail panel — explains exactly which rules excluded the stock
+  const hardFailPanel = s.hardFails.length ? `
+    <div class="mb-6 p-4 bg-rose-50 rounded-xl ring-1 ring-rose-200">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="text-rose-500 text-2xl leading-none">⚠</div>
+        <div class="flex-1">
+          <div class="font-bold text-rose-900">Excluded from SPIP Basket</div>
+          <div class="text-xs text-rose-700/80 mt-0.5">Hard fail per client framework — stock exits pipeline regardless of composite score.</div>
+        </div>
+      </div>
+      <ul class="space-y-1.5 ml-9 list-disc text-sm text-rose-800">
+        ${s.hardFails.map((h) => `<li class="font-semibold">${escapeHtml(h)}</li>`).join("")}
+      </ul>
+    </div>
+  ` : "";
+
+  const unratedPanel = (!s.hardFails.length && s.unrated) ? `
+    <div class="mb-6 p-4 bg-amber-50 rounded-xl ring-1 ring-amber-200">
+      <div class="flex items-start gap-3">
+        <div class="text-amber-500 text-2xl leading-none">ℹ</div>
+        <div class="flex-1">
+          <div class="font-bold text-amber-900">Unrated — Technicals data missing</div>
+          <div class="text-xs text-amber-800 mt-0.5">Yahoo Finance returned no OHLCV for this ticker, so Technicals + Sentiment/Liquidity pillars couldn't score. Common cause: REIT/InvIT or very-recent listing. Composite will populate once a vendor with NSE coverage (e.g. Upstox) is wired.</div>
+        </div>
+      </div>
+    </div>
+  ` : "";
+
+  // Side-by-side pillar tab shortcuts for digging deeper
+  const tabShortcuts = `
+    <div class="mb-6">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Drill Deeper Into Each Pillar</div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        ${["fundamentals","technicals","macro","sentiment"].map((tab) => `
+          <button class="composite-jump px-3 py-2 rounded-lg bg-slate-50 hover:bg-indigo-50 ring-1 ring-slate-200 hover:ring-indigo-300 text-xs font-semibold text-slate-700 hover:text-indigo-700 transition-colors text-left"
+                  data-jump-tab="${tab}">
+            ${escapeHtml(CONFIGS[tab].label)} →
+          </button>
+        `).join("")}
+      </div>
+      <div class="text-[11px] text-slate-500 mt-1.5">Each pillar tab shows the per-rule breakdown that fed into the score above.</div>
+    </div>
+  `;
+
+  const ratingPillClass = composite.ratingClass(s.rating);
+  $("#drill-content").innerHTML = `
+    <div class="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 p-5 z-10">
+      <button id="drill-close" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+      <div class="flex items-center gap-4 pr-8">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-md">${initials}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-xl text-slate-900 truncate">${escapeHtml(name)}</div>
+          ${(sector || industry) ? `<div class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(sector)}${sector && industry ? " · " : ""}${escapeHtml(industry)}</div>` : ""}
+          ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-800">View on Screener.in ↗</a>` : ""}
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4">
+        <div class="bg-slate-50 rounded-lg p-3">
+          <div class="text-xs text-slate-500 font-medium">Composite Score</div>
+          <div class="text-3xl font-bold text-slate-900">${s.composite != null ? s.composite.toFixed(1) : "—"}<span class="text-base text-slate-400">/100</span></div>
+          <div class="text-xs text-slate-500">SPIP weighted</div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-3">
+          <div class="text-xs text-slate-500 font-medium">Rating</div>
+          <div class="mt-1 inline-flex px-2.5 py-1 rounded-full text-sm font-bold ring-1 ${ratingPillClass}">${s.rating}</div>
+          <div class="text-xs text-slate-500 mt-1">${s.hardFailed ? "Hard fail → excluded" : s.unrated ? "Data incomplete" : "Per client framework"}</div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-3">
+          <div class="text-xs text-slate-500 font-medium">Market Cap</div>
+          <div class="text-base font-bold text-slate-900 truncate">${escapeHtml(co["Market Cap"] || "—")}</div>
+          <div class="text-xs text-slate-500 truncate">CMP ${escapeHtml(co["Current Price"] || "—")}</div>
+        </div>
+      </div>
+    </div>
+    <div class="p-5">
+      ${hardFailPanel}
+      ${unratedPanel}
+      ${pillarTable}
+      ${tabShortcuts}
+    </div>
+  `;
+  $("#drill-panel").classList.remove("translate-x-full");
+  $("#drill-overlay").classList.remove("hidden");
+  $("#drill-close").addEventListener("click", closeDrillDown);
+  // Wire the "drill deeper" buttons — close composite drill and switch tab.
+  $$(".composite-jump").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeDrillDown();
+      switchTab(btn.dataset.jumpTab);
+    });
+  });
+}
+
 function closeDrillDown() {
   $("#drill-panel").classList.add("translate-x-full");
   $("#drill-overlay").classList.add("hidden");
