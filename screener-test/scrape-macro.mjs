@@ -290,11 +290,14 @@ async function fetchNSESentimentAll() {
     const todayRows = await fetchFIIDIITodayRows();
     const history = appendToFIIHistory(todayRows);
     const signal = computeFIISignal(history);
-    if (signal) {
-      Object.assign(out, signal);
+    // Always assign — computeFIISignal now returns an explicit
+    // "accumulating" state (null signal) when there's too little
+    // history, which correctly overrides any optimistic seed value.
+    Object.assign(out, signal);
+    if (signal.fii_net_positive_last_20d != null) {
       console.log(`  FII flow: ${signal.fii_net_positive_last_20d} (${signal.fii_positive_days}/${signal.fii_total_days} days) — history file has ${history.length} entries`);
     } else {
-      console.log("  FII flow: not enough history yet to compute signal (history size", history.length + ")");
+      console.log(`  FII flow: accumulating — ${signal.fii_total_days}/20 days collected (${signal.fii_positive_days} net-positive); signal goes live at 5 days.`);
     }
   } catch (err) {
     console.log("  FII fetch error:", err.message);
@@ -369,8 +372,19 @@ function computeFIISignal(history) {
   // Take latest up to 20 days
   const dates = [...byDate.keys()].sort((a, b) => new Date(b) - new Date(a)).slice(0, 20);
   const days = dates.length;
-  if (days < 5) return null;
   const positive = dates.filter((d) => byDate.get(d) > 0).length;
+  // The rolling signal needs at least 5 trading days before it means
+  // anything. Below that, return an explicit "accumulating" state with
+  // a null signal (scored N/A by the rule) rather than leaving a stale
+  // seed in place — never assert a flow direction we can't yet compute.
+  if (days < 5) {
+    return {
+      fii_net_positive_last_20d: null,
+      fii_positive_days: positive,
+      fii_total_days: days,
+      fii_signal_note: `Building rolling window — ${days} of 20 trading days collected so far (${positive} net-positive). NSE only publishes a daily FII/DII snapshot, so the signal accumulates day-by-day and goes live once ≥ 5 trading days are gathered, then fills toward a true 20-day window.`,
+    };
+  }
   const pct = positive / days;
   let signal;
   if (pct >= 0.5) signal = "yes";

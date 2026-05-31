@@ -18,7 +18,7 @@ function ruleIndiaVIX(c) {
 function ruleFIIDIIFlow(c) {
   const s = c?._macro?.sentiment;
   if (!s) return { ...NA, max: 2 };
-  if (s.fii_net_positive_last_20d == null) return { ...NA, max: 2, note: "FII/DII flow signal not yet set in macro-context.json." };
+  if (s.fii_net_positive_last_20d == null) return { ...NA, max: 2, value: s.fii_total_days != null ? `Accumulating — ${s.fii_total_days}/20 days` : null, note: s.fii_signal_note || "FII/DII flow signal not yet available — accumulating daily snapshots (goes live at 5 trading days)." };
   const signal = String(s.fii_net_positive_last_20d).toLowerCase();
   const note = s.fii_signal_note || "FII/DII flow signal from market activity report.";
   if (signal === "yes") return { points: 2, max: 2, status: "pass", value: "FII net positive in 10+ of last 20 days", note };
