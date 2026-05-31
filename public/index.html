@@ -28,6 +28,8 @@
       .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       .drill-panel { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+      #modal-overlay.is-open { display: flex; }
+      #modal-overlay.is-open #modal-container { opacity: 1; transform: scale(1); }
       @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       .fade-in { animation: fade-in 0.4s ease-out both; }
       table thead th[data-sort] { cursor: pointer; user-select: none; }
@@ -94,13 +96,16 @@
           <div class="text-2xl font-bold text-slate-900 mt-1" id="meta-count">—</div>
           <div class="text-xs text-slate-500 mt-0.5" id="meta-source">—</div>
         </div>
-        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
-          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Scoring Method</div>
+        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100 relative">
+          <div class="flex items-start justify-between">
+            <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Scoring Method</div>
+            <button id="help-btn" class="w-5 h-5 rounded-full bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200 hover:ring-indigo-300 text-indigo-600 hover:text-indigo-700 text-[11px] font-bold flex items-center justify-center transition-colors" title="See how scoring works on this tab">?</button>
+          </div>
           <div class="text-2xl font-bold text-slate-900 mt-1" id="stat-rules">—</div>
-          <div class="text-xs text-slate-500 mt-0.5"><span id="stat-rules-note">Active rules</span> <span class="text-slate-400">·</span> <span id="deferred-count">—</span> deferred</div>
+          <div class="text-xs text-slate-500 mt-0.5" id="stat-rules-note">Active rules</div>
         </div>
-        <div class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
-          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Max Score</div>
+        <div id="stat-max-card" class="bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-100">
+          <div class="text-xs text-slate-500 font-medium uppercase tracking-wider" id="stat-max-label">Max Score</div>
           <div class="text-2xl font-bold text-slate-900 mt-1" id="stat-max">—</div>
           <div class="text-xs text-slate-500 mt-0.5" id="stat-max-note">—</div>
         </div>
@@ -123,7 +128,7 @@
       </section>
 
       <!-- DEFERRED PARAMETERS PANEL (collapsible) -->
-      <details class="mb-6 bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
+      <details id="deferred-panel" class="mb-6 bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
         <summary class="cursor-pointer px-5 py-4 flex items-center justify-between hover:bg-slate-50">
           <div class="flex items-center gap-3">
             <div class="text-amber-500 text-lg">⚠</div>
@@ -190,11 +195,18 @@
       </footer>
     </main>
 
-    <!-- DRILL-DOWN PANEL -->
+    <!-- DRILL-DOWN PANEL (side-slide — for pillar tabs) -->
     <div id="drill-overlay" class="fixed inset-0 bg-slate-900/30 hidden z-40 backdrop-blur-sm"></div>
     <aside id="drill-panel" class="drill-panel fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white shadow-2xl translate-x-full z-50 overflow-y-auto scrollbar-thin">
       <div id="drill-content"></div>
     </aside>
+
+    <!-- CENTRED MODAL — for SPIP Basket drill + Help modal -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 hidden z-[60] backdrop-blur-sm items-center justify-center p-4 sm:p-8 overflow-y-auto">
+      <div id="modal-container" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 scale-95 opacity-0 transition-all duration-200 overflow-hidden">
+        <div id="modal-content"></div>
+      </div>
+    </div>
 
     <script type="module" src="js/app.js"></script>
   </body>

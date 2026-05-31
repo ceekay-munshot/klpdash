@@ -559,17 +559,20 @@ function sourceFriendly(c, m) {
   if (c.label === "Technicals") return "Yahoo Finance EOD · NSE 500";
   if (c.label === "Macro") return "Multi-source · Yahoo + RBI + curated";
   if (c.label === "Sentiment & Liquidity") return "Yahoo + NSE + computed breadth";
-  if (c.label === "SPIP Basket") return "Composite — 5-pillar weighted (40 · 35 · 15 · 5 · 5)";
+  if (c.label === "SPIP Basket") return "5-pillar weighted composite";
   return c.label;
 }
 
 function renderStats() {
   const c = cfg(); const st = tabState();
-  // Composite tab overrides the stat cards with basket-population counts.
+  const maxCard = $("#stat-max-card");
+  // Composite tab overrides the stat cards. The 4-bucket strip below the
+  // header carries the rating distribution, so the stat cards here stay
+  // intentionally minimal — universe size + pillar weighting.
   if (c.composite && st) {
-    const counts = { strong: 0, buy: 0, watch: 0, avoid: 0, filtered: 0, unrated: 0 };
+    const counts = { strong: 0, buy: 0, watch: 0, hardfail: 0, avoid: 0, unrated: 0 };
     for (const s of st.scored) {
-      if (s.hardFailed) counts.filtered++;
+      if (s.hardFailed) counts.hardfail++;
       else if (s.unrated) counts.unrated++;
       else if (s.rating === "STRONG BUY") counts.strong++;
       else if (s.rating === "BUY") counts.buy++;
@@ -577,27 +580,37 @@ function renderStats() {
       else counts.avoid++;
     }
     const inBasket = counts.strong + counts.buy + counts.watch;
-    $("#stat-rules").textContent = `${inBasket} / ${st.scored.length}`;
-    $("#stat-rules-note").textContent = `In basket · ${counts.strong} STRONG BUY · ${counts.buy} BUY · ${counts.watch} WATCH`;
-    $("#stat-max").textContent = `${counts.filtered}`;
-    $("#stat-max-note").textContent = `Hard-failed (excluded)${counts.unrated ? ` · ${counts.unrated} unrated (no OHLCV)` : ""}`;
-    $("#deferred-count").textContent = counts.avoid;
-    $("#deferred-summary").textContent = `${counts.avoid} stocks rated AVOID (composite < 45)`;
+    $("#stat-rules").textContent = `${inBasket}`;
+    $("#stat-rules-note").textContent = `In SPIP Basket of ${st.scored.length}`;
+    // Repurpose the third card for the pillar weights mini-strip (was a
+    // confusing "Max Score 300" reading before).
+    $("#stat-max-label").textContent = "Pillar Weights";
+    $("#stat-max").innerHTML = `<span class="text-base font-semibold text-slate-700">40 · 35 · 15 · 5 · 5</span>`;
+    $("#stat-max-note").textContent = "Fund · Tech · Macro · Sent · Liq";
+    if (maxCard) maxCard.classList.remove("hidden");
     // Rich title — uses innerHTML so the trophy can render properly.
     $("#top-cards-title").innerHTML = `<span class="text-amber-500">🏆</span> SPIP Basket — Top 10 Picks <span class="ml-2 text-xs font-normal text-slate-500">composite-weighted, hard-fails excluded</span>`;
     return;
   }
   $("#stat-rules").textContent = c.stats.rules;
   $("#stat-rules-note").textContent = c.stats.rulesNote;
+  $("#stat-max-label").textContent = "Max Score";
   $("#stat-max").textContent = c.stats.maxScore;
   $("#stat-max-note").textContent = c.stats.maxNote;
-  $("#deferred-count").textContent = c.deferred.length;
-  $("#deferred-summary").textContent = `${c.deferred.length} parameter${c.deferred.length>1?"s":""} pending data source`;
+  if (maxCard) maxCard.classList.remove("hidden");
   $("#top-cards-title").textContent = `Top 10 by ${c.label} Score`;
 }
 
 function renderDeferredList() {
   const c = cfg();
+  const panel = $("#deferred-panel");
+  // Composite tab has no "pending data source" concept — hide the panel entirely.
+  if (c.composite || c.deferred.length === 0) {
+    panel?.classList.add("hidden");
+    return;
+  }
+  panel?.classList.remove("hidden");
+  $("#deferred-summary").textContent = `${c.deferred.length} parameter${c.deferred.length>1?"s":""} pending data source`;
   $("#deferred-list").innerHTML = c.deferred.map((d) => `
     <div class="flex items-start gap-3 p-3 rounded-lg bg-amber-50 ring-1 ring-amber-100">
       <div class="text-amber-500 text-lg leading-none">⚠</div>
@@ -659,12 +672,15 @@ function renderCompositeTopCards() {
   const total = all.length;
   const inBasket = counts.strong + counts.buy + counts.watch;
 
-  // Rating distribution as a single 100%-width segmented bar plus labelled cards
+  // 3-bucket rating distribution: STRONG BUY · BUY · WATCH only.
+  // AVOID / UNRATED / hard-failed roll into the segmented 100%-width
+  // bar above the cards but don't get their own dedicated card —
+  // those are exit/exclusion states, not basket categories.
   const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
   const pctOf = (n) => total ? (n / total) * 100 : 0;
   const distributionStrip = `
     <div class="mb-3">
-      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
+      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100" title="${counts.strong} STRONG BUY · ${counts.buy} BUY · ${counts.watch} WATCH · ${counts.avoid} AVOID · ${counts.unrated} UNRATED · ${counts.filtered} HARD FAIL">
         ${seg(pctOf(counts.strong),   "bg-gradient-to-r from-emerald-500 to-teal-500")}
         ${seg(pctOf(counts.buy),      "bg-gradient-to-r from-blue-500 to-indigo-500")}
         ${seg(pctOf(counts.watch),    "bg-gradient-to-r from-amber-500 to-orange-500")}
@@ -673,22 +689,19 @@ function renderCompositeTopCards() {
         ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-500 to-slate-600")}
       </div>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
+    <div class="grid grid-cols-3 gap-3 mb-5">
       ${[
         { count: counts.strong,   label: "STRONG BUY", from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",   accent: "text-emerald-700" },
         { count: counts.buy,      label: "BUY",        from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",    accent: "text-blue-700" },
         { count: counts.watch,    label: "WATCH",      from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",   accent: "text-amber-700" },
-        { count: counts.avoid,    label: "AVOID",      from: "from-rose-500",    to: "to-pink-500",    soft: "from-rose-50 to-pink-50",      accent: "text-rose-700" },
-        { count: counts.unrated,  label: "UNRATED",    from: "from-slate-400",   to: "to-slate-500",   soft: "from-slate-50 to-slate-100",   accent: "text-slate-600" },
-        { count: counts.filtered, label: "FILTERED",   from: "from-slate-500",   to: "to-slate-600",   soft: "from-slate-100 to-slate-200",  accent: "text-slate-700" },
       ].map((b) => `
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-3">
-          <div class="flex items-center gap-1.5 mb-1">
+        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-4">
+          <div class="flex items-center gap-1.5 mb-1.5">
             <span class="w-2 h-2 rounded-full bg-gradient-to-br ${b.from} ${b.to}"></span>
             <span class="text-[10px] font-bold uppercase tracking-wider ${b.accent}">${b.label}</span>
           </div>
-          <div class="text-3xl font-bold ${b.accent}">${b.count}</div>
-          <div class="text-[10px] text-slate-500 mt-0.5">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
+          <div class="text-3xl font-bold ${b.accent} leading-none">${b.count}</div>
+          <div class="text-[10px] text-slate-500 mt-1.5">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
         </div>
       `).join("")}
     </div>
@@ -1017,16 +1030,16 @@ function renderScoreGauge(score, theme, max = 100, size = 144) {
 }
 
 // Pillar card — premium card per pillar showing raw score, %, weight, and
-// weighted contribution. Used in the SPIP Basket drill view.
+// weighted contribution. Each line gets its own row for clean alignment.
 function renderPillarCard(label, p, weight) {
   if (!p || p.raw == null) {
     return `
-      <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/40 p-3">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(label)}</div>
-        <div class="mt-1.5 text-slate-300 text-2xl font-bold">—</div>
-        <div class="text-[10px] text-slate-400 mt-1">no data</div>
-        <div class="mt-2 h-1.5 rounded-full bg-slate-100"></div>
-        <div class="mt-2 flex items-baseline justify-between border-t border-slate-200 pt-2">
+      <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/40 p-4">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">${escapeHtml(label)}</div>
+        <div class="text-slate-300 text-3xl font-bold leading-none">—</div>
+        <div class="text-[10px] text-slate-400 mt-1.5">no data</div>
+        <div class="mt-3 h-2 rounded-full bg-slate-100"></div>
+        <div class="mt-3 pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
           <span class="text-[10px] text-slate-400 uppercase tracking-wider">${weight}% weight</span>
           <span class="font-bold text-slate-300 text-sm">+0.0</span>
         </div>
@@ -1039,17 +1052,22 @@ function renderPillarCard(label, p, weight) {
   const accent  = ({ emerald: "text-emerald-700", blue: "text-blue-700", amber: "text-amber-700", rose: "text-rose-700" })[tier];
   const bg      = ({ emerald: "bg-emerald-50/60", blue: "bg-blue-50/60", amber: "bg-amber-50/60", rose: "bg-rose-50/60" })[tier];
   return `
-    <div class="rounded-xl ring-1 ring-slate-200 ${bg} p-3 hover:shadow-md hover:-translate-y-0.5 transition-all">
-      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(label)}</div>
-      <div class="mt-1.5 flex items-baseline gap-1.5">
-        <span class="text-2xl font-bold text-slate-900">${p.raw}</span>
-        <span class="text-sm text-slate-400">/${p.max}</span>
-        <span class="ml-auto text-xs font-semibold ${accent}">${pct}%</span>
+    <div class="rounded-xl ring-1 ring-slate-200 ${bg} p-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <!-- Pillar name -->
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">${escapeHtml(label)}</div>
+      <!-- Raw score on its own row, large -->
+      <div class="mt-2 flex items-baseline gap-1.5">
+        <span class="text-3xl font-bold text-slate-900 leading-none">${p.raw}</span>
+        <span class="text-sm text-slate-400">/ ${p.max}</span>
       </div>
-      <div class="mt-2 h-1.5 rounded-full bg-white/60 overflow-hidden ring-1 ring-slate-200">
-        <div class="${barFill} h-1.5 rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
+      <!-- Percentage on its own row -->
+      <div class="mt-1.5 text-xs font-semibold ${accent}">${pct}%</div>
+      <!-- Progress bar -->
+      <div class="mt-2.5 h-2 rounded-full bg-white/70 overflow-hidden ring-1 ring-slate-200/80">
+        <div class="${barFill} h-2 rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
       </div>
-      <div class="mt-2.5 flex items-baseline justify-between border-t border-slate-200/80 pt-2">
+      <!-- Weight + contribution footer -->
+      <div class="mt-3 pt-3 border-t border-slate-200/80 flex items-baseline justify-between">
         <span class="text-[10px] text-slate-500 uppercase tracking-wider">${weight}% weight</span>
         <span class="font-bold text-slate-900 text-sm">+${(p.weighted ?? 0).toFixed(1)}</span>
       </div>
@@ -1057,37 +1075,34 @@ function renderPillarCard(label, p, weight) {
   `;
 }
 
-// SPIP Basket drill: hero composite gauge + decision panel + 5-card
-// pillar grid + per-pillar drill-deeper shortcuts. Designed to be the
-// "elite" client-facing view — when a CEO opens a stock, this is the
-// page that should make them go "wow".
+// SPIP Basket drill — opens as a CENTRED MODAL (not the side panel).
+// Hero gauge + decision card on top, 5-card pillar composition below,
+// then drill-deeper shortcuts to the per-pillar tabs.
 function openCompositeDrill(s) {
   const co = s.company || {};
   const name = co.Company || "—";
-  const { color, initials } = avatarFor(name);
   const sector = co.Sector || ""; const industry = co["Broad Industry"] || "";
   const url = co["Screener URL"] || null;
   const theme = composite.ratingTheme(s.rating);
   const decision = composite.decisionFor(s.rating);
+  const initials = avatarFor(name).initials;
 
-  // --- Hero header: gradient banner + avatar + identity strip
+  // --- Hero header
   const heroHeader = `
     <div class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br ${theme.from} ${theme.to} opacity-95"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_55%)]"></div>
-      <button id="drill-close" class="absolute top-3 right-3 z-10 text-white/80 hover:text-white text-2xl leading-none w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">×</button>
-      <div class="relative p-5 ${theme.textOn}">
-        <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/30 flex items-center justify-center text-white font-bold text-lg shadow-lg">${initials}</div>
+      <div class="absolute inset-0 bg-gradient-to-br ${theme.from} ${theme.to}"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.20),transparent_55%)]"></div>
+      <button id="modal-close" class="absolute top-3 right-3 z-10 text-white/85 hover:text-white text-2xl leading-none w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center transition-colors">×</button>
+      <div class="relative p-6 ${theme.textOn}">
+        <div class="flex items-center gap-4 pr-12">
+          <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur ring-1 ring-white/30 flex items-center justify-center text-white font-bold text-xl shadow-lg flex-shrink-0">${initials}</div>
           <div class="flex-1 min-w-0">
-            <div class="font-bold text-2xl truncate">${escapeHtml(name)}</div>
-            ${(sector || industry) ? `<div class="text-sm opacity-90 truncate mt-0.5">${escapeHtml(sector)}${sector && industry ? " · " : ""}${escapeHtml(industry)}</div>` : ""}
-            <div class="flex items-center gap-3 mt-1.5 text-xs">
-              ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="opacity-95 hover:opacity-100 underline decoration-white/40 hover:decoration-white">View on Screener.in ↗</a>` : ""}
-              <span class="opacity-80">·</span>
-              <span class="opacity-95">${escapeHtml(co["Market Cap"] || "—")} mkt cap</span>
-              <span class="opacity-80">·</span>
-              <span class="opacity-95">CMP ${escapeHtml(co["Current Price"] || "—")}</span>
+            <div class="font-bold text-2xl sm:text-3xl truncate">${escapeHtml(name)}</div>
+            ${(sector || industry) ? `<div class="text-sm opacity-90 truncate mt-1">${escapeHtml(sector)}${sector && industry ? " · " : ""}${escapeHtml(industry)}</div>` : ""}
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs">
+              ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="opacity-95 hover:opacity-100 underline decoration-white/40 hover:decoration-white whitespace-nowrap">View on Screener.in ↗</a>` : ""}
+              <span class="opacity-95 whitespace-nowrap">${escapeHtml(co["Market Cap"] || "—")} mkt cap</span>
+              <span class="opacity-95 whitespace-nowrap">CMP ${escapeHtml(co["Current Price"] || "—")}</span>
             </div>
           </div>
         </div>
@@ -1095,57 +1110,55 @@ function openCompositeDrill(s) {
     </div>
   `;
 
-  // --- Hero panel: gauge on the left, decision card on the right
+  // --- Hero panel: gauge | decision card. Modal is wide, so we can give
+  // each panel real breathing room rather than cramming them.
   const heroPanel = `
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-5">
-      <!-- Composite gauge -->
-      <div class="lg:col-span-2 bg-white rounded-2xl ring-1 ring-slate-200 p-5 flex items-center gap-5">
-        ${renderScoreGauge(s.composite, theme)}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-6 flex items-center gap-6">
+        ${renderScoreGauge(s.composite, theme, 100, 168)}
         <div class="flex-1 min-w-0">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Composite Score</div>
-          <div class="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-xs font-bold shadow-sm">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Composite Score</div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-sm font-bold shadow-sm">
             <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
             ${escapeHtml(s.rating)}
           </div>
-          <div class="text-xs text-slate-500 mt-2 leading-snug">${escapeHtml(decision.profile)}</div>
+          <div class="text-sm text-slate-600 mt-3 leading-snug">${escapeHtml(decision.profile)}</div>
         </div>
       </div>
-      <!-- Decision card -->
-      <div class="lg:col-span-3 bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div class="text-[10px] font-bold uppercase tracking-wider ${theme.accent}">Recommended Action — Per Client Framework</div>
-          <span class="text-[10px] text-slate-500">SPIP · Section C</span>
+      <div class="bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider ${theme.accent}">Recommended Action</div>
+          <span class="text-[10px] text-slate-500 whitespace-nowrap">SPIP · Section C</span>
         </div>
-        <div class="text-base font-bold text-slate-900 mb-3">${escapeHtml(decision.action)}</div>
+        <div class="text-lg font-bold text-slate-900 mb-4 leading-snug">${escapeHtml(decision.action)}</div>
         <div class="grid grid-cols-3 gap-3 text-xs">
           <div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Position Size</div>
-            <div class="font-semibold text-slate-900">${escapeHtml(decision.size)}</div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Size</div>
+            <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.size)}</div>
           </div>
           <div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Review</div>
-            <div class="font-semibold text-slate-900">${escapeHtml(decision.review)}</div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Review</div>
+            <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.review)}</div>
           </div>
           <div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Exit Trigger</div>
-            <div class="font-semibold text-slate-900 text-[11px] leading-tight">${escapeHtml(decision.exit)}</div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Exit Trigger</div>
+            <div class="font-semibold text-slate-900 leading-snug text-[11px]">${escapeHtml(decision.exit)}</div>
           </div>
         </div>
       </div>
     </div>
   `;
 
-  // --- Hard-fail panel (only when triggered)
   const hardFailPanel = s.hardFails.length ? `
-    <div class="mb-5 p-4 bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl ring-1 ring-rose-200">
+    <div class="mb-6 p-5 bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl ring-1 ring-rose-200">
       <div class="flex items-start gap-3 mb-3">
-        <div class="w-9 h-9 rounded-lg bg-rose-500 text-white flex items-center justify-center text-lg flex-shrink-0">⚠</div>
+        <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center text-xl flex-shrink-0">⚠</div>
         <div class="flex-1">
           <div class="font-bold text-rose-900 text-base">Excluded from SPIP Basket</div>
-          <div class="text-xs text-rose-700/90 mt-0.5">Hard fail per client framework · stock exits pipeline regardless of composite score</div>
+          <div class="text-sm text-rose-700/90 mt-0.5">Hard fail per client framework · stock exits pipeline regardless of composite score</div>
         </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-${s.hardFails.length > 2 ? 3 : 2} gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${s.hardFails.length > 2 ? 3 : 2} gap-2 mt-3">
         ${s.hardFails.map((h) => `
           <div class="bg-white rounded-lg p-3 ring-1 ring-rose-100">
             <div class="text-[10px] font-bold uppercase tracking-wider text-rose-500">Red Flag</div>
@@ -1157,32 +1170,31 @@ function openCompositeDrill(s) {
   ` : "";
 
   const unratedPanel = (!s.hardFails.length && s.unrated) ? `
-    <div class="mb-5 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl ring-1 ring-amber-200">
+    <div class="mb-6 p-5 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl ring-1 ring-amber-200">
       <div class="flex items-start gap-3">
-        <div class="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0">ℹ</div>
+        <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl flex-shrink-0">ℹ</div>
         <div class="flex-1">
-          <div class="font-bold text-amber-900 text-base">Unrated — Technicals Data Missing</div>
-          <div class="text-xs text-amber-800/90 mt-0.5">Yahoo doesn't carry OHLCV for this ticker (typical for REITs / InvITs / very-recent listings). Composite will populate when a vendor with NSE coverage is wired.</div>
+          <div class="font-bold text-amber-900 text-base">Unrated — Technicals data missing</div>
+          <div class="text-sm text-amber-800/90 mt-0.5">Yahoo doesn't carry OHLCV for this ticker (REITs / InvITs / very-recent listings). Composite will populate when a vendor with NSE coverage is wired.</div>
         </div>
       </div>
     </div>
   ` : "";
 
-  // --- Pillar composition: 5-card grid
+  // --- Pillar composition: 5-card grid with proper breathing room
   const pillarCards = `
-    <div class="mb-5">
+    <div class="mb-6">
       <div class="flex items-baseline justify-between mb-3">
         <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
-        <div class="text-xs text-slate-500">Sum of weighted contributions = Composite</div>
+        <div class="text-[11px] text-slate-500">Sum of weighted contributions = Composite</div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-        ${renderPillarCard("Fundamentals",   s.pillars?.fundamentals, 40)}
-        ${renderPillarCard("Technicals",     s.pillars?.technicals,   35)}
-        ${renderPillarCard("Macro / Sector", s.pillars?.macro,        15)}
-        ${renderPillarCard("Sentiment",      s.pillars?.sentiment,    5)}
-        ${renderPillarCard("Liquidity",      s.pillars?.liquidity,    5)}
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        ${renderPillarCard("Fundamentals", s.pillars?.fundamentals, 40)}
+        ${renderPillarCard("Technicals",   s.pillars?.technicals,   35)}
+        ${renderPillarCard("Macro",        s.pillars?.macro,        15)}
+        ${renderPillarCard("Sentiment",    s.pillars?.sentiment,    5)}
+        ${renderPillarCard("Liquidity",    s.pillars?.liquidity,    5)}
       </div>
-      <!-- Sum row -->
       <div class="mt-3 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl px-4 py-3 ring-1 ring-slate-200">
         <div class="flex items-center gap-2">
           <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Composite Score</span>
@@ -1196,7 +1208,6 @@ function openCompositeDrill(s) {
     </div>
   `;
 
-  // --- Drill-deeper shortcuts: polished cards with pillar count + icon
   const PILLAR_INFO = {
     fundamentals: { icon: "📊", label: "Fundamentals", count: "19 rules", color: "from-violet-500 to-purple-500" },
     technicals:   { icon: "📈", label: "Technicals",   count: "16 rules", color: "from-sky-500 to-blue-500" },
@@ -1204,7 +1215,7 @@ function openCompositeDrill(s) {
     sentiment:    { icon: "💹", label: "Sentiment",    count: "8 rules",  color: "from-amber-500 to-orange-500" },
   };
   const tabShortcuts = `
-    <div class="mb-3">
+    <div>
       <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Drill Deeper Into Each Pillar</div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         ${Object.entries(PILLAR_INFO).map(([tab, info]) => `
@@ -1225,23 +1236,39 @@ function openCompositeDrill(s) {
     </div>
   `;
 
-  $("#drill-content").innerHTML = `
+  openModal(`
     ${heroHeader}
-    <div class="p-5">
+    <div class="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
       ${hardFailPanel}
       ${unratedPanel}
       ${heroPanel}
       ${pillarCards}
       ${tabShortcuts}
     </div>
-  `;
-  $("#drill-panel").classList.remove("translate-x-full");
-  $("#drill-overlay").classList.remove("hidden");
-  $("#drill-close").addEventListener("click", closeDrillDown);
+  `, { size: "wide" });
+
+  $("#modal-close")?.addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
+  // Drill-deeper button: close composite modal, switch to the target
+  // pillar tab, then immediately open the per-company side panel for
+  // THIS company on that tab (instead of dropping the user into an
+  // unfocused table).
   $$(".composite-jump").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      closeDrillDown();
-      switchTab(btn.dataset.jumpTab);
+    btn.addEventListener("click", async () => {
+      const targetTab = btn.dataset.jumpTab;
+      const companyName = co.Company || co.name || "";
+      closeModal();
+      await switchTab(targetTab);
+      // Find the score-row that corresponds to the same company on
+      // the destination tab — different tabs key on Company vs name.
+      const st = state.cache[targetTab];
+      const target = CONFIGS[targetTab];
+      const match = st?.scored.find((s) => {
+        try { return target.name(s.company) === companyName; } catch { return false; }
+      });
+      if (match) openDrillDown(match);
     });
   });
 }
@@ -1249,6 +1276,205 @@ function openCompositeDrill(s) {
 function closeDrillDown() {
   $("#drill-panel").classList.add("translate-x-full");
   $("#drill-overlay").classList.add("hidden");
+}
+
+// ---------------- Centred modal (composite drill + help) ----------------
+// Side-panel drill works for the per-pillar tabs (lots of rules,
+// vertical scroll). The composite drill and the help screen need the
+// full attention of the page, so they open in a centred modal.
+
+function openModal(innerHtml, opts = {}) {
+  const sizeClass = opts.size === "wide" ? "max-w-5xl" : "max-w-4xl";
+  const container = $("#modal-container");
+  container.className = `relative bg-white rounded-3xl shadow-2xl w-full ${sizeClass} my-8 scale-95 opacity-0 transition-all duration-200 overflow-hidden`;
+  $("#modal-content").innerHTML = innerHtml;
+  $("#modal-overlay").classList.add("is-open");
+  $("#modal-overlay").classList.remove("hidden");
+  // requestAnimationFrame so the entrance transition fires
+  requestAnimationFrame(() => container.classList.replace("scale-95", "scale-100"));
+  // ESC + click-outside close
+  const onKey = (e) => { if (e.key === "Escape") closeModal(); };
+  document.addEventListener("keydown", onKey);
+  $("#modal-overlay").__onKey = onKey;
+}
+function closeModal() {
+  const ov = $("#modal-overlay");
+  ov.classList.remove("is-open");
+  ov.classList.add("hidden");
+  $("#modal-content").innerHTML = "";
+  if (ov.__onKey) { document.removeEventListener("keydown", ov.__onKey); ov.__onKey = null; }
+}
+
+// Scoring-framework help content for each tab.
+// Pillar tabs: list every rule the tab scores, grouped by category,
+//              with the max points and pass criterion.
+// Composite tab: pillar weighting + rating bands + decision framework
+//                + every hard-fail rule across all pillars.
+function buildHelpModal(tabId) {
+  const cfgTab = CONFIGS[tabId];
+
+  // SPIP Basket — composite-specific help: weights + bands + hard fails.
+  if (cfgTab.composite) {
+    const weightedRow = (label, weight, max, color) => `
+      <div class="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br ${color} text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">${weight}%</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-slate-900 text-sm">${label}</div>
+          <div class="text-xs text-slate-500">Max ${max} raw pts → weighted contribution up to ${weight} pts</div>
+        </div>
+        <div class="text-xs text-slate-400 font-mono">×${weight}%</div>
+      </div>
+    `;
+    const ratingRow = (rating, range, color, action) => `
+      <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+        <div class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${color} flex-shrink-0 min-w-[88px] text-center">${rating}</div>
+        <div class="text-xs text-slate-500 font-mono flex-shrink-0 w-16">${range}</div>
+        <div class="text-xs text-slate-700">${action}</div>
+      </div>
+    `;
+    const hardFails = [
+      { pillar: "Fundamentals", rule: "Operating Cash Flow", trigger: "Negative CFO in latest year" },
+      { pillar: "Fundamentals", rule: "Interest Coverage",    trigger: "ICR < 1.5 (debt-serviceability risk)" },
+      { pillar: "Fundamentals", rule: "Promoter Pledge",      trigger: "Pledge > 20%" },
+      { pillar: "Fundamentals", rule: "Debt / Equity",        trigger: "D/E > 2 (extreme leverage)" },
+      { pillar: "Fundamentals", rule: "Auditor Remarks",      trigger: "Adverse opinion / disclaimer" },
+      { pillar: "Fundamentals", rule: "SEBI Governance",      trigger: "Active SEBI investigation" },
+      { pillar: "Technicals",   rule: "Price Above 200 DMA",  trigger: "Stock below 200 DMA (primary trend filter)" },
+      { pillar: "Liquidity",    rule: "Avg Daily Traded Value", trigger: "ADTV < ₹5 Cr (illiquid)" },
+    ];
+
+    return `
+      <div class="relative bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 text-white">
+        <button id="modal-close" class="absolute top-3 right-3 text-white/80 hover:text-white text-2xl leading-none w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">×</button>
+        <div class="text-xs font-semibold uppercase tracking-wider opacity-90">SPIP — Stock Selection &amp; Performance Index</div>
+        <h2 class="text-2xl font-bold mt-1">How the SPIP Basket Is Scored</h2>
+        <p class="text-sm opacity-90 mt-1">Weighted composite of 5 pillars · rating bands per client framework · hard-fail rules exclude stocks from the basket entirely.</p>
+      </div>
+      <div class="p-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+
+        <div class="mb-6">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Pillar Weights — composite formula</h3>
+          <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-200">
+            <div class="font-mono text-[11px] text-slate-700 text-center mb-3 leading-relaxed">
+              Composite = (Fund/29)×40 + (Tech/24)×35 + (Macro/17)×15 + (Sent/6)×5 + (Liq/6)×5
+            </div>
+            ${weightedRow("Fundamentals — 19 rules", 40, 29, "from-violet-500 to-purple-500")}
+            ${weightedRow("Technicals — 16 rules",    35, 24, "from-sky-500 to-blue-500")}
+            ${weightedRow("Macro / Sector — 11 rules", 15, 17, "from-emerald-500 to-teal-500")}
+            ${weightedRow("Sentiment — 4 rules",       5,  6,  "from-amber-500 to-orange-500")}
+            ${weightedRow("Liquidity — 4 rules",       5,  6,  "from-rose-500 to-pink-500")}
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Rating Bands — what each score band means</h3>
+          <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-200">
+            ${ratingRow("STRONG BUY", "≥ 75",   "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200", "Initiate FULL position · 8–10% of basket · monthly review")}
+            ${ratingRow("BUY",        "60–74", "bg-blue-100 text-blue-800 ring-1 ring-blue-200",          "Initiate 50–75% position · 5–7% of basket · bi-weekly review")}
+            ${ratingRow("WATCH",      "45–59", "bg-amber-100 text-amber-800 ring-1 ring-amber-200",       "Watchlist · do not initiate · weekly review")}
+            ${ratingRow("AVOID",      "< 45",  "bg-rose-100 text-rose-800 ring-1 ring-rose-200",          "Exit position · zero allocation · immediate action")}
+            ${ratingRow("HARD FAIL",  "—",     "bg-slate-200 text-slate-800 ring-1 ring-slate-300",       "Excluded from basket regardless of composite score")}
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Hard-Fail Rules — stock exits pipeline</h3>
+          <div class="bg-rose-50/40 rounded-xl p-4 ring-1 ring-rose-200">
+            <div class="text-xs text-rose-800 mb-3">If any of these trigger, the stock is excluded from the SPIP basket regardless of its composite score:</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${hardFails.map((hf) => `
+                <div class="bg-white rounded-lg p-2.5 ring-1 ring-rose-100">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-rose-500">${escapeHtml(hf.pillar)}</div>
+                  <div class="text-sm font-bold text-rose-900 mt-0.5">${escapeHtml(hf.rule)}</div>
+                  <div class="text-[11px] text-rose-700/90 mt-0.5">${escapeHtml(hf.trigger)}</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  // Pillar tabs (Fundamentals / Technicals / Macro / Sentiment & Liquidity):
+  // list every rule with category, max points, and pass criterion.
+  const rules = cfgTab.rules || [];
+  const grouped = rules.reduce((acc, r) => { (acc[r.category] ||= []).push(r); return acc; }, {});
+  const totalMax = rules.reduce((s, r) => s + ((r.fn ? r.fn({}).max : 0) || 0), 0) || cfgTab.stats?.maxScore?.match(/\d+/)?.[0] || 0;
+  const headerColors = {
+    fundamentals: "from-violet-500 via-purple-500 to-pink-500",
+    technicals:   "from-sky-500 via-blue-500 to-indigo-500",
+    macro:        "from-emerald-500 via-teal-500 to-cyan-500",
+    sentiment:    "from-amber-500 via-orange-500 to-rose-500",
+  };
+  const grad = headerColors[tabId] || "from-slate-500 to-slate-700";
+
+  // META holds the verbatim client scoring sheet text — surfaces the
+  // full point-band breakdown (pass / partial / fail) per rule so the
+  // user sees not just the headline threshold but the full structure.
+  const metaForTab = RULE_META[tabId] || {};
+
+  const ruleRow = (r) => {
+    let max = 0;
+    try { max = r.fn ? (r.fn({}).max || 0) : 0; } catch { max = 0; }
+    // Max-point tier styling so 2 pts pops more than 1 pt.
+    const pointStyle = max >= 2
+      ? "bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-sm"
+      : max === 1
+        ? "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200"
+        : "bg-slate-100 text-slate-500";
+    const clientLogic = metaForTab[r.key]?.clientLogic || "";
+    return `
+      <div class="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-3 mb-1">
+            <div class="font-semibold text-slate-900 text-sm">${escapeHtml(r.label)}</div>
+            <div class="inline-flex items-baseline gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-bold ${pointStyle} flex-shrink-0">
+              <span>${max}</span>
+              <span class="opacity-90">pt${max === 1 ? "" : "s"}</span>
+              <span class="opacity-75 ml-0.5 text-[9px] font-semibold uppercase tracking-wider">max</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-slate-500"><span class="font-semibold text-slate-600">Threshold:</span> ${escapeHtml(r.criteria || "—")}</div>
+          ${clientLogic ? `<div class="text-[11px] text-slate-600 mt-1 leading-snug bg-slate-50 rounded-md px-2 py-1.5 ring-1 ring-slate-100">${escapeHtml(clientLogic)}</div>` : ""}
+        </div>
+      </div>
+    `;
+  };
+
+  return `
+    <div class="relative bg-gradient-to-br ${grad} p-6 text-white">
+      <button id="modal-close" class="absolute top-3 right-3 text-white/80 hover:text-white text-2xl leading-none w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">×</button>
+      <div class="text-xs font-semibold uppercase tracking-wider opacity-90">Client framework</div>
+      <h2 class="text-2xl font-bold mt-1">How the ${escapeHtml(cfgTab.label)} Tab Is Scored</h2>
+      <p class="text-sm opacity-90 mt-1">${rules.length} rules across ${Object.keys(grouped).length} categories · max ${totalMax} pts · scored verbatim from the client's SPIP framework.</p>
+    </div>
+    <div class="p-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+      ${Object.entries(grouped).map(([cat, rs]) => {
+        const catMax = rs.reduce((s, r) => { try { return s + (r.fn ? (r.fn({}).max || 0) : 0); } catch { return s; } }, 0);
+        return `
+          <div class="mb-5">
+            <div class="flex items-baseline justify-between mb-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">${escapeHtml(cat)}</h3>
+              <span class="text-[10px] text-slate-400 font-mono">${rs.length} rules · ${catMax} pts</span>
+            </div>
+            <div class="bg-slate-50 rounded-xl px-4 py-1 ring-1 ring-slate-200">
+              ${rs.map(ruleRow).join("")}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function openHelpModal() {
+  openModal(buildHelpModal(state.activeTab));
+  $("#modal-close")?.addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
 }
 
 // ---------------- Excel export (active tab) ----------------
@@ -1271,6 +1497,7 @@ function wire() {
   $("#score-filter").addEventListener("change", (e) => { state.scoreFilter = e.target.value; applyFilters(); });
   $("#export-btn").addEventListener("click", exportToExcel);
   $("#drill-overlay").addEventListener("click", closeDrillDown);
+  $("#help-btn")?.addEventListener("click", openHelpModal);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrillDown(); });
 }
 
