@@ -672,29 +672,28 @@ function renderCompositeTopCards() {
   const total = all.length;
   const inBasket = counts.strong + counts.buy + counts.watch;
 
-  // 4-bucket rating distribution per client request: STRONG BUY · BUY ·
-  // WATCH · HARD FAIL only. AVOID + UNRATED roll into the segmented bar
-  // below (so the segmented strip still adds to 100%) but don't get
-  // their own card.
+  // 3-bucket rating distribution: STRONG BUY · BUY · WATCH only.
+  // AVOID / UNRATED / hard-failed roll into the segmented 100%-width
+  // bar above the cards but don't get their own dedicated card —
+  // those are exit/exclusion states, not basket categories.
   const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
   const pctOf = (n) => total ? (n / total) * 100 : 0;
   const distributionStrip = `
     <div class="mb-3">
-      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100">
+      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100" title="${counts.strong} STRONG BUY · ${counts.buy} BUY · ${counts.watch} WATCH · ${counts.avoid} AVOID · ${counts.unrated} UNRATED · ${counts.filtered} HARD FAIL">
         ${seg(pctOf(counts.strong),   "bg-gradient-to-r from-emerald-500 to-teal-500")}
         ${seg(pctOf(counts.buy),      "bg-gradient-to-r from-blue-500 to-indigo-500")}
         ${seg(pctOf(counts.watch),    "bg-gradient-to-r from-amber-500 to-orange-500")}
         ${seg(pctOf(counts.avoid),    "bg-gradient-to-r from-rose-500 to-pink-500")}
         ${seg(pctOf(counts.unrated),  "bg-slate-300")}
-        ${seg(pctOf(counts.hardfail), "bg-gradient-to-r from-slate-500 to-slate-600")}
+        ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-500 to-slate-600")}
       </div>
     </div>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="grid grid-cols-3 gap-3 mb-5">
       ${[
         { count: counts.strong,   label: "STRONG BUY", from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",   accent: "text-emerald-700" },
         { count: counts.buy,      label: "BUY",        from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",    accent: "text-blue-700" },
         { count: counts.watch,    label: "WATCH",      from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",   accent: "text-amber-700" },
-        { count: counts.hardfail, label: "HARD FAIL",  from: "from-slate-500",   to: "to-slate-600",   soft: "from-slate-100 to-slate-200",  accent: "text-slate-700" },
       ].map((b) => `
         <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-4">
           <div class="flex items-center gap-1.5 mb-1.5">
@@ -1252,10 +1251,24 @@ function openCompositeDrill(s) {
   $("#modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "modal-overlay") closeModal();
   }, { once: true });
+  // Drill-deeper button: close composite modal, switch to the target
+  // pillar tab, then immediately open the per-company side panel for
+  // THIS company on that tab (instead of dropping the user into an
+  // unfocused table).
   $$(".composite-jump").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
+      const targetTab = btn.dataset.jumpTab;
+      const companyName = co.Company || co.name || "";
       closeModal();
-      switchTab(btn.dataset.jumpTab);
+      await switchTab(targetTab);
+      // Find the score-row that corresponds to the same company on
+      // the destination tab — different tabs key on Company vs name.
+      const st = state.cache[targetTab];
+      const target = CONFIGS[targetTab];
+      const match = st?.scored.find((s) => {
+        try { return target.name(s.company) === companyName; } catch { return false; }
+      });
+      if (match) openDrillDown(match);
     });
   });
 }
