@@ -1,123 +1,104 @@
 {
-  "generated_at": "2026-05-30T15:28:23.117Z",
+  "generated_at": "2026-05-31T20:56:07.872Z",
   "source_count": 4,
-  "total_entities_seen": 1,
+  "total_entities_seen": 0,
   "flagged_companies": {},
-  "unmatched_sample": [
-    {
-      "name": "Dee Development Engineers Ltd",
-      "type": "insider trading",
-      "source": "BSE — corporate announcements (recent)"
-    }
-  ],
+  "unmatched_sample": [],
   "sources": [
     {
       "url": "https://www.bseindia.com/corporates/ann.html",
       "label": "BSE — corporate announcements (recent)",
-      "at": "2026-05-30T15:28:03.463Z",
+      "at": "2026-05-31T20:55:42.752Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 11,
-      "total_extracted": 11,
+      "total_extracted_raw": 10,
+      "total_extracted": 10,
       "prefilter_sample": [
         {
-          "name": "Dee Development Engineers Ltd",
-          "order_type": "insider trading",
+          "name": "Kati Patang Lifestyle Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Closure of Trading Window"
+          "snippet": "Board Meeting Outcome for Financial Results"
         },
         {
-          "name": "Haria Apparels Ltd",
-          "order_type": "result",
+          "name": "Chase Bright Steel Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Outcome Of Board Meeting And Submission Of Audited Financial Results For The Year Ended March 31St 2026."
+          "snippet": "Announcement under Regulation 30 (LODR)-Change in Management"
         },
         {
-          "name": "Bonlon Industries Ltd",
-          "order_type": "board meeting",
+          "name": "T & I Global Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Outcome for OUTCOME OF BOARD MEETING"
+          "snippet": "NEWSPAPER ADVERTISENET FOR THE QUARTER AND YEAR ENDED 31ST MARCH, 2026"
         },
         {
-          "name": "Pakka Ltd",
-          "order_type": "board meeting",
+          "name": "Atishay Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Outcome Of Board Meeting Held On 30Th May, 2026"
+          "snippet": "Announcement under Regulation 30 (LODR)-Award_of_Order_Receipt_of_Order"
         },
         {
-          "name": "3B Films Ltd",
-          "order_type": "company update",
+          "name": "Standard Capital Markets Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Regulation 30 (LODR)-Resignation of Director"
+          "snippet": "Announcement under Regulation 30 (LODR)-Newspaper Publication"
         },
         {
-          "name": "Sree Rayalaseema Hi-Strength Hypo Ltd",
-          "order_type": "result",
+          "name": "Suraj Industries Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Submission Of Standalone And Consolidated Audited Financial Results For 4Th Quarter / Year Ending 31.03.2026"
+          "snippet": "Announcement under Regulation 30 (LODR)-Newspaper Publication"
         },
         {
-          "name": "Unison Metals Ltd",
-          "order_type": "result",
+          "name": "Universus Photo Imagings Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "STANDALONE AND CONSOLIDATED AUDITED FINANCIAL RESULT FOR THE QUARTER AND YEAR ENDED 31 MARCH 2026"
+          "snippet": "Announcement under Regulation 30 (LODR)-Newspaper Publication"
         },
         {
-          "name": "Procal Electronics India Ltd",
-          "order_type": "board meeting",
+          "name": "Bharatrohan Airborne Innovations Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Outcome Of Board Meeting Of The Company Held On Today I.E. 30.05.2026"
+          "snippet": "Announcement under Regulation 30 (LODR)-Press Release / Media Release"
         },
         {
-          "name": "Aarnav Fashions Ltd",
-          "order_type": "company update",
+          "name": "Jindal Steel Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Compliances-Reg.24(A)-Annual Secretarial Compliance"
+          "snippet": "Announcement under Regulation 30 (LODR)-Analyst / Investor Meet - Intimation"
         },
         {
-          "name": "Samrat Pharmachem Ltd",
-          "order_type": "result",
+          "name": "Fischer Medical Ventures Ltd",
+          "order_type": "other",
           "is_listed_entity": true,
           "is_active_proceeding": true,
-          "snippet": "Audited Financial Results For The Quarter And Year Ended 31 March, 2026"
-        },
-        {
-          "name": "Repono Ltd",
-          "order_type": "company update",
-          "is_listed_entity": true,
-          "is_active_proceeding": true,
-          "snippet": "Intimation Under Regulation 30 Of SEBI (Listing Obligations And Disclosure Requirements) Regulations, 2015"
+          "snippet": "Financial Results For The Quarter And Year Ended 31.03.2026"
         }
       ],
-      "after_filter_count": 1,
+      "after_filter_count": 0,
       "dropped_counts": {
         "not_listed": 0,
         "not_active": 0,
-        "routine_type": 10,
-        "no_sebi_signal": 0
+        "routine_type": 0,
+        "no_sebi_signal": 10
       },
-      "sample": [
-        {
-          "name": "Dee Development Engineers Ltd",
-          "order_type": "insider trading",
-          "snippet": "Closure of Trading Window"
-        }
-      ]
+      "sample": []
     },
     {
       "url": "https://www.bseindia.com/markets/MarketInfo/PressRelease.aspx",
       "label": "BSE — press releases",
-      "at": "2026-05-30T15:28:12.736Z",
+      "at": "2026-05-31T20:55:54.379Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -136,7 +117,7 @@
     {
       "url": "https://www.nseindia.com/companies-listing/corporate-filings-announcements",
       "label": "NSE — corporate filings & announcements",
-      "at": "2026-05-30T15:28:15.624Z",
+      "at": "2026-05-31T20:56:03.501Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -155,16 +136,31 @@
     {
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
-      "at": "2026-05-30T15:28:17.135Z",
+      "at": "2026-05-31T20:56:04.828Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 0,
-      "total_extracted": 0,
-      "prefilter_sample": [],
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
+      "prefilter_sample": [
+        {
+          "name": "Citrus Check Inns Limited",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "is_active_proceeding": true,
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
+        },
+        {
+          "name": "Sai Prasad Group",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "is_active_proceeding": true,
+          "snippet": "Caution to public against buying / dealing with assets of Sai Prasad Group of companies and its Directors (English, Hindi, Marathi)"
+        }
+      ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 0,
+        "not_listed": 2,
         "not_active": 0,
         "routine_type": 0,
         "no_sebi_signal": 0
