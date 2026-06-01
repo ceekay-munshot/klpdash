@@ -170,8 +170,21 @@ async function run() {
   // entries for the May 4 → June 1 window). The web UI uses a different
   // backend we don't have public API access to, but Firecrawl can render
   // the page and LLM-extract the table.
+  // Record the env-check BEFORE we try Firecrawl, so the debug file
+  // shows the truth even if Firecrawl never runs / silently throws.
+  LAST_FIRECRAWL_RESPONSE = {
+    env_check: {
+      has_api_key: !!process.env.FIRECRAWL_API_KEY,
+      api_key_length: (process.env.FIRECRAWL_API_KEY || "").length,
+      api_key_prefix: (process.env.FIRECRAWL_API_KEY || "").slice(0, 3),
+    },
+    called_firecrawl: false,
+  };
+  console.log(`\nFirecrawl env-check: has_key=${LAST_FIRECRAWL_RESPONSE.env_check.has_api_key} length=${LAST_FIRECRAWL_RESPONSE.env_check.api_key_length}`);
+
   let firecrawlAdded = 0;
   if (process.env.FIRECRAWL_API_KEY) {
+    LAST_FIRECRAWL_RESPONSE.called_firecrawl = true;
     try {
       const fcRows = await scrapeRecentViaFirecrawl();
       firecrawlAdded = fcRows.length;
@@ -200,6 +213,8 @@ async function run() {
       console.log(`Firecrawl added ${fcRows.length} recent disclosures (${trades.length} total after dedupe)`);
     } catch (err) {
       console.log(`Firecrawl supplement failed (non-fatal): ${err.message}`);
+      // Capture error in debug too so we can see it without log access.
+      LAST_FIRECRAWL_RESPONSE.scrape_error = err.message;
     }
   } else {
     console.log("FIRECRAWL_API_KEY not set — skipping recent-window supplement.");
@@ -279,14 +294,14 @@ async function scrapeRecentViaFirecrawl() {
   });
   if (!r.ok) {
     const body = await r.text();
-    LAST_FIRECRAWL_RESPONSE = { http_status: r.status, error_body: body.slice(0, 1000) };
+    Object.assign(LAST_FIRECRAWL_RESPONSE || {}, { http_status: r.status, error_body: body.slice(0, 1000) });
     throw new Error(`Firecrawl HTTP ${r.status}: ${body.slice(0, 200)}`);
   }
   const j = await r.json();
   const extract = j?.data?.json || j?.data?.llm_extraction || j?.data?.extract || {};
   const upstream = j?.data?.metadata?.statusCode || null;
   const md = j?.data?.markdown || "";
-  LAST_FIRECRAWL_RESPONSE = {
+  Object.assign(LAST_FIRECRAWL_RESPONSE || {}, {
     http_status: r.status,
     upstream_status: upstream,
     metadata: j?.data?.metadata || null,
@@ -296,7 +311,7 @@ async function scrapeRecentViaFirecrawl() {
     markdown_length: md.length,
     markdown_head: md.slice(0, 2000),
     markdown_contains_inoxindia: /INOXINDIA/i.test(md),
-  };
+  });
   if (upstream && upstream !== 200) {
     console.log(`  Firecrawl: upstream NSE page returned ${upstream} — refusing extracted rows to avoid hallucination`);
     return [];
