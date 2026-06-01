@@ -1133,44 +1133,45 @@ function renderPillarCard(label, p, weight) {
 // inline SVG. Concentric rings at 20/40/60/80/100, axes at 5 vertices,
 // data polygon coloured to match the rating tier. Each axis is labelled
 // at the perimeter with the pillar's raw/max + percentage.
+//
+// Layout: the `size` parameter is the chart RADIUS extent — labels
+// extend into a `LABEL_PAD` zone outside that, so the actual SVG is
+// (size + 2*LABEL_PAD) wide/tall. This prevents the right-edge labels
+// (e.g. "17.5/24") from getting clipped when long.
 function renderPillarRadar(s, theme, size = 280) {
-  const cx = size / 2, cy = size / 2;
-  const r = size / 2 - 44;   // leave room for axis labels
+  const LABEL_PAD = 64;             // room around chart for labels
+  const svgSize = size + LABEL_PAD * 2;
+  const cx = svgSize / 2, cy = svgSize / 2;
+  const r = size / 2 - 6;           // chart radius proper
   // 5 axes — start at top (-90°) and step every 72°
   const axes = [
-    { key: "fundamentals", label: "FUND", short: "F" },
-    { key: "technicals",   label: "TECH", short: "T" },
-    { key: "macro",        label: "MACRO", short: "M" },
-    { key: "sentiment",    label: "SENT", short: "S" },
-    { key: "liquidity",    label: "LIQ", short: "L" },
+    { key: "fundamentals", label: "FUND" },
+    { key: "technicals",   label: "TECH" },
+    { key: "macro",        label: "MACRO" },
+    { key: "sentiment",    label: "SENT" },
+    { key: "liquidity",    label: "LIQ" },
   ];
   const ptAt = (axisIdx, pct) => {
     const angle = -Math.PI / 2 + (axisIdx * 2 * Math.PI / 5);
     return { x: cx + Math.cos(angle) * r * (pct / 100), y: cy + Math.sin(angle) * r * (pct / 100) };
   };
-
   // Concentric guide rings (20/40/60/80/100 %)
   const rings = [20, 40, 60, 80, 100].map((p) => {
     const pts = axes.map((_, i) => ptAt(i, p)).map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(" ");
     return `<polygon points="${pts}" fill="none" stroke="#e2e8f0" stroke-width="1"/>`;
   }).join("");
-
   // Axis lines (centre → vertex at 100%)
   const axisLines = axes.map((_, i) => {
     const p = ptAt(i, 100);
     return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#e2e8f0" stroke-width="1"/>`;
   }).join("");
-
-  // Data polygon — animated via a scaling transform centred on the
-  // chart middle. The polygon is at full size in markup; transform
-  // animates from scale(0) → scale(1) on entrance.
+  // Data polygon
   const dataPts = axes.map((a, i) => {
     const pct = s.pillars?.[a.key]?.pct ?? 0;
     const p = ptAt(i, pct);
     return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
   }).join(" ");
-
-  // Gradient stops keyed off the theme — same hexes as the gauge.
+  // Gradient stops keyed off the theme.
   const gradMap = {
     "from-emerald-500 to-teal-500":   ["#10b981", "#14b8a6"],
     "from-blue-500 to-indigo-500":    ["#3b82f6", "#6366f1"],
@@ -1182,24 +1183,38 @@ function renderPillarRadar(s, theme, size = 280) {
   const key = `${theme.from} ${theme.to}`;
   const [c1, c2] = gradMap[key] || ["#94a3b8", "#64748b"];
   const gid = `rg${Math.random().toString(36).slice(2, 8)}`;
-
-  // Axis labels — pushed past the perimeter a touch
+  // Axis labels — placed at a fixed pixel offset OUTSIDE the chart
+  // radius so they never overlap the polygon. We use the LABEL_PAD
+  // padding zone for them, so text never clips at the SVG edge.
   const labels = axes.map((a, i) => {
-    const labelP = ptAt(i, 118);
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI / 5);
+    const labelOffset = r + 26;     // distance from centre to the label baseline
+    const lx = cx + Math.cos(angle) * labelOffset;
+    const ly = cy + Math.sin(angle) * labelOffset;
     const p = s.pillars?.[a.key];
     const pct = p?.pct ?? 0;
     const raw = p?.raw ?? "—";
     const max = p?.max ?? "—";
-    const align = i === 0 ? "middle" : (labelP.x > cx ? "start" : "end");
+    // Anchor: middle for top/bottom (i=0,3), start for right (i=1,2),
+    // end for left (i=3,4). Determined by sign of cos(angle).
+    const cos = Math.cos(angle);
+    const anchor = Math.abs(cos) < 0.1 ? "middle" : (cos > 0 ? "start" : "end");
+    // Vertical anchor: shift dy upward for top vertex, downward for
+    // bottom vertices, so the 3-line label block doesn't overlap the
+    // chart polygon visually.
+    const sin = Math.sin(angle);
+    const blockHeight = 36;          // 3 lines × ~12 px
+    const dy = sin < -0.5 ? -blockHeight + 8     // top-ish vertex: pull whole block up
+             : sin > 0.5  ? 6                    // bottom-ish vertex: leave it just below
+             : -8;                                // sides: centre-ish
     return `
-      <g text-anchor="${align}">
-        <text x="${labelP.x.toFixed(1)}" y="${labelP.y.toFixed(1)}" class="font-bold" font-size="10" fill="#64748b" letter-spacing="0.06em">${a.label}</text>
-        <text x="${labelP.x.toFixed(1)}" y="${(labelP.y + 12).toFixed(1)}" font-size="11" font-weight="700" fill="#0f172a">${raw}/${max}</text>
-        <text x="${labelP.x.toFixed(1)}" y="${(labelP.y + 23).toFixed(1)}" font-size="9" fill="#94a3b8">${pct}%</text>
+      <g text-anchor="${anchor}" transform="translate(0, ${dy})">
+        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" class="font-bold" font-size="10" fill="#64748b" letter-spacing="0.08em">${a.label}</text>
+        <text x="${lx.toFixed(1)}" y="${(ly + 13).toFixed(1)}" font-size="12" font-weight="700" fill="#0f172a">${raw}/${max}</text>
+        <text x="${lx.toFixed(1)}" y="${(ly + 25).toFixed(1)}" font-size="10" fill="#94a3b8">${pct}%</text>
       </g>
     `;
   }).join("");
-
   // Vertex dots on the data polygon
   const vertices = axes.map((a, i) => {
     const pct = s.pillars?.[a.key]?.pct ?? 0;
@@ -1208,8 +1223,8 @@ function renderPillarRadar(s, theme, size = 280) {
   }).join("");
 
   return `
-    <div class="relative" style="width:${size}px;height:${size}px" data-radar="1">
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <div class="relative" style="width:${svgSize}px;height:${svgSize}px" data-radar="1">
+      <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" style="overflow: visible;">
         <defs>
           <linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="${c1}" stop-opacity="0.65"/>
@@ -1321,18 +1336,22 @@ function openMagazineDrill(s) {
   const thesis = synthesizeThesis(s);
 
   // "By the numbers" — pull whatever ratios are available from the
-  // fundamentals row. Each cell falls back to "—" when missing.
+  // fundamentals row. Each cell falls back to "—" when missing. The
+  // first two (Composite + Rating) are rendered in their own hero
+  // block above the secondary metrics list.
+  const heroMetrics = [
+    { label: "Composite",  value: s.composite != null ? s.composite.toFixed(1) : "—", suffix: "/ 100", accent: theme.accent },
+    { label: "Rating",     value: s.rating, suffix: "",       accent: theme.accent },
+  ];
   const ratios = [
-    { label: "Composite",       value: s.composite != null ? s.composite.toFixed(1) : "—",  sub: "/ 100" },
-    { label: "Rating",          value: s.rating,                                              sub: "" },
-    { label: "Market Cap",      value: co["Market Cap"] || "—",                               sub: "" },
-    { label: "CMP",             value: co["Current Price"] ? `₹${co["Current Price"]}` : "—", sub: "Current Mkt Price" },
-    { label: "P/E",             value: co["Stock P/E"] || "—",                                sub: "" },
-    { label: "ROE",             value: co["ROE"] || "—",                                      sub: "" },
-    { label: "ROCE",            value: co["ROCE"] || "—",                                     sub: "" },
-    { label: "Debt / Equity",   value: co["Debt to equity"] || "—",                           sub: "" },
-    { label: "Rev 3Y CAGR",     value: co["Sales growth 3Years"] || "—",                      sub: "" },
-    { label: "PAT 3Y CAGR",     value: co["Profit Var 3Yrs"] || "—",                          sub: "" },
+    { label: "Market Cap",      value: co["Market Cap"] || "—" },
+    { label: "CMP",             value: co["Current Price"] ? `₹${co["Current Price"]}` : "—" },
+    { label: "P/E",             value: co["Stock P/E"] || "—" },
+    { label: "ROE",             value: co["ROE"] || "—" },
+    { label: "ROCE",            value: co["ROCE"] || "—" },
+    { label: "Debt / Equity",   value: co["Debt to equity"] || "—" },
+    { label: "Rev 3Y CAGR",     value: co["Sales growth 3Years"] || "—" },
+    { label: "PAT 3Y CAGR",     value: co["Profit Var 3Yrs"] || "—" },
   ];
 
   openModal(`
@@ -1340,47 +1359,47 @@ function openMagazineDrill(s) {
       <div class="absolute inset-0 bg-gradient-to-br ${theme.from} ${theme.to}"></div>
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.20),transparent_55%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.10),transparent_60%)]"></div>
       <button id="modal-close" class="absolute top-4 right-4 z-10 text-white/85 hover:text-white text-2xl leading-none w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center transition-colors">×</button>
-      <div class="relative p-8 ${theme.textOn}">
-        <div class="flex items-center gap-2 text-xs uppercase tracking-[0.2em] opacity-80">
+      <div class="relative px-8 py-7 ${theme.textOn}">
+        <div class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.25em] opacity-85">
           <span>SPIP Brief</span>
-          <span>·</span>
+          <span class="opacity-50">·</span>
           <span>${escapeHtml(s.rating)}</span>
-          <span>·</span>
+          <span class="opacity-50">·</span>
           <span>${escapeHtml(sector || "—")}</span>
         </div>
-        <h1 class="font-display font-extrabold text-4xl sm:text-5xl mt-2 leading-tight">${escapeHtml(name)}</h1>
-        <p class="text-sm sm:text-base opacity-95 mt-3 max-w-3xl leading-relaxed">${thesis}</p>
+        <h1 class="font-display font-extrabold text-4xl sm:text-5xl mt-3 leading-[1.05] tracking-tight">${escapeHtml(name)}</h1>
+        <p class="text-[15px] opacity-95 mt-3 max-w-3xl leading-[1.65]">${thesis}</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 max-h-[calc(95vh-260px)] overflow-y-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-0 max-h-[calc(95vh-240px)] overflow-y-auto">
       <!-- LEFT 2/3 — radar + decision -->
       <div class="lg:col-span-2 p-7 border-r border-slate-100">
-        <div class="flex items-baseline justify-between mb-3">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
+        <div class="flex items-baseline justify-between mb-2">
+          <div class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Pillar Composition</div>
           <div class="text-[11px] text-slate-500">Weighted 40 · 35 · 15 · 5 · 5</div>
         </div>
-        <div class="flex items-center justify-center py-4">
-          ${renderPillarRadar(s, theme, 320)}
+        <div class="flex items-center justify-center -my-2">
+          ${renderPillarRadar(s, theme, 280)}
         </div>
 
-        <!-- Decision band (action / size / review / exit) -->
-        <div class="mt-5 bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-5">
+        <!-- Decision band -->
+        <div class="bg-gradient-to-br ${theme.soft} rounded-2xl ring-1 ${theme.ring} p-5">
           <div class="flex items-center justify-between mb-2">
-            <div class="text-[10px] font-bold uppercase tracking-wider ${theme.accent}">Recommended Action</div>
-            <span class="text-[10px] text-slate-500">SPIP · Section C</span>
+            <div class="text-[10px] font-bold uppercase tracking-[0.15em] ${theme.accent}">Recommended Action</div>
+            <span class="text-[10px] text-slate-500 whitespace-nowrap">SPIP · Section C</span>
           </div>
-          <div class="text-lg font-bold text-slate-900 mb-4">${escapeHtml(decision.action)}</div>
-          <div class="grid grid-cols-3 gap-3 text-xs">
-            <div>
+          <div class="text-lg font-bold text-slate-900 mb-4 leading-snug">${escapeHtml(decision.action)}</div>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="border-l-2 ${theme.ring.replace("ring-", "border-")} pl-3">
               <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Size</div>
-              <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.size)}</div>
+              <div class="font-semibold text-slate-900 leading-snug text-xs">${escapeHtml(decision.size)}</div>
             </div>
-            <div>
+            <div class="border-l-2 ${theme.ring.replace("ring-", "border-")} pl-3">
               <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Review</div>
-              <div class="font-semibold text-slate-900 leading-snug">${escapeHtml(decision.review)}</div>
+              <div class="font-semibold text-slate-900 leading-snug text-xs">${escapeHtml(decision.review)}</div>
             </div>
-            <div>
+            <div class="border-l-2 ${theme.ring.replace("ring-", "border-")} pl-3">
               <div class="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Exit Trigger</div>
               <div class="font-semibold text-slate-900 leading-snug text-[11px]">${escapeHtml(decision.exit)}</div>
             </div>
@@ -1390,22 +1409,37 @@ function openMagazineDrill(s) {
 
       <!-- RIGHT 1/3 — by the numbers -->
       <div class="p-7 bg-slate-50/40">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">By the Numbers</div>
-        <div class="space-y-3">
-          ${ratios.map((r) => `
-            <div class="flex items-baseline justify-between gap-3 pb-2 border-b border-slate-200/70 last:border-0">
-              <div>
-                <div class="text-xs text-slate-500">${escapeHtml(r.label)}</div>
-                ${r.sub ? `<div class="text-[10px] text-slate-400">${escapeHtml(r.sub)}</div>` : ""}
+        <div class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-4">By the Numbers</div>
+
+        <!-- Hero metrics: Composite + Rating, larger format -->
+        <div class="space-y-2.5 mb-5">
+          ${heroMetrics.map((m) => `
+            <div class="bg-white rounded-xl p-3 ring-1 ring-slate-200/70">
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider">${escapeHtml(m.label)}</div>
+              <div class="flex items-baseline gap-1.5 mt-0.5">
+                <span class="text-2xl font-bold ${m.accent} leading-none">${escapeHtml(m.value || "—")}</span>
+                ${m.suffix ? `<span class="text-xs text-slate-400">${escapeHtml(m.suffix)}</span>` : ""}
               </div>
-              <div class="font-bold text-slate-900 text-right">${escapeHtml(r.value || "—")}</div>
             </div>
           `).join("")}
         </div>
 
-        <div class="mt-5 pt-4 border-t border-slate-200">
-          <button id="mag-back" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
-            ← Back to standard view
+        <!-- Secondary metrics: vertical-accent rows -->
+        <div class="space-y-0">
+          ${ratios.map((r, i) => `
+            <div class="flex items-center justify-between gap-3 py-2.5 ${i < ratios.length - 1 ? "border-b border-slate-200/60" : ""}">
+              <div class="flex items-center gap-2.5">
+                <div class="w-0.5 h-4 rounded-full bg-gradient-to-b ${theme.from} ${theme.to} opacity-60"></div>
+                <div class="text-xs text-slate-600">${escapeHtml(r.label)}</div>
+              </div>
+              <div class="font-bold text-slate-900 text-sm text-right">${escapeHtml(r.value || "—")}</div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-200">
+          <button id="mag-back" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-1">
+            <span class="text-base leading-none">←</span> Back to standard view
           </button>
         </div>
       </div>
