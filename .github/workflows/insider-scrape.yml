@@ -1,8 +1,15 @@
 name: Insider trades scrape
 
 on:
-  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns.
+  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns
+  # and ad-hoc debugging via the watch_tickers input.
   workflow_dispatch:
+    inputs:
+      watch_tickers:
+        description: "Optional: comma-separated tickers to dump every raw API row for, in the workflow logs (debug)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   scrape:
@@ -20,6 +27,8 @@ jobs:
           node-version: "22"
 
       - name: Run insider scraper
+        env:
+          WATCH_TICKERS: ${{ inputs.watch_tickers }}
         run: node screener-test/scrape-insider.mjs
 
       - name: Upload insider data (artifact)

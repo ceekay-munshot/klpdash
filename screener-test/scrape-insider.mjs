@@ -54,6 +54,52 @@ async function run() {
     console.log("Sample raw entry keys:", Object.keys(trades[0]).join(", "));
   }
 
+  // -------- DIAGNOSTIC LOGGING --------
+  // (1) Count tdpTransactionType distribution across all chunks. If NSE
+  //     introduces a new label (e.g. "Disposal" instead of "Sell") that
+  //     we don't classify, it'll show up here as a sizable "OTHER"
+  //     bucket instead of disappearing into pledgeSkipped silently.
+  const typeCounts = {};
+  let missingSymbol = 0;
+  for (const t of trades) {
+    const tt = String(t.tdpTransactionType || "(empty)").trim();
+    typeCounts[tt] = (typeCounts[tt] || 0) + 1;
+    if (!String(t.symbol || "").trim()) missingSymbol++;
+  }
+  console.log("\ntdpTransactionType distribution:");
+  Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => {
+    console.log(`  ${k.padEnd(20)} ${n}`);
+  });
+  if (missingSymbol > 0) console.log(`Entries with missing/blank symbol: ${missingSymbol}`);
+
+  // (2) If WATCH_TICKERS env is set (comma-separated), print every raw
+  //     entry for those tickers — schema + values — so we can see what
+  //     NSE is actually returning. Used to debug "the form shows a sell
+  //     but our aggregate doesn't" mismatches.
+  const watch = (process.env.WATCH_TICKERS || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
+  if (watch.length) {
+    console.log(`\n=== Watching tickers: ${watch.join(", ")} ===`);
+    let watchHits = 0;
+    for (const t of trades) {
+      const sym = String(t.symbol || "").trim().toUpperCase();
+      if (!watch.includes(sym)) continue;
+      watchHits++;
+      console.log("  ROW:", JSON.stringify({
+        symbol: t.symbol,
+        type: t.tdpTransactionType,
+        secAcq: t.secAcq,
+        secVal: t.secVal,
+        acqMode: t.acqMode,
+        personCategory: t.personCategory,
+        date: t.date,
+        intimDt: t.intimDt,
+        acqfromDt: t.acqfromDt,
+        acqtoDt: t.acqtoDt,
+      }));
+    }
+    console.log(`Total rows seen for watched tickers: ${watchHits}`);
+  }
+
   const perTicker = aggregate(trades);
   const tickerCount = Object.keys(perTicker).length;
   console.log(`Aggregated into ${tickerCount} tickers.`);
