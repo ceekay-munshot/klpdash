@@ -14,6 +14,19 @@ const SCREENER = (c) => ({ url: c?.["Screener URL"] || "https://www.screener.in/
 const SCREENER_QUARTERS = (c) => ({ ...SCREENER(c), section: "Company page · Quarters section" });
 const SCREENER_CASHFLOW = (c) => ({ ...SCREENER(c), section: "Company page · Cash Flow statement" });
 const SCREENER_SHAREHOLD = (c) => ({ ...SCREENER(c), section: "Company page · Shareholding Pattern" });
+// For rules whose final value is COMPUTED in our pipeline (not pulled
+// from a public page), we still want to point at the OHLCV source so
+// the user can sanity-check the inputs — but with a label that makes
+// the computed nature obvious instead of misleadingly saying "Yahoo
+// Finance" for a number Yahoo doesn't carry.
+const COMPUTED_FROM_YAHOO = (c) => {
+  const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
+  return {
+    url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS/history` : "https://finance.yahoo.com",
+    label: "Calculated (from Yahoo OHLCV)",
+    section: "Daily closes — see input source on Yahoo Finance",
+  };
+};
 const YAHOO = (c) => {
   const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
   return { url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS` : "https://finance.yahoo.com", label: "Yahoo Finance", section: "Historical daily OHLCV (1Y)" };
@@ -235,8 +248,8 @@ export const META = {
       ourLogic: null,
     },
     beta: {
-      source: YAHOO,
-      calculation: "Compute 1-year (up to 252 trading days) of daily returns for stock and Nifty 500 index. Beta = covariance(stock_returns, index_returns) / variance(index_returns).",
+      source: COMPUTED_FROM_YAHOO,
+      calculation: "Beta = covariance(stock_daily_returns, index_daily_returns) / variance(index_daily_returns). Inputs are 1-year (up to 252 trading days) of daily closes from Yahoo Chart v8 for the stock and Nifty 500 (^CRSLDX). Stock and index series are intersected by calendar DATE before returns are computed — earlier versions used slice(-252) on each series independently, which silently misaligned dates whenever the stock and index histories had different lengths (e.g. recent IPOs with shorter histories). That bug compressed beta toward 0 across the universe; this fix restores it.",
       clientLogic: "PASS if Beta 0.7–1.3 (moderate); 1 pt. Beta > 1.5 = high risk, weight penalty. Beta < 0.5 = drag risk.",
       ourLogic: null,
     },
