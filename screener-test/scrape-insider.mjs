@@ -13,7 +13,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_PATH = resolve(__dirname, "../public/data/insider-trades.json");
 
 const LOOKBACK_DAYS = 180;
-const CHUNK_DAYS = 60;      // NSE PIT endpoint accepts windows up to ~90 days
+const CHUNK_DAYS = 7;       // NSE PIT silently caps recent chunks at ~316
+                            // rows even though older 60-day chunks return
+                            // 2000+. 7-day chunks stay under the cap on
+                            // every period we've measured. Total ~26 calls.
+const CAP_WARNING_THRESHOLD = 300;  // log a canary if any chunk approaches the cap
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -35,11 +39,12 @@ async function run() {
       const rows = data?.data || [];
       trades.push(...rows);
       chunkOk++;
-      console.log(`${rows.length} trades`);
+      const cap = rows.length >= CAP_WARNING_THRESHOLD ? `  ⚠ approaching NSE cap (${rows.length} ≥ ${CAP_WARNING_THRESHOLD}) — recent disclosures may be silently truncated; shrink CHUNK_DAYS` : "";
+      console.log(`${rows.length} trades${cap}`);
     } catch (err) {
       console.log(`FAIL: ${err.message}`);
     }
-    await sleep(800);
+    await sleep(400);
   }
 
   if (chunkOk === 0) {
