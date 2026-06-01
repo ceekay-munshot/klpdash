@@ -1,0 +1,52 @@
+{
+  "_note": "Curated baseline of NSE-listed Nifty 500 names with NOTABLE recent SEBI activity. Hand-maintained quarterly safety net for the auto-scraper — keeps coverage non-zero even when news/SEBI pages return empty. Update by reading the latest SEBI press releases, Mint / BS / ET 'SEBI' topic pages, or after a major enforcement announcement. KEEP ONLY entries naming the LISTED ENTITY (not just promoters in personal capacity) AND where the proceeding is currently active or unresolved. Move resolved/settled cases to _resolved below for the audit trail.",
+  "_review_cadence": "Quarterly. Set a calendar reminder to re-check each entry; remove anything settled / dismissed / where the order is older than 18 months without follow-up.",
+  "_last_reviewed": "2026-06-01",
+
+  "active_cases": [
+    {
+      "ticker": "ADANIENT",
+      "name": "Adani Enterprises",
+      "order_type": "sebi-investigation",
+      "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with Supreme Court through 2024-25.",
+      "source_label": "SEBI status report to Supreme Court (2024-25)"
+    },
+    {
+      "ticker": "ADANIGREEN",
+      "name": "Adani Green Energy",
+      "order_type": "sebi-investigation",
+      "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures.",
+      "source_label": "SEBI status report to Supreme Court (2024-25)"
+    },
+    {
+      "ticker": "ADANIPORTS",
+      "name": "Adani Ports & SEZ",
+      "order_type": "sebi-investigation",
+      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
+      "source_label": "SEBI status report to Supreme Court (2024-25)"
+    },
+    {
+      "ticker": "ADANIPOWER",
+      "name": "Adani Power",
+      "order_type": "sebi-investigation",
+      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
+      "source_label": "SEBI status report to Supreme Court (2024-25)"
+    },
+    {
+      "ticker": "ZEEL",
+      "name": "Zee Entertainment",
+      "order_type": "show-cause",
+      "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25).",
+      "source_label": "SEBI orders + SAT appeals (2023-25)"
+    }
+  ],
+
+  "_resolved": [
+    {
+      "ticker": "_example_",
+      "name": "_When you resolve / remove a case from active_cases, paste the entry here with resolution_date so the next reviewer has audit history._",
+      "resolution_date": null,
+      "resolution_type": null
+    }
+  ]
+}
