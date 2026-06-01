@@ -1,12 +1,13 @@
-name: Weekly refresh (fundamentals + governance)
+name: Weekly refresh (fundamentals + governance + PLI/Renewable)
 
 # Fundamentals (Screener.in via Playwright) + Governance flags (SEBI via
-# Firecrawl) run together once a week on Sunday night IST. Reason for the
-# weekly cadence: Screener.in fundamentals (P&L ratios, shareholding,
-# auditor remarks) are quarterly/annual numbers that simply don't move
-# day-to-day — daily scraping was burning ~50 min of CI a day for stale
-# data. SEBI proceedings also change slowly; weekly pairs naturally with
-# fundamentals.
+# Firecrawl) + PLI / Renewable lists (DPIIT / MNRE / PIB via Firecrawl)
+# run together once a week on Sunday night IST. Reason for the weekly
+# cadence: Screener.in fundamentals (P&L ratios, shareholding, auditor
+# remarks) are quarterly/annual numbers that simply don't move day-to-
+# day — daily scraping was burning ~50 min of CI a day for stale data.
+# SEBI proceedings + PLI / Renewable beneficiary lists also change
+# slowly; weekly pairs naturally with fundamentals.
 #
 # Schedule rationale:
 # - Sunday 18:23 UTC == Sunday 23:53 IST (late Sun night IST).
@@ -92,6 +93,18 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node screener-test/scrape-governance-flags.mjs
 
+      # ---- 3. PLI + Renewable lists (DPIIT / MNRE / PIB via Firecrawl) — ~3 min, non-fatal ----
+      # Beneficiary lists for the Macro/Sector pillar. Used to be on a
+      # quarterly cron — moved here because (a) the underlying schemes
+      # update mid-quarter often enough to matter, (b) refreshing in
+      # the same workflow as fundamentals + governance means one place
+      # to monitor for "the slow weekly stuff".
+      - name: Run PLI + Renewable list refresh
+        continue-on-error: true
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: node screener-test/scrape-pli-renewable-refresh.mjs
+
       # ---- Artifacts ----
       - name: Upload weekly artifacts
         if: always()
@@ -103,6 +116,8 @@ jobs:
             public/data/screener-companies.json
             public/data/metadata.json
             public/data/governance-flags.json
+            public/data/pli-renewable-refresh-status.json
+            screener-test/static/macro-context.json
           if-no-files-found: warn
 
       # ---- One commit, one push ----
@@ -113,6 +128,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/screener-companies.csv public/data/screener-companies.json public/data/metadata.json
           [ -f public/data/governance-flags.json ] && git add public/data/governance-flags.json || true
+          [ -f public/data/pli-renewable-refresh-status.json ] && git add public/data/pli-renewable-refresh-status.json || true
+          # macro-context.json holds the curated PLI + Renewable beneficiary lists
+          # that the Macro pillar reads from.
+          [ -f screener-test/static/macro-context.json ] && git add screener-test/static/macro-context.json || true
           if git diff --cached --quiet; then
             echo "No data changes to commit."
             exit 0
