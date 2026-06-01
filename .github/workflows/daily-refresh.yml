@@ -1,16 +1,16 @@
 name: Daily refresh (all scrapers)
 
 # Daily scrapers that change day-to-day: Technicals, Insider, Sentiment
-# extras, Macro. The slow Fundamentals + Governance scrapes were split
-# out into weekly-refresh.yml (runs Sun 23:53 IST) because those numbers
-# are quarterly/annual and don't move daily.
+# extras, Macro, Governance flags. The slow Fundamentals + PLI/Renewable
+# scrapes still live in weekly-refresh.yml (Sun 23:53 IST) because those
+# numbers are quarterly/annual and don't move daily.
 #
 # IMPORTANT: workflow name is preserved as "Daily refresh (all scrapers)"
 # because auditor-opinions-refresh.yml chains off this exact name via
 # workflow_run — renaming would silently break the Muns agent trigger.
 #
-# Total runtime budget: ~6 min (Technicals ~4, Insider ~1, Sentiment <1,
-# Macro <1). Was ~55 min when fundamentals was included.
+# Total runtime budget: ~9 min (Technicals ~4, Insider ~1, Sentiment <1,
+# Macro <1, Governance ~3).
 
 on:
   workflow_dispatch:
@@ -62,6 +62,18 @@ jobs:
         continue-on-error: true
         run: node screener-test/scrape-macro.mjs
 
+      # ---- 5. Governance flags (SEBI via Firecrawl) — ~3 min, non-fatal ----
+      # News-driven so daily cadence matters: Mint / BS / ET SEBI topic
+      # pages refresh daily; a high-profile SEBI announcement against a
+      # Nifty 500 name needs to surface within 24h, not wait for Sunday.
+      # Curated baseline (screener-test/static/known-sebi-cases.json)
+      # guarantees minimum coverage even when news sources return empty.
+      - name: Run governance flags scraper
+        continue-on-error: true
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: node screener-test/scrape-governance-flags.mjs
+
       # ---- Artifacts (always upload, even on partial failure) ----
       - name: Upload all data artifacts
         if: always()
@@ -75,6 +87,7 @@ jobs:
             public/data/macro.json
             public/data/atr-history.json
             public/data/fii-dii-history.json
+            public/data/governance-flags.json
           if-no-files-found: warn
 
       # ---- One commit, one push ----
@@ -89,6 +102,7 @@ jobs:
           [ -f public/data/macro.json ] && git add public/data/macro.json || true
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true
+          [ -f public/data/governance-flags.json ] && git add public/data/governance-flags.json || true
           if git diff --cached --quiet; then
             echo "No data changes to commit."
             exit 0
