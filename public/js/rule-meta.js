@@ -125,9 +125,9 @@ export const META = {
     },
     insider: {
       source: NSE_PIT,
-      calculation: "Pull NSE PIT (Prohibition of Insider Trading) disclosures over last 6 months. Aggregate per ticker: sum(secAcq × CE/PE indicator) for Buy transactions, Sell transactions. Net buy value > 0 = PASS. Estimate insider sell as % of float using (market cap / current price). > 1% of float sold = hard fail per client spec.",
+      calculation: "Pull NSE PIT (Prohibition of Insider Trading) disclosures over the last 180 calendar days. Aggregate per ticker by tdpTransactionType: Buy → buy_shares + buy_value; Sell → sell_shares + sell_value; Pledge / Pledge Release / Invocation → EXCLUDED (collateral movements aren't buy/sell of beneficial ownership). Score by net rupee value when available, else fall back to net shares (NSE PIT often omits execution prices). > 1% of float sold = hard fail per client spec; float estimated from market_cap / cmp.",
       clientLogic: "PASS if net insider buying in last 2 quarters; 1 pt. Insider selling > 1% holding = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Pledge / pledge-release / invocation filings are excluded from the trade count — they show up under Reg 7(2) on NSE's PIT page but they're collateral movements, not buy/sell of beneficial ownership. The cell value reads e.g. '(2 trades · 4 pledges excluded)' so the count matches NSE only after you discount pledges.",
     },
     div: {
       source: SCREENER,

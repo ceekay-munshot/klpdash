@@ -367,6 +367,7 @@ async function loadTab(tabId) {
         row.insider_net_shares = ins.net_shares; row.insider_net_value = ins.net_value;
         row.insider_buy_shares = ins.buy_shares; row.insider_sell_shares = ins.sell_shares;
         row.insider_transactions = ins.transactions; row.insider_last_date = ins.last_date;
+        row.insider_pledges_excluded = ins.pledges_excluded || 0;
       } else { row.insider_transactions = 0; }
       row.governance_loaded = governanceLoaded;
       row.governance_flag = ticker && governanceByTicker[ticker] ? governanceByTicker[ticker] : null;
@@ -460,6 +461,7 @@ async function loadTab(tabId) {
         row.insider_buy_shares  = insiderData.buy_shares;
         row.insider_sell_shares = insiderData.sell_shares;
         row.insider_transactions = insiderData.transactions;
+        row.insider_pledges_excluded = insiderData.pledges_excluded || 0;
         row.insider_last_date   = insiderData.last_date;
       } else {
         row.insider_transactions = 0;
