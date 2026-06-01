@@ -29,6 +29,10 @@ jobs:
       - name: Run insider scraper
         env:
           WATCH_TICKERS: ${{ inputs.watch_tickers }}
+          # Firecrawl supplement fills in the last ~30 days that NSE's
+          # public PIT API doesn't surface — see PR #97. Required for
+          # recent disclosures (Sells, Pledges) to appear in the output.
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node screener-test/scrape-insider.mjs
 
       - name: Upload insider data (artifact)

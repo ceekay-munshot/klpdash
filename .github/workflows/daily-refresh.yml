@@ -44,6 +44,11 @@ jobs:
       # the whole daily refresh over insider data — surface as a warning.
       - name: Run insider scraper
         continue-on-error: true
+        env:
+          # Firecrawl supplement fills in the last ~30 days that NSE's
+          # public PIT API doesn't surface — see PR #97. Required for
+          # recent disclosures (Sells, Pledges) to appear in the output.
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node screener-test/scrape-insider.mjs
 
       # ---- 3. Sentiment extras via Firecrawl (PCR + Impact Cost) — ~1 min, non-fatal ----
