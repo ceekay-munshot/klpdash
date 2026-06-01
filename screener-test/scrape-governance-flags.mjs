@@ -104,9 +104,19 @@ const SCHEMA_BY_MODE = { news: NEWS_SCHEMA, regulator: REGULATOR_SCHEMA };
 // Hallucination guard: classic placeholder patterns.
 const PLACEHOLDER_RE = /\b(XYZ|ABC|LMN|PQR|Foo|Bar|Sample|Example|Placeholder)\b/i;
 
-// Signal verification: the snippet must contain a SEBI-action keyword.
-// Catches LLM drift where it returns a stock-tip article as a SEBI matter.
+// Signal verification: the SNIPPET (verbatim from the source) must
+// contain a SEBI-action keyword. order_type alone is the LLM's "best
+// guess" — accepting it lets through entries where the LLM tagged a
+// random buyback story as "sebi-fine" with no evidence in the snippet.
 const SEBI_SIGNAL_RE = /\b(sebi|show[- ]?cause|adjudicat\w+|investigat\w+|enforcement|violation|penalty|fine|ban|bar|prohibit|debarment|restrain|insider[- ]?trading|fraud|misrepresent\w+|consent\s+order|noticee|respondent|wtm\s+order|ao\s+order|interim\s+order)\b/i;
+
+// Resolved / favourable-to-company signals. If any of these appear in
+// the snippet, the SEBI proceeding has gone IN FAVOUR of the company
+// (or has been resolved) — it's no longer an "active SEBI issue" and
+// we should NOT hard-fail the stock. Last week's run flagged RELIANCE
+// based on the headline "Supreme Court QUASHES Sebi's ₹447 crore
+// disgorgement order against RIL" — that's RIL winning, not losing.
+const RESOLVED_SIGNAL_RE = /\b(quash\w*|set\s+aside|dismiss\w*|exonerat\w*|acquit\w*|ruled\s+in\s+(?:favou?r|favor)\s+of|no\s+contravention|cleared\s+by|absolv\w*|withdraw\w*\s+(?:by\s+)?sebi|appeal\s+(?:allowed|upheld))\b/i;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -171,15 +181,27 @@ async function firecrawlExtract(src) {
       is_listed_entity: it.is_listed_entity,
       snippet: (it.headline_snippet || "").slice(0, 150),
     }));
-    // Filter: must be listed entity + must contain SEBI signal in snippet.
-    const dropped = { not_listed: 0, no_sebi_signal: 0, no_name: 0 };
+    // Filter chain:
+    //   (a) must have a name + must be listed entity
+    //   (b) the SNIPPET (verbatim, not the LLM's order_type guess) must
+    //       contain a SEBI-action keyword
+    //   (c) the snippet must NOT contain a "resolved in company's
+    //       favour" signal (quashed / set aside / dismissed / etc.)
+    const dropped = { not_listed: 0, no_sebi_signal_in_snippet: 0, resolved_in_favour: 0, no_name: 0 };
     const filtered = items.filter((it) => {
       if (!it.name || String(it.name).trim().length < 3) { dropped.no_name++; return false; }
       if (it.is_listed_entity === false) { dropped.not_listed++; return false; }
       const snippet = String(it.headline_snippet || "");
-      const orderType = String(it.order_type || "");
-      if (!SEBI_SIGNAL_RE.test(snippet) && !SEBI_SIGNAL_RE.test(orderType)) {
-        dropped.no_sebi_signal++; return false;
+      // (b) — REQUIRE SEBI signal in the snippet itself. order_type is
+      // unreliable on its own (LLM has been seen guessing "sebi-fine"
+      // for unrelated buyback / earnings stories).
+      if (!SEBI_SIGNAL_RE.test(snippet)) {
+        dropped.no_sebi_signal_in_snippet++; return false;
+      }
+      // (c) — DROP when the snippet describes a resolution in the
+      // company's favour. The matter is no longer active.
+      if (RESOLVED_SIGNAL_RE.test(snippet)) {
+        dropped.resolved_in_favour++; return false;
       }
       return true;
     });
