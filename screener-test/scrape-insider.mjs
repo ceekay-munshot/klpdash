@@ -158,6 +158,7 @@ async function run() {
       date_range_rows_seen: debugRows.length,
       date_range_rows: debugRows,
       per_symbol_experiment: symbolResults,
+      firecrawl_response: LAST_FIRECRAWL_RESPONSE,
     }, null, 2) + "\n");
     console.log(`\nWrote debug dump to ${DEBUG_PATH}`);
   }
@@ -254,6 +255,12 @@ const FIRECRAWL_INSIDER_SCHEMA = {
   required: ["disclosures"],
 };
 
+// Captured on every call so the debug dump can include WHAT Firecrawl
+// saw (upstream status, raw extracted JSON, response shape) — useful
+// when extraction returns 0 rows and we need to know why without
+// hitting auth-gated GitHub Actions logs.
+let LAST_FIRECRAWL_RESPONSE = null;
+
 async function scrapeRecentViaFirecrawl() {
   const url = "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading";
   console.log("\nFirecrawl: fetching recent disclosures from NSE web UI...");
@@ -265,24 +272,38 @@ async function scrapeRecentViaFirecrawl() {
     },
     body: JSON.stringify({
       url,
-      formats: ["json"],
+      formats: ["json", "markdown"],   // also pull markdown so we can SEE what page Firecrawl rendered
       jsonOptions: { schema: FIRECRAWL_INSIDER_SCHEMA },
       onlyMainContent: false,
     }),
   });
   if (!r.ok) {
     const body = await r.text();
+    LAST_FIRECRAWL_RESPONSE = { http_status: r.status, error_body: body.slice(0, 1000) };
     throw new Error(`Firecrawl HTTP ${r.status}: ${body.slice(0, 200)}`);
   }
   const j = await r.json();
   const extract = j?.data?.json || j?.data?.llm_extraction || j?.data?.extract || {};
   const upstream = j?.data?.metadata?.statusCode || null;
+  const md = j?.data?.markdown || "";
+  LAST_FIRECRAWL_RESPONSE = {
+    http_status: r.status,
+    upstream_status: upstream,
+    metadata: j?.data?.metadata || null,
+    extract_top_level_keys: Object.keys(extract),
+    disclosures_count_raw: Array.isArray(extract.disclosures) ? extract.disclosures.length : -1,
+    sample_extracted_rows: Array.isArray(extract.disclosures) ? extract.disclosures.slice(0, 10) : [],
+    markdown_length: md.length,
+    markdown_head: md.slice(0, 2000),
+    markdown_contains_inoxindia: /INOXINDIA/i.test(md),
+  };
   if (upstream && upstream !== 200) {
     console.log(`  Firecrawl: upstream NSE page returned ${upstream} — refusing extracted rows to avoid hallucination`);
     return [];
   }
   const disclosures = Array.isArray(extract.disclosures) ? extract.disclosures : [];
   console.log(`  Firecrawl: extracted ${disclosures.length} disclosure rows from NSE web UI`);
+  console.log(`  Firecrawl markdown length: ${md.length}, contains INOXINDIA: ${LAST_FIRECRAWL_RESPONSE.markdown_contains_inoxindia}`);
   // Map each row to the same shape as NSE's API response so aggregate()
   // can process it unchanged.
   return disclosures
