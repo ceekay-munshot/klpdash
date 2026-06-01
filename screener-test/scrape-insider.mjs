@@ -162,6 +162,48 @@ async function run() {
     console.log(`\nWrote debug dump to ${DEBUG_PATH}`);
   }
 
+  // ---- Firecrawl supplement for the last ~30 days ----
+  // The NSE date-range API has a confirmed ~28-day blackout on recent
+  // disclosures (proven in PRs #93-96 — INOX India had 3 May 2026
+  // Sell disclosures visible on the NSE web UI but the API returned 0
+  // entries for the May 4 → June 1 window). The web UI uses a different
+  // backend we don't have public API access to, but Firecrawl can render
+  // the page and LLM-extract the table.
+  let firecrawlAdded = 0;
+  if (process.env.FIRECRAWL_API_KEY) {
+    try {
+      const fcRows = await scrapeRecentViaFirecrawl();
+      firecrawlAdded = fcRows.length;
+      // Dedupe vs the API-pulled rows (same disclosure could appear in
+      // both for the ~April overlap window). Key on symbol + acqfromDt
+      // + secAcq + tdpTransactionType; API wins on collision because
+      // its values are reliably structured.
+      const seen = new Set();
+      for (const t of trades) {
+        seen.add([
+          String(t.symbol || "").toUpperCase(),
+          String(t.acqfromDt || ""),
+          String(t.secAcq || ""),
+          String(t.tdpTransactionType || ""),
+        ].join("|"));
+      }
+      for (const f of fcRows) {
+        const k = [
+          String(f.symbol || "").toUpperCase(),
+          String(f.acqfromDt || ""),
+          String(f.secAcq || ""),
+          String(f.tdpTransactionType || ""),
+        ].join("|");
+        if (!seen.has(k)) { trades.push(f); seen.add(k); }
+      }
+      console.log(`Firecrawl added ${fcRows.length} recent disclosures (${trades.length} total after dedupe)`);
+    } catch (err) {
+      console.log(`Firecrawl supplement failed (non-fatal): ${err.message}`);
+    }
+  } else {
+    console.log("FIRECRAWL_API_KEY not set — skipping recent-window supplement.");
+  }
+
   const perTicker = aggregate(trades);
   const tickerCount = Object.keys(perTicker).length;
   console.log(`Aggregated into ${tickerCount} tickers.`);
@@ -178,6 +220,85 @@ async function run() {
   mkdirSync(dirname(OUT_PATH), { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload) + "\n");
   console.log(`\nWrote: ${OUT_PATH}`);
+}
+
+// Firecrawl LLM-extract of NSE's web UI insider-trading page. Renders
+// the JS-heavy page with a headless browser, then an LLM pulls out the
+// structured disclosure rows. We map each row back to the API's field
+// shape (symbol/tdpTransactionType/secAcq/secVal/personCategory/dates)
+// so downstream aggregate() can process them identically.
+const FIRECRAWL_INSIDER_SCHEMA = {
+  type: "object",
+  properties: {
+    disclosures: {
+      type: "array",
+      description: "Insider trading disclosures (SEBI Reg 7(2)) on this page. INCLUDE every visible row — the table may show multiple weeks of activity per company. Each row is one disclosure: a Buy, Sell, Pledge, Pledge Release, or Pledge Invocation. Extract values exactly as written (don't compute or estimate).",
+      items: {
+        type: "object",
+        properties: {
+          symbol: { type: "string", description: "NSE ticker symbol — uppercase letters only (e.g. INOXINDIA, RELIANCE). Required." },
+          company_name: { type: "string", description: "Full company name as shown." },
+          person_name: { type: "string", description: "Name of person/entity filing the disclosure." },
+          person_category: { type: "string", description: "e.g. Promoter, Promoter Group, Director, KMP." },
+          transaction_type: { type: "string", description: "Exactly one of: Buy, Sell, Pledge, Pledge Revoke, Pledge Invoke. Use the page's wording, just match case." },
+          shares: { type: "number", description: "Number of securities acquired or disposed (the middle 'No. of security' column under 'Securities acquired / disposed')." },
+          value_rs: { type: "number", description: "Value of the transaction in INR. May be 0 if unreported." },
+          from_date: { type: "string", description: "Acquisition / disposal FROM date in DD-MM-YYYY format." },
+          to_date: { type: "string", description: "Acquisition / disposal TO date in DD-MM-YYYY format." },
+          filing_date: { type: "string", description: "Disclosure filing date in DD-MM-YYYY format." },
+        },
+        required: ["symbol", "transaction_type", "shares"],
+      },
+    },
+  },
+  required: ["disclosures"],
+};
+
+async function scrapeRecentViaFirecrawl() {
+  const url = "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading";
+  console.log("\nFirecrawl: fetching recent disclosures from NSE web UI...");
+  const r = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["json"],
+      jsonOptions: { schema: FIRECRAWL_INSIDER_SCHEMA },
+      onlyMainContent: false,
+    }),
+  });
+  if (!r.ok) {
+    const body = await r.text();
+    throw new Error(`Firecrawl HTTP ${r.status}: ${body.slice(0, 200)}`);
+  }
+  const j = await r.json();
+  const extract = j?.data?.json || j?.data?.llm_extraction || j?.data?.extract || {};
+  const upstream = j?.data?.metadata?.statusCode || null;
+  if (upstream && upstream !== 200) {
+    console.log(`  Firecrawl: upstream NSE page returned ${upstream} — refusing extracted rows to avoid hallucination`);
+    return [];
+  }
+  const disclosures = Array.isArray(extract.disclosures) ? extract.disclosures : [];
+  console.log(`  Firecrawl: extracted ${disclosures.length} disclosure rows from NSE web UI`);
+  // Map each row to the same shape as NSE's API response so aggregate()
+  // can process it unchanged.
+  return disclosures
+    .filter((d) => d && d.symbol && d.transaction_type && d.shares != null)
+    .map((d) => ({
+      symbol: String(d.symbol).trim().toUpperCase(),
+      tdpTransactionType: String(d.transaction_type).trim(),
+      secAcq: String(d.shares),
+      secVal: String(d.value_rs || 0),
+      personCategory: d.person_category || "",
+      acqfromDt: d.from_date || "",
+      acqtoDt: d.to_date || "",
+      intimDt: d.filing_date || "",
+      date: d.filing_date || "",
+      _source: "firecrawl",
+    }));
 }
 
 function writeFallback(reason) {
