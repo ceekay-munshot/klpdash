@@ -409,7 +409,9 @@ function ruleInsiderBuying(c) {
   const sellPctOfFloat = totalShares ? (sellSh / totalShares) * 100 : null;
   const sellHardFail = sellPctOfFloat != null && sellPctOfFloat > 1;
 
-  const val = `Buy ${formatShares(buySh)} | Sell ${formatShares(sellSh)} | Net ${(netSh>=0?"+":"")}${formatShares(netSh)} (${c.insider_transactions} disclosure${c.insider_transactions===1?"":"s"})`;
+  const pledges = c.insider_pledges_excluded || 0;
+  const pledgeNote = pledges > 0 ? ` · ${pledges} pledge${pledges===1?"":"s"} excluded` : "";
+  const val = `Buy ${formatShares(buySh)} | Sell ${formatShares(sellSh)} | Net ${(netSh>=0?"+":"")}${formatShares(netSh)} (${c.insider_transactions} trade${c.insider_transactions===1?"":"s"}${pledgeNote})`;
   if (sellHardFail) {
     return { points: 0, max: 1, status: "fail", value: val, note: `Insider selling exceeded 1% of float (${sellPctOfFloat.toFixed(2)}%) — red flag per client framework.` };
   }

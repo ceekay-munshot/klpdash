@@ -179,7 +179,7 @@ function aggregate(trades) {
 
     if (!out[sym]) out[sym] = {
       buy_shares: 0, sell_shares: 0, buy_value: 0, sell_value: 0,
-      transactions: 0, last_date: null,
+      transactions: 0, pledges_excluded: 0, last_date: null,
     };
 
     if (type === "Buy") {
@@ -191,8 +191,12 @@ function aggregate(trades) {
     } else {
       // Pledge / Pledge Release / Invocation — not a buy or sell of beneficial
       // ownership. Skip from the scoring count (the client rule is about
-      // net BUYING vs SELLING, not collateral pledges).
+      // net BUYING vs SELLING, not collateral pledges). We still TRACK these
+      // per-ticker so the rule cell can transparently say "X trades + Y
+      // pledges excluded" — otherwise a user comparing our number to the
+      // NSE PIT page (which lists everything) will be confused.
       pledgeSkipped++;
+      out[sym].pledges_excluded = (out[sym].pledges_excluded || 0) + 1;
       continue;
     }
     out[sym].transactions++;
