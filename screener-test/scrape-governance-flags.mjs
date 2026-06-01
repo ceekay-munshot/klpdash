@@ -113,10 +113,43 @@ const SEBI_SIGNAL_RE = /\b(sebi|show[- ]?cause|adjudicat\w+|investigat\w+|enforc
 // Resolved / favourable-to-company signals. If any of these appear in
 // the snippet, the SEBI proceeding has gone IN FAVOUR of the company
 // (or has been resolved) — it's no longer an "active SEBI issue" and
-// we should NOT hard-fail the stock. Last week's run flagged RELIANCE
-// based on the headline "Supreme Court QUASHES Sebi's ₹447 crore
-// disgorgement order against RIL" — that's RIL winning, not losing.
-const RESOLVED_SIGNAL_RE = /\b(quash\w*|set\s+aside|dismiss\w*|exonerat\w*|acquit\w*|ruled\s+in\s+(?:favou?r|favor)\s+of|no\s+contravention|cleared\s+by|absolv\w*|withdraw\w*\s+(?:by\s+)?sebi|appeal\s+(?:allowed|upheld))\b/i;
+// we should NOT hard-fail the stock.
+//
+// Expanded after the first ad-hoc run still flagged RELIANCE with a
+// snippet that used wording my first regex didn't cover:
+//   "Reliance Industries gets partial relief from Supreme Court as it
+//    sets aside Rs 447 crore Sebi recovery order"
+// Additions: sets/setting aside (verb conjugations); "partial relief
+// from Supreme Court / High Court / SAT"; "provides relief to";
+// "favourable verdict"; "appeal upheld" (already there); plus
+// "in (the) favour of" without the "ruled" prefix.
+const RESOLVED_SIGNAL_RE = new RegExp(
+  "\\b(" +
+    "quash\\w*"                                                          + "|" + // quashes, quashed, quashing
+    "(?:set|sets|setting)\\s+aside"                                      + "|" + // set/sets/setting aside
+    "dismiss\\w*"                                                        + "|" + // dismisses, dismissed
+    "exonerat\\w*"                                                       + "|" + // exonerate(s/d)
+    "acquit\\w*"                                                         + "|" + // acquit(s/ted)
+    "absolv\\w*"                                                         + "|" + // absolves, absolved
+    "(?:partial\\s+)?relief\\s+(?:from|by|to)\\s+(?:the\\s+)?(?:supreme\\s+court|high\\s+court|sat|sebi)" + "|" +
+    "(?:provides|grants|granting)\\s+relief\\s+to"                       + "|" + // SC provides/grants relief to X
+    "ruled\\s+in\\s+(?:favou?r|favor)\\s+of"                             + "|" +
+    "in\\s+(?:the\\s+)?favou?r\\s+of\\s+(?:the\\s+)?(?:company|noticee|appellant|respondent)" + "|" +
+    "favou?rable\\s+(?:verdict|ruling|order|judgement|judgment)"         + "|" +
+    "no\\s+contravention"                                                + "|" +
+    "cleared\\s+by"                                                      + "|" +
+    "withdraw\\w*\\s+(?:by\\s+)?sebi"                                    + "|" +
+    "appeal\\s+(?:allowed|upheld|succeeded)"                             + "|" +
+    // Appellate-court language that signals SEBI/SAT got OVERTURNED.
+    // E.g. RIL snippet: "the SAT, in its majority verdict, committed
+    // an 'egregious error' in passing the judgement"
+    "majority\\s+verdict"                                                + "|" +
+    "(?:egregious|gross|fundamental|grave|patent)\\s+error"              + "|" +
+    "committed\\s+an?\\s+\\w+\\s+error"                                  + "|" +
+    "(?:apex\\s+court|supreme\\s+court|sat)\\s+(?:said|held|noted|observed|found)\\s+(?:the\\s+)?(?:sat|sebi)" +
+  ")\\b",
+  "i"
+);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
