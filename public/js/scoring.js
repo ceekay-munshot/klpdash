@@ -413,9 +413,16 @@ function ruleInsiderBuying(c) {
   if (sellHardFail) {
     return { points: 0, max: 1, status: "fail", value: val, note: `Insider selling exceeded 1% of float (${sellPctOfFloat.toFixed(2)}%) — red flag per client framework.` };
   }
-  if (netVal > 0) return { points: 1, max: 1, status: "pass", value: val, note: "Net insider buying over last 6 months — positive signal." };
-  if (netVal === 0) return { points: 1, max: 1, status: "partial", value: val, note: "Insider activity roughly balanced." };
-  return { points: 0, max: 1, status: "fail", value: val, note: "Net insider selling over last 6 months." };
+  // Primary score signal is the rupee net (netVal); but NSE PIT
+  // disclosures frequently come without execution prices, in which
+  // case netVal == 0 even though netSh is clearly positive (or
+  // negative). Fall back to net SHARES so a stock with unambiguous
+  // buying like 53.91 L shares net bought / 0 sold doesn't get
+  // misclassified as "balanced".
+  const signal = netVal !== 0 ? netVal : netSh;
+  if (signal > 0) return { points: 1, max: 1, status: "pass", value: val, note: "Net insider buying over the last 6 months — positive signal." };
+  if (signal === 0) return { points: 1, max: 1, status: "partial", value: val, note: "Insider buys and sells offset each other — no directional signal." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Net insider selling over the last 6 months." };
 }
 
 function formatShares(n) {
