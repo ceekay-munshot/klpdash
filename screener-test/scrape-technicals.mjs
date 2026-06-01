@@ -319,9 +319,12 @@ function computeIndicators(bars, indexBars, indexReturns, indexClose) {
   const indexSixM = indexClose.length >= 126 ? indexClose.at(-1) / indexClose.at(-126) - 1 : null;
   const relStrength6m = (sixMReturn != null && indexSixM != null) ? sixMReturn - indexSixM : null;
 
-  // Beta — last ~252 daily returns aligned with index
-  const stockReturns = dailyReturns(bars);
-  const beta = computeBeta(stockReturns, indexReturns);
+  // Beta — last ~252 trading-day pairs aligned by date with the index.
+  // computeBeta does the date-matching internally; passing raw bars
+  // instead of pre-computed returns so it can intersect calendar dates
+  // (the previous slice(-252) approach silently misaligned dates when
+  // stock and index histories were different lengths).
+  const beta = computeBeta(bars, indexBars);
 
   // Today's % change vs yesterday's close — feeds the market-wide
   // Advances/Declines breadth computation in the Sentiment tab.
@@ -605,18 +608,46 @@ function adtv20Cr(bars) {
   return Math.round((avgRupees / 1e7) * 100) / 100;
 }
 
-function computeBeta(stockReturns, indexReturns) {
-  // Align tail ends; use up to 252 obs
-  const m = Math.min(stockReturns.length, indexReturns.length, 252);
-  if (m < 60) return null;
-  const sR = stockReturns.slice(-m);
-  const iR = indexReturns.slice(-m);
-  const sMean = avg(sR);
-  const iMean = avg(iR);
+function computeBeta(stockBars, indexBars) {
+  // Properly align by DATE before computing returns — the previous
+  // implementation took `slice(-252)` of each return array, which paired
+  // up DIFFERENT calendar dates whenever the stock and index histories
+  // had different lengths (e.g. recent IPOs like INOX India have ~270
+  // bars vs Nifty 500's longer history). That misalignment produced
+  // near-random correlation, dragging beta toward 0 across the universe
+  // (median was 0.03, 41% of stocks negative — clearly wrong).
+  if (!stockBars?.length || !indexBars?.length) return null;
+  const indexByDate = new Map();
+  for (const b of indexBars) indexByDate.set(b.date, b.close);
+  // Walk the stock bars in order, building parallel close arrays only
+  // for dates present in BOTH series. dailyReturns() then operates on
+  // truly aligned data.
+  const sClose = [];
+  const iClose = [];
+  for (const b of stockBars) {
+    const ic = indexByDate.get(b.date);
+    if (ic == null) continue;
+    sClose.push(b.close);
+    iClose.push(ic);
+  }
+  if (sClose.length < 60) return null;
+  // Build aligned daily-return series from the matched closes.
+  const sR = []; const iR = [];
+  for (let i = 1; i < sClose.length; i++) {
+    sR.push(sClose[i] / sClose[i - 1] - 1);
+    iR.push(iClose[i] / iClose[i - 1] - 1);
+  }
+  // Cap to last 252 trading-day pairs (≈ 1 year) — consistent with the
+  // "Beta — last ~252 daily returns" comment in computeIndicators().
+  const m = Math.min(sR.length, 252);
+  const sTail = sR.slice(-m);
+  const iTail = iR.slice(-m);
+  const sMean = avg(sTail);
+  const iMean = avg(iTail);
   let cov = 0, varI = 0;
   for (let i = 0; i < m; i++) {
-    cov += (sR[i] - sMean) * (iR[i] - iMean);
-    varI += (iR[i] - iMean) ** 2;
+    cov  += (sTail[i] - sMean) * (iTail[i] - iMean);
+    varI += (iTail[i] - iMean) ** 2;
   }
   if (varI === 0) return null;
   return cov / varI;
