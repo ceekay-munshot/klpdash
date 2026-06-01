@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-06-01T04:15:36.584Z",
+  "generated_at": "2026-06-01T05:24:47.912Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 93.3,
+      "latest": 93.04,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -18.17,
+      "pct_change_30d": -18.39,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 94.77,
+      "latest": 94.81,
       "latest_unit": "₹/$",
-      "pct_change_30d": 0.01,
+      "pct_change_30d": 0.05,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 16.03,
+      "latest": 16.14,
       "latest_unit": "",
-      "pct_change_30d": -8.07,
+      "pct_change_30d": -7.47,
       "trend": "falling",
       "history_bars": 24
     }
@@ -48,8 +48,8 @@
     "fii_signal_note": "Building rolling window — 4 of 20 trading days collected so far (1 net-positive). NSE only publishes a daily FII/DII snapshot, so the signal accumulates day-by-day and goes live once ≥ 5 trading days are gathered, then fills toward a true 20-day window.",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": 0.75,
-    "market_breadth_note": "212 advances vs 282 declines across 498 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 0.88,
+    "market_breadth_note": "232 advances vs 263 declines across 498 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 1,
     "fii_total_days": 4
   },
