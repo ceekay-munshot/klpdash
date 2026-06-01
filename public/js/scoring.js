@@ -312,9 +312,14 @@ function rulePledge(c) {
 function rulePromoterHolding(c) {
   const v = parsePercent(c["Change in Prom Hold"]);
   if (v == null) return naWithReason(c, "ph", 1);
-  if (v >= 0) return { points: 1, max: 1, status: "pass", value: fmtPct(v), note: "Promoter holding stable or increasing." };
-  if (v > -2) return { points: 1, max: 1, status: "partial", value: fmtPct(v), note: "Minor reduction in promoter holding." };
-  return { points: 0, max: 1, status: "fail", value: fmtPct(v), note: "Promoter holding falling > 2%." };
+  // Always render the change with an explicit sign so the cell value
+  // can't be misread as the absolute holding level. "0%" alone looks
+  // like "no promoter holding"; "+0.00%" reads clearly as "no change".
+  const signed = (v > 0 ? "+" : "") + fmtPct(v);
+  const val = `Change ${signed} (vs previous quarter)`;
+  if (v >= 0) return { points: 1, max: 1, status: "pass", value: val, note: "Promoter holding stable or increasing — no dilution this quarter." };
+  if (v > -2) return { points: 1, max: 1, status: "partial", value: val, note: "Minor reduction in promoter holding (under 2 % in the quarter)." };
+  return { points: 0, max: 1, status: "fail", value: val, note: "Promoter holding fell by more than 2 % in the quarter — fails per client framework." };
 }
 
 function ruleFIIDII(c) {
@@ -503,7 +508,7 @@ const ACTIVE_RULES = [
   { key: "icr", label: "Interest Coverage", category: "Balance Sheet", criteria: "> 3", fn: ruleInterestCoverage },
   { key: "cr", label: "Current Ratio", category: "Balance Sheet", criteria: "> 1.2", fn: ruleCurrentRatio },
   { key: "pledge", label: "Promoter Pledge", category: "Balance Sheet", criteria: "< 5%", fn: rulePledge },
-  { key: "ph", label: "Promoter Holding", category: "Shareholding", criteria: "Stable / increasing", fn: rulePromoterHolding },
+  { key: "ph", label: "Change in Promoter Holding", category: "Shareholding", criteria: "Stable or increasing (Δ ≥ 0% QoQ)", fn: rulePromoterHolding },
   { key: "fiidii", label: "FII + DII Holding", category: "Shareholding", criteria: "Increasing", fn: ruleFIIDII },
   { key: "insider", label: "Insider Buying", category: "Shareholding", criteria: "Net buying in last 6 mo", fn: ruleInsiderBuying },
   { key: "div", label: "Dividend Consistency", category: "Governance", criteria: "Positive", fn: ruleDividendConsistency },
