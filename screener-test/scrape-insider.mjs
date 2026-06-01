@@ -84,12 +84,11 @@ async function run() {
   const watch = (process.env.WATCH_TICKERS || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
   if (watch.length) {
     console.log(`\n=== Watching tickers: ${watch.join(", ")} ===`);
-    let watchHits = 0;
+    const debugRows = [];
     for (const t of trades) {
       const sym = String(t.symbol || "").trim().toUpperCase();
       if (!watch.includes(sym)) continue;
-      watchHits++;
-      console.log("  ROW:", JSON.stringify({
+      const row = {
         symbol: t.symbol,
         type: t.tdpTransactionType,
         secAcq: t.secAcq,
@@ -100,9 +99,24 @@ async function run() {
         intimDt: t.intimDt,
         acqfromDt: t.acqfromDt,
         acqtoDt: t.acqtoDt,
-      }));
+      };
+      debugRows.push(row);
+      console.log("  ROW:", JSON.stringify(row));
     }
-    console.log(`Total rows seen for watched tickers: ${watchHits}`);
+    console.log(`Total rows seen for watched tickers: ${debugRows.length}`);
+    // Also persist the debug dump to a committed file so it's auditable
+    // after the workflow run finishes, without needing to scroll GitHub
+    // Actions logs (which require auth to read remotely).
+    const DEBUG_PATH = resolve(__dirname, "../public/data/insider-debug.json");
+    writeFileSync(DEBUG_PATH, JSON.stringify({
+      generated_at: new Date().toISOString(),
+      watch_tickers: watch,
+      total_trades_in_pull: trades.length,
+      type_distribution: typeCounts,
+      rows_seen: debugRows.length,
+      rows: debugRows,
+    }, null, 2) + "\n");
+    console.log(`Wrote debug dump to ${DEBUG_PATH}`);
   }
 
   const perTicker = aggregate(trades);
