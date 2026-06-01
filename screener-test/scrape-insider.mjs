@@ -107,16 +107,59 @@ async function run() {
     // Also persist the debug dump to a committed file so it's auditable
     // after the workflow run finishes, without needing to scroll GitHub
     // Actions logs (which require auth to read remotely).
+    // EXPERIMENT: also try the per-symbol variant of the same endpoint
+    // for the LAST 30 DAYS — this is the window where the date-range
+    // endpoint returned 0 rows (Chunks 1-4 in the previous run). If
+    // NSE's API returns INOX's May Sell disclosures when filtered by
+    // symbol, we know the fix path: switch to per-symbol queries for
+    // the recent window. If even this returns nothing, escalate to
+    // Firecrawl on the NSE web UI.
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400000);
+    const symbolResults = {};
+    for (const sym of watch) {
+      try {
+        console.log(`\n--- Per-symbol experiment for ${sym} (${fmtDate(thirtyDaysAgo)} → ${fmtDate(today)}) ---`);
+        const data = await fetchPIT(fmtDate(thirtyDaysAgo), fmtDate(today), sym);
+        const rows = data?.data || [];
+        console.log(`  Returned ${rows.length} rows via ?symbol=${sym}`);
+        symbolResults[sym] = {
+          window: `${fmtDate(thirtyDaysAgo)} → ${fmtDate(today)}`,
+          count: rows.length,
+          rows: rows.slice(0, 50).map((t) => ({
+            symbol: t.symbol,
+            type: t.tdpTransactionType,
+            secAcq: t.secAcq,
+            secVal: t.secVal,
+            acqMode: t.acqMode,
+            personCategory: t.personCategory,
+            date: t.date,
+            intimDt: t.intimDt,
+            acqfromDt: t.acqfromDt,
+            acqtoDt: t.acqtoDt,
+          })),
+        };
+        for (const r of rows.slice(0, 5)) {
+          console.log("    ROW:", JSON.stringify({ type: r.tdpTransactionType, secAcq: r.secAcq, date: r.date, acqtoDt: r.acqtoDt }));
+        }
+        await sleep(800);
+      } catch (err) {
+        console.log(`  FAIL: ${err.message}`);
+        symbolResults[sym] = { error: err.message };
+      }
+    }
+
     const DEBUG_PATH = resolve(__dirname, "../public/data/insider-debug.json");
     writeFileSync(DEBUG_PATH, JSON.stringify({
       generated_at: new Date().toISOString(),
       watch_tickers: watch,
       total_trades_in_pull: trades.length,
       type_distribution: typeCounts,
-      rows_seen: debugRows.length,
-      rows: debugRows,
+      date_range_rows_seen: debugRows.length,
+      date_range_rows: debugRows,
+      per_symbol_experiment: symbolResults,
     }, null, 2) + "\n");
-    console.log(`Wrote debug dump to ${DEBUG_PATH}`);
+    console.log(`\nWrote debug dump to ${DEBUG_PATH}`);
   }
 
   const perTicker = aggregate(trades);
@@ -189,8 +232,9 @@ async function initNSESession() {
   }
 }
 
-async function fetchPIT(fromDate, toDate) {
-  const url = `https://www.nseindia.com/api/corporates-pit?index=equities&from_date=${fromDate}&to_date=${toDate}`;
+async function fetchPIT(fromDate, toDate, symbol = null) {
+  const symbolParam = symbol ? `&symbol=${encodeURIComponent(symbol)}` : "";
+  const url = `https://www.nseindia.com/api/corporates-pit?index=equities&from_date=${fromDate}&to_date=${toDate}${symbolParam}`;
   let attempt = 0;
   while (attempt < 3) {
     try {
