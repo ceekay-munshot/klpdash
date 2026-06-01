@@ -1,112 +1,132 @@
 #!/usr/bin/env node
-// Governance flags scraper. Hits SEBI's enforcement orders and press
-// releases via Firecrawl + LLM extract, pulls out the NSE listed
-// companies named as noticees / respondents in active proceedings,
-// fuzzily matches to NSE 500 tickers, and writes a per-ticker flag
-// map. The Fundamentals "Governance Issues" rule reads this file to
-// hard-fail companies with active SEBI cases.
+// Governance flags scraper — v2.
 //
-// Cost budget: ~10-20 Firecrawl credits per weekly run.
+// PROBLEM with v1 (May 2026): scraped 4 landing pages (BSE corporate
+// announcements, BSE press releases, NSE corporate filings, SEBI orders
+// listing) but none of them actually surface SEBI orders against named
+// listed entities. The BSE/NSE pages list routine LODR Reg-30 filings
+// (board meetings, financial results); SEBI's orders.html lists order
+// titles like "WTM/SK/CFD/CFD-SEC-2/29183/2024" — no entity names. Net
+// result: 0 flagged companies in most weekly runs, even though high-
+// profile SEBI activity against Nifty 500 names is well-documented.
+//
+// v2 STRATEGY: financial-news SEBI topic pages. Mint / Business Standard
+// / Economic Times each maintain a "SEBI" topic page where every story
+// of the last few weeks is listed with a headline. Headlines naturally
+// name the listed entity ("SEBI fines XYZ Ltd ₹2 cr for…", "Adani gets
+// SEBI notice on…"). LLM extraction works cleanly on this surface.
+//
+// LAYERS:
+//   1) Curated baseline (screener-test/static/known-sebi-cases.json) —
+//      hand-maintained high-profile cases so we're never at zero coverage.
+//   2) News topic pages (Mint + BS + ET) — caught automatically.
+//   3) SEBI orders page (kept as backup; rarely fires but no extra cost).
+//   4) Combined, deduped, fuzzy-matched to Nifty 500 tickers.
+//
+// Cost: ~10-20 Firecrawl credits per weekly run (one credit per source).
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCREENER_PATH = resolve(__dirname, "../public/data/screener-companies.json");
+const CURATED_PATH  = resolve(__dirname, "static/known-sebi-cases.json");
 const OUT_PATH      = resolve(__dirname, "../public/data/governance-flags.json");
 
 const FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape";
 const API_KEY = process.env.FIRECRAWL_API_KEY;
 
-if (!API_KEY) {
-  console.error("FIRECRAWL_API_KEY env var not set — writing empty flags file.");
-  writeStub("FIRECRAWL_API_KEY not set");
-  process.exit(0);
-}
-
-// Source URLs. SEBI's site is structured around chronological order
-// archives; the orders page is the primary one. We hit a small set so
-// the Firecrawl bill stays sane.
-// Sources. We switched from SEBI-only after the May 30 diagnostic run:
-//
-//   - SEBI's enforcement/orders.html listing page works (200 OK) but
-//     the listing itself doesn't carry noticee names — only order titles
-//     + PDF links. We'd need to drill into individual PDFs (~50 extra
-//     Firecrawl calls/week) to get company names from SEBI directly.
-//   - Three other SEBI URLs we tried (recent.html, two press-release
-//     paths, adjudication-orders.html) all returned upstream 404.
-//   - Worse, the LLM hallucinated "XYZ Industries Ltd / ABC Fintech Ltd"
-//     etc. when fed an empty 404 page. The hallucination guard below
-//     now rejects any Firecrawl response with upstream_status != 200.
-//
-// New strategy: BSE + NSE Corporate Announcements. Under SEBI LODR
-// regulations, listed companies must disclose SEBI inquiries /
-// investigations / show-cause notices to BSE and NSE within 24 hours.
-// That's a much cleaner stream of governance signal:
-//   - Real disclosures published by the company itself (no third-party
-//     hearsay)
-//   - Direct link between disclosure and ticker
-//   - Easier for the LLM to spot (the disclosure subject line typically
-//     contains "Disclosure under Reg 30 of SEBI LODR" + nature)
-//
-// We retain SEBI's orders.html as a low-priority backup; if the listing
-// gains noticee data in future or has a parseable structure we don't
-// see today, the LLM will surface it.
+// ---------- Source list ----------
+// News pages name listed entities directly in headlines — the highest-
+// signal surface we can scrape. SEBI's own orders.html stays as a backup
+// (occasionally catches direct mentions when an order title includes a
+// company name).
 const SOURCES = [
-  { url: "https://www.bseindia.com/corporates/ann.html", label: "BSE — corporate announcements (recent)" },
-  { url: "https://www.bseindia.com/markets/MarketInfo/PressRelease.aspx", label: "BSE — press releases" },
-  { url: "https://www.nseindia.com/companies-listing/corporate-filings-announcements", label: "NSE — corporate filings & announcements" },
-  { url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI — orders listing (backup)" },
+  { url: "https://www.livemint.com/topic/sebi",                label: "Mint — SEBI topic (news)",                    mode: "news" },
+  { url: "https://www.business-standard.com/topic/sebi",       label: "Business Standard — SEBI topic (news)",       mode: "news" },
+  { url: "https://economictimes.indiatimes.com/topic/sebi",    label: "Economic Times — SEBI topic (news)",          mode: "news" },
+  { url: "https://www.sebi.gov.in/enforcement/orders.html",    label: "SEBI — orders listing (backup)",              mode: "regulator" },
 ];
 
-// LLM extract schema. The "is_listed_entity" + "is_active_proceeding"
-// flags do the filtering work — SEBI orders mention many companies as
-// third parties (auditors, banks, etc.) but only the noticees are
-// what we want to flag.
-const SCHEMA = {
+// ---------- LLM extract schemas — per-source mode ----------
+
+// News-page schema: titles like "SEBI bans XYZ Ltd promoters for…"
+// or "Adani gets SEBI show-cause on…". The LLM must extract the
+// entity NAMED IN THE HEADLINE (not third-party advisers).
+const NEWS_SCHEMA = {
   type: "object",
   properties: {
     flagged_entities: {
       type: "array",
-      description: "Listed Indian companies on this page that have disclosed (under SEBI LODR Reg 30) or been the subject of a SEBI action involving WRONGDOING. INCLUDE ONLY entries where the page text clearly contains at least one of: 'SEBI', 'show-cause', 'adjudication', 'investigation', 'enforcement', 'violation', 'penalty', 'insider trading', 'fraud', 'misrepresentation', 'consent order', 'noticee', 'WTM order', 'AO order'. STRICTLY EXCLUDE all routine corporate filings — these are NOT governance issues even though they appear on the same announcements feed: outcome of board meeting, board-meeting intimation, quarterly / annual financial results, audited results, dividend declaration / record date, AGM / EGM notice, change in director / KMP, allotment of securities, code of conduct, newspaper publication of results, transfer of unclaimed dividend, related-party transactions report, registered office change, postal ballot, scheme of arrangement, ESOP allotment, voting results, share transfer, statement of investor complaints. STRICTLY EXCLUDE individuals named in their personal capacity. STRICTLY EXCLUDE foreign companies. EMPTY OK: if the page shows only routine filings or is an error page, return an empty array — DO NOT invent placeholder names ('XYZ Industries', 'ABC Limited' etc.) just to populate the schema.",
+      description: "Indian listed companies named in recent NEWS HEADLINES on this page as subjects of SEBI enforcement, investigation, or disciplinary action. INCLUDE: stories where the headline contains a company name AND any of these SEBI-action keywords: ban, bar, prohibit, fine, penalty, show-cause, adjudication, investigation, enforcement, order, settlement, consent, noticee, insider trading, fraud, misrepresent, debarment, restrain. STRICTLY EXCLUDE: stories where the company is mentioned in passing (e.g. as a market beneficiary of a SEBI policy change), opinion pieces, analyst commentary, generic 'SEBI updates rules' stories, foreign companies, and individuals named only in personal capacity. EMPTY OK: if no headline names a listed entity as the SUBJECT of an enforcement matter, return [] — do not invent.",
       items: {
         type: "object",
         properties: {
-          name: { type: "string", description: "Exact company name as written on the page. Must be a name actually present in the source page content." },
-          order_type: { type: "string", description: "Best guess from this list ONLY: sebi-inquiry | sebi-investigation | show-cause | adjudication | settlement | lodr-violation-disclosure | enforcement-order | other. Do NOT use this field for routine filing categories like 'board meeting' or 'result'." },
-          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company" },
-          is_active_proceeding: { type: "boolean", description: "true if the matter looks active. When ambiguous, default to true." },
-          context_snippet: { type: "string", description: "10-30 word VERBATIM snippet from the page that contains the SEBI / violation / penalty / investigation keyword. Required for the entry to be valid — if you can't quote that, do not include this entity." },
+          name:             { type: "string", description: "Exact company name as it appears in the news headline." },
+          order_type:       { type: "string", description: "Best fit: sebi-investigation | sebi-ban | sebi-fine | show-cause | adjudication | settlement | enforcement-order | other." },
+          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company." },
+          headline_snippet: { type: "string", description: "VERBATIM ~15-30 word excerpt from the news headline or summary that names the company AND the SEBI action. Required." },
         },
-        required: ["name", "is_listed_entity", "context_snippet"],
+        required: ["name", "is_listed_entity", "headline_snippet"],
       },
     },
   },
   required: ["flagged_entities"],
 };
 
-// Post-LLM safety net: even with the prompt tightened, the model
-// sometimes still labels routine filings as "lodr-violation". Reject
-// entries whose order_type or snippet smells routine.
-const ROUTINE_TYPE_RE = /^(result|outcome|board\s*meeting|board\s*update|company\s*update|dividend|agm|egm|scheme|allotment|esop|voting|share\s*transfer|director\s*change|change\s*in\s*kmp|code\s*of\s*conduct|registered\s*office|newspaper)/i;
-const SEBI_SIGNAL_RE = /\b(sebi|show[- ]?cause|adjudicat\w+|investigat\w+|enforcement|violation|penalty|insider[- ]?trading|fraud|misrepresent\w+|consent\s+order|noticee|wtm\s+order|ao\s+order)\b/i;
+// Regulator-page schema: SEBI's orders.html lists order titles +
+// occasionally entity names. Slightly different prompt to handle the
+// formal language ("In the matter of XYZ Ltd…").
+const REGULATOR_SCHEMA = {
+  type: "object",
+  properties: {
+    flagged_entities: {
+      type: "array",
+      description: "Indian listed companies named as NOTICEES, RESPONDENTS, or subjects in SEBI enforcement order titles on this page. Order titles often follow the pattern 'In the matter of [Company]' or 'WTM Order against [Company]'. INCLUDE only if a company name is clearly part of the order title. STRICTLY EXCLUDE non-listed shell entities, foreign companies, and individuals named in personal capacity. EMPTY OK: return [] if no order title names a listed entity.",
+      items: {
+        type: "object",
+        properties: {
+          name:             { type: "string", description: "Exact entity name as it appears in the SEBI order title." },
+          order_type:       { type: "string", description: "Best fit: wtm-order | ao-order | settlement | consent-order | interim-order | enforcement-order | other." },
+          is_listed_entity: { type: "boolean", description: "true if the entity looks like a publicly listed Indian company." },
+          headline_snippet: { type: "string", description: "VERBATIM ~15-30 word excerpt from the order title/summary that names the entity. Required." },
+        },
+        required: ["name", "is_listed_entity", "headline_snippet"],
+      },
+    },
+  },
+  required: ["flagged_entities"],
+};
+
+const SCHEMA_BY_MODE = { news: NEWS_SCHEMA, regulator: REGULATOR_SCHEMA };
+
+// Hallucination guard: classic placeholder patterns.
+const PLACEHOLDER_RE = /\b(XYZ|ABC|LMN|PQR|Foo|Bar|Sample|Example|Placeholder)\b/i;
+
+// Signal verification: the snippet must contain a SEBI-action keyword.
+// Catches LLM drift where it returns a stock-tip article as a SEBI matter.
+const SEBI_SIGNAL_RE = /\b(sebi|show[- ]?cause|adjudicat\w+|investigat\w+|enforcement|violation|penalty|fine|ban|bar|prohibit|debarment|restrain|insider[- ]?trading|fraud|misrepresent\w+|consent\s+order|noticee|respondent|wtm\s+order|ao\s+order|interim\s+order)\b/i;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const DEBUG_PER_SOURCE = [];
 
-async function firecrawlExtract(url, label) {
-  console.log(`  Firecrawl LLM extract on: ${url}`);
-  const entry = { url, label, at: new Date().toISOString() };
+// ---------- Firecrawl call ----------
+
+async function firecrawlExtract(src) {
+  const { url, label, mode } = src;
+  const schema = SCHEMA_BY_MODE[mode] || NEWS_SCHEMA;
+  console.log(`  Firecrawl LLM extract on: ${url}   (${mode})`);
+  const entry = { url, label, mode, at: new Date().toISOString() };
   try {
     const r = await fetch(FIRECRAWL_URL, {
       method: "POST",
-      headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         url,
         formats: ["json"],
-        jsonOptions: { schema: SCHEMA },
+        jsonOptions: { schema },
         onlyMainContent: false,
       }),
     });
@@ -133,61 +153,40 @@ async function firecrawlExtract(url, label) {
     entry.outcome = "ok";
     entry.upstream_status = data?.metadata?.statusCode || null;
     entry.total_extracted_raw = items.length;
-
-    // Hallucination guard #1: Firecrawl says it succeeded but the
-    // upstream URL returned a 4xx/5xx. The LLM was extracting names
-    // from SEBI's HTML 404 page in the previous run and inventing
-    // placeholders like "XYZ Industries Ltd." to satisfy the schema.
-    // Reject the whole response when upstream is not 200.
+    // Hallucination guard #1: upstream not 200 → distrust the LLM.
     if (entry.upstream_status && entry.upstream_status !== 200) {
       entry.dropped_reason = `upstream_status=${entry.upstream_status} — refusing LLM output to avoid hallucination`;
       items = [];
     }
-
-    // Hallucination guard #2: classic placeholder patterns. The LLM has
-    // been observed to emit "XYZ Industries", "ABC Fintech", "LMN Corp"
-    // etc. when the page has no real content. Strip any entity whose
-    // name reads like a textbook example.
-    const PLACEHOLDER = /\b(XYZ|ABC|LMN|PQR|Foo|Bar|Sample|Example|Placeholder)\b/i;
-    const filteredOutPlaceholders = items.filter((it) => PLACEHOLDER.test(String(it.name || "")));
-    if (filteredOutPlaceholders.length) {
-      entry.dropped_placeholders = filteredOutPlaceholders.map((it) => it.name);
-      items = items.filter((it) => !PLACEHOLDER.test(String(it.name || "")));
+    // Hallucination guard #2: placeholder names.
+    const flagged_placeholders = items.filter((it) => PLACEHOLDER_RE.test(String(it.name || "")));
+    if (flagged_placeholders.length) {
+      entry.dropped_placeholders = flagged_placeholders.map((it) => it.name);
+      items = items.filter((it) => !PLACEHOLDER_RE.test(String(it.name || "")));
     }
     entry.total_extracted = items.length;
-
-    // Save BEFORE-filter samples too — when post-filter is 0 this is the
-    // only way to see what the LLM actually extracted and why we
-    // rejected it.
     entry.prefilter_sample = items.slice(0, 15).map((it) => ({
       name: it.name,
       order_type: it.order_type,
       is_listed_entity: it.is_listed_entity,
-      is_active_proceeding: it.is_active_proceeding,
-      snippet: (it.context_snippet || "").slice(0, 150),
+      snippet: (it.headline_snippet || "").slice(0, 150),
     }));
-    // Filter: must be listed + active. Then run the safety net to
-    // drop routine corporate filings the LLM mislabelled as
-    // governance issues (BSE / NSE announcement pages are flooded
-    // with board-meeting / financial-result / dividend filings —
-    // the prior run flagged every single one of them).
-    const dropped = { not_listed: 0, not_active: 0, routine_type: 0, no_sebi_signal: 0 };
+    // Filter: must be listed entity + must contain SEBI signal in snippet.
+    const dropped = { not_listed: 0, no_sebi_signal: 0, no_name: 0 };
     const filtered = items.filter((it) => {
+      if (!it.name || String(it.name).trim().length < 3) { dropped.no_name++; return false; }
       if (it.is_listed_entity === false) { dropped.not_listed++; return false; }
-      if (it.is_active_proceeding === false) { dropped.not_active++; return false; }
-      const type = String(it.order_type || "").trim();
-      const snippet = String(it.context_snippet || "");
-      if (type && ROUTINE_TYPE_RE.test(type)) { dropped.routine_type++; return false; }
-      // The snippet has to mention SEBI / violation / show-cause /
-      // adjudication / etc. — if the LLM couldn't quote SEBI-specific
-      // language from the page, this isn't a real governance flag.
-      if (!SEBI_SIGNAL_RE.test(snippet) && !SEBI_SIGNAL_RE.test(type)) { dropped.no_sebi_signal++; return false; }
+      const snippet = String(it.headline_snippet || "");
+      const orderType = String(it.order_type || "");
+      if (!SEBI_SIGNAL_RE.test(snippet) && !SEBI_SIGNAL_RE.test(orderType)) {
+        dropped.no_sebi_signal++; return false;
+      }
       return true;
     });
     entry.after_filter_count = filtered.length;
     entry.dropped_counts = dropped;
-    entry.sample = filtered.slice(0, 10).map((it) => ({ name: it.name, order_type: it.order_type, snippet: (it.context_snippet || "").slice(0, 100) }));
-    console.log(`    Extracted ${items.length} entities, ${filtered.length} after governance-signal filter (dropped: ${JSON.stringify(dropped)})`);
+    entry.sample = filtered.slice(0, 10).map((it) => ({ name: it.name, order_type: it.order_type, snippet: (it.headline_snippet || "").slice(0, 120) }));
+    console.log(`    Extracted ${items.length} entities, ${filtered.length} after filter (dropped: ${JSON.stringify(dropped)})`);
     DEBUG_PER_SOURCE.push(entry);
     return filtered;
   } catch (err) {
@@ -199,20 +198,7 @@ async function firecrawlExtract(url, label) {
   }
 }
 
-// ---------- Fuzzy name → ticker matcher (same approach as PLI refresh) ----------
-
-function buildNameMap(screener) {
-  const map = new Map();
-  for (const c of screener) {
-    const fullName = String(c.Company || "");
-    const m = String(c["Screener URL"] || "").match(/\/company\/([^/]+)/);
-    if (!m) continue;
-    const ticker = m[1].toUpperCase();
-    const variants = generateNameVariants(fullName);
-    for (const v of variants) map.set(v, ticker);
-  }
-  return map;
-}
+// ---------- Fuzzy name → ticker matcher ----------
 
 function normaliseName(s) {
   return String(s || "")
@@ -227,17 +213,43 @@ function generateNameVariants(name) {
   const out = new Set();
   const n = normaliseName(name);
   if (!n) return out;
-  out.add(n);
-  out.add(n.replace(/\s+/g, ""));
+  out.add(n);                       // full normalised
+  out.add(n.replace(/\s+/g, ""));   // no spaces
   const parts = n.split(/\s+/);
   if (parts.length >= 2) {
     out.add(parts.slice(0, 2).join(" "));
     out.add(parts.slice(0, 2).join(""));
   }
-  if (parts.length >= 3) out.add(parts.slice(0, 3).join(" "));
-  const noSpace = n.replace(/\s+/g, "");
-  if (noSpace.length >= 8) out.add(noSpace.slice(0, 8));
+  if (parts.length >= 3) {
+    out.add(parts.slice(0, 3).join(" "));
+  }
+  // First-word-only prefix for groups like "Adani", "Reliance", "Tata"
+  // when news headlines abbreviate to just the group name. We add this
+  // ONLY when the first word is reasonably distinctive (>= 4 chars).
+  if (parts[0] && parts[0].length >= 4) {
+    out.add(parts[0]);
+  }
   return out;
+}
+
+function buildNameMap(screener) {
+  const map = new Map();
+  // Track which variants were added per name so we can deduplicate
+  // sensibly (don't overwrite a precise match with a loose prefix).
+  for (const c of screener) {
+    const fullName = String(c.Company || "");
+    const m = String(c["Screener URL"] || "").match(/\/company\/([^/]+)/);
+    if (!m) continue;
+    const ticker = m[1].toUpperCase();
+    const variants = generateNameVariants(fullName);
+    for (const v of variants) {
+      // Don't overwrite an existing exact match with a vague one — e.g.,
+      // "adani" alone would otherwise map to whichever Adani entity
+      // ended up last in the loop. Skip if the variant is already mapped.
+      if (!map.has(v)) map.set(v, ticker);
+    }
+  }
+  return map;
 }
 
 function resolveTicker(rawName, nameMap) {
@@ -248,7 +260,25 @@ function resolveTicker(rawName, nameMap) {
   return null;
 }
 
-// ---------- main ----------
+// ---------- Curated baseline merger ----------
+
+function loadCurated() {
+  if (!existsSync(CURATED_PATH)) {
+    console.log("  No curated baseline file at", CURATED_PATH);
+    return [];
+  }
+  try {
+    const j = JSON.parse(readFileSync(CURATED_PATH, "utf8"));
+    const cases = Array.isArray(j.active_cases) ? j.active_cases : [];
+    console.log(`  Loaded ${cases.length} curated active cases.`);
+    return cases;
+  } catch (e) {
+    console.log("  Failed to parse curated file:", e.message);
+    return [];
+  }
+}
+
+// ---------- Output ----------
 
 function writeStub(reason) {
   mkdirSync(dirname(OUT_PATH), { recursive: true });
@@ -259,62 +289,98 @@ function writeStub(reason) {
   }, null, 2) + "\n");
 }
 
+// ---------- main ----------
+
 async function main() {
   console.log("Loading Nifty 500 universe...");
   const screener = JSON.parse(readFileSync(SCREENER_PATH, "utf8"));
   const nameMap = buildNameMap(screener);
-  console.log(`Built ticker map with ${nameMap.size} name variants for ${screener.length} companies.\n`);
+  console.log(`Built ticker map with ${nameMap.size} name variants for ${screener.length} companies.`);
 
-  // Pull entities from every source. We keep ALL entities (not just the
-  // matched ones) for the diagnostic file so we can audit unmatched
-  // candidates later.
+  console.log("\nLoading curated baseline...");
+  const curated = loadCurated();
+
+  // ---- Pull from live sources (if API key present) ----
   const allEntities = [];
-  for (const src of SOURCES) {
-    const items = await firecrawlExtract(src.url, src.label);
-    for (const it of items) allEntities.push({ ...it, _source: src.label, _url: src.url });
-    await sleep(400);
+  if (!API_KEY) {
+    console.log("\nFIRECRAWL_API_KEY not set — skipping live sources, using curated baseline only.");
+  } else {
+    console.log("\nScraping live sources...");
+    for (const src of SOURCES) {
+      const items = await firecrawlExtract(src);
+      for (const it of items) allEntities.push({
+        ...it,
+        _source: src.label,
+        _url: src.url,
+        _origin: "scraper",
+      });
+      await sleep(400);
+    }
+    console.log(`\nTotal live entities collected: ${allEntities.length}`);
   }
 
-  console.log(`\nTotal entities collected across all sources: ${allEntities.length}`);
+  // ---- Merge curated cases into the entity stream ----
+  for (const c of curated) {
+    allEntities.push({
+      name: c.name,
+      order_type: c.order_type,
+      headline_snippet: c.snippet,
+      is_listed_entity: true,
+      _source: c.source_label || "Curated baseline (static/known-sebi-cases.json)",
+      _url: null,
+      _origin: "curated",
+      _explicit_ticker: c.ticker, // honour the curator's ticker mapping
+    });
+  }
 
-  // Match each to NSE 500 ticker; keep the first match per ticker so
-  // the resulting map is deduped. Later mentions of the same company
-  // append to a "mentions" array on the flag entry for audit.
+  // ---- Match to Nifty 500 tickers ----
   const flagged = {};
   const unmatched = [];
   for (const e of allEntities) {
-    const ticker = resolveTicker(e.name, nameMap);
+    // Curated entries carry an explicit ticker — trust the curator.
+    let ticker = e._explicit_ticker || null;
+    if (!ticker) ticker = resolveTicker(e.name, nameMap);
     if (!ticker) {
-      unmatched.push({ name: e.name, type: e.order_type, source: e._source });
+      unmatched.push({ name: e.name, type: e.order_type, source: e._source, origin: e._origin });
       continue;
     }
     if (!flagged[ticker]) {
       flagged[ticker] = {
         primary_name: e.name,
         order_type: e.order_type || null,
-        snippet: e.context_snippet || null,
+        snippet: e.headline_snippet || null,
         source_url: e._url,
         source_label: e._source,
+        origins: new Set(),
         mentions: [],
         first_seen_at: new Date().toISOString(),
       };
     }
+    flagged[ticker].origins.add(e._origin);
     flagged[ticker].mentions.push({
       source: e._source,
+      origin: e._origin,
       order_type: e.order_type || null,
-      snippet: (e.context_snippet || "").slice(0, 200),
+      snippet: (e.headline_snippet || "").slice(0, 200),
     });
   }
+  // Convert origins Set → sorted array for JSON
+  for (const t in flagged) {
+    flagged[t].origins = [...flagged[t].origins].sort();
+  }
 
-  console.log(`Matched ${Object.keys(flagged).length} flagged tickers from ${allEntities.length} entities (${unmatched.length} unmatched).`);
+  console.log(`\nMatched ${Object.keys(flagged).length} flagged tickers from ${allEntities.length} entities (${unmatched.length} unmatched).`);
   if (Object.keys(flagged).length) {
     console.log("Flagged tickers:");
-    Object.entries(flagged).forEach(([t, v]) => console.log(`  ${t.padEnd(15)} — ${v.primary_name} (${v.order_type || "unknown type"})`));
+    Object.entries(flagged).forEach(([t, v]) => {
+      console.log(`  ${t.padEnd(15)} — ${v.primary_name}  [${v.origins.join("+")}]  (${v.order_type || "unknown type"})`);
+    });
   }
 
   const payload = {
     generated_at: new Date().toISOString(),
     source_count: SOURCES.length,
+    curated_baseline_count: curated.length,
     total_entities_seen: allEntities.length,
     flagged_companies: flagged,
     unmatched_sample: unmatched.slice(0, 30),
