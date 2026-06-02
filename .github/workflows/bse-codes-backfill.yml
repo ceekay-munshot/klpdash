@@ -58,6 +58,33 @@ jobs:
           fi
           git commit -m "BSE codes backfill ($(date -u +%Y-%m-%d))"
           for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then break; fi
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+
+      - name: Regenerate to-do list (chain doesn't fire from GITHUB_TOKEN pushes)
+        # GH Actions deliberately doesn't trigger workflow_run when a
+        # workflow's own GITHUB_TOKEN pushes a commit — security feature
+        # to prevent infinite loops. So we explicitly run the to-do
+        # generator here, otherwise the new BSE codes wouldn't get picked
+        # up until tomorrow's daily cron.
+        if: always()
+        run: node screener-test/build-auditor-todo.mjs
+
+      - name: Commit refreshed to-do list
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/auditor-todo.csv
+          if git diff --cached --quiet; then
+            echo "To-do list unchanged."
+            exit 0
+          fi
+          git commit -m "Refresh auditor to-do list (post-backfill, $(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
             if git push origin HEAD:main; then exit 0; fi
             git fetch origin main
             git rebase origin/main || { git rebase --abort; exit 1; }
