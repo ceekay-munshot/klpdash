@@ -1,57 +1,57 @@
 {
-  "generated_at": "2026-06-02T05:08:29.223Z",
+  "generated_at": "2026-06-02T13:04:16.600Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 94.17,
+      "latest": 94,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -12.94,
+      "pct_change_30d": -13.1,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 95.16,
+      "latest": 95.26,
       "latest_unit": "₹/$",
-      "pct_change_30d": 0.27,
+      "pct_change_30d": 0.38,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 16.09,
+      "latest": 15.35,
       "latest_unit": "",
-      "pct_change_30d": -12.85,
+      "pct_change_30d": -16.82,
       "trend": "falling",
       "history_bars": 24
     }
   },
   "economic": {
-    "gdp_yoy": 8.2,
-    "gdp_trending_up": true,
-    "cpi": 4.2,
+    "gdp_yoy": 7.8,
+    "gdp_trending_up": false,
+    "cpi": 3.48,
     "cpi_within_rbi_band": true,
-    "gsec10y": 6.95,
-    "gsec10y_trend": "declining"
+    "gsec10y": 7.02,
+    "gsec10y_trend": "rising"
   },
   "regime": {
     "gov_capex_active": true,
-    "gov_capex_note": "FY26 Union Budget continues large infra capex push (≥₹11L Cr).",
-    "rate_cut_cycle": true,
-    "rate_cut_cycle_note": "RBI in rate-cut cycle after recent MPC meeting.",
+    "gov_capex_note": "Union Budget FY2026-27 (Feb 1, 2026) proposes ₹12.2 lakh crore capex (+9% vs FY26 BE of ₹11.21 lakh crore); GFCF grew 7.6% in H1 FY26 confirming investment momentum continues.",
+    "rate_cut_cycle": false,
+    "rate_cut_cycle_note": "RBI paused easing cycle at 5.25% repo rate; three consecutive holds (Feb 6, Apr 8, Jun 5 decision pending). Cumulative 125 bps eased Feb–Dec 2025. Neutral policy stance maintained; FY27 CPI projected 4.6% limits further near-term cuts.",
     "china_plus_one_active": true,
-    "china_plus_one_note": "Chemicals + electronics manufacturing themes continue benefiting from China+1 reorientation.",
-    "rural_recovery_signal": "good",
-    "rural_recovery_note": "Above-normal monsoon outlook + MSP hike + stable kharif sowing."
+    "china_plus_one_note": "India FY26 merchandise + services exports hit record USD 860 bn (+4.22% YoY), led by electronics and engineering goods; manufacturing FDI +17% YoY in FY26; PLI scheme generating ₹17 lakh crore in incremental production across 14 sectors.",
+    "rural_recovery_signal": "weak",
+    "rural_recovery_note": "IMD updated SW Monsoon 2026 seasonal forecast to 90% of LPA (below normal); 60% probability of deficient season; core monsoon zone rainfall also projected below normal (<94% LPA). Onset over Kerala around June 4, 2026."
   },
   "sentiment": {
     "_note": "Market-wide sentiment signals. FII/DII flow + market breadth are auto-computed by scrape-macro.mjs; these seed values are deliberately neutral so the dashboard never shows an asserted signal before live data is computed.",
     "fii_net_positive_last_20d": "no",
-    "fii_signal_note": "FII net positive in 1 of last 5 reported trading days (auto-computed from rolling daily snapshots).",
+    "fii_signal_note": "FII net positive in 1 of last 6 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": 0.62,
-    "market_breadth_note": "190 advances vs 306 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 1.48,
+    "market_breadth_note": "295 advances vs 199 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 1,
-    "fii_total_days": 5
+    "fii_total_days": 6
   },
   "sector_themes": {
     "infra_push": [
