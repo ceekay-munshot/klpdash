@@ -1,6 +1,7 @@
 {
-  "_note": "Macro context inputs that change slowly (monthly/quarterly). Update these by hand when MPC meets, when monthly CPI releases, when budget signals change, etc. The scraper merges these with daily live values (crude, INR) and writes the combined file to public/data/macro.json.",
+  "_note": "Macro context inputs. The `economic`, `regime`, and `sentiment.put_call_ratio` blocks are auto-updated by the weekly macro-indicators-refresh Claude.ai routine (output → public/data/weekly-macro-refresh.json → validated and merged by macro-merger.yml). The `sector_themes`, `pli_companies`, `renewable_companies`, and `china_plus_one_companies` blocks remain hand-maintained.",
   "_last_manual_update": "2026-05-27",
+  "_last_routine_update": null,
   "economic": {
     "gdp_yoy": 8.2,
     "gdp_trending_up": true,
