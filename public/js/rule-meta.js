@@ -150,7 +150,8 @@ export const META = {
     },
     auditorRemarks: {
       source: () => ({ url: "https://www.bseindia.com/", label: "BSE India — Annual Reports", section: "Independent Auditor's Report section of the latest filed annual report" }),
-      calculation: "Auditor opinions are extracted directly from the company's most recent annual report PDF filed on BSE India. The pipeline runs weekly: (1) public/data/auditor-todo.csv is auto-maintained by the daily auditor-todo-updater workflow — it lists every Nifty 500 company that either has no opinion yet or whose opinion is older than 330 days; (2) a Claude.ai routine reads the to-do list every Sunday at 23:00 IST, opens https://www.bseindia.com/corporates/AnnualReport_New.aspx?scripcd={BSE_CODE} for each company, navigates to the latest annual report PDF, and extracts structured fields (auditor firm, opinion type, opinion date, report year, Emphasis of Matter, key concerns, extraction confidence); (3) the routine opens a PR with the new extractions; (4) on merge, the auditor-merger workflow translates the routine's opinion_type into a rule-compatible string and writes everything to public/data/auditor-opinions.json. The drill-down surfaces the full EoM paragraph and key-concerns text inline.",
+      // Direct extraction from a primary source — no computation, so no Calculation button.
+      calculation: null,
       clientLogic: "PASS if clean unqualified opinion; 2 pts. Any qualification or emphasis-of-matter = 1 pt. Adverse opinion or disclaimer = hard fail.",
       ourLogic: null,
     },
