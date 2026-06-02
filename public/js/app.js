@@ -378,6 +378,7 @@ async function loadTab(tabId) {
         row.insider_net_shares = ins.net_shares; row.insider_net_value = ins.net_value;
         row.insider_buy_shares = ins.buy_shares; row.insider_sell_shares = ins.sell_shares;
         row.insider_transactions = ins.transactions; row.insider_last_date = ins.last_date;
+        row.insider_pledges_excluded = ins.pledges_excluded || 0;
       } else { row.insider_transactions = 0; }
       row.governance_loaded = governanceLoaded;
       row.governance_flag = ticker && governanceByTicker[ticker] ? governanceByTicker[ticker] : null;
@@ -385,6 +386,12 @@ async function loadTab(tabId) {
       const aud = ticker ? auditorByTicker[ticker] : null;
       row.auditor_opinion = aud?.opinion || null;
       row.auditor_opinion_source = aud?.source || null;
+      row.auditor_firm = aud?.auditor_firm || null;
+      row.auditor_opinion_date = aud?.auditor_opinion_date || null;
+      row.auditor_report_year = aud?.auditor_report_year || null;
+      row.auditor_emphasis_of_matter = aud?.auditor_emphasis_of_matter || null;
+      row.auditor_key_concerns = aud?.auditor_key_concerns || null;
+      row.auditor_confidence = aud?.auditor_confidence || null;
       // Macro sector overlays
       row.in_pli = ticker ? pli.has(ticker) : false;
       row.in_renewable = ticker ? renew.has(ticker) : false;
@@ -471,6 +478,7 @@ async function loadTab(tabId) {
         row.insider_buy_shares  = insiderData.buy_shares;
         row.insider_sell_shares = insiderData.sell_shares;
         row.insider_transactions = insiderData.transactions;
+        row.insider_pledges_excluded = insiderData.pledges_excluded || 0;
         row.insider_last_date   = insiderData.last_date;
       } else {
         row.insider_transactions = 0;
@@ -481,6 +489,12 @@ async function loadTab(tabId) {
       const auditEntry = ticker ? auditorByTicker[ticker] : null;
       row.auditor_opinion = auditEntry?.opinion || null;
       row.auditor_opinion_source = auditEntry?.source || null;
+      row.auditor_firm = auditEntry?.auditor_firm || null;
+      row.auditor_opinion_date = auditEntry?.auditor_opinion_date || null;
+      row.auditor_report_year = auditEntry?.auditor_report_year || null;
+      row.auditor_emphasis_of_matter = auditEntry?.auditor_emphasis_of_matter || null;
+      row.auditor_key_concerns = auditEntry?.auditor_key_concerns || null;
+      row.auditor_confidence = auditEntry?.auditor_confidence || null;
     }
   }
 

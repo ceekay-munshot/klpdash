@@ -14,6 +14,19 @@ const SCREENER = (c) => ({ url: c?.["Screener URL"] || "https://www.screener.in/
 const SCREENER_QUARTERS = (c) => ({ ...SCREENER(c), section: "Company page · Quarters section" });
 const SCREENER_CASHFLOW = (c) => ({ ...SCREENER(c), section: "Company page · Cash Flow statement" });
 const SCREENER_SHAREHOLD = (c) => ({ ...SCREENER(c), section: "Company page · Shareholding Pattern" });
+// For rules whose final value is COMPUTED in our pipeline (not pulled
+// from a public page), we still want to point at the OHLCV source so
+// the user can sanity-check the inputs — but with a label that makes
+// the computed nature obvious instead of misleadingly saying "Yahoo
+// Finance" for a number Yahoo doesn't carry.
+const COMPUTED_FROM_YAHOO = (c) => {
+  const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
+  return {
+    url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS/history` : "https://finance.yahoo.com",
+    label: "Calculated (from Yahoo OHLCV)",
+    section: "Daily closes — see input source on Yahoo Finance",
+  };
+};
 const YAHOO = (c) => {
   const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
   return { url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS` : "https://finance.yahoo.com", label: "Yahoo Finance", section: "Historical daily OHLCV (1Y)" };
@@ -125,9 +138,9 @@ export const META = {
     },
     insider: {
       source: NSE_PIT,
-      calculation: "Pull NSE PIT (Prohibition of Insider Trading) disclosures over last 6 months. Aggregate per ticker: sum(secAcq × CE/PE indicator) for Buy transactions, Sell transactions. Net buy value > 0 = PASS. Estimate insider sell as % of float using (market cap / current price). > 1% of float sold = hard fail per client spec.",
+      calculation: "Pull NSE PIT (Prohibition of Insider Trading) disclosures over the last 180 calendar days. Aggregate per ticker by tdpTransactionType: Buy → buy_shares + buy_value; Sell → sell_shares + sell_value; Pledge / Pledge Release / Invocation → EXCLUDED (collateral movements aren't buy/sell of beneficial ownership). Score by net rupee value when available, else fall back to net shares (NSE PIT often omits execution prices). > 1% of float sold = hard fail per client spec; float estimated from market_cap / cmp.",
       clientLogic: "PASS if net insider buying in last 2 quarters; 1 pt. Insider selling > 1% holding = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Pledge / pledge-release / invocation filings are excluded from the trade count — they show up under Reg 7(2) on NSE's PIT page but they're collateral movements, not buy/sell of beneficial ownership. The cell value reads e.g. '(2 trades · 4 pledges excluded)' so the count matches NSE only after you discount pledges.",
     },
     div: {
       source: SCREENER,
@@ -136,10 +149,11 @@ export const META = {
       ourLogic: null,
     },
     auditorRemarks: {
-      source: () => ({ url: "https://devde.muns.io/agents/run", label: "Muns Auditor Opinion agent", section: "Independent Auditor's Report (latest AR), classified by agent" }),
-      calculation: "Daily after the screener CSV refresh, the 'Auditor opinions refresh' workflow calls the Muns Auditor Opinion agent (user_index 124, agent_library_id 0789b5f8-…) once per company in parallel batches of 50. Per-call payload: stock_ticker, stock_company_name, context_company_name, stock_country=IN, to_date=today, timezone=Asia/Kolkata. The agent's <conclusion> block returns a markdown table — we extract the middle column (Auditor's Opinion) and cache per ticker in public/data/auditor-opinions.json for 30 days. Errors and 'Not disclosed' responses are handled separately (errors retry immediately; 'Not disclosed' is cached as N/A and re-tried after 30 days).",
+      source: () => ({ url: "https://www.bseindia.com/", label: "BSE India — Annual Reports", section: "Independent Auditor's Report section of the latest filed annual report" }),
+      // Direct extraction from a primary source — no computation, so no Calculation button.
+      calculation: null,
       clientLogic: "PASS if clean unqualified opinion; 2 pts. Any qualification or emphasis-of-matter = 1 pt. Adverse opinion or disclaimer = hard fail.",
-      ourLogic: "Live via Muns agent. Opinion text matched against keywords: 'unqualified' → pass (2 pts), 'qualified' / 'emphasis of matter' → partial (1 pt), 'adverse' / 'disclaimer' → hard fail (0 pts). 'Not disclosed' or unmatched text stays N/A so we don't accidentally penalise a clean company the agent couldn't classify.",
+      ourLogic: null,
     },
     governance: {
       source: () => ({ url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI Orders + Press Releases", section: "Auto-refresh via Firecrawl LLM extract (weekly)" }),
@@ -235,8 +249,8 @@ export const META = {
       ourLogic: null,
     },
     beta: {
-      source: YAHOO,
-      calculation: "Compute 1-year (up to 252 trading days) of daily returns for stock and Nifty 500 index. Beta = covariance(stock_returns, index_returns) / variance(index_returns).",
+      source: COMPUTED_FROM_YAHOO,
+      calculation: "Beta = covariance(stock_daily_returns, index_daily_returns) / variance(index_daily_returns). Inputs are 1-year (up to 252 trading days) of daily closes from Yahoo Chart v8 for the stock and Nifty 500 (^CRSLDX). Stock and index series are intersected by calendar DATE before returns are computed — earlier versions used slice(-252) on each series independently, which silently misaligned dates whenever the stock and index histories had different lengths (e.g. recent IPOs with shorter histories). That bug compressed beta toward 0 across the universe; this fix restores it.",
       clientLogic: "PASS if Beta 0.7–1.3 (moderate); 1 pt. Beta > 1.5 = high risk, weight penalty. Beta < 0.5 = drag risk.",
       ourLogic: null,
     },

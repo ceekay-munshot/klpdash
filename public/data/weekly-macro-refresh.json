@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-06-02T12:00:00Z",
+  "source": "Macro indicators refresh — Claude.ai routine",
+  "indicators": {
+    "gdp_yoy": {
+      "value": 7.8,
+      "trending_up": false,
+      "source": "MOSPI Quarterly Estimates of GDP, Q3 FY2025-26 (Oct–Dec 2025), new base year 2022-23 series, released February 27, 2026. Q4 FY26 data scheduled June 7, 2026 — not yet available.",
+      "as_of": "2026-02-27",
+      "confidence": "High"
+    },
+    "cpi": {
+      "value": 3.48,
+      "source": "MOSPI CPI Press Release, April 2026 (provisional); released May 12, 2026. May 2026 data due June 12, 2026.",
+      "as_of": "2026-05-12",
+      "confidence": "High"
+    },
+    "gsec10y": {
+      "value": 7.02,
+      "trend": "rising",
+      "source": "Multiple market data sources (TradingEconomics, WorldGovernmentBonds) reporting India 10Y G-Sec at 7.02% on June 1, 2026. CCIL reported benchmark 10Y yield at 6.95% for May 2026 average; June 1 close at 7.02% reflects geopolitical pressure (Iran conflict) pushing yields ~34 bps higher since March 2026.",
+      "as_of": "2026-06-01",
+      "confidence": "Medium"
+    },
+    "rate_cut_cycle": {
+      "active": false,
+      "note": "RBI paused easing cycle at 5.25% repo rate; three consecutive holds (Feb 6, Apr 8, Jun 5 decision pending). Cumulative 125 bps eased Feb–Dec 2025. Neutral policy stance maintained; FY27 CPI projected 4.6% limits further near-term cuts.",
+      "source": "RBI MPC Resolution, April 8, 2026 (repo rate held at 5.25%, neutral stance); finnovate.in RBI MPC April 2026 analysis.",
+      "as_of": "2026-04-08",
+      "confidence": "High"
+    },
+    "gov_capex": {
+      "active": true,
+      "note": "Union Budget FY2026-27 (Feb 1, 2026) proposes ₹12.2 lakh crore capex (+9% vs FY26 BE of ₹11.21 lakh crore); GFCF grew 7.6% in H1 FY26 confirming investment momentum continues.",
+      "source": "PIB – Union Budget FY2026-27: Strengthening Capital Goods Sector, February 3, 2026 (pib.gov.in, PRID 2222521).",
+      "as_of": "2026-02-03",
+      "confidence": "High"
+    },
+    "china_plus_one": {
+      "active": true,
+      "note": "India FY26 merchandise + services exports hit record USD 860 bn (+4.22% YoY), led by electronics and engineering goods; manufacturing FDI +17% YoY in FY26; PLI scheme generating ₹17 lakh crore in incremental production across 14 sectors.",
+      "source": "PIB Press Release on FY2025-26 Annual Export Data, April 15, 2026 (pib.gov.in, PRID 2252272); InvestIndia PLI scheme performance data.",
+      "as_of": "2026-04-15",
+      "confidence": "High"
+    },
+    "rural_recovery": {
+      "signal": "weak",
+      "note": "IMD updated SW Monsoon 2026 seasonal forecast to 90% of LPA (below normal); 60% probability of deficient season; core monsoon zone rainfall also projected below normal (<94% LPA). Onset over Kerala around June 4, 2026.",
+      "source": "IMD Updated Long Range Forecast for SW Monsoon Seasonal Rainfall (June–Sep 2026), released May 29, 2026 (via PIB PRID 2266479 and IMD X/Twitter).",
+      "as_of": "2026-05-29",
+      "confidence": "High"
+    }
+  },
+  "skipped": [
+    {
+      "indicator": "put_call_ratio",
+      "reason": "NSE option-chain blocked; third-party aggregators (Upstox, OptionX) indicate Nifty PCR in ~0.49–0.59 range on June 2, 2026, but no direct NSE confirmation was possible within fetch limit."
+    }
+  ]
+}

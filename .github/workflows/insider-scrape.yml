@@ -1,8 +1,15 @@
 name: Insider trades scrape
 
 on:
-  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns.
+  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns
+  # and ad-hoc debugging via the watch_tickers input.
   workflow_dispatch:
+    inputs:
+      watch_tickers:
+        description: "Optional: comma-separated tickers to dump every raw API row for, in the workflow logs (debug)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   scrape:
@@ -20,6 +27,12 @@ jobs:
           node-version: "22"
 
       - name: Run insider scraper
+        env:
+          WATCH_TICKERS: ${{ inputs.watch_tickers }}
+          # Firecrawl supplement fills in the last ~30 days that NSE's
+          # public PIT API doesn't surface — see PR #97. Required for
+          # recent disclosures (Sells, Pledges) to appear in the output.
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node screener-test/scrape-insider.mjs
 
       - name: Upload insider data (artifact)
@@ -36,6 +49,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/insider-trades.json
+          # When WATCH_TICKERS was set, the scraper also wrote a debug
+          # dump file with the raw API rows for those tickers — commit
+          # it too so we can audit what NSE returned without needing
+          # to log into GitHub Actions to read the workflow logs.
+          [ -f public/data/insider-debug.json ] && git add public/data/insider-debug.json || true
           if git diff --cached --quiet; then
             echo "No insider data changes to commit."
             exit 0
