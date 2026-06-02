@@ -40,7 +40,7 @@ const NSE_FII = () => ({ url: "https://www.nseindia.com/reports/fii-dii", label:
 const NSE_PIT = () => ({ url: "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading", label: "NSE corporate filings", section: "PIT (Prohibition of Insider Trading) disclosures" });
 const NSE_FNO_LIST = () => ({ url: "https://www.nseindia.com/products-services/equity-derivatives-list-underlyings", label: "NSE F&O eligible list", section: "Stocks with active futures + options" });
 const RBI_DBIE = () => ({ url: "https://dbie.rbi.org.in/", label: "RBI Database on Indian Economy", section: "Macro statistics — GDP, CPI, G-Sec yield" });
-const MOSPI = () => ({ url: "https://www.mospi.gov.in/", label: "MoSPI", section: "Quarterly GDP and monthly CPI releases" });
+const MOSPI = () => ({ url: "https://www.mospi.gov.in/press-release", label: "MoSPI", section: "Quarterly GDP + monthly CPI press releases" });
 const PIB_PLI = () => ({ url: "https://pib.gov.in/PressReleseDetailm.aspx?PRID=1761136", label: "PIB / DPIIT", section: "PLI scheme approved beneficiaries" });
 const MNRE = () => ({ url: "https://mnre.gov.in/", label: "MNRE", section: "Renewable capacity addition tenders + awards" });
 
@@ -156,8 +156,9 @@ export const META = {
       ourLogic: null,
     },
     governance: {
-      source: () => ({ url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI Orders + Press Releases", section: "Auto-refresh via Firecrawl LLM extract (weekly)" }),
-      calculation: "Weekly Firecrawl + LLM extract on 3 SEBI sources (enforcement orders listing, recent activity, press releases). Schema asks the LLM for 'listed Indian companies named as noticees / respondents in ACTIVE proceedings' — explicitly excludes individuals, foreign entities, third-party mentions, and concluded matters. Fuzzy name matcher resolves extracted names to NSE 500 tickers. Result is committed to public/data/governance-flags.json and merged per-ticker on Fundamentals tab load.",
+      source: () => ({ url: "https://www.sebi.gov.in/enforcement/orders.html", label: "SEBI Orders + Press Releases", section: "SEBI enforcement listing — companies named as noticees in active proceedings" }),
+      // Direct lookup against a curated/scraped entity list — no formula.
+      calculation: null,
       clientLogic: "PASS if no active SEBI proceedings or litigation flags; 2 pts. Any active investigation = 0 pts (hard fail).",
       ourLogic: null,
     },
@@ -265,30 +266,34 @@ export const META = {
   macro: {
     infra: {
       source: (c) => ({ url: "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=2003687", label: "PIB / Union Budget", section: "FY26 Budget capex announcement" }),
-      calculation: "Check if company's Broad Industry is in the curated infra-beneficiary list (Cement, Construction, Engineering, Capital Goods, Iron & Steel, Power) AND govt_capex_active flag is true.",
+      // Sector membership check against curated infra-beneficiary list — no formula.
+      calculation: null,
       clientLogic: "PASS if stock is in Capital Goods / Cement / Roads sector with active govt capex; 2 pts. No exposure = 0 pts.",
       ourLogic: null,
     },
     ratecut: {
       source: (c) => ({ url: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx", label: "RBI", section: "Monetary Policy Committee statements" }),
-      calculation: "Check if company's Broad Industry is in rate-sensitive list (Banks, NBFCs, Housing Finance, Realty, Auto) AND rate_cut_cycle flag is true.",
+      // Sector membership check against curated rate-sensitive list — no formula.
+      calculation: null,
       clientLogic: "PASS if sector benefits from falling rates and RBI stance is accommodative; 2 pts. Neutral = 1 pt.",
       ourLogic: null,
     },
     chinaplus1: {
       source: (c) => ({ url: "https://www.dpiit.gov.in/", label: "DPIIT / Ministry of Commerce", section: "PLI scheme + China+1 substitution disclosures" }),
-      calculation: "Primary: company NSE ticker on curated china_plus_one_companies list (~50 names — EMS, specialty chemicals, pharma APIs, bearings, auto components with significant China+1 share gain). Fallback: Broad Industry membership in china_plus_one sector theme (Specialty Chemicals, Pharma, Electric Equipment, Electronics).",
+      // Direct lookup in curated company list + sector fallback — no formula.
+      calculation: null,
       clientLogic: "PASS if company derives > 15% revenue from China+1 substitution or EMS theme; 2 pts.",
       ourLogic: "Hybrid approach. Primary path: curated company list (~50 names with material China+1 / EMS revenue exposure — full 2 pts on match). Fallback path: sector membership for companies not on the explicit list (1 pt partial credit). Closes the previous sector-only proxy.",
     },
     rural: {
       source: (c) => ({ url: "https://nabard.org/", label: "NABARD / IMD", section: "Rural recovery + monsoon indicators" }),
-      calculation: "Check if company's Broad Industry is rural-facing (FMCG, Agro, Tractors, 2-Wheelers) AND rural_recovery_signal is 'good'.",
+      // Sector membership check against curated rural-facing list — no formula.
+      calculation: null,
       clientLogic: "PASS if rural indicators improving (MSP hike, normal monsoon, kharif sowing); 1 pt. Drought risk = 0 pts.",
       ourLogic: null,
     },
     gdp: {
-      source: RBI_DBIE,
+      source: MOSPI,
       calculation: null,
       clientLogic: "PASS if GDP growth ≥ 6.5% and trending up; 2 pts. Below 6% = broad market caution = 1 pt.",
       ourLogic: null,
@@ -319,13 +324,15 @@ export const META = {
     },
     pli: {
       source: PIB_PLI,
-      calculation: "Look up company's NSE ticker in our PLI beneficiary list (~175 names across electronics, pharma, auto, textiles, food processing, steel, batteries, drones — sourced from DPIIT, PIB, and MNRE press releases). List auto-refreshes quarterly via the pli-renewable-refresh workflow: Firecrawl + LLM extract on PIB and DPIIT 'what's new' pages, names matched fuzzily against the NSE 500 universe, new entries appended (purely additive).",
+      // Direct lookup in curated PLI beneficiary list — no formula.
+      calculation: null,
       clientLogic: "PASS if company has approved PLI allocation or confirmed PLI-scheme revenue; 2 pts.",
       ourLogic: null,
     },
     renewable: {
       source: MNRE,
-      calculation: "Look up company's NSE ticker in our renewable-energy participants list (~54 names — solar OEMs, wind OEMs, hydro PSUs, green hydrogen aspirants, power electronics suppliers). List auto-refreshes quarterly via the pli-renewable-refresh workflow: Firecrawl + LLM extract on MNRE 'what's new' and press releases pages, names matched against the NSE 500 universe.",
+      // Direct lookup in curated renewable-energy participants list — no formula.
+      calculation: null,
       clientLogic: "PASS if company is a direct participant in renewable capacity addition pipeline; 2 pts.",
       ourLogic: null,
     },
@@ -334,7 +341,8 @@ export const META = {
   sentiment: {
     vix: {
       source: YAHOO_VIX,
-      calculation: "Read latest India VIX value from Yahoo ^INDIAVIX.",
+      // Direct latest-value read from Yahoo ^INDIAVIX — no formula.
+      calculation: null,
       clientLogic: "PASS if VIX < 15 (low fear, risk-on); 2 pts. VIX 15–20 = caution = 1 pt. VIX > 20 = reduce exposure = 0 pts.",
       ourLogic: null,
     },
@@ -345,8 +353,9 @@ export const META = {
       ourLogic: "We use a daily-snapshot accumulator. Each daily macro scrape adds one row; the rolling 20-day signal stabilises after ~10 daily runs.",
     },
     pcr: {
-      source: () => ({ url: "https://www.nseindia.com/option-chain", label: "NSE option chain", section: "NIFTY weekly + monthly option chain (deferred)" }),
-      calculation: "Sourced via Firecrawl LLM extract from NSE's option-chain HTML page (https://www.nseindia.com/option-chain). Firecrawl renders the JS-heavy page through a headless browser, then passes the rendered DOM to an LLM with a `nifty_pcr` schema to extract the number — robust to layout changes. Yesterday's value is cached and surfaced (marked stale) when today's fetch fails. Refreshed daily.",
+      source: () => ({ url: "https://www.nseindia.com/option-chain", label: "NSE option chain", section: "NIFTY weekly + monthly option chain" }),
+      // Direct extraction from NSE's option-chain page — no formula.
+      calculation: null,
       clientLogic: "PASS if PCR 0.9–1.3 (balanced to bullish); 1 pt. PCR < 0.8 = overly bullish caution. PCR > 1.5 = panic.",
       ourLogic: null,
     },
@@ -376,7 +385,8 @@ export const META = {
     },
     fno: {
       source: NSE_FNO_LIST,
-      calculation: "Check if company's NSE ticker is in our curated F&O eligible list (~200 NSE stocks with active futures + options).",
+      // Direct lookup in NSE's published F&O eligible list — no formula.
+      calculation: null,
       clientLogic: "PASS if stock has active F&O contracts; 1 pt. Non-F&O stock = 0 pts (prefer but not mandatory).",
       ourLogic: null,
     },
