@@ -456,11 +456,38 @@ function ruleGovernanceIssues(c) {
   };
 }
 
-// ---- auditor remarks: Muns Auditor Opinion agent ----
-// Pulls the latest annual report's auditor opinion classification per
-// company from public/data/auditor-opinions.json (refreshed daily by the
-// "Auditor opinions refresh" workflow, which calls the Muns agent in
-// parallel batches and caches each opinion for 30 days).
+// ---- auditor remarks: weekly routine extraction from BSE annual reports ----
+// Reads each company's latest auditor opinion from public/data/auditor-opinions.json.
+// That file is maintained by a weekly Claude.ai routine that processes the
+// auto-generated public/data/auditor-todo.csv, extracts the auditor's report
+// section from each company's latest BSE annual report PDF, and the
+// auditor-merger workflow merges its output back into auditor-opinions.json.
+
+// Substantive-detail suffix appended to the rule's note: auditor firm,
+// report year, opinion date, Emphasis of Matter text, key concerns —
+// drawn from the routine-extracted fields. Returns "" when no useful
+// detail is present (e.g. legacy entries without routine enrichment).
+function buildAuditorDetail(c) {
+  const trunc = (s, n) => (s && s.length > n) ? s.slice(0, n).trimEnd() + "..." : s;
+  const isEmpty = (s) => !s || /^(none|n\/?a|could not extract)$/i.test(String(s).trim());
+  const meta = [];
+  if (c.auditor_report_year) meta.push(c.auditor_report_year);
+  if (c.auditor_firm) meta.push(`audited by ${c.auditor_firm}`);
+  if (c.auditor_opinion_date && !/could not extract/i.test(c.auditor_opinion_date)) {
+    meta.push(`opinion dated ${c.auditor_opinion_date}`);
+  }
+  const parts = [];
+  if (meta.length) parts.push(meta.join(", "));
+  if (!isEmpty(c.auditor_emphasis_of_matter)) {
+    parts.push(`Emphasis of Matter: ${trunc(c.auditor_emphasis_of_matter, 280)}`);
+  }
+  if (!isEmpty(c.auditor_key_concerns)) {
+    parts.push(`Key concerns: ${trunc(c.auditor_key_concerns, 280)}`);
+  }
+  // Strip a trailing period/ellipsis from each part so the joiner doesn't double-punctuate.
+  return parts.length ? ` ${parts.map((p) => p.replace(/[.…]+\s*$/, "")).join(". ")}.` : "";
+}
+
 function ruleAuditorOpinion(c) {
   if (!c?.auditor_opinions_loaded) {
     return naWithReason(c, "auditorRemarks", 2);
@@ -469,29 +496,30 @@ function ruleAuditorOpinion(c) {
   const src = c.auditor_opinion_source;
   if (!op) {
     return { points: 0, max: 2, status: "na", value: "—",
-      note: "Most recent annual report's auditor opinion not disclosed by the agent — will retry on next 30-day refresh cycle." };
+      note: "Latest auditor opinion not yet extracted — company is queued in auditor-todo.csv and will be processed by the next weekly routine run." };
   }
   const opLower = String(op).toLowerCase();
-  // "Not disclosed" / "Not provided" / similar non-answers → N/A (cached
-  // for 30 days so we don't spam the API, but rendered as pending).
+  // "Not disclosed" / "Not provided" / similar non-answers → N/A. Company stays
+  // on the auto-maintained to-do list and the routine retries each Sunday.
   if (/\bnot\s+(disclosed|provided|available|stated|known|reported|specified|mentioned)\b|^n\/?a$|^unknown$|^none$/.test(opLower)) {
     return { points: 0, max: 2, status: "na", value: op,
-      note: "Auditor opinion not disclosed for this company in the agent's source set — will retry on next 30-day refresh cycle." };
+      note: "Auditor opinion not disclosed in the latest annual report — routine will retry on next weekly run." };
   }
+  const detail = buildAuditorDetail(c);
   // Adverse opinion or disclaimer → hard fail per client framework.
   if (/\b(adverse|disclaimer)\b/.test(opLower)) {
     return { points: 0, max: 2, status: "hard_fail", value: op,
-      note: `${op} per the most recent annual report. Hard fail per client framework.${src ? ` Source: ${src}` : ""}` };
+      note: `${op} per the most recent annual report. Hard fail per client framework.${detail}${src ? ` Source: ${src}` : ""}` };
   }
   // Qualified opinion or emphasis-of-matter → 1 pt partial.
   if (/\bqualified\b|emphasis[- ]of[- ]matter|emphasis matter/.test(opLower) && !/un\s*-?\s*qualified/.test(opLower)) {
     return { points: 1, max: 2, status: "partial", value: op,
-      note: `${op} flagged in the most recent annual report — 1 pt per client framework (qualification or emphasis-of-matter).${src ? ` Source: ${src}` : ""}` };
+      note: `${op} flagged in the most recent annual report — 1 pt per client framework (qualification or emphasis-of-matter).${detail}${src ? ` Source: ${src}` : ""}` };
   }
   // Unqualified opinion → full 2 pts.
   if (/\bunqualified\b|\bclean\b/.test(opLower)) {
     return { points: 2, max: 2, status: "pass", value: op,
-      note: `Clean ${op.toLowerCase().includes("unqualified") ? "unqualified opinion" : op} from the most recent annual report.${src ? ` Source: ${src}` : ""}` };
+      note: `Clean ${op.toLowerCase().includes("unqualified") ? "unqualified opinion" : op} from the most recent annual report.${detail}${src ? ` Source: ${src}` : ""}` };
   }
   // Anything else: keep as N/A so we don't accidentally penalise a
   // misclassified-but-clean opinion.
