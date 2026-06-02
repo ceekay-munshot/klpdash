@@ -21,7 +21,7 @@ on:
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90       # 3s throttle × 119 + cool-downs = up to ~60 min
     permissions:
       contents: write
     steps:
@@ -36,6 +36,10 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run BSE code backfill
+        # continue-on-error so even a partial run (cancelled / timed out)
+        # still hits the commit step and saves whatever progress the
+        # scraper checkpointed to disk.
+        continue-on-error: true
         env:
           SCREENER_EMAIL: ${{ secrets.SCREENER_EMAIL }}
           SCREENER_PASSWORD: ${{ secrets.SCREENER_PASSWORD }}
@@ -43,6 +47,7 @@ jobs:
         run: node screener-test/scrape-bse-codes-backfill.mjs
 
       - name: Commit supplement file
+        if: always()    # commit even when the scrape step partially failed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
