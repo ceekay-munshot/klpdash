@@ -38,7 +38,13 @@ const CONFIGS = {
     },
     drillHeaderStats: (c) => [
       { label: "Market Cap", main: c["Market Cap"] || "—", sub: `CMP ${c["Current Price"] || "—"}` },
-      { label: "P/E · D/E",  main: `${c["Stock P/E"] || "—"} · ${c["Debt to equity"] || "—"}`, sub: `ROCE ${c["ROCE"] || "—"}` },
+      { label: "Valuation & Returns",
+        metrics: [
+          { name: "P/E",  value: c["Stock P/E"]       || "—" },
+          { name: "D/E",  value: c["Debt to equity"]  || "—" },
+          { name: "ROCE", value: c["ROCE"]            || "—" },
+        ],
+        sub: `Capital efficiency snapshot` },
     ],
   },
   macro: {
@@ -132,8 +138,13 @@ const CONFIGS = {
     drillHeaderStats: (c) => [
       { label: "CMP · 52W High", main: c.cmp ? "₹" + Math.round(c.cmp).toLocaleString("en-IN") : "—",
         sub: c.high_52w ? `52W ₹${Math.round(c.high_52w).toLocaleString("en-IN")}` : "" },
-      { label: "RSI · ADX · Beta", main: `${c.rsi14 ?? "—"} · ${c.adx14 ?? "—"} · ${c.beta_1y ?? "—"}`,
-        sub: c.relative_strength_6m == null ? "" : `RS 6M ${(c.relative_strength_6m * 100).toFixed(1)}%` },
+      { label: "Momentum & Risk",
+        metrics: [
+          { name: "RSI",  value: c.rsi14 ?? "—" },
+          { name: "ADX",  value: c.adx14 ?? "—" },
+          { name: "β",    value: c.beta_1y ?? "—" },
+        ],
+        sub: c.relative_strength_6m == null ? "" : `6M relative strength ${(c.relative_strength_6m * 100).toFixed(1)}% vs Nifty 500` },
     ],
   },
   composite: {
@@ -1012,7 +1023,16 @@ function openDrillDown(s) {
         ${headerStats.map((hs) => `
           <div class="bg-slate-50 rounded-lg p-3">
             <div class="text-xs text-slate-500 font-medium">${escapeHtml(hs.label)}</div>
-            <div class="text-base font-bold text-slate-900 truncate">${escapeHtml(hs.main)}</div>
+            ${hs.metrics ? `
+              <div class="grid grid-cols-${hs.metrics.length} gap-1 mt-1">
+                ${hs.metrics.map((m) => `
+                  <div>
+                    <div class="text-[9px] text-slate-400 uppercase tracking-wider">${escapeHtml(m.name)}</div>
+                    <div class="text-base font-bold text-slate-900 leading-tight">${escapeHtml(String(m.value))}</div>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<div class="text-base font-bold text-slate-900 truncate">${escapeHtml(hs.main || "")}</div>`}
             <div class="text-xs text-slate-500 truncate">${escapeHtml(hs.sub || "")}</div>
           </div>
         `).join("")}
