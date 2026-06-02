@@ -456,11 +456,12 @@ function ruleGovernanceIssues(c) {
   };
 }
 
-// ---- auditor remarks: Muns Auditor Opinion agent ----
-// Pulls the latest annual report's auditor opinion classification per
-// company from public/data/auditor-opinions.json (refreshed daily by the
-// "Auditor opinions refresh" workflow, which calls the Muns agent in
-// parallel batches and caches each opinion for 30 days).
+// ---- auditor remarks: weekly routine extraction from BSE annual reports ----
+// Reads each company's latest auditor opinion from public/data/auditor-opinions.json.
+// That file is maintained by a weekly Claude.ai routine that processes the
+// auto-generated public/data/auditor-todo.csv, extracts the auditor's report
+// section from each company's latest BSE annual report PDF, and the
+// auditor-merger workflow merges its output back into auditor-opinions.json.
 
 // Substantive-detail suffix appended to the rule's note: auditor firm,
 // report year, opinion date, Emphasis of Matter text, key concerns —
@@ -495,14 +496,14 @@ function ruleAuditorOpinion(c) {
   const src = c.auditor_opinion_source;
   if (!op) {
     return { points: 0, max: 2, status: "na", value: "—",
-      note: "Most recent annual report's auditor opinion not disclosed by the agent — will retry on next 30-day refresh cycle." };
+      note: "Latest auditor opinion not yet extracted — company is queued in auditor-todo.csv and will be processed by the next weekly routine run." };
   }
   const opLower = String(op).toLowerCase();
-  // "Not disclosed" / "Not provided" / similar non-answers → N/A (cached
-  // for 30 days so we don't spam the API, but rendered as pending).
+  // "Not disclosed" / "Not provided" / similar non-answers → N/A. Company stays
+  // on the auto-maintained to-do list and the routine retries each Sunday.
   if (/\bnot\s+(disclosed|provided|available|stated|known|reported|specified|mentioned)\b|^n\/?a$|^unknown$|^none$/.test(opLower)) {
     return { points: 0, max: 2, status: "na", value: op,
-      note: "Auditor opinion not disclosed for this company in the agent's source set — will retry on next 30-day refresh cycle." };
+      note: "Auditor opinion not disclosed in the latest annual report — routine will retry on next weekly run." };
   }
   const detail = buildAuditorDetail(c);
   // Adverse opinion or disclaimer → hard fail per client framework.
