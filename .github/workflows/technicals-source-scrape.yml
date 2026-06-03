@@ -1,0 +1,61 @@
+name: Technicals source scrape (TradingView via Firecrawl)
+
+# Scrapes per-company technical indicators (RSI, MACD, ADX, ATR, MAs) from
+# TradingView so our dashboard values match what an analyst sees on their
+# screen. Falls back to OHLCV-calculated values in tech-scoring.js for any
+# company / indicator the source page doesn't expose.
+#
+# Initial batch: TECHNICALS_SOURCE_BATCH=25 top-SPIP companies per run.
+# Cron fires daily 07:45 IST after revenue-mix TODO regeneration (07:15)
+# so the priority order is freshly computed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: "Number of companies to scrape this run (default 25)"
+        required: false
+        default: "25"
+  schedule:
+    # 02:15 UTC = 07:45 IST — after revenue-mix TODO regen + after Yahoo
+    # OHLCV scrape in daily-refresh, so we have CMP for sanity checks.
+    - cron: "15 2 * * *"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Run technicals source scraper
+        continue-on-error: true  # Don't blow up other workflows if Firecrawl times out
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          TECHNICALS_SOURCE_BATCH: ${{ inputs.batch_size || '25' }}
+          TECHNICALS_SOURCE_THROTTLE: "1500"
+        run: node screener-test/scrape-technicals-source.mjs
+
+      - name: Commit refreshed technicals-source.json
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/technicals-source.json
+          if git diff --cached --quiet; then
+            echo "No technicals-source changes to commit."
+            exit 0
+          fi
+          git commit -m "Technicals source refresh ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          exit 1

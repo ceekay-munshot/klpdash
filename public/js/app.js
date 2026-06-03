@@ -619,6 +619,26 @@ async function loadTab(tabId) {
       const atrHistory = await fetch("data/atr-history.json").then((r) => r.json());
       for (const row of rows) if (row.ticker && atrHistory[row.ticker]) row.atr_history = atrHistory[row.ticker];
     } catch { /* file may not exist yet — accumulator will populate over days */ }
+
+    // Per-company source values from TradingView (scrape-technicals-source.mjs).
+    // When available for a ticker, we silently overwrite the OHLCV-derived
+    // indicator values so the dashboard shows what an analyst would see on
+    // TradingView. Missing tickers keep their calculated values.
+    try {
+      const src = await fetch("data/technicals-source.json").then((r) => r.json());
+      const bySlug = src?.companies || {};
+      for (const row of rows) {
+        const s = row.ticker && bySlug[row.ticker.toUpperCase()];
+        if (!s) continue;
+        const o = s.oscillators || {};
+        const ma = s.moving_averages || {};
+        if (o.rsi_14   != null) row.rsi14  = o.rsi_14;
+        if (o.adx_14   != null) row.adx14  = o.adx_14;
+        if (ma.ema_50  != null) row.ema50  = ma.ema_50;
+        if (ma.sma_50  != null) row.sma50  = ma.sma_50;
+        if (ma.sma_200 != null) row.sma200 = ma.sma_200;
+      }
+    } catch { /* source file may not exist yet */ }
   }
 
   const scored = rows.map(c.score).sort((a, b) => b.totalPoints - a.totalPoints);
