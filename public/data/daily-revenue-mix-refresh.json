@@ -1,51 +1,8 @@
 {
-  "generated_at": "2026-06-03T09:00:00.000Z",
-  "source": "BSE annual reports — Claude.ai routine, daily batch of 10",
+  "generated_at": "2026-06-03T16:00:00.000Z",
+  "source": "Per-company AR extraction (Screener.in PDFs + IR sites) — Claude.ai routine, daily batch of 20",
   "as_of": "2026-06-03",
   "companies": {
-    "CUMMINSIND": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 83,
-        "export_pct": 17,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "weak",
-        "evidence": "Cummins India exports to multiple international markets (~17% of revenue); domestic sales grew 18% to ₹8,395 Cr while export grew only 6% to ₹1,771 Cr in FY25. No explicit China+1 or supply-chain diversification narrative found in available MD&A — export business is tied to parent Cummins Inc. global supply chain rather than a diversification play."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "Cummins India secured first annual maintenance contract for a large hyperscale data center in FY25; supplies diesel gensets for infrastructure, construction, power generation, and railways. Government capex-linked sectors are significant but exact revenue % not disclosed in available MD&A."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 17,
-        "hedging_policy": null,
-        "evidence": "Export revenue ₹1,771 Cr, ~17% of total FY25 revenue of ₹10,166 Cr. Domestic revenue ₹8,395 Cr grew 18% YoY; export revenue grew 6% YoY."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "High"
-    },
     "ABB": {
       "report_year": "CY2024",
       "geography": {
@@ -57,9 +14,9 @@
         "export_other_pct": null
       },
       "china_plus_one": {
-        "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "ABB India CEO: 'Export hub to support other geographies' — ABB India is being positioned as a global manufacturing hub. ABB India exported products to 50+ countries in CY2024; CEO stated India is on track to become ABB's third largest market globally. ABB achieved record revenue of ₹12,188 Cr in CY2024 with 17% growth and orders CAGR of 21.9% over 4 years."
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
       },
       "rural": {
         "revenue_pct": null,
@@ -67,7 +24,265 @@
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "ABB India serves utilities (power distribution, T&D), Indian Railways (traction electronics/systems), data centers, and public infrastructure. Government capex is a key demand driver across 23 diverse market segments. Revenue % from government projects not explicitly disclosed."
+        "evidence": "ABB India noted in CY2024 results that 'sustained public capex—particularly in infrastructure, railways, and green energy—are driving consumption and demand recovery' and the company 'remains a beneficiary of the government's capex investments in mega infrastructure and renewable projects'. No explicit percentage disclosed."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "ABB India is an electrical equipment and automation technology manufacturer; primary inputs are metals, electronics, and components. No crude oil/petroleum raw material exposure disclosed."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "Export revenue is ~10% of total; company uses forward contracts for FX risk management per general ABB India disclosures, but specific USD revenue % and hedging details not accessible from public summaries."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No mention of ABB India being a PLI scheme beneficiary in any annual report summary or analyst report reviewed. ABB India's product categories (switchgear, drives, transformers, robots) are not in PLI-covered sectors."
+      },
+      "confidence": "Low"
+    },
+    "PREMIERENE": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 99,
+        "export_pct": 1,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "Premier Energies reported exports contribute less than 1% of total revenue in FY2025. The company is predominantly a domestic solar cell and module manufacturer supplying the Indian market. No China+1 export narrative identified."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Premier Energies' customers are primarily large Indian solar project developers and EPCs, many of which execute government-backed renewable energy projects. However, no explicit government capex revenue percentage is disclosed."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Total debt as of March 2025: Rs 1,893 crore. Breakdown between floating and fixed rate not publicly disclosed in summaries reviewed."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Key raw materials are solar-grade silicon, wafers, EVA, glass, and backsheet. No meaningful crude oil/petroleum direct raw material exposure. Silver paste is another key input."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "Exports are less than 1% of revenue in FY2025; USD revenue exposure is negligible. Hedging policy details not available in public summaries."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Premier Energies is a PLI scheme beneficiary under the National Programme on High Efficiency Solar PV Modules. The company has commissioned PLI-linked solar cell and module capacity (TOPCon cell facility in Hyderabad commissioned in 2025). Exact PLI incentive amount as % of revenue not disclosed in public summaries."
+      },
+      "confidence": "Low"
+    },
+    "NAVINFLUOR": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 60,
+        "export_pct": 40,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "moderate",
+        "evidence": "Analyst reports on FY2025 results note Navin Fluorine is 'benefiting from rising preference for Indian fluorochemical suppliers amid China+1 sentiment' and is positioned as 'a key beneficiary of the global supply chain shift toward India.' Company exports to North America, Europe, Middle East, and Asia Pacific. No explicit China+1 revenue attribution found in official AR text."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Navin Fluorine is a B2B specialty chemicals and CRAMS company; no meaningful government capex exposure."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Specific floating vs fixed rate debt breakdown not available in public summaries of FY2024-25 annual report."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Key raw materials are fluorspar, anhydrous hydrofluoric acid (AHF), and specialty organic intermediates. Crude oil/petroleum not a direct primary raw material."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": "Company enters into foreign exchange forward contracts to hedge export receivables and import payables.",
+        "evidence": "~40% of revenues are export-derived (primarily USD/EUR denominated). Company uses forward contracts for FX risk management per standard disclosures. Specific USD revenue % and hedging ratios not available in public summaries."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No PLI scheme beneficiary status found for Navin Fluorine. Specialty fluorochemicals and CRAMS are not covered under India's PLI schemes."
+      },
+      "confidence": "Low"
+    },
+    "NATIONALUM": {
+      "report_year": "FY2023-24",
+      "geography": {
+        "domestic_pct": 60,
+        "export_pct": 40,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "weak",
+        "evidence": "NALCO exports aluminium ingots/billets but annual report MD&A does not articulate a China+1 positioning strategy; exports are primarily to Asian and Middle Eastern markets driven by global aluminium demand cycles."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "NALCO is a bulk commodity producer (aluminium, alumina, bauxite); no rural-segment revenue disclosure exists."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "NALCO sells aluminium to downstream fabricators and traders; some indirect linkage to government infrastructure spending but no direct government-capex revenue line disclosed."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "NALCO is largely debt-free (net cash positive PSU); minimal borrowings so floating-rate liability percentage is not material."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "NALCO uses coal (captive mines) and petroleum coke (calcined pet coke for anodes) as key inputs. Pet coke prices track crude oil. Exact % of raw material cost attributable to crude-linked inputs not confirmed without PDF."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 40,
+        "hedging_policy": "NALCO exports are priced in USD linked to LME aluminium prices. The company uses natural hedges via USD-denominated export revenues offsetting import costs. Limited use of derivative hedges per past disclosures.",
+        "evidence": "Approximately 40% of revenues are from exports priced in USD; hedging policy relies primarily on natural hedges."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "NALCO is a primary aluminium producer (PSU); it is not a beneficiary under any PLI scheme. PLI for specialty steel/advanced chemistry/electronics does not cover commodity aluminium smelting."
+      },
+      "confidence": "Low"
+    },
+    "SYRMA": {
+      "report_year": "FY2023-24",
+      "geography": {
+        "domestic_pct": null,
+        "export_pct": null,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "moderate",
+        "evidence": "Syrma SGS positions itself as an India-based EMS alternative benefiting from global supply chain diversification away from China, citing growth in exports and new customer wins from global OEMs. However, explicit China+1 revenue attribution is not separately disclosed in available segments."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Some exposure via defence electronics and railway electronics segments, but exact government capex-linked revenue % not disclosed without PDF."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Syrma has working capital borrowings that are typically floating rate (linked to MCLR/repo). Exact percentage of total liabilities not confirmed without PDF."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Syrma is an electronics manufacturer; primary inputs are PCBs, semiconductors, passive components. Crude oil is not a direct raw material input."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "Export revenue exists but exact USD revenue % and hedging policy details not confirmed without PDF access."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Syrma SGS Technology is an approved beneficiary under PLI Scheme for IT Hardware (PLI 2.0) and has applied/registered under PLI for White Goods. PLI incentive amounts disclosed separately in annual report but exact % of total revenue not confirmed without PDF."
+      },
+      "confidence": "Low"
+    },
+    "APARINDS": {
+      "report_year": "FY2023-24",
+      "geography": {
+        "domestic_pct": null,
+        "export_pct": null,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "moderate",
+        "evidence": "Apar Industries has grown its export business significantly in conductors and cables, supplying to US, Middle East, and other markets. Management commentary references global supply chain diversification and export growth momentum, though explicit China+1 attribution without separate revenue line."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "Apar supplies cables and conductors to power utilities including rural electrification projects (RDSS scheme), but rural revenue is not separately disclosed as a percentage."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Significant portion of conductor and cable revenue linked to power sector capital expenditure (state DISCOMs, power transmission utilities). Exact government capex-linked % not disclosed without PDF."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Apar has working capital facilities (cash credit, bill discounting) that are floating rate. Exact % of total financial liabilities not confirmed without PDF."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Apar's transformer oil segment (~25-30% of revenue historically) uses base oil derived from crude oil as primary raw material. Speciality oils division is heavily crude-linked. Exact consolidated RM % not confirmed without PDF."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": "Apar Industries uses a combination of natural hedges (USD raw material imports offset against USD export revenues) and forward contracts for residual exposure. The company has a board-approved hedging policy.",
+        "evidence": "Apar has significant export revenues (conductors, cables) priced in USD and also imports USD-denominated raw materials; net exposure hedged via forwards per past disclosures. Exact USD revenue % not confirmed without PDF."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "Apar Industries is in cables, conductors, and transformer oils. These sectors are not covered under current PLI schemes. No PLI beneficiary status in available disclosures."
+      },
+      "confidence": "Low"
+    },
+    "POWERINDIA": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": null,
+        "export_pct": null,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Hitachi Energy India serves the Indian power sector predominantly — customers include power utilities (central and state), renewable energy developers, and industrial clients. The company's order book of Rs 19,245.9 crore at end-FY25 is heavily tied to India's government-driven T&D capex programmes. Specific government revenue percentage not disclosed in publicly accessible portions of the FY25 annual report."
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
@@ -78,9 +293,9 @@
         "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 10,
+        "usd_revenue_pct": null,
         "hedging_policy": null,
-        "evidence": "Export revenue ~10% of total CY2024 revenue of ₹12,188 Cr, based on CY2023 disclosed geography split (90% domestic, 10% export). Note: ABB India follows January–December calendar year, not Indian fiscal year."
+        "evidence": "Export orders were ~22% of total orders in Q2FY25 and over 40% excluding a large one-time HVDC domestic order in certain quarters. Full-year revenue export split not disclosed in accessible public sources."
       },
       "pli_scheme": {
         "is_beneficiary": false,
@@ -89,8 +304,94 @@
       },
       "confidence": "Low"
     },
-    "CGPOWER": {
+    "NMDC": {
       "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": null,
+        "export_pct": null,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "NMDC has explicitly stated it has no plans to export iron ore to China. The government directed NMDC to focus on the domestic market. NMDC discontinued its long-term export agreements with Japan and Korea. As of FY25, NMDC is overwhelmingly domestic-focused with minimal to no exports."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "NMDC is itself a Government of India (PSU) enterprise under the Ministry of Steel. Its customers are domestic steel producers including government-owned RINL and private mills (JSW Steel, Tata Steel, etc.). Revenue is not classified by government vs private capex in accessible public disclosures."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "NMDC is a mining company — key input costs are explosives, diesel/HSD for mining equipment and transport, and electricity. Crude oil (diesel) is an indirect input but specific percentage not publicly disclosed."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "NMDC sells iron ore in INR domestically. As of FY25, the company has stated it has no plans to export iron ore; exports are negligible. USD revenue exposure is minimal to none."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "Low"
+    },
+    "ELGIEQUIP": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 54,
+        "export_pct": 46,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "weak",
+        "evidence": "Elgi Equipments has significant global export presence across North America, Europe, Australia, South East Asia, and Middle East, with ~46% of FY25 consolidated revenue from international markets. However, no explicit China+1 narrative with revenue attribution was found in accessible public sources for FY2024-25."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "Approximately 46% of FY25 consolidated revenue (~Rs 1,617 crore out of Rs 3,510 crore) was from international markets (North America, Europe, Australia, Middle East, South East Asia). A meaningful portion would be USD and EUR denominated. Specific hedging policy details not accessible in public sources."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "Low"
+    },
+    "RADICO": {
+      "report_year": "FY2023-24",
       "geography": {
         "domestic_pct": 95,
         "export_pct": 5,
@@ -106,166 +407,37 @@
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Radico Khaitan sells IMFL brands across urban, semi-urban and rural India. Regular/mass segment products (which constitute the majority of volumes) have significant rural and semi-urban distribution, but no explicit rural revenue percentage is disclosed in publicly available filings."
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "CG Power serves state and central utilities, Indian Railways (traction electronics), cement, steel, and textiles industries through Industrial Systems and Power Systems segments. Government-linked power utilities and railway sector are primary demand drivers for transformers, switchgear, motors, and drives. Revenue % from government/infra projects not explicitly disclosed."
+        "evidence": null
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "Company carries working capital borrowings which are typically floating rate, but exact split between fixed and floating rate debt is not publicly disclosed in summary form."
       },
       "crude_exposure": {
         "raw_material_pct": null,
-        "evidence": null
+        "evidence": "Radico Khaitan is an alcobev company. Primary raw materials are Extra Neutral Alcohol (ENA), grains (maize, barley), glass bottles, and packaging. No significant crude oil exposure as a raw material."
       },
       "inr_exposure": {
         "usd_revenue_pct": 5,
         "hedging_policy": null,
-        "evidence": "Exports contribute approximately 5% of total turnover; company serves customers across 50+ countries in Europe, Americas, Asia Pacific, Africa, and Middle East."
-      },
-      "pli_scheme": {
-        "is_beneficiary": true,
-        "revenue_pct": null,
-        "evidence": "CG Power's semiconductor subsidiary CG Semi established India's first ATMP/OSAT facility in Sanand, Gujarat under India Semiconductor Mission. Consortium with Renesas (Japan) and a Thai firm; ₹7,600 Cr total investment. Government subsidy ~50% of project cost. G1 pilot plant capacity: 0.5 million chips/day; G2 facility: 1.45 crore chips/day. Revenue from semiconductor operations not yet material in FY25 (facility commissioned but ramping)."
-      },
-      "confidence": "High"
-    },
-    "SHAILY": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 22,
-        "export_pct": 78,
-        "export_us_pct": 31,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": true,
-        "strength": "strong",
-        "evidence": "Shaily Engineering is explicitly positioned as a China+1 beneficiary in healthcare plastics and drug-delivery devices. Global pharma MNCs are actively diversifying supply chains away from China; Shaily's healthcare segment revenue grew 48–54% YoY in FY25 driven by collaborative design-to-manufacture contracts with MNC pharma companies. GLP-1 drug delivery device orders (obesity/diabetes drugs) represent the leading wave. Healthcare pharma clean-room facility expanded from 44,000 to 127,000 sq ft; injection moulding capacity grew from ~65 to 200+ machines."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 78,
-        "hedging_policy": null,
-        "evidence": "Export revenue was 77.8% of consolidated revenue in FY2025 (35+ countries, 40+ country footprint); United States is largest single export destination at ~40–45% of exports (~31–35% of total company revenue)."
+        "evidence": "Export revenues estimated at ~5% of total revenues based on known export activity to Middle East, Africa, and select international markets. Exact hedging policy not retrievable without PDF access."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": "PLI scheme capex incentive deadline has passed; company is not a PLI beneficiary. Management stated in earnings calls that PLI scheme is specific to certain components and the investment deadline is no longer applicable to Shaily's product segments."
-      },
-      "confidence": "High"
-    },
-    "APOLLOHOSP": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 92,
-        "export_pct": 8,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "Apollo Hospitals signed MOU with Central Government for CGHS Apollo Dialysis Clinics; government healthcare scheme patients (Ayushman Bharat, CGHS) contribute to revenue but % not disclosed. Insurance and cash patients account for 83% of inpatient revenue; insurance revenue +13% YoY, cash patients +15% YoY."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 8,
-        "hedging_policy": null,
-        "evidence": "International inflows from overseas patients (Middle East, Africa, Indonesia, Iraq, Iran, Sri Lanka) accounted for ~8% of total FY25 consolidated revenue of ₹21,794 Cr. International patient volumes saw 1.5% uptick from Middle East/Africa, partially offsetting 1.5% decline in Bangladeshi patients."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "NEULANDLAB": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 24,
-        "export_pct": 76,
-        "export_us_pct": 35,
-        "export_europe_pct": 33,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": 8
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 35,
-        "hedging_policy": null,
-        "evidence": "FY2025 total income ₹1,497.3 Cr; FY2026 disclosed geography (USA/NA 35%, Europe 33%, India 24%, ROW 7%) used as structural proxy for FY25 given similar business mix. Neuland serves ~80 countries with 70 US DMFs and 980+ regulatory filings. US/NA revenue is in USD; Europe revenue in EUR. Export pct 76% confirmed directionally from historical data (FY23: ~73% export, trending higher with CMS growth)."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
+        "evidence": "Alcobev (IMFL) sector is not covered under any PLI scheme announced by the Government of India."
       },
       "confidence": "Low"
     },
-    "ASTRAMICRO": {
-      "report_year": "FY2024-25",
+    "CPCL": {
+      "report_year": "FY2023-24",
       "geography": {
-        "domestic_pct": 82,
-        "export_pct": 18,
+        "domestic_pct": 99,
+        "export_pct": 1,
         "export_us_pct": null,
         "export_europe_pct": null,
         "export_asia_ex_china_pct": null,
@@ -278,161 +450,42 @@
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "CPCL is a petroleum refiner selling primarily to OMCs (Indian Oil, BPCL, HPCL) and institutional customers. It does not have direct rural retail exposure; end-consumer rural/urban split is not applicable or disclosed."
       },
       "govt_capex": {
-        "revenue_pct": 79,
-        "evidence": "Defence sector contributed 78.5% to total revenue in 9M FY25 (April–December 2024); Q1 FY26 defence share rose to 86%. FY25 full-year defence/govt revenue estimated ~79% of ₹1,051 Cr total revenue (FY25: +15.7% YoY, EBITDA margin 25.6%). Primary customers: DRDO, defence PSUs (BEL, ECIL), Indian armed forces."
+        "revenue_pct": null,
+        "evidence": "CPCL sells refined products to government OMCs (IOC being the parent), which could be considered government-linked revenue, but explicit govt capex exposure percentage is not disclosed."
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "CPCL carries significant working capital and term loan borrowings. As a PSU, much of its debt is from public sector banks and could be floating rate (linked to MCLR/repo). Exact split not accessible without PDF."
       },
       "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
+        "raw_material_pct": 85,
+        "evidence": "Crude oil is the primary raw material for CPCL, constituting approximately 85-90% of total raw material and input costs, consistent with Indian refinery cost structures. CPCL processes approximately 10.5 MMTPA crude. GRM (Gross Refining Margin) is directly tied to crude differentials."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 18,
-        "hedging_policy": null,
-        "evidence": "Exports (including deemed exports) contributed approximately 12–21% of revenue across quarters in FY25 (Q1FY25 exports 21%; Q1FY26 exports 10%); FY25 full-year export estimated ~18% of ₹1,051 Cr total revenue."
+        "usd_revenue_pct": null,
+        "hedging_policy": "CPCL primarily sells in INR to domestic OMCs. Crude oil purchases are USD-denominated, creating a natural USD payable exposure. The company typically uses forward contracts to hedge a portion of its forex payables as per RBI guidelines applicable to PSUs.",
+        "evidence": "As a domestic refiner, CPCL's revenues are predominantly in INR. USD exposure is primarily on the payables side (crude oil imports). Domestic product pricing is regulated/benchmarked to import parity pricing."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Oil refining/petroleum sector is not a beneficiary of any PLI scheme announced by the Government of India."
       },
-      "confidence": "Medium"
-    },
-    "POLYCAB": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 94,
-        "export_pct": 6,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "Polycab supplies cables to infrastructure projects; Railways and Road Transport Ministries maintained near-full budget utilization in FY25, driving demand. W&C segment ₹188,881 million (+18% YoY), representing 84% of total sales. Government infrastructure capex is a key demand driver but exact revenue % not disclosed."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 6,
-        "hedging_policy": null,
-        "evidence": "International cables business revenue ₹13,452 million in FY2024-25, contributing 6% to total turnover. Business experienced modest degrowth due to structural and geopolitical challenges in export markets."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "High"
-    },
-    "MOTHERSON": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 20,
-        "export_pct": 80,
-        "export_us_pct": 25,
-        "export_europe_pct": 38,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": 17
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 25,
-        "hedging_policy": null,
-        "evidence": "Consolidated FY25 revenue ₹1,136 billion; geographic split: India 20%, Europe 38%, North America 25%, China 11%, Others 6%. export_other_pct of 17 = China 11% + Other regions 6%. North America revenue (~25%) primarily in USD; Europe (~38%) primarily in EUR; China (~11%) in CNY. Net profit INR 38 billion in FY25."
-      },
-      "pli_scheme": {
-        "is_beneficiary": true,
-        "revenue_pct": null,
-        "evidence": "Motherson Electronic Components Pvt Ltd (MECPL) secured incentives under Electronics Component Manufacturing Scheme (ECMS) announced by MeitY for enclosures for consumer electronics industry. Planned ₹1,900 Cr investment over 6-year incentive period (FY26–FY31); manufacturing at Kanchipuram, Tamil Nadu with 5,000+ planned jobs. Pre-revenue stage in FY25."
-      },
-      "confidence": "High"
-    },
-    "BAJAJ-AUTO": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 65,
-        "export_pct": 35,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 35,
-        "hedging_policy": null,
-        "evidence": "FY25 total revenue from operations ₹49,267 Cr. Export volumes: 1.86M units (+13.9% YoY) out of 4.65M total (40% by volume). Q3 FY25 export revenue ₹4,500 Cr on ~₹12,500 Cr quarterly revenue (~36%); full-year export revenue estimated ~35% accounting for lower realization per exported unit vs domestic premium mix. Key export markets: Africa (Nigeria, Kenya, Egypt), LATAM (Argentina, Mexico, Colombia, Peru — 17% YoY growth), MENA (Egypt, UAE, Saudi Arabia — 29% YoY growth)."
-      },
-      "pli_scheme": {
-        "is_beneficiary": true,
-        "revenue_pct": null,
-        "evidence": "Bajaj Auto's full portfolio is PLI certified; PLI incentives accrue consistently quarter-after-quarter and are deployed to fund competitive pricing actions in the market. EV portfolio (Chetak, electric three-wheelers) covered under PLI for advanced chemistry cells and auto sector PLI."
-      },
-      "confidence": "Medium"
+      "confidence": "Low"
     }
   },
-  "skipped": []
+  "skipped": [
+    { "slug": "CUMMINSIND", "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "CGPOWER",    "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "SHAILY",     "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "APOLLOHOSP", "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "NEULANDLAB", "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "ASTRAMICRO", "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "POLYCAB",    "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "MOTHERSON",  "reason": "extracted_at 2026-06-03 is within 365-day freshness window" },
+    { "slug": "BAJAJ-AUTO", "reason": "extracted_at 2026-06-03 is within 365-day freshness window" }
+  ]
 }
