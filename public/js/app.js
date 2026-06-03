@@ -193,6 +193,13 @@ const CONFIGS = {
         sub: co._composite?.composite != null ? `Composite ${co._composite.composite.toFixed(1)} / 100` : "Unrated — data missing" },
     ],
   },
+  // Stub tab — when active, switchTab toggles the locked placeholder
+  // section instead of loading data. Used today for the History tab
+  // until the snapshot pipeline (Cloudflare KV) ships.
+  history: {
+    label: "History",
+    locked: true,
+  },
 };
 
 // ---------------- State ----------------
@@ -375,6 +382,16 @@ async function switchTab(tabId) {
   $("#search").value = "";
   $("#score-filter").value = "all";
 
+  // Locked tabs (History etc.) skip data loading + table rendering and
+  // just show their #locked-placeholder section.
+  const c = CONFIGS[tabId];
+  const locked = !!c?.locked;
+  document.querySelectorAll("main > section").forEach((sec) => {
+    if (sec.id === "locked-placeholder") sec.classList.toggle("hidden", !locked);
+    else sec.classList.toggle("hidden", locked);
+  });
+  if (locked) return;
+
   if (!state.cache[tabId]) await loadTab(tabId);
   renderAll();
 }
@@ -399,7 +416,7 @@ async function loadTab(tabId) {
     // to the standalone tab. Best-effort fetches.
     let insiderByTicker = {}, governanceByTicker = {}, auditorByTicker = {};
     let insiderLoaded = false, governanceLoaded = false, auditorLoaded = false;
-    try { const j = await fetch("data/insider-trades.json").then((r) => r.json()); insiderByTicker = j?.companies || {}; insiderLoaded = Object.keys(insiderByTicker).length > 0; } catch {}
+    try { insiderByTicker = await loadInsiderMerged(); insiderLoaded = Object.keys(insiderByTicker).length > 0; } catch {}
     try { const j = await fetch("data/governance-flags.json").then((r) => r.json()); governanceByTicker = j?.flagged_companies || {}; governanceLoaded = !!j && !j.error; } catch {}
     try { const j = await fetch("data/auditor-opinions.json").then((r) => r.json()); auditorByTicker = j?.companies || {}; auditorLoaded = !!j && Object.keys(auditorByTicker).length > 0; } catch {}
     const pli   = new Set((macroData.pli_companies || []).map((s) => String(s).toUpperCase()));
@@ -480,8 +497,7 @@ async function loadTab(tabId) {
     let insiderByTicker = {};
     let insiderLoaded = false;
     try {
-      const insider = await fetch("data/insider-trades.json").then((r) => r.json());
-      insiderByTicker = insider?.companies || {};
+      insiderByTicker = await loadInsiderMerged();
       insiderLoaded = Object.keys(insiderByTicker).length > 0;
     } catch { /* insider file missing — rule shows N/A */ }
 
@@ -1213,6 +1229,44 @@ function renderScoreGauge(score, theme, max = 100, size = 144) {
       </div>
     </div>
   `;
+}
+
+// Loads insider-trades.json (the daily NSE PIT scrape output) and merges
+// in public/data/insider-recent-supplement.json (the routine's recent-
+// disclosures output) into a single by-ticker map. The supplement covers
+// the ~30-day window where NSE PIT's API has a blackout; the daily scrape
+// owns everything older. Per-company aggregates are summed so the rule
+// sees the FULL picture without us having to merge in scoring.js.
+async function loadInsiderMerged() {
+  const out = {};
+  try {
+    const base = await fetch("data/insider-trades.json").then((r) => r.json());
+    Object.assign(out, base?.companies || {});
+  } catch {}
+  let supp = null;
+  try { supp = await fetch("data/insider-recent-supplement.json").then((r) => r.json()); }
+  catch { return out; }
+  if (!supp?.companies) return out;
+  for (const [ticker, s] of Object.entries(supp.companies)) {
+    const cur = out[ticker] || {
+      buy_shares: 0, sell_shares: 0, buy_value: 0, sell_value: 0,
+      transactions: 0, pledges_excluded: 0, last_date: null,
+      net_shares: 0, net_value: 0,
+    };
+    cur.buy_shares       = (cur.buy_shares       || 0) + (s.buy_shares       || 0);
+    cur.sell_shares      = (cur.sell_shares      || 0) + (s.sell_shares      || 0);
+    cur.buy_value        = (cur.buy_value        || 0) + (s.buy_value        || 0);
+    cur.sell_value       = (cur.sell_value       || 0) + (s.sell_value       || 0);
+    cur.transactions     = (cur.transactions     || 0) + (s.transactions     || 0);
+    cur.pledges_excluded = (cur.pledges_excluded || 0) + (s.pledges_excluded || 0);
+    cur.net_shares       = (cur.buy_shares || 0) - (cur.sell_shares || 0);
+    cur.net_value        = (cur.buy_value  || 0) - (cur.sell_value  || 0);
+    if (s.last_date && (!cur.last_date || new Date(s.last_date) > new Date(cur.last_date))) {
+      cur.last_date = s.last_date;
+    }
+    out[ticker] = cur;
+  }
+  return out;
 }
 
 // Lazy composite resolver — used by drill-down (any tab) to get the
