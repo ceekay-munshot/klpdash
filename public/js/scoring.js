@@ -493,38 +493,36 @@ function ruleAuditorOpinion(c) {
     return naWithReason(c, "auditorRemarks", 2);
   }
   const op = c.auditor_opinion;
-  const src = c.auditor_opinion_source;
   if (!op) {
     return { points: 0, max: 2, status: "na", value: "—",
-      note: "Latest auditor opinion not yet extracted — company is queued in auditor-todo.csv and will be processed by the next weekly routine run." };
+      note: "Latest auditor opinion not yet extracted." };
   }
   const opLower = String(op).toLowerCase();
-  // "Not disclosed" / "Not provided" / similar non-answers → N/A. Company stays
-  // on the auto-maintained to-do list and the routine retries each Sunday.
+  // "Not disclosed" / "Not provided" / similar non-answers → N/A.
   if (/\bnot\s+(disclosed|provided|available|stated|known|reported|specified|mentioned)\b|^n\/?a$|^unknown$|^none$/.test(opLower)) {
     return { points: 0, max: 2, status: "na", value: op,
-      note: "Auditor opinion not disclosed in the latest annual report — routine will retry on next weekly run." };
+      note: "Auditor opinion not disclosed in the latest annual report." };
   }
   const detail = buildAuditorDetail(c);
   // Adverse opinion or disclaimer → hard fail per client framework.
   if (/\b(adverse|disclaimer)\b/.test(opLower)) {
     return { points: 0, max: 2, status: "hard_fail", value: op,
-      note: `${op} per the most recent annual report. Hard fail per client framework.${detail}${src ? ` Source: ${src}` : ""}` };
+      note: `${op} per the most recent annual report. Hard fail per client framework.${detail}` };
   }
   // Qualified opinion or emphasis-of-matter → 1 pt partial.
   if (/\bqualified\b|emphasis[- ]of[- ]matter|emphasis matter/.test(opLower) && !/un\s*-?\s*qualified/.test(opLower)) {
     return { points: 1, max: 2, status: "partial", value: op,
-      note: `${op} flagged in the most recent annual report — 1 pt per client framework (qualification or emphasis-of-matter).${detail}${src ? ` Source: ${src}` : ""}` };
+      note: `${op} flagged in the most recent annual report — 1 pt per client framework (qualification or emphasis-of-matter).${detail}` };
   }
   // Unqualified opinion → full 2 pts.
   if (/\bunqualified\b|\bclean\b/.test(opLower)) {
     return { points: 2, max: 2, status: "pass", value: op,
-      note: `Clean ${op.toLowerCase().includes("unqualified") ? "unqualified opinion" : op} from the most recent annual report.${detail}${src ? ` Source: ${src}` : ""}` };
+      note: `Clean ${op.toLowerCase().includes("unqualified") ? "unqualified opinion" : op} from the most recent annual report.${detail}` };
   }
   // Anything else: keep as N/A so we don't accidentally penalise a
   // misclassified-but-clean opinion.
   return { points: 0, max: 2, status: "na", value: op,
-    note: `Auditor opinion text ("${op}") didn't match a known classification — review manually.${src ? ` Source: ${src}` : ""}` };
+    note: `Auditor opinion text ("${op}") didn't match a known classification — review manually.` };
 }
 
 // ---- deferred parameters (data source pending) ----

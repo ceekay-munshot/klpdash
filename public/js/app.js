@@ -1076,7 +1076,10 @@ function openDrillDown(s) {
     </div>
   `).join("");
 
-  const deferredHtml = `
+  // Only render the "Pending Data Source" block when there are actually
+  // deferred rules — empty section was just visual noise on tabs whose
+  // rules are all wired (Fundamentals, Technicals, etc. now have 0 deferred).
+  const deferredHtml = (c.deferred && c.deferred.length) ? `
     <div class="mb-5">
       <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Pending Data Source</div>
       <div class="space-y-2">
@@ -1094,7 +1097,7 @@ function openDrillDown(s) {
         `).join("")}
       </div>
     </div>
-  `;
+  ` : "";
 
   const tier = s.hardFails.length ? "hardfail" : scoreTier(s.scorePct);
   const sector = c.sector(co), industry = c.industry(co);
