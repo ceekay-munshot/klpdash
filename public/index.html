@@ -24,6 +24,8 @@
         min-height: 100vh;
       }
       .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+      /* Tabular numerals — every number-bearing cell uses fixed-width digits so columns visually line up */
+      table tbody td, table thead th, .stat-card, .stat-num, [data-numeric] { font-variant-numeric: tabular-nums; }
       .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
       .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -166,10 +168,10 @@
           <div class="text-2xl font-bold text-slate-900 mt-1" id="stat-max">—</div>
           <div class="text-xs text-slate-500 mt-0.5" id="stat-max-note">—</div>
         </div>
-        <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-4 shadow-lg text-white">
-          <div class="text-xs font-medium uppercase tracking-wider opacity-90">Refresh Cadence</div>
-          <div class="text-2xl font-bold mt-1">Daily</div>
-          <div class="text-xs opacity-90 mt-0.5">06:00 IST · auto-scheduled</div>
+        <div id="refresh-card" class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-4 shadow-lg text-white">
+          <div class="text-xs font-medium uppercase tracking-wider opacity-90">Last Refresh</div>
+          <div class="text-2xl font-bold mt-1" id="refresh-ago">—</div>
+          <div class="text-xs opacity-90 mt-0.5" id="refresh-source">06:00 IST · auto-scheduled</div>
         </div>
       </section>
 
@@ -215,6 +217,11 @@
               <option value="weak">Weak (&lt;40%)</option>
               <option value="hardfail">Hard-fail flagged</option>
             </select>
+            <button id="watch-toggle" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-200 transition-colors" title="Show only watchlisted companies">
+              <span id="watch-star-icon" class="text-amber-400">☆</span>
+              <span>Watchlist</span>
+              <span id="watch-count" class="text-[10px] font-bold text-slate-500 bg-slate-200/70 rounded-full px-1.5 py-0.5 min-w-[18px] text-center">0</span>
+            </button>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-xs text-slate-500 hidden sm:block"><span id="row-count" class="font-semibold text-slate-700">—</span> shown</div>
