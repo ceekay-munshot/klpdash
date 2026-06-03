@@ -315,32 +315,43 @@ function buildFrameworkSheet(wb, tab, cfg, ruleMetaForTab) {
   const sheet = wb.addWorksheet("Scoring Framework", {
     views: [{ state: "frozen", ySplit: 1 }],
   });
-  sheet.columns = [
+  // Show a Pillar column when rules are tagged (composite-tab export).
+  const hasPillarTag = cfg.rules.some((r) => r._pillar);
+  const PILLAR_LABEL = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment / Liquidity" };
+  const baseCols = [
     { header: "Rule",          key: "rule",      width: 32 },
+    ...(hasPillarTag ? [{ header: "Pillar", key: "pillar", width: 20 }] : []),
     { header: "Category",      key: "category",  width: 18 },
     { header: "Max Points",    key: "max",       width: 12 },
     { header: "Short Criteria", key: "criteria", width: 28 },
     { header: "Client Scoring Logic", key: "logic", width: 80 },
   ];
+  sheet.columns = baseCols;
   styleHeaderRow(sheet.getRow(1));
 
   cfg.rules.forEach((r, i) => {
     const row = sheet.getRow(i + 2);
     row.getCell("rule").value = r.label;
     row.getCell("rule").font = { bold: true };
+    if (hasPillarTag) {
+      row.getCell("pillar").value = PILLAR_LABEL[r._pillar] || r._pillar || "—";
+      row.getCell("pillar").alignment = { horizontal: "center" };
+    }
     row.getCell("category").value = r.category || "—";
     row.getCell("max").value = r.max || "";
     row.getCell("max").alignment = { horizontal: "center" };
     row.getCell("criteria").value = r.criteria || "—";
 
     const logicCell = row.getCell("logic");
+    // Composite export passes a flattened meta under the "composite" tab key,
+    // but the existing lookup also works for per-pillar tabs unchanged.
     const meta = ruleMetaForTab?.[r.key];
     logicCell.value = meta?.clientLogic || "—";
     logicCell.alignment = { wrapText: true, vertical: "top" };
 
     // Zebra stripe.
     if (i % 2 === 0) {
-      ["rule", "category", "max", "criteria", "logic"].forEach((k) => {
+      ["rule", ...(hasPillarTag ? ["pillar"] : []), "category", "max", "criteria", "logic"].forEach((k) => {
         row.getCell(k).fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR.bandFill } };
       });
     }

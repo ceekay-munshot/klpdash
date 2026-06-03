@@ -1111,16 +1111,12 @@ function openDrillDown(s) {
           ${c.screenerUrl(co) ? `<a href="${escapeHtml(c.screenerUrl(co))}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-800">View on Screener.in ↗</a>` : ""}
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <div class="bg-slate-50 rounded-lg p-3 flex flex-col items-center justify-center">
-          ${renderScoreGauge(s.scorePct, themeFromTier(tier), 100, 108)}
-          <div class="text-[10px] text-slate-500 mt-1.5 font-semibold uppercase tracking-wider">${tierLabel(tier)} · ${escapeHtml(c.label)}</div>
+      <div class="grid grid-cols-3 gap-3 mt-4">
+        <div class="bg-slate-50 rounded-lg p-3">
+          <div class="text-xs text-slate-500 font-medium">${escapeHtml(c.label)} Score</div>
+          <div class="text-2xl font-bold ${tierColor(tier)}">${s.totalPoints}<span class="text-sm text-slate-400">/${s.totalMax}</span></div>
+          <div class="text-xs text-slate-500">${tierLabel(tier)}</div>
         </div>
-        <div id="drill-radar-slot" class="bg-slate-50 rounded-lg p-2 flex items-center justify-center min-h-[140px]">
-          <div class="text-xs text-slate-400 animate-pulse">Loading pillar profile…</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-${Math.max(1, headerStats.length)} gap-3 mt-3">
         ${headerStats.map((hs) => `
           <div class="bg-slate-50 rounded-lg p-3">
             <div class="text-xs text-slate-500 font-medium">${escapeHtml(hs.label)}</div>
@@ -1170,22 +1166,6 @@ function openDrillDown(s) {
   $("#drill-panel").classList.remove("translate-x-full");
   $("#drill-overlay").classList.remove("hidden");
   $("#drill-close").addEventListener("click", closeDrillDown);
-  // Fire score gauge count-up + ring sweep animations after mount.
-  requestAnimationFrame(() => animateScoreEntrance($("#drill-content")));
-  // Lazy-populate the pillar radar (needs composite scoring → may
-  // need to fetch technicals.json + macro.json on first call).
-  (async () => {
-    const slot = document.getElementById("drill-radar-slot");
-    if (!slot) return;
-    const comp = await ensureCompositeFor(co);
-    // Drill might have closed by the time the fetch resolves
-    if (!document.getElementById("drill-radar-slot")) return;
-    if (!comp || !comp.pillars) {
-      slot.innerHTML = `<div class="text-xs text-slate-400 text-center">Pillar profile unavailable<br/><span class="text-[10px]">data not loaded for this ticker</span></div>`;
-      return;
-    }
-    slot.innerHTML = renderPillarRadar({ pillars: comp.pillars }, themeFromTier(tier), 110);
-  })();
 }
 // Render a circular progress gauge as inline SVG. Returns an HTML
 // string with the score number centred inside the ring.
@@ -2088,12 +2068,54 @@ function openHelpModal() {
 async function exportToExcel() {
   const c = cfg(); const st = tabState();
   if (!st || !st.scored) return;
+
+  let effCfg = c, effScored = st.scored, effRuleMeta = RULE_META;
+
+  // Composite tab has cfg.rules=[] (it scores pillars, not rules), so the
+  // Excel framework / distribution / ranked sheets came out empty. For
+  // the export, synthesise an effective config that aggregates every rule
+  // from all 4 pillars, plus merged per-company breakdowns drawn from
+  // s.company._composite.pillarResults — so the workbook shows every rule
+  // for every company with their actual values.
+  if (state.activeTab === "composite") {
+    const pillarSpecs = [
+      { tag: "fundamentals", rules: fund.ACTIVE_RULES,   prKey: "fund"   },
+      { tag: "technicals",   rules: tech.ACTIVE_RULES,   prKey: "tech"   },
+      { tag: "macro",        rules: macro.ACTIVE_RULES,  prKey: "macro"  },
+      { tag: "sentiment",    rules: senliq.ACTIVE_RULES, prKey: "senliq" },
+    ];
+    const allRules = [];
+    for (const p of pillarSpecs) {
+      for (const r of p.rules) allRules.push({ ...r, _pillar: p.tag });
+    }
+    effCfg = { ...c, rules: allRules };
+    effScored = st.scored.map((s) => {
+      const pr = s.company?._composite?.pillarResults;
+      let merged = [];
+      if (pr) {
+        for (const p of pillarSpecs) {
+          const arr = pr[p.prKey]?.breakdown;
+          if (Array.isArray(arr)) merged = merged.concat(arr);
+        }
+      }
+      return { ...s, breakdown: merged };
+    });
+    // Flatten per-pillar rule metas under a "composite" key so the export's
+    // lookup `ruleMeta[tab][ruleKey]` finds clientLogic for every rule.
+    const compositeMeta = {};
+    for (const p of pillarSpecs) {
+      const m = RULE_META[p.tag] || {};
+      for (const k of Object.keys(m)) compositeMeta[k] = m[k];
+    }
+    effRuleMeta = { ...RULE_META, composite: compositeMeta };
+  }
+
   await exportToExcelNew({
     tab: state.activeTab,
     tabLabel: c.label,
-    cfg: c,
-    scored: st.scored,
-    ruleMeta: RULE_META,
+    cfg: effCfg,
+    scored: effScored,
+    ruleMeta: effRuleMeta,
   });
 }
 
