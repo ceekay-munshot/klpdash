@@ -108,45 +108,60 @@ function checkpointSave() {
   writeFileSync(OUT_PATH, JSON.stringify(out, null, 2) + "\n");
 }
 
-// ---------- Parse a single page's text into structured indicators ----------
 // TradingView's rendered text has each indicator on its own visual row;
-// each row contains: name <whitespace> value <whitespace> action.
+// each row's label includes parameters in parens — "Relative Strength
+// Index (14)" — followed by the VALUE, then the BUY/SELL/NEUTRAL action.
 // We split by newlines and walk per line, matching label → value.
+//
+// CRITICAL: the value comes AFTER the closing paren in the label.
+// A naive `/-?\d+\.?\d*/` regex grabs the PARAMETER inside the parens
+// (the "14" in "RSI (14)") instead of the actual value. Always extract
+// from the text after the last ")" on the line, or fall through to
+// the next non-label line if the label is alone.
 function parsePageText(text) {
   const result = { summary: {}, oscillators: {}, moving_averages: {} };
   const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
 
-  // Find the summary block — typically near the top, format like:
-  //   "Strong Buy" / "Buy" / "Neutral" / "Sell" / "Strong Sell"
-  //   "Buy: 8"   "Neutral: 1"   "Sell: 1"
-  const verdictMatch = text.match(/(Strong Buy|Strong Sell|^Buy$|^Sell$|Neutral)/im);
-  if (verdictMatch) result.summary.verdict = verdictMatch[1];
-  const buyM = text.match(/Buy[:\s]+(\d+)/i);
-  const sellM = text.match(/Sell[:\s]+(\d+)/i);
-  const neutralM = text.match(/Neutral[:\s]+(\d+)/i);
+  // Summary verdict — TradingView shows "Strong Buy" / "Buy" / "Neutral" /
+  // "Sell" / "Strong Sell" as a standalone heading line. Match the most
+  // specific verdict that appears as a whole-line entry; this avoids
+  // matching "Neutral" inside indicator rows.
+  for (const verdict of ["Strong Buy", "Strong Sell", "Buy", "Sell", "Neutral"]) {
+    if (lines.some((l) => l === verdict)) {
+      result.summary.verdict = verdict;
+      break;
+    }
+  }
+  const buyM     = text.match(/(?:^|\s)Buy[:\s]+(\d+)\b/m);
+  const sellM    = text.match(/(?:^|\s)Sell[:\s]+(\d+)\b/m);
+  const neutralM = text.match(/(?:^|\s)Neutral[:\s]+(\d+)\b/m);
   if (buyM)     result.summary.buy_count     = Number(buyM[1]);
   if (sellM)    result.summary.sell_count    = Number(sellM[1]);
   if (neutralM) result.summary.neutral_count = Number(neutralM[1]);
 
-  // Per-indicator: name might be on one line, value on next (responsive
-  // layout). Or "Name <tab> Value <tab> Action" inline. Handle both.
+  // Per-indicator: label → value
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     for (const [pattern, bucket, field] of INDICATOR_MAP) {
       if (!pattern.test(line)) continue;
-      // Try to extract a number from THIS line first (inline format)
-      let m = line.match(/-?\d+\.?\d*/);
-      if (m) {
-        result[bucket][field] = Number(m[0]);
-        break;
+
+      // 1) Try inline format — look ONLY at text after the last closing
+      //    paren on the label line (skips over the parameter numbers).
+      const afterParen = line.includes(")") ? line.split(")").pop().trim() : "";
+      let m = afterParen.match(/-?\d+\.?\d*/);
+      if (m) { result[bucket][field] = Number(m[0]); break; }
+
+      // 2) Otherwise scan the next few non-empty lines for a pure number.
+      //    Stop if we hit another indicator label.
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const candidate = lines[j];
+        if (/^-?\d+\.?\d*$/.test(candidate)) {
+          result[bucket][field] = Number(candidate);
+          break;
+        }
+        if (INDICATOR_MAP.some(([p]) => p.test(candidate))) break;
       }
-      // Otherwise look at the next line (stacked format)
-      const next = lines[i + 1] || "";
-      const nm = next.match(/^-?\d+\.?\d*$/);
-      if (nm) {
-        result[bucket][field] = Number(nm[0]);
-        break;
-      }
+      break;
     }
   }
   return result;
