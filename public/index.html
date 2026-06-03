@@ -143,6 +143,9 @@
         <button data-tab="composite" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
           SPIP Basket <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">NEW</span>
         </button>
+        <button data-tab="history" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
+          History <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SOON</span>
+        </button>
       </div>
     </nav>
 
@@ -236,6 +239,36 @@
             <thead id="table-head" class="bg-slate-50/70 sticky top-0 z-10"></thead>
             <tbody id="table-body"></tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- LOCKED TAB PLACEHOLDER (shown on History tab — toggled by switchTab in app.js) -->
+      <section id="locked-placeholder" class="hidden">
+        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 p-12 text-center">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white text-3xl mb-5 shadow-lg">⏳</div>
+          <h2 class="text-2xl font-bold font-display text-slate-900 mb-3">History — Coming Soon</h2>
+          <p class="text-slate-600 max-w-xl mx-auto mb-8">
+            Track how the SPIP Basket evolves over time. Every daily refresh, the top STRONG BUY companies shift — some drop out, new ones enter. This tab will surface the timeline so you can spot reliable repeaters and understand why anything fell out of the basket.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto text-left">
+            <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-100">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Reliability</div>
+              <div class="text-sm text-slate-700">Which companies have stayed STRONG BUY for N weeks in a row — the basket's most consistent picks.</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-100">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Movement Log</div>
+              <div class="text-sm text-slate-700">Daily timeline of additions and removals — see who just entered the top 7 or just dropped out, with the reason.</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-100">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Why It Dropped</div>
+              <div class="text-sm text-slate-700">When a company exits the basket, see which signal turned negative — auditor flag, ICR compression, technical breakdown, etc.</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-4 ring-1 ring-slate-100">
+              <div class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Composite Velocity</div>
+              <div class="text-sm text-slate-700">Top 25 by week-over-week composite-score change — companies whose ranking is improving fastest.</div>
+            </div>
+          </div>
+          <div class="mt-8 text-xs text-slate-400">Snapshots written to Cloudflare KV daily after each refresh. Read-time merge into a timeline grid.</div>
         </div>
       </section>
 
