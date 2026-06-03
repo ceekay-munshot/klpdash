@@ -33,19 +33,14 @@ function fmtList(arr, max = 3) {
 // company-revenue-mix.json is populated by the daily Claude.ai routine that
 // reads each company's BSE annual report MD&A. When data exists for the
 // company, the affected rules use per-company truth instead of the sector
-// proxy. Companies still awaiting extraction fall through to the sector
-// proxy (current behaviour).
+// proxy. Companies still awaiting extraction fall through to the original
+// sector-proxy notes — the user-facing dashboard reveals nothing about
+// proxies or pipeline state.
 function rmix(c) { return c?._revenue_mix || null; }
 function truncEvidence(s, n = 220) {
   if (!s) return "";
   const str = String(s).trim();
   return str.length > n ? str.slice(0, n).trimEnd() + "..." : str;
-}
-// Append the per-company evidence to the rule note, tagged as "Verified".
-function withEvidence(note, ev, year) {
-  if (!ev) return note;
-  const tag = year ? `[Verified from ${year} AR]` : `[Verified from annual report]`;
-  return `${note} ${tag} ${truncEvidence(ev)}`;
 }
 
 // ---- Sector Rotation (7 pts) ----
@@ -84,49 +79,48 @@ function ruleChinaPlusOne(c) {
   const active = m.regime?.china_plus_one_active;
   const sector = getSector(c);
 
-  // PRIMARY: per-company truth from annual report MD&A.
+  // PRIMARY: per-company truth from annual report MD&A (silently upgrades
+  // the rule note when extraction data exists; otherwise falls through to
+  // the original sector-proxy notes — the dashboard reveals nothing about
+  // pipeline state).
   const rm = rmix(c);
   if (rm?.china_plus_one) {
     const exp = rm.geography?.export_pct ?? null;
     const strength = rm.china_plus_one.strength;
-    const ev = rm.china_plus_one.evidence;
-    const yr = rm.report_year;
+    const ev = truncEvidence(rm.china_plus_one.evidence);
     if (!active) {
-      return { points: 0, max: 2, status: "fail", value: `${sector} · exports ${exp ?? "?"}%`,
-        note: withEvidence("China+1 theme not flagged as active in current macro regime — company-specific exposure not scored.", ev, yr) };
+      return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active — even curated-list companies score 0." };
     }
     if (strength === "strong" && exp != null && exp >= 40) {
-      return { points: 2, max: 2, status: "pass", value: `${exp}% exports · China+1 strong`,
-        note: withEvidence(`Per-company verified — strong China+1 narrative, ${exp}% export revenue.`, ev, yr) };
+      return { points: 2, max: 2, status: "pass", value: sector,
+        note: `Strong China+1 exposure with ${exp}% export revenue.${ev ? ` ${ev}` : ""}` };
     }
     if (strength === "moderate" || (strength === "strong" && exp != null && exp >= 25)) {
-      return { points: 1, max: 2, status: "partial", value: `${exp ?? "?"}% exports · China+1 moderate`,
-        note: withEvidence(`Per-company verified — moderate China+1 narrative.`, ev, yr) };
+      return { points: 1, max: 2, status: "partial", value: sector,
+        note: `Moderate China+1 exposure${exp != null ? ` (${exp}% export revenue)` : ""}.${ev ? ` ${ev}` : ""}` };
     }
     if (strength === "weak") {
-      return { points: 0, max: 2, status: "fail", value: `${exp ?? "?"}% exports · China+1 weak`,
-        note: withEvidence(`Per-company verified — weak/passing China+1 narrative.`, ev, yr) };
+      return { points: 0, max: 2, status: "fail", value: sector,
+        note: `Weak China+1 narrative${exp != null ? ` (${exp}% export revenue)` : ""}.${ev ? ` ${ev}` : ""}` };
     }
-    return { points: 0, max: 2, status: "fail", value: `${exp ?? "?"}% exports · no China+1`,
-      note: withEvidence(`Annual report contains no China+1 narrative.`, ev, yr) };
+    return { points: 0, max: 2, status: "fail", value: sector,
+      note: `No material China+1 exposure${exp != null ? ` (${exp}% export revenue)` : ""}.${ev ? ` ${ev}` : ""}` };
   }
 
-  // FALLBACK: sector / curated-list proxy (current behaviour) until per-
-  // company extraction lands for this ticker. Tagged so the user can see
-  // the difference between "verified" and "proxy" in the drill-down.
+  // FALLBACK: original sector / curated-list proxy notes.
   const onCompanyList = !!c?.in_china_plus_one;
   const inSectorList = inTheme(c, "china_plus_one");
   if (onCompanyList) {
-    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "[Proxy — pending AR extraction] China+1 theme not flagged as active — even curated-list companies score 0." };
+    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active — even curated-list companies score 0." };
     return { points: 2, max: 2, status: "pass", value: sector,
-      note: `[Proxy — pending AR extraction] ${m.regime?.china_plus_one_note || "Benefiting from China+1 reorientation."} On curated company list with material China+1 / EMS revenue.` };
+      note: `${m.regime?.china_plus_one_note || "Benefiting from China+1 reorientation."} On curated company list with material China+1 / EMS revenue.` };
   }
   if (inSectorList) {
-    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "[Proxy — pending AR extraction] China+1 theme not flagged as active — sector match alone scores 0." };
+    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "China+1 theme not flagged as active — sector match alone scores 0." };
     return { points: 1, max: 2, status: "partial", value: sector,
-      note: `[Proxy — pending AR extraction] Sector benefits from China+1 theme but company not on the curated >15%-revenue list — partial credit.` };
+      note: `Sector benefits from China+1 theme but company not on the curated >15%-revenue list — partial credit.` };
   }
-  return { points: 1, max: 2, status: "partial", value: sector, note: `[Proxy — pending AR extraction] Neither on the China+1 curated company list nor in a benefiting sector — 1 pt neutral per client framework.` };
+  return { points: 1, max: 2, status: "partial", value: sector, note: `Neither on the China+1 curated company list nor in a benefiting sector — 1 pt neutral per client framework.` };
 }
 
 function ruleRuralRecovery(c) {
