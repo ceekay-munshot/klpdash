@@ -29,6 +29,11 @@
     "market_breadth_ad_ratio": null,
     "market_breadth_note": "Live A/D ratio scrape not yet wired — Market Breadth rule shows N/A until then."
   },
+  "_sector_themes_meta": {
+    "_review_cadence": "Annually — sector-to-theme mappings are stable business logic but worth a yearly review for new sectors or reclassifications (e.g., Screener's industry taxonomy changes).",
+    "_last_reviewed": "2026-05-27",
+    "_note": "Edit sector_themes only if (a) Screener introduces a new industry name we want to capture, (b) Macro theme classification changes by client framework."
+  },
   "sector_themes": {
     "infra_push": [
       "Cement & Cement Products",
