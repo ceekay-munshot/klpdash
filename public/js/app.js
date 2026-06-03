@@ -417,6 +417,10 @@ async function loadTab(tabId) {
     let insiderByTicker = {}, governanceByTicker = {}, auditorByTicker = {};
     let insiderLoaded = false, governanceLoaded = false, auditorLoaded = false;
     try { insiderByTicker = await loadInsiderMerged(); insiderLoaded = Object.keys(insiderByTicker).length > 0; } catch {}
+    // Per-company annual-report extraction (replaces sector proxies in macro rules
+    // once extraction lands for a ticker — routine processes ~10/day in SPIP order).
+    let revenueMixByTicker = {};
+    try { revenueMixByTicker = (await fetch("data/company-revenue-mix.json").then((r) => r.json()))?.companies || {}; } catch {}
     try { const j = await fetch("data/governance-flags.json").then((r) => r.json()); governanceByTicker = j?.flagged_companies || {}; governanceLoaded = !!j && !j.error; } catch {}
     try { const j = await fetch("data/auditor-opinions.json").then((r) => r.json()); auditorByTicker = j?.companies || {}; auditorLoaded = !!j && Object.keys(auditorByTicker).length > 0; } catch {}
     const pli   = new Set((macroData.pli_companies || []).map((s) => String(s).toUpperCase()));
@@ -450,6 +454,9 @@ async function loadTab(tabId) {
       row.in_pli = ticker ? pli.has(ticker) : false;
       row.in_renewable = ticker ? renew.has(ticker) : false;
       row.in_china_plus_one = ticker ? cp1.has(ticker) : false;
+      // Per-company revenue-mix extraction (truth from annual report,
+      // replaces sector proxy in macro rules once extraction lands).
+      row._revenue_mix = ticker ? (revenueMixByTicker[ticker] || null) : null;
     }
     // ATR history for technicals
     try {
@@ -558,6 +565,8 @@ async function loadTab(tabId) {
     const pli = new Set((rawMeta.pli_companies || []).map((s) => String(s).toUpperCase()));
     const renew = new Set((rawMeta.renewable_companies || []).map((s) => String(s).toUpperCase()));
     const cp1 = new Set((rawMeta.china_plus_one_companies || []).map((s) => String(s).toUpperCase()));
+    let revenueMixByTicker = {};
+    try { revenueMixByTicker = (await fetch("data/company-revenue-mix.json").then((r) => r.json()))?.companies || {}; } catch {}
     for (const row of rows) {
       const m = String(row["Screener URL"] || "").match(/\/company\/([^/]+)/);
       const ticker = m ? m[1].toUpperCase() : null;
@@ -565,6 +574,7 @@ async function loadTab(tabId) {
       row.in_pli = ticker ? pli.has(ticker) : false;
       row.in_renewable = ticker ? renew.has(ticker) : false;
       row.in_china_plus_one = ticker ? cp1.has(ticker) : false;
+      row._revenue_mix = ticker ? (revenueMixByTicker[ticker] || null) : null;
     }
   }
 
