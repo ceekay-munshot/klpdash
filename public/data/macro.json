@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-06-02T13:04:16.600Z",
+  "generated_at": "2026-06-03T05:25:09.311Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 94,
+      "latest": 97.01,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -13.1,
+      "pct_change_30d": -15.23,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 95.26,
+      "latest": 95.74,
       "latest_unit": "₹/$",
-      "pct_change_30d": 0.38,
+      "pct_change_30d": 0.5,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 15.35,
+      "latest": 16.34,
       "latest_unit": "",
-      "pct_change_30d": -16.82,
+      "pct_change_30d": -10.68,
       "trend": "falling",
       "history_bars": 24
     }
@@ -48,8 +48,8 @@
     "fii_signal_note": "FII net positive in 1 of last 6 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": 1.48,
-    "market_breadth_note": "295 advances vs 199 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 0.33,
+    "market_breadth_note": "123 advances vs 372 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 1,
     "fii_total_days": 6
   },

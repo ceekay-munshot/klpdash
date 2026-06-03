@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-02T13:05:29.526Z",
+  "generated_at": "2026-06-03T05:25:48.756Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 15,
+  "total_entities_seen": 14,
   "flagged_companies": {
     "SUZLON": {
       "primary_name": "Suzlon Energy",
       "order_type": "sebi-fine",
-      "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation",
+      "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation.",
       "source_url": "https://www.livemint.com/topic/sebi",
       "source_label": "Mint — SEBI topic (news)",
       "origins": [
@@ -18,13 +18,13 @@
           "source": "Mint — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation"
+          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation."
         },
         {
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi fined Suzlon Energy and key executives over alleged disclosure lapses that misrepresented the company's financial position and risks"
+          "snippet": "Sebi fines Suzlon Energy, KMPs ₹29 crore for 'financial misreporting'"
         },
         {
           "source": "Economic Times — SEBI topic (news)",
@@ -35,7 +35,13 @@
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "other",
+          "order_type": "sebi-fine",
+          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "show-cause",
           "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         },
         {
@@ -43,15 +49,9 @@
           "origin": "scraper",
           "order_type": "sebi-fine",
           "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -70,7 +70,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -89,7 +89,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -108,7 +108,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -127,7 +127,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -146,7 +146,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-02T13:05:29.525Z"
+      "first_seen_at": "2026-06-03T05:25:48.756Z"
     }
   },
   "unmatched_sample": [
@@ -157,20 +157,14 @@
       "origin": "scraper"
     },
     {
-      "name": "PRISM",
+      "name": "Oyo",
       "type": "sebi-investigation",
       "source": "Mint — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Oyo",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
       "name": "NDTV",
-      "type": "other",
+      "type": "show-cause",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -180,7 +174,7 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-02T13:04:16.657Z",
+      "at": "2026-06-03T05:25:09.365Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -191,19 +185,19 @@
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation"
+          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation."
         },
         {
           "name": "PRISM",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation"
+          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation."
         },
         {
-          "name": "PRISM",
+          "name": "Oyo",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Oyo-parent Prism gets Sebi approval for ₹6,650 crore IPO: Report"
+          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation."
         }
       ],
       "after_filter_count": 3,
@@ -217,17 +211,17 @@
         {
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
-          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation"
+          "snippet": "Sebi slaps ₹29 crore penalties on Suzlon Energy, former executives for financial misrepresentation."
         },
         {
           "name": "PRISM",
           "order_type": "sebi-investigation",
-          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation"
+          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation."
         },
         {
-          "name": "PRISM",
+          "name": "Oyo",
           "order_type": "sebi-investigation",
-          "snippet": "Oyo-parent Prism gets Sebi approval for ₹6,650 crore IPO: Report"
+          "snippet": "OYO parent PRISM wins Sebi nod for IPO, targets $7-8 billion valuation."
         }
       ]
     },
@@ -235,7 +229,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-02T13:04:42.103Z",
+      "at": "2026-06-03T05:25:17.329Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -243,34 +237,34 @@
       "total_extracted": 4,
       "prefilter_sample": [
         {
-          "name": "Suzlon Energy",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi fined Suzlon Energy and key executives over alleged disclosure lapses that misrepresented the company's financial position and risks"
-        },
-        {
           "name": "Reliance Industries",
-          "order_type": "sebi-investigation",
+          "order_type": "adjudication",
           "is_listed_entity": true,
           "snippet": "SC sets aside Sebi's ₹447 crore disgorgement order to Reliance Industries"
         },
         {
-          "name": "Reliance Industries",
-          "order_type": "sebi-investigation",
+          "name": "Suzlon Energy",
+          "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "SC sets aside SAT order directing RIL to disgorge ₹447 crore"
+          "snippet": "Sebi fines Suzlon Energy, KMPs ₹29 crore for 'financial misreporting'"
         },
         {
-          "name": "Oyo",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Oyo's parent Prism gets Sebi nod for ₹6,650-crore public listing: Report"
+          "name": "Seven individuals",
+          "order_type": "sebi-ban",
+          "is_listed_entity": false,
+          "snippet": "Sebi bans 7 individuals in ₹20 crore social media stock manipulation case"
+        },
+        {
+          "name": "Seven individuals",
+          "order_type": "sebi-ban",
+          "is_listed_entity": false,
+          "snippet": "Sebi bars 7 from markets for 'fraud' trades, directs ₹20 cr disgorgement"
         }
       ],
-      "after_filter_count": 2,
+      "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
+        "not_listed": 2,
+        "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 1,
         "no_name": 0
       },
@@ -278,12 +272,7 @@
         {
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
-          "snippet": "Sebi fined Suzlon Energy and key executives over alleged disclosure lapses that misrepresented the company's financial p"
-        },
-        {
-          "name": "Oyo",
-          "order_type": "other",
-          "snippet": "Oyo's parent Prism gets Sebi nod for ₹6,650-crore public listing: Report"
+          "snippet": "Sebi fines Suzlon Energy, KMPs ₹29 crore for 'financial misreporting'"
         }
       ]
     },
@@ -291,12 +280,12 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-02T13:04:57.992Z",
+      "at": "2026-06-03T05:25:29.363Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 9,
-      "total_extracted": 9,
+      "total_extracted_raw": 11,
+      "total_extracted": 11,
       "prefilter_sample": [
         {
           "name": "Suzlon Energy",
@@ -306,7 +295,13 @@
         },
         {
           "name": "Suzlon Energy",
-          "order_type": "other",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+        },
+        {
+          "name": "Suzlon Energy",
+          "order_type": "show-cause",
           "is_listed_entity": true,
           "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         },
@@ -317,22 +312,28 @@
           "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
         },
         {
-          "name": "Suzlon Energy",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
-        },
-        {
           "name": "NDTV",
-          "order_type": "other",
+          "order_type": "show-cause",
           "is_listed_entity": true,
           "snippet": "Sebi drops disclosure case against NDTV, closes proceedings without penalty"
         },
         {
-          "name": "Ola Electric",
+          "name": "Reliance Industries",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Ola Electric shares fall nearly 4% as firm launches QIP to raise funds. Check floor price, other details"
+          "snippet": "Reliance Industries gets partial relief from Supreme Court as it sets aside Rs 447 crore Sebi recovery order"
+        },
+        {
+          "name": "Reliance Industries",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Supreme Court provides relief to Reliance in 2007 securities market fraud case"
+        },
+        {
+          "name": "Ketan Parekh Case",
+          "order_type": "show-cause",
+          "is_listed_entity": false,
+          "snippet": "Ketan Parekh Case: Sebi sends show cause notice to 6 Capital Group FPIs"
         },
         {
           "name": "Central Bank of India",
@@ -341,23 +342,23 @@
           "snippet": "Central Bank of India shares tumble as government launches OFS"
         },
         {
-          "name": "Jubilant FoodWorks",
+          "name": "Zydus Lifesciences",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Jubilant FoodWorks says Haryana PCB directs company to deposit Rs 22.65 lakh environmental compensation"
+          "snippet": "Zydus Lifesciences hikes share buyback price to Rs 1,260 per share, lowers share count"
         },
         {
-          "name": "PB Fintech",
+          "name": "IREDA",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PB Fintech invests Rs 5 crore in broking arm PB Marketing and Consulting"
+          "snippet": "IREDA shares drop 4% post Q4 results. What’s spooking investors?"
         }
       ],
       "after_filter_count": 5,
       "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 4,
-        "resolved_in_favour": 0,
+        "not_listed": 1,
+        "no_sebi_signal_in_snippet": 3,
+        "resolved_in_favour": 2,
         "no_name": 0
       },
       "sample": [
@@ -368,7 +369,12 @@
         },
         {
           "name": "Suzlon Energy",
-          "order_type": "other",
+          "order_type": "sebi-fine",
+          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+        },
+        {
+          "name": "Suzlon Energy",
+          "order_type": "show-cause",
           "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         },
         {
@@ -377,13 +383,8 @@
           "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
         },
         {
-          "name": "Suzlon Energy",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
-        },
-        {
           "name": "NDTV",
-          "order_type": "other",
+          "order_type": "show-cause",
           "snippet": "Sebi drops disclosure case against NDTV, closes proceedings without penalty"
         }
       ]
@@ -392,7 +393,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-02T13:05:21.654Z",
+      "at": "2026-06-03T05:25:45.299Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
