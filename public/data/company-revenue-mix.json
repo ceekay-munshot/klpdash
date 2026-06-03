@@ -1,0 +1,405 @@
+{
+  "generated_at": "2026-06-03T09:00:00.000Z",
+  "source": "Per-company annual-report extraction (Claude.ai routine, daily batch of ~10)",
+  "companies": {
+    "CUMMINSIND": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 83,
+        "export_pct": 17,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "weak",
+        "evidence": "Cummins India exports to multiple international markets (~17% of revenue); domestic sales grew 18% to ₹8,395 Cr while export grew only 6% to ₹1,771 Cr in FY25. No explicit China+1 or supply-chain diversification narrative found in available MD&A — export business is tied to parent Cummins Inc. global supply chain rather than a diversification play."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Cummins India secured first annual maintenance contract for a large hyperscale data center in FY25; supplies diesel gensets for infrastructure, construction, power generation, and railways. Government capex-linked sectors are significant but exact revenue % not disclosed in available MD&A."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 17,
+        "hedging_policy": null,
+        "evidence": "Export revenue ₹1,771 Cr, ~17% of total FY25 revenue of ₹10,166 Cr. Domestic revenue ₹8,395 Cr grew 18% YoY; export revenue grew 6% YoY."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "High",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "CGPOWER": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 95,
+        "export_pct": 5,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "CG Power serves state and central utilities, Indian Railways (traction electronics), cement, steel, and textiles industries through Industrial Systems and Power Systems segments. Government-linked power utilities and railway sector are primary demand drivers for transformers, switchgear, motors, and drives. Revenue % from government/infra projects not explicitly disclosed."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 5,
+        "hedging_policy": null,
+        "evidence": "Exports contribute approximately 5% of total turnover; company serves customers across 50+ countries in Europe, Americas, Asia Pacific, Africa, and Middle East."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "CG Power's semiconductor subsidiary CG Semi established India's first ATMP/OSAT facility in Sanand, Gujarat under India Semiconductor Mission. Consortium with Renesas (Japan) and a Thai firm; ₹7,600 Cr total investment. Government subsidy ~50% of project cost. G1 pilot plant capacity: 0.5 million chips/day; G2 facility: 1.45 crore chips/day. Revenue from semiconductor operations not yet material in FY25 (facility commissioned but ramping)."
+      },
+      "confidence": "High",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "SHAILY": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 22,
+        "export_pct": 78,
+        "export_us_pct": 31,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "strong",
+        "evidence": "Shaily Engineering is explicitly positioned as a China+1 beneficiary in healthcare plastics and drug-delivery devices. Global pharma MNCs are actively diversifying supply chains away from China; Shaily's healthcare segment revenue grew 48–54% YoY in FY25 driven by collaborative design-to-manufacture contracts with MNC pharma companies. GLP-1 drug delivery device orders (obesity/diabetes drugs) represent the leading wave. Healthcare pharma clean-room facility expanded from 44,000 to 127,000 sq ft; injection moulding capacity grew from ~65 to 200+ machines."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 78,
+        "hedging_policy": null,
+        "evidence": "Export revenue was 77.8% of consolidated revenue in FY2025 (35+ countries, 40+ country footprint); United States is largest single export destination at ~40–45% of exports (~31–35% of total company revenue)."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "PLI scheme capex incentive deadline has passed; company is not a PLI beneficiary. Management stated in earnings calls that PLI scheme is specific to certain components and the investment deadline is no longer applicable to Shaily's product segments."
+      },
+      "confidence": "High",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "APOLLOHOSP": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 92,
+        "export_pct": 8,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Apollo Hospitals signed MOU with Central Government for CGHS Apollo Dialysis Clinics; government healthcare scheme patients (Ayushman Bharat, CGHS) contribute to revenue but % not disclosed. Insurance and cash patients account for 83% of inpatient revenue; insurance revenue +13% YoY, cash patients +15% YoY."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 8,
+        "hedging_policy": null,
+        "evidence": "International inflows from overseas patients (Middle East, Africa, Indonesia, Iraq, Iran, Sri Lanka) accounted for ~8% of total FY25 consolidated revenue of ₹21,794 Cr. International patient volumes saw 1.5% uptick from Middle East/Africa, partially offsetting 1.5% decline in Bangladeshi patients."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "Medium",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "NEULANDLAB": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 24,
+        "export_pct": 76,
+        "export_us_pct": 35,
+        "export_europe_pct": 33,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 8
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 35,
+        "hedging_policy": null,
+        "evidence": "FY2025 total income ₹1,497.3 Cr; FY2026 disclosed geography (USA/NA 35%, Europe 33%, India 24%, ROW 7%) used as structural proxy for FY25 given similar business mix. Neuland serves ~80 countries with 70 US DMFs and 980+ regulatory filings. US/NA revenue is in USD; Europe revenue in EUR. Export pct 76% confirmed directionally from historical data (FY23: ~73% export, trending higher with CMS growth)."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "Low",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "ASTRAMICRO": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 82,
+        "export_pct": 18,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": 79,
+        "evidence": "Defence sector contributed 78.5% to total revenue in 9M FY25 (April–December 2024); Q1 FY26 defence share rose to 86%. FY25 full-year defence/govt revenue estimated ~79% of ₹1,051 Cr total revenue (FY25: +15.7% YoY, EBITDA margin 25.6%). Primary customers: DRDO, defence PSUs (BEL, ECIL), Indian armed forces."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 18,
+        "hedging_policy": null,
+        "evidence": "Exports (including deemed exports) contributed approximately 12–21% of revenue across quarters in FY25 (Q1FY25 exports 21%; Q1FY26 exports 10%); FY25 full-year export estimated ~18% of ₹1,051 Cr total revenue."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "Medium",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "POLYCAB": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 94,
+        "export_pct": 6,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Polycab supplies cables to infrastructure projects; Railways and Road Transport Ministries maintained near-full budget utilization in FY25, driving demand. W&C segment ₹188,881 million (+18% YoY), representing 84% of total sales. Government infrastructure capex is a key demand driver but exact revenue % not disclosed."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 6,
+        "hedging_policy": null,
+        "evidence": "International cables business revenue ₹13,452 million in FY2024-25, contributing 6% to total turnover. Business experienced modest degrowth due to structural and geopolitical challenges in export markets."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "confidence": "High",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "MOTHERSON": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 20,
+        "export_pct": 80,
+        "export_us_pct": 25,
+        "export_europe_pct": 38,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 17
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 25,
+        "hedging_policy": null,
+        "evidence": "Consolidated FY25 revenue ₹1,136 billion; geographic split: India 20%, Europe 38%, North America 25%, China 11%, Others 6%. export_other_pct of 17 = China 11% + Other regions 6%. North America revenue (~25%) primarily in USD; Europe (~38%) primarily in EUR; China (~11%) in CNY. Net profit INR 38 billion in FY25."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Motherson Electronic Components Pvt Ltd (MECPL) secured incentives under Electronics Component Manufacturing Scheme (ECMS) announced by MeitY for enclosures for consumer electronics industry. Planned ₹1,900 Cr investment over 6-year incentive period (FY26–FY31); manufacturing at Kanchipuram, Tamil Nadu with 5,000+ planned jobs. Pre-revenue stage in FY25."
+      },
+      "confidence": "High",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    },
+    "BAJAJ-AUTO": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 65,
+        "export_pct": 35,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": null
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": null
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 35,
+        "hedging_policy": null,
+        "evidence": "FY25 total revenue from operations ₹49,267 Cr. Export volumes: 1.86M units (+13.9% YoY) out of 4.65M total (40% by volume). Q3 FY25 export revenue ₹4,500 Cr on ~₹12,500 Cr quarterly revenue (~36%); full-year export revenue estimated ~35% accounting for lower realization per exported unit vs domestic premium mix. Key export markets: Africa (Nigeria, Kenya, Egypt), LATAM (Argentina, Mexico, Colombia, Peru — 17% YoY growth), MENA (Egypt, UAE, Saudi Arabia — 29% YoY growth)."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Bajaj Auto's full portfolio is PLI certified; PLI incentives accrue consistently quarter-after-quarter and are deployed to fund competitive pricing actions in the market. EV portfolio (Chetak, electric three-wheelers) covered under PLI for advanced chemistry cells and auto sector PLI."
+      },
+      "confidence": "Medium",
+      "extracted_at": "2026-06-03T09:00:00.000Z"
+    }
+  },
+  "total_extracted": 9,
+  "last_batch_size": 9,
+  "last_batch_rejected": 1
+}
