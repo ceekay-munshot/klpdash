@@ -2,7 +2,7 @@
   "_note": "NSE F&O eligible stocks. The full list of stocks with active futures + options. NSE adds/removes a handful each quarter via circular based on liquidity, market cap and impact cost criteria. The `tickers` array is auto-updated by the weekly fno-list-refresh Claude.ai routine (output → public/data/weekly-fno-refresh.json → validated and merged by fno-merger.yml).",
   "_review_cadence": "Quarterly — NSE Circular on F&O additions/exclusions (typically end of each calendar quarter).",
   "_last_manual_update": "2026-05-24",
-  "_last_reviewed": "2026-06-03",
+  "_last_reviewed": "2026-06-03 (legacy cleanup: ZOMATO→ETERNAL rename, removed GMRINFRA duplicate of GMRAIRPORT)",
   "_last_routine_update": "2026-06-03T10:00:00.000Z",
   "tickers": [
     "AARTIIND",
@@ -78,6 +78,7 @@
     "DRREDDY",
     "EICHERMOT",
     "ESCORTS",
+    "ETERNAL",
     "EXIDEIND",
     "FEDERALBNK",
     "FORCEMOT",
@@ -86,7 +87,6 @@
     "GLAND",
     "GLENMARK",
     "GMRAIRPORT",
-    "GMRINFRA",
     "GNFC",
     "GODFRYPHLP",
     "GODREJCP",
@@ -233,7 +233,6 @@
     "WAAREEENER",
     "WIPRO",
     "YESBANK",
-    "ZOMATO",
     "ZYDUSLIFE"
   ],
   "_last_routine_source": "NSE/FAOP/70616 approx. dated 2026-03-30 (most recent additions effective 2026-04-01); list compiled from NSE circulars through Q2 2026 — NSE web access blocked (HTTP 403), tickers sourced from verified NSE circular announcements via financial news (Business Standard, AngelOne, Zeebiz, EliteWealth, Screener, NSE quote pages)"
