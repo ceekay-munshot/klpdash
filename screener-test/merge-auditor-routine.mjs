@@ -135,7 +135,10 @@ for (const r of routine) {
     ...existingEntry,
     name: existingEntry.name || r.company_name,
     opinion: opinionStr,
-    source: `BSE annual report — extracted by routine (confidence: ${r.confidence_in_extraction || "Medium"})`,
+    // Kept short — the dashboard reads `auditor_confidence` separately for
+    // internal QA, but the visible source label stays plain "BSE annual
+    // report" so the drill-down doesn't expose pipeline mechanics.
+    source: "BSE annual report",
     conclusion_block: r.key_concerns_flagged_by_auditor || null,
     error: null,
     http_status: 200,

@@ -60,25 +60,29 @@ export const META = {
     },
     ebitda: {
       source: SCREENER,
-      calculation: "Read full OPM (Operating Profit Margin) series from Screener's Profit & Loss table (up to 12 years). Take the most recent 6 years. PASS if latest year is improving AND no 2+ year contraction streak in window. FAIL if 2+ consecutive years of contraction detected. Fallback to 2-year comparison only when history is too short.",
+      // Series check against Screener data — no formula, just verifies a trend pattern.
+      calculation: null,
       clientLogic: "PASS if EBITDA margin improving YoY; 1 pt. FAIL if contracting 2+ consecutive years (0 pts).",
       ourLogic: null,
     },
     npm: {
       source: SCREENER,
-      calculation: "Compare NPM (Net Profit Margin) last year vs preceding. PASS if stable/expanding; PARTIAL if compression ≤ 200 bps; FAIL if margin compressed > 200 bps.",
+      // Direct LY-vs-prev-year comparison from Screener — no formula.
+      calculation: null,
       clientLogic: "PASS if NPM stable on ~bps; 1 pt. Flag if margin compressed > 200 bps in latest year (0 pts).",
       ourLogic: null,
     },
     cfo: {
       source: SCREENER_CASHFLOW,
-      calculation: "Read full Cash from Operating Activities series from Screener's Cash Flow Statement (up to 10 years). PASS if positive across all years in the available window. HARD FAIL if latest year is negative — per client framework, that's an automatic disqualification regardless of profitability.",
+      // Series sign-check on direct Screener CFO values — no formula.
+      calculation: null,
       clientLogic: "PASS if positive CFO for 10 consecutive years; 2 pts. Negative CFO is a hard fail regardless of PAT.",
       ourLogic: null,
     },
     rev3y: {
       source: SCREENER,
-      calculation: "Read Sales growth 3Years from Screener Top Ratios. Apply sector-defensive threshold: 8% pass / 5% partial for defensives (FMCG, Pharma, Utilities, Healthcare), 12% pass / 8% partial for everyone else.",
+      // Direct Screener value + sector-defensive threshold lookup — no formula.
+      calculation: null,
       clientLogic: "PASS if Revenue CAGR (3Y) ≥ 12–15%; 2 pts. 8–12% = 1 pt. < 8% = 0 pts. Sector-adjust for defensives.",
       ourLogic: null,
     },
@@ -90,13 +94,15 @@ export const META = {
     },
     eps: {
       source: SCREENER_QUARTERS,
-      calculation: "Read last 4 quarters of EPS from Screener's Quarterly Results table. PASS if all 4 quarters positive AND at least 2 of 3 QoQ transitions are increases. PARTIAL if positive but growth not consistent. FAIL if any negative or erratic. Falls back to 3Y/5Y CAGR check if quarterly history is too short.",
+      // 4-quarter pattern check on direct Screener EPS values — no formula.
+      calculation: null,
       clientLogic: "PASS if EPS positive and growing consistently over 3–4 quarters; 1 pt. Erratic EPS = 0 pts.",
       ourLogic: null,
     },
     qoq: {
       source: SCREENER_QUARTERS,
-      calculation: "Look at Net Profit values for the last 4 quarters (latest, -1, -2, -3) from Screener Quarters section. PASS if Q-latest > Q-1 AND Q-1 > Q-2; FAIL if any 2 consecutive declines.",
+      // QoQ trend check on direct Screener Net Profit values — no formula.
+      calculation: null,
       clientLogic: "PASS if QoQ earnings improvement for last 3 quarters; 1 pt. Any 2 consecutive declines = 0 pts.",
       ourLogic: null,
     },
@@ -132,7 +138,8 @@ export const META = {
     },
     fiidii: {
       source: SCREENER_SHAREHOLD,
-      calculation: "Read FII Holding Series + DII Holding Series (last 8 quarterly snapshots from Screener's Shareholding Pattern). Take last 4 quarters. Sum each quarter. PASS if combined holding is higher at Q-latest than Q-3 AND at least 2 of 3 QoQ transitions are increases. PARTIAL if net up but inconsistent or FII fell >2 pp across the 4 quarters. FAIL if combined trending down. Falls back to single-quarter ribbon change for recent IPOs without 4 quarters of history.",
+      // Quarterly snapshot trend check on direct Screener shareholding-pattern values — no formula.
+      calculation: null,
       clientLogic: "PASS if FII + DII holding increasing trend over last 4 quarters; 1 pt. Sharp FII exit = flag.",
       ourLogic: null,
     },
@@ -144,7 +151,8 @@ export const META = {
     },
     div: {
       source: SCREENER,
-      calculation: "Read Dividend Payout % series from Screener's Profit & Loss table (annual history up to 12 years). Take the last 5 years. PASS if dividend > 0 in at least 3 of those 5 years (per client framework). 4-of-5 or 5-of-5 also pass with a stronger note. FAIL otherwise. Falls back to ribbon's 'Dividend last year' + '5-yr avg yield' when annual history is too short.",
+      // 5-year count check on direct Screener dividend-payout series — no formula.
+      calculation: null,
       clientLogic: "PASS if dividend paid in at least 3 of last 5 years; 1 pt. Erratic or nil dividend = 0 pts (discretionary).",
       ourLogic: null,
     },
