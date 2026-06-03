@@ -632,11 +632,15 @@ async function loadTab(tabId) {
         if (!s) continue;
         const o = s.oscillators || {};
         const ma = s.moving_averages || {};
-        if (o.rsi_14   != null) row.rsi14  = o.rsi_14;
-        if (o.adx_14   != null) row.adx14  = o.adx_14;
-        if (ma.ema_50  != null) row.ema50  = ma.ema_50;
-        if (ma.sma_50  != null) row.sma50  = ma.sma_50;
-        if (ma.sma_200 != null) row.sma200 = ma.sma_200;
+        // Track which fields were sourced from TradingView so rule-meta.js
+        // can label the Source button accurately per-rule.
+        const sourced = new Set();
+        if (o.rsi_14   != null) { row.rsi14  = o.rsi_14;   sourced.add("rsi14"); }
+        if (o.adx_14   != null) { row.adx14  = o.adx_14;   sourced.add("adx14"); }
+        if (ma.ema_50  != null) { row.ema50  = ma.ema_50;  sourced.add("ema50"); }
+        if (ma.sma_50  != null) { row.sma50  = ma.sma_50;  sourced.add("sma50"); }
+        if (ma.sma_200 != null) { row.sma200 = ma.sma_200; sourced.add("sma200"); }
+        if (sourced.size) row._source_tech_fields = sourced;
       }
     } catch { /* source file may not exist yet */ }
   }

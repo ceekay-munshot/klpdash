@@ -31,6 +31,24 @@ const YAHOO = (c) => {
   const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
   return { url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS` : "https://finance.yahoo.com", label: "Yahoo Finance", section: "Historical daily OHLCV (1Y)" };
 };
+// TradingView is the source of truth for an indicator value WHEN we successfully
+// scraped it (scrape-technicals-source.mjs writes to technicals-source.json,
+// app.js sets row._source_tech_fields per overwritten field). Without a scrape
+// for the company / indicator, the rule's source helper falls back to
+// COMPUTED_FROM_YAHOO so the Source button always reflects where the value
+// actually came from.
+const TRADINGVIEW = (c) => {
+  const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
+  return {
+    url: ticker ? `https://in.tradingview.com/symbols/NSE-${ticker}/technicals/` : "https://in.tradingview.com",
+    label: "TradingView · Technical Analysis",
+    section: "Live indicator value read from /technicals/ page",
+  };
+};
+// Factory: returns a source function that picks TradingView when the named
+// field was sourced for this company, else falls back to the Yahoo-calc path.
+const techSource = (fieldName) => (c) =>
+  c?._source_tech_fields?.has(fieldName) ? TRADINGVIEW(c) : COMPUTED_FROM_YAHOO(c);
 const YAHOO_CRUDE = () => ({ url: "https://finance.yahoo.com/quote/BZ=F", label: "Yahoo Finance", section: "Brent Crude futures (BZ=F)" });
 const YAHOO_INRUSD = () => ({ url: "https://finance.yahoo.com/quote/USDINR=X", label: "Yahoo Finance", section: "USD/INR spot (USDINR=X)" });
 const YAHOO_VIX = () => ({ url: "https://finance.yahoo.com/quote/%5EINDIAVIX", label: "Yahoo Finance", section: "India VIX (^INDIAVIX)" });
@@ -174,55 +192,55 @@ export const META = {
 
   technicals: {
     ema50: {
-      source: YAHOO,
-      calculation: "Standard 50-day EMA computed from Yahoo daily closes. Formula: EMA today = price × (2/51) + EMA yesterday × (49/51). Seeded with first 50-day SMA. PASS if today's close > 50 EMA.",
+      source: techSource("ema50"),
+      calculation: "Standard 50-day EMA. When we have a TradingView scrape for this ticker, the value is read directly from the moving-averages table. Otherwise we compute it locally from Yahoo daily closes (EMA today = price × (2/51) + EMA yesterday × (49/51), seeded with first 50-day SMA). PASS if today's close > 50 EMA.",
       clientLogic: "PASS if CMP > 50 EMA on daily timeframe; 2 pts. Below 50 EMA = 0 pts. Confirms short-to-medium term uptrend.",
       ourLogic: null,
     },
     dma200: {
-      source: YAHOO,
-      calculation: "200-day SMA from Yahoo daily closes (simple average of last 200 closes). PASS if today's close > 200 DMA. Returns N/A for companies with < 200 trading days of history.",
+      source: techSource("sma200"),
+      calculation: "200-day SMA. When we have a TradingView scrape for this ticker, the value is read directly from the moving-averages table. Otherwise computed locally as the simple average of the last 200 Yahoo daily closes. PASS if today's close > 200 DMA. Returns N/A for companies with < 200 trading days of history.",
       clientLogic: "PASS if CMP > 200 DMA on daily timeframe; 2 pts. Fail = stock exits pipeline (primary trend filter).",
       ourLogic: null,
     },
     gold: {
-      source: YAHOO,
-      calculation: "Compute 50-day SMA and 200-day SMA from Yahoo closes. Golden Cross active if 50 SMA > 200 SMA. Death Cross if 50 SMA < 200 SMA.",
+      source: (c) => (c?._source_tech_fields?.has("sma50") || c?._source_tech_fields?.has("sma200")) ? TRADINGVIEW(c) : COMPUTED_FROM_YAHOO(c),
+      calculation: "50-day SMA and 200-day SMA — read from TradingView when scraped, computed locally from Yahoo closes otherwise. Golden Cross active if 50 SMA > 200 SMA. Death Cross if 50 SMA < 200 SMA.",
       clientLogic: "PASS if 50 DMA > 200 DMA (Golden Cross active); 1 pt. Death Cross (50 < 200) = 0 pts.",
       ourLogic: null,
     },
     hhhl: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Aggregate daily Yahoo OHLCV into weekly bars (max high + min low per 5-day group). Take 26 weekly bars ≈ 6 months. Split into recent 13-week window vs prior 13-week window. Pattern present if recent max(high) > prior max(high) AND recent min(low) > prior min(low).",
       clientLogic: "PASS if HH-HL visible on weekly chart over 6+ months; 1 pt. Lower-lows pattern = 0 pts.",
       ourLogic: null,
     },
     rsi: {
-      source: YAHOO,
-      calculation: "RSI(14) = 100 − 100 / (1 + RS) where RS = average gain / average loss over last 14 daily closes. Wilder smoothing for subsequent updates.",
+      source: techSource("rsi14"),
+      calculation: "RSI(14). When we have a TradingView scrape for this ticker, the value is read directly from the oscillators table. Otherwise computed locally from Yahoo closes: RSI = 100 − 100 / (1 + RS) where RS = average gain / average loss over last 14 daily closes, Wilder smoothing for subsequent updates.",
       clientLogic: "PASS if RSI 55–75 (ideal momentum zone); 2 pts. RSI > 80 = overbought = 1 pt. RSI < 40 = weak/failing = 0 pts.",
       ourLogic: null,
     },
     macd: {
-      source: YAHOO,
-      calculation: "MACD line = EMA(12) − EMA(26). Signal = EMA(9) of MACD line. PASS if MACD line > signal AND MACD line > 0. Positive crossover detected if MACD crossed above signal in last day.",
+      source: COMPUTED_FROM_YAHOO,
+      calculation: "MACD line = EMA(12) − EMA(26). Signal = EMA(9) of MACD line. Computed locally from Yahoo closes (TradingView shows MACD Level but not Signal separately, so we keep the local computation). PASS if MACD line > signal AND MACD line > 0. Positive crossover detected if MACD crossed above signal in last day.",
       clientLogic: "PASS if MACD line > signal line and above zero (positive crossover); 2 pts. Negative crossover = 0 pts.",
       ourLogic: null,
     },
     adx: {
-      source: YAHOO,
-      calculation: "ADX(14) using Wilder smoothing. Compute True Range, +DM, −DM each day. Smooth to +DI / −DI. DX = 100 × |+DI − −DI| / (+DI + −DI). ADX = 14-period Wilder smoothing of DX. Scoring: > 25 = 1 pt, 20–25 = 0.5 pt (per client framework), < 20 = 0.",
+      source: techSource("adx14"),
+      calculation: "ADX(14). When we have a TradingView scrape for this ticker, the value is read directly from the oscillators table. Otherwise computed locally from Yahoo OHLCV using Wilder smoothing: True Range / +DM / −DM each day → +DI / −DI → DX = 100 × |+DI − −DI| / (+DI + −DI) → ADX = 14-period Wilder smoothing of DX. Scoring: > 25 = 1 pt, 20–25 = 0.5 pt (per client framework), < 20 = 0.",
       clientLogic: "PASS if ADX > 25 (strong trend); 1 pt. ADX 20–25 = 0.5 pts (developing). ADX < 20 = choppy/no trend = 0 pts.",
       ourLogic: null,
     },
     rs: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Compute 6-month return for stock and for Nifty 500 index (^CRSLDX). Relative Strength = stock_return − index_return.",
       clientLogic: "PASS if 6M price return > Nifty 500 index return; 2 pts. Underperforming benchmark = 1 pt.",
       ourLogic: null,
     },
     volbo: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Compare today's volume against the average of the prior 20 trading days' volume. Volume ratio = today / 20-day avg. PASS if ratio ≥ 1.5×.",
       clientLogic: "PASS if breakout-day volume ≥ 1.5× 20-day avg; 2 pts. Low volume breakout = suspect = 1 pt.",
       ourLogic: null,
@@ -240,19 +258,19 @@ export const META = {
       ourLogic: null,
     },
     near52w: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Compute 52-week high from last 250 daily closes. Proximity ratio = today's close / 52W high. Distance from high = (1 − ratio) × 100%.",
       clientLogic: "PASS if within 10% of 52-week high; 2 pts. > 20% below 52W high = weak structure = 0 pts.",
       ourLogic: null,
     },
     consolidation: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Look at the last 30 trading days = 6 weeks. Base range % = (max(high) − min(low)) / avg(close) × 100. Tight base = range < 12%. Breakout = today's close > prior 6-week high. Volume confirm = today's volume > 1.5× base avg volume. Strong = all three; partials documented in the note.",
       clientLogic: "PASS if breaking out of at least 6-week base on strong volume; 2 pts. No base = 0 pts.",
       ourLogic: null,
     },
     base: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Take last 60 daily closes. Drawdown % = (max − min) / max × 100. Closing-range tightness = standard deviation of closes ÷ mean of closes, expressed as %. Healthy = drawdown < 15% AND tightness < 4%.",
       clientLogic: "PASS if base formed with controlled drawdown < 15% and tight closing range; 1 pt.",
       ourLogic: null,
@@ -264,7 +282,7 @@ export const META = {
       ourLogic: null,
     },
     atr: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "ATR(14) using Wilder smoothing over True Range values. ATR % = ATR ÷ latest close × 100. Trend assessed from atr_history.json accumulator (≥10 daily snapshots needed for trend): recent-half avg vs older-half avg. Scoring combines absolute level (<2.5% / 2.5–4% / >4%) AND trend direction (declining boosts to PASS, rising downgrades to partial). Accumulator builds 1 snapshot per daily Technicals scrape, so the trend signal strengthens over ~2 weeks.",
       clientLogic: "PASS if 14-day ATR % declining or stable (< 2.5% for large cap); 1 pt. Rising ATR = position-size flag.",
       ourLogic: null,
@@ -374,19 +392,19 @@ export const META = {
       ourLogic: "We compute A/D from our own Nifty 500 universe rather than scrape NSE's breadth widget — fully under our control.",
     },
     adtv: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Take last 20 daily bars (≈ 4 weeks). Sum (close × volume) across the window. Average and divide by 1e7 to get ADTV in ₹ crores.",
       clientLogic: "PASS if ADTV ≥ ₹10 Cr (adjust for portfolio AUM); 2 pts. < ₹5 Cr = illiquid = hard fail.",
       ourLogic: null,
     },
     impact: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Estimated from daily OHLCV using the Amihud (2002) illiquidity ratio over the last 30 trading days: ILLIQ = mean(|daily_return| / daily_rupee_volume). Expected impact for a ₹5 crore (5e7 rupee) order ≈ ILLIQ × 5e7 × 100 (as %). Amihud is the proxy that won the Goyenko-Holden-Trzcinka (2009) horse-race for daily-data price-impact accuracy. Order size was set at ₹5 Cr (a standardized institutional position) because ₹1 Cr passed 98% of Nifty 500 — the client's three-band scoring (≤0.3 / 0.3-0.5 / >0.5) only discriminates at an order size large enough to actually consume liquidity. Pairs with close-to-close returns > 15% are skipped (corporate-action guard for dividends, splits, demergers — Indian circuit breakers cap normal intraday at 10%). NSE's official monthly Impact Cost CSV was discontinued July 2024 (circular 62424); this estimator is the practical replacement until we wire a paid feed (Upstox Full Market Quote can deliver the real number from 5-level depth).",
       clientLogic: "PASS if impact cost ≤ 0.3% for mid-cap; 2 pts. > 0.5% = high slippage risk.",
       ourLogic: "Computed estimate, not the official NSE number. Modelled at ₹5 Cr standardized order size — client framework says 'for mid-cap' without naming a rupee amount; ₹5 Cr was chosen to make the three-band scoring actually discriminate. Cross-sectional ranking is reliable (~0.7-0.9 correlation in published validations); absolute level is noisier for very liquid large caps. Borderline cases near 0.3% / 0.5% cutoffs may misclassify — flag for manual review on critical names.",
     },
     spread: {
-      source: YAHOO,
+      source: COMPUTED_FROM_YAHOO,
       calculation: "Estimated from daily close/high/low using the Abdi-Ranaldo (2017) CHL spread estimator over a 30-day window: S = 2·√mean[(c_t − η_t)(c_t − η_{t+1})], where c = ln(close) and η = (ln H + ln L)/2. Best of the classic low-frequency proxies — ~0.74 monthly cross-sectional correlation with TAQ effective spreads. Pairs with close-to-close returns > 15% are skipped (corporate-action guard: dividends, stock splits, demergers, bonus issues all create overnight close gaps that the proxy would otherwise misread as a wide spread — e.g. Vedanta's 2024 capital reduction caused a 5% spread reading on an otherwise highly-liquid stock). NSE Level-1 (bid/ask) is genuinely paywalled and Yahoo doesn't carry it for India (confirmed 0/506 coverage on v8 chart-meta and v7 quote endpoints). Upstox Full Market Quote can deliver the real top-of-book bid/ask in a single 500-instrument call when we wire the integration.",
       clientLogic: "PASS if bid-ask spread < 0.1% of CMP; 1 pt. Wide spread (> 0.3%) signals thin order book = 0 pts.",
       ourLogic: "Computed estimate, not a live bid/ask. Rank-orders liquidity well; absolute level for very liquid large caps is noisy and can come in near zero (clamped — negative S² values arise from sampling noise when true spreads are tighter than the estimator can resolve). Borderline cases near 0.1% / 0.3% cutoffs may misclassify.",
