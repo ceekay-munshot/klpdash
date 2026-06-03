@@ -50,10 +50,24 @@ function ruleInfraPush(c) {
   if (!m) return { ...NA, max: 2 };
   const na = naIfNoSector(c, 2); if (na) return na;
   const active = m.regime?.gov_capex_active;
-  const isBenef = inTheme(c, "infra_push");
   const sector = getSector(c);
-  // Sector neutrality: client framework gives 1 pt to companies in non-
-  // infra sectors (the macro theme doesn't apply to them either way).
+
+  // PRIMARY: per-company govt-capex revenue share from annual report.
+  const rm = rmix(c);
+  if (rm?.govt_capex?.revenue_pct != null) {
+    const pct = rm.govt_capex.revenue_pct;
+    const ev = truncEvidence(rm.govt_capex.evidence);
+    if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "Government capex push not flagged as active in macro context." };
+    if (pct >= 30) return { points: 2, max: 2, status: "pass", value: sector,
+      note: `${pct}% of revenue from government / capex projects — material benefit from active capex push.${ev ? ` ${ev}` : ""}` };
+    if (pct >= 10) return { points: 1, max: 2, status: "partial", value: sector,
+      note: `${pct}% revenue from government / capex — partial exposure.${ev ? ` ${ev}` : ""}` };
+    return { points: 1, max: 2, status: "partial", value: sector,
+      note: `Only ${pct}% revenue from government / capex — not materially capex-driven.${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: original sector proxy.
+  const isBenef = inTheme(c, "infra_push");
   if (!isBenef) return { points: 1, max: 2, status: "partial", value: sector, note: `Sector not on the infra-beneficiary list — 1 pt neutral per client framework.` };
   if (!active) return { points: 0, max: 2, status: "fail", value: sector, note: "Government capex push not flagged as active in macro context." };
   return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.gov_capex_note || "In a sector benefiting from active government capex push." };
@@ -64,9 +78,25 @@ function ruleRateCuts(c) {
   if (!m) return { ...NA, max: 2 };
   const na = naIfNoSector(c, 2); if (na) return na;
   const inCycle = m.regime?.rate_cut_cycle;
-  const isBenef = inTheme(c, "rate_sensitive");
   const sector = getSector(c);
-  // Sector neutrality: non-rate-sensitive sectors get 1 pt per client.
+
+  // PRIMARY: per-company floating-rate liability share from annual report.
+  const rm = rmix(c);
+  if (rm?.rate_sensitive?.floating_rate_liability_pct != null) {
+    const pct = rm.rate_sensitive.floating_rate_liability_pct;
+    const ev = truncEvidence(rm.rate_sensitive.evidence);
+    if (pct < 15) return { points: 1, max: 2, status: "partial", value: sector,
+      note: `Only ${pct}% of liabilities at floating rate — limited sensitivity to rate cycle.${ev ? ` ${ev}` : ""}` };
+    if (!inCycle) return { points: 1, max: 2, status: "partial", value: sector,
+      note: `${pct}% floating-rate liabilities but RBI not currently in rate-cut cycle.${ev ? ` ${ev}` : ""}` };
+    if (pct >= 40) return { points: 2, max: 2, status: "pass", value: sector,
+      note: `${pct}% of liabilities at floating rate — directly benefits from RBI rate-cut cycle.${ev ? ` ${ev}` : ""}` };
+    return { points: 1, max: 2, status: "partial", value: sector,
+      note: `${pct}% floating-rate liabilities — moderate benefit from rate-cut cycle.${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: original sector proxy.
+  const isBenef = inTheme(c, "rate_sensitive");
   if (!isBenef) return { points: 1, max: 2, status: "partial", value: sector, note: `Sector not rate-sensitive — 1 pt neutral per client framework.` };
   if (!inCycle) return { points: 1, max: 2, status: "partial", value: sector, note: "RBI not in rate-cut cycle — neutral for rate-sensitive sectors." };
   return { points: 2, max: 2, status: "pass", value: sector, note: m.regime?.rate_cut_cycle_note || "Rate-sensitive sector benefiting from RBI rate-cut cycle." };
@@ -128,9 +158,25 @@ function ruleRuralRecovery(c) {
   if (!m) return { ...NA, max: 1 };
   const na = naIfNoSector(c, 1); if (na) return na;
   const signal = m.regime?.rural_recovery_signal || "neutral";
-  const isBenef = inTheme(c, "rural_recovery");
   const sector = getSector(c);
-  // Non-rural-facing sector: 1 pt neutral per client framework.
+
+  // PRIMARY: per-company rural revenue share from annual report.
+  const rm = rmix(c);
+  if (rm?.rural?.revenue_pct != null) {
+    const pct = rm.rural.revenue_pct;
+    const ev = truncEvidence(rm.rural.evidence);
+    if (pct < 15) return { points: 1, max: 1, status: "pass", value: sector,
+      note: `Only ${pct}% of revenue from rural markets — not materially exposed.${ev ? ` ${ev}` : ""}` };
+    if (signal === "good") return { points: 1, max: 1, status: "pass", value: sector,
+      note: `${pct}% of revenue from rural markets — favourable rural indicators.${ev ? ` ${ev}` : ""}` };
+    if (signal === "neutral") return { points: 1, max: 1, status: "partial", value: sector,
+      note: `${pct}% revenue from rural markets but indicators are mixed.${ev ? ` ${ev}` : ""}` };
+    return { points: 0, max: 1, status: "fail", value: sector,
+      note: `${pct}% revenue from rural markets — rural signal weak / drought risk flagged.${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: original sector proxy.
+  const isBenef = inTheme(c, "rural_recovery");
   if (!isBenef) return { points: 1, max: 1, status: "pass", value: sector, note: `Sector not rural-facing — 1 pt neutral per client framework.` };
   if (signal === "good") return { points: 1, max: 1, status: "pass", value: sector, note: m.regime?.rural_recovery_note || "Rural indicators improving — favourable for FMCG/Tractors/Agro." };
   if (signal === "neutral") return { points: 1, max: 1, status: "partial", value: sector, note: "Rural-facing sector but indicators are mixed." };
@@ -168,12 +214,26 @@ function ruleCrudeOil(c) {
   const crude = m.live.crude_brent.latest;
   const trend = m.live.crude_brent.trend;
   const sector = getSector(c);
+  const val = `Brent $${crude}/bbl (${trend})`;
+
+  // PRIMARY: per-company crude-as-raw-material cost share from annual report.
+  const rm = rmix(c);
+  if (rm?.crude_exposure?.raw_material_pct != null) {
+    const pct = rm.crude_exposure.raw_material_pct;
+    const ev = truncEvidence(rm.crude_exposure.evidence);
+    // Low crude cost → not materially crude-sensitive
+    if (pct < 10) return { points: 1, max: 1, status: "pass", value: val, note: `Only ${pct}% of revenue from crude-linked raw materials — limited crude sensitivity.${ev ? ` ${ev}` : ""}` };
+    // Material crude exposure: cheap crude helps, expensive crude hurts
+    if (crude < 85 && pct >= 15) return { points: 1, max: 1, status: "pass", value: val, note: `${pct}% raw-material crude exposure — soft crude price is a margin tailwind.${ev ? ` ${ev}` : ""}` };
+    if (crude > 90 && pct >= 15) return { points: 0, max: 1, status: "fail", value: val, note: `${pct}% raw-material crude exposure — elevated crude is a margin headwind.${ev ? ` ${ev}` : ""}` };
+    return { points: 1, max: 1, status: "partial", value: val, note: `${pct}% raw-material crude exposure — neutral at current crude levels.${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: original sector proxy.
   const benefitsLow = inTheme(c, "crude_low_beneficiary");
   const hurtsHigh = inTheme(c, "crude_high_hurt");
-  const val = `Brent $${crude}/bbl (${trend})`;
   if (crude < 85 && benefitsLow) return { points: 1, max: 1, status: "pass", value: val, note: `Crude below $85 — favourable for ${sector}.` };
   if (crude > 90 && hurtsHigh) return { points: 0, max: 1, status: "fail", value: val, note: `Crude above $90 — input-cost headwind for ${sector}.` };
-  // Non-crude-sensitive sector: 1 pt neutral per client framework.
   return { points: 1, max: 1, status: "pass", value: val, note: `Sector not directly crude-sensitive — 1 pt neutral per client framework.` };
 }
 
@@ -183,16 +243,33 @@ function ruleINRUSD(c) {
   const na = naIfNoSector(c, 1); if (na) return na;
   const rate = m.live.usdinr.latest;
   const trend = m.live.usdinr.trend;
-  const inrWeakening = trend === "rising";  // USD/INR rising == INR weakening
+  const inrWeakening = trend === "rising";
   const inrStrengthening = trend === "falling";
   const sector = getSector(c);
+  const val = `USD/INR ₹${rate} (INR ${inrWeakening ? "weakening" : inrStrengthening ? "strengthening" : "stable"})`;
+
+  // PRIMARY: per-company USD revenue share from annual report.
+  const rm = rmix(c);
+  if (rm?.inr_exposure?.usd_revenue_pct != null) {
+    const pct = rm.inr_exposure.usd_revenue_pct;
+    const hedge = rm.inr_exposure.hedging_policy;
+    const ev = truncEvidence(rm.inr_exposure.evidence);
+    const hedgeNote = hedge ? ` Hedging: ${truncEvidence(hedge, 120)}` : "";
+    if (pct < 10) return { points: 1, max: 1, status: "pass", value: val, note: `Only ${pct}% of revenue in USD — limited INR sensitivity.${ev ? ` ${ev}` : ""}` };
+    if (inrWeakening && pct >= 25) return { points: 1, max: 1, status: "pass", value: val,
+      note: `${pct}% USD revenue — INR weakening adds margin tailwind.${hedgeNote}${ev ? ` ${ev}` : ""}` };
+    if (inrStrengthening && pct >= 25) return { points: 0, max: 1, status: "fail", value: val,
+      note: `${pct}% USD revenue — INR strengthening compresses export margins.${hedgeNote}${ev ? ` ${ev}` : ""}` };
+    return { points: 1, max: 1, status: "partial", value: val,
+      note: `${pct}% USD revenue — neutral at current INR trend.${hedgeNote}${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: original sector proxy.
   const exporter = inTheme(c, "inr_weakening_benefit");
   const importer = inTheme(c, "inr_weakening_hurt");
-  const val = `USD/INR ₹${rate} (INR ${inrWeakening ? "weakening" : inrStrengthening ? "strengthening" : "stable"})`;
   if (inrWeakening && exporter) return { points: 1, max: 1, status: "pass", value: val, note: `INR weakening trend — adds ~70 bps margin tailwind for ${sector} exporters.` };
   if (inrStrengthening && exporter) return { points: 0, max: 1, status: "fail", value: val, note: `Strong INR hurts ${sector} exporters.` };
   if (inrWeakening && importer) return { points: 0, max: 1, status: "fail", value: val, note: `INR weakening hurts ${sector} importers.` };
-  // Non-INR-sensitive sector: 1 pt neutral per client framework.
   return { points: 1, max: 1, status: "pass", value: val, note: `Sector not directly INR-sensitive — 1 pt neutral per client framework.` };
 }
 
@@ -218,6 +295,22 @@ function ruleBondYields(c) {
 function rulePLIBeneficiary(c) {
   const m = c?._macro;
   if (!m?.pli_companies) return { ...NA, max: 2 };
+
+  // PRIMARY: explicit PLI mention + revenue share from annual report.
+  const rm = rmix(c);
+  if (rm?.pli_scheme?.is_beneficiary != null) {
+    const isBenef = rm.pli_scheme.is_beneficiary;
+    const pct = rm.pli_scheme.revenue_pct;
+    const ev = truncEvidence(rm.pli_scheme.evidence);
+    if (!isBenef) return { points: 0, max: 2, status: "fail", value: "Not a PLI beneficiary",
+      note: `Annual report does not cite PLI-scheme participation.${ev ? ` ${ev}` : ""}` };
+    if (pct != null && pct >= 5) return { points: 2, max: 2, status: "pass", value: `${pct}% PLI revenue`,
+      note: `${pct}% of revenue from PLI-eligible products.${ev ? ` ${ev}` : ""}` };
+    return { points: 2, max: 2, status: "pass", value: "On PLI scheme",
+      note: `Confirmed PLI beneficiary in annual report.${ev ? ` ${ev}` : ""}` };
+  }
+
+  // FALLBACK: curated company list.
   const inList = !!c?.in_pli;
   if (inList) return { points: 2, max: 2, status: "pass", value: "On PLI list", note: "Company has approved PLI allocation or confirmed PLI-scheme revenue." };
   return { points: 0, max: 2, status: "fail", value: "Not on PLI list", note: `Not in the curated list of ${m.pli_companies.length} PLI beneficiaries.` };
