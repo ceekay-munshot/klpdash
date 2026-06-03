@@ -196,6 +196,24 @@ const CONFIGS = {
 };
 
 // ---------------- State ----------------
+// Watchlist persisted in localStorage. Stored as an array of company
+// identifiers (Screener URL slug — stable across sessions). Toggled via
+// the ☆/★ button in each row and the "Watchlist" filter pill in the toolbar.
+const WATCHLIST_KEY = "klpdash-watchlist-v1";
+function loadWatchlist() {
+  try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function saveWatchlist(set) {
+  try { localStorage.setItem(WATCHLIST_KEY, JSON.stringify([...set])); }
+  catch {}
+}
+function companyKey(co) {
+  // Stable identifier: URL slug from Screener URL (NSE ticker or BSE code)
+  const slug = String(co?.["Screener URL"] || co?.["Composite URL"] || "").match(/\/company\/([^/]+)/)?.[1];
+  return slug ? slug.toUpperCase() : (co?.Company || co?.name || "").toUpperCase();
+}
+
 const state = {
   activeTab: "fundamentals",
   cache: {},                  // tab → { scored, raw, meta, filtered }
@@ -203,6 +221,13 @@ const state = {
   scoreFilter: "all",
   sortBy: "score",
   sortDir: "desc",
+  watchlist: loadWatchlist(),
+  watchOnly: false,
+  // Lazy composite cache — populated on first drill-down or when composite
+  // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
+  compositeBySlug: new Map(),
+  lazyTechBySlug: null,        // Map slug → tech row (loaded on demand)
+  lazyMacroCtx: null,          // raw macro.json (loaded on demand)
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -235,6 +260,18 @@ function scoreTier(pct) {
 }
 function tierLabel(t) { return ({ excellent: "Excellent", good: "Good", average: "Average", weak: "Weak", hardfail: "Hard Fail" })[t]; }
 function tierColor(t) { return ({ excellent: "text-emerald-600", good: "text-blue-600", average: "text-amber-600", weak: "text-rose-600", hardfail: "text-rose-700" })[t]; }
+// Gradient theme keyed off the per-tab tier — feeds renderScoreGauge / renderPillarRadar
+// (both expect the { from, to } shape that ratingTheme returns for composite tab).
+function themeFromTier(t) {
+  const map = {
+    excellent: { from: "from-emerald-500", to: "to-teal-500" },
+    good:      { from: "from-blue-500",    to: "to-indigo-500" },
+    average:   { from: "from-amber-500",   to: "to-orange-500" },
+    weak:      { from: "from-rose-500",    to: "to-pink-500" },
+    hardfail:  { from: "from-slate-500",   to: "to-slate-600" },
+  };
+  return map[t] || { from: "from-slate-400", to: "to-slate-500" };
+}
 function statusPill(status) {
   switch (status) {
     case "pass":      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">✓ Pass</span>`;
@@ -582,6 +619,30 @@ function renderMeta() {
   $("#meta-count").textContent = `${st.scored.length} companies`;
   // Render a friendly source label instead of dumping the raw saved-screen URL.
   $("#meta-source").textContent = sourceFriendly(c, m);
+  // Top-right refresh card: show "Xh ago" + source line (replaces the
+  // previous hardcoded "Daily / 06:00 IST" copy with the real freshness).
+  const agoEl = $("#refresh-ago"), srcEl = $("#refresh-source");
+  if (agoEl && srcEl && m && m.generated_at) {
+    agoEl.textContent = relativeTimeFrom(m.generated_at);
+    srcEl.textContent = sourceFriendly(c, m);
+  } else if (agoEl) {
+    agoEl.textContent = "—";
+  }
+}
+
+// Compact relative-time formatter ("2h ago", "yesterday", "3 days ago").
+function relativeTimeFrom(iso) {
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "—";
+  const diffMin = Math.round((Date.now() - t) / 60_000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.round(diffHr / 24);
+  if (diffDay === 1) return "yesterday";
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 }
 
 function sourceFriendly(c, m) {
@@ -860,6 +921,7 @@ function applyFilters() {
   const c = cfg(); const st = tabState();
   const q = state.search.trim().toLowerCase();
   let rows = st.scored.filter((s) => {
+    if (state.watchOnly && !state.watchlist.has(companyKey(s.company))) return false;
     if (q && !c.name(s.company).toLowerCase().includes(q)) return false;
     if (state.scoreFilter === "hardfail") return s.hardFails.length > 0;
     if (state.scoreFilter !== "all") {
@@ -910,9 +972,16 @@ function renderTable() {
       return `<span class="w-1.5 h-1.5 rounded-full ${dot}" title="${escapeHtml(b.label)}: ${b.status}"></span>`;
     }).join("");
     const flagged = s.hardFails.length > 0;
+    const slug = companyKey(s.company);
+    const watched = state.watchlist.has(slug);
     return `
       <tr data-idx="${i}" class="row-clickable border-b border-slate-100 cursor-pointer transition-colors ${flagged ? "bg-rose-50/40 hover:bg-rose-50" : "hover:bg-slate-50"}" ${flagged ? `style="box-shadow: inset 3px 0 0 #f43f5e"` : ""}>
-        <td class="px-4 py-3 text-sm text-slate-500 font-medium">${rank}</td>
+        <td class="px-4 py-3 text-sm text-slate-500 font-medium">
+          <div class="flex items-center gap-1">
+            <button data-watch="${escapeHtml(slug)}" class="watch-star text-base leading-none transition-colors ${watched ? "text-amber-400" : "text-slate-300 hover:text-amber-400"}" title="${watched ? "Remove from watchlist" : "Add to watchlist"}">${watched ? "★" : "☆"}</button>
+            <span>${rank}</span>
+          </div>
+        </td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">${initials}</div>
@@ -938,6 +1007,34 @@ function renderTable() {
     `;
   }).join("") || `<tr><td colspan="${4 + c.columns.length + 2}" class="px-4 py-12 text-center text-slate-400">No companies match your filters.</td></tr>`;
   $$("#table-body .row-clickable").forEach((el) => el.addEventListener("click", () => openDrillDown(st.filtered[Number(el.dataset.idx)])));
+  // Watchlist star handlers — stop propagation so the row click doesn't fire too
+  $$("#table-body .watch-star").forEach((btn) => btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const k = btn.dataset.watch;
+    if (!k) return;
+    if (state.watchlist.has(k)) state.watchlist.delete(k);
+    else state.watchlist.add(k);
+    saveWatchlist(state.watchlist);
+    updateWatchCount();
+    // If "Watchlist only" is on, an unstar should drop the row from view
+    if (state.watchOnly) applyFilters();
+    else renderTable();
+  }));
+}
+
+// Update the toolbar "Watchlist" pill count + active style.
+function updateWatchCount() {
+  const el = $("#watch-count");
+  if (el) el.textContent = String(state.watchlist.size);
+  const btn = $("#watch-toggle");
+  if (btn) {
+    const on = state.watchOnly;
+    btn.classList.toggle("bg-amber-100", on);
+    btn.classList.toggle("border-amber-300", on);
+    btn.classList.toggle("text-amber-800", on);
+    const icon = $("#watch-star-icon");
+    if (icon) icon.textContent = on ? "★" : "☆";
+  }
 }
 
 // ---------------- drill-down ----------------
@@ -1014,12 +1111,16 @@ function openDrillDown(s) {
           ${c.screenerUrl(co) ? `<a href="${escapeHtml(c.screenerUrl(co))}" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:text-indigo-800">View on Screener.in ↗</a>` : ""}
         </div>
       </div>
-      <div class="grid grid-cols-3 gap-3 mt-4">
-        <div class="bg-slate-50 rounded-lg p-3">
-          <div class="text-xs text-slate-500 font-medium">${escapeHtml(c.label)} Score</div>
-          <div class="text-2xl font-bold ${tierColor(tier)}">${s.totalPoints}<span class="text-sm text-slate-400">/${s.totalMax}</span></div>
-          <div class="text-xs text-slate-500">${tierLabel(tier)}</div>
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="bg-slate-50 rounded-lg p-3 flex flex-col items-center justify-center">
+          ${renderScoreGauge(s.scorePct, themeFromTier(tier), 100, 108)}
+          <div class="text-[10px] text-slate-500 mt-1.5 font-semibold uppercase tracking-wider">${tierLabel(tier)} · ${escapeHtml(c.label)}</div>
         </div>
+        <div id="drill-radar-slot" class="bg-slate-50 rounded-lg p-2 flex items-center justify-center min-h-[140px]">
+          <div class="text-xs text-slate-400 animate-pulse">Loading pillar profile…</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-${Math.max(1, headerStats.length)} gap-3 mt-3">
         ${headerStats.map((hs) => `
           <div class="bg-slate-50 rounded-lg p-3">
             <div class="text-xs text-slate-500 font-medium">${escapeHtml(hs.label)}</div>
@@ -1069,6 +1170,22 @@ function openDrillDown(s) {
   $("#drill-panel").classList.remove("translate-x-full");
   $("#drill-overlay").classList.remove("hidden");
   $("#drill-close").addEventListener("click", closeDrillDown);
+  // Fire score gauge count-up + ring sweep animations after mount.
+  requestAnimationFrame(() => animateScoreEntrance($("#drill-content")));
+  // Lazy-populate the pillar radar (needs composite scoring → may
+  // need to fetch technicals.json + macro.json on first call).
+  (async () => {
+    const slot = document.getElementById("drill-radar-slot");
+    if (!slot) return;
+    const comp = await ensureCompositeFor(co);
+    // Drill might have closed by the time the fetch resolves
+    if (!document.getElementById("drill-radar-slot")) return;
+    if (!comp || !comp.pillars) {
+      slot.innerHTML = `<div class="text-xs text-slate-400 text-center">Pillar profile unavailable<br/><span class="text-[10px]">data not loaded for this ticker</span></div>`;
+      return;
+    }
+    slot.innerHTML = renderPillarRadar({ pillars: comp.pillars }, themeFromTier(tier), 110);
+  })();
 }
 // Render a circular progress gauge as inline SVG. Returns an HTML
 // string with the score number centred inside the ring.
@@ -1113,6 +1230,44 @@ function renderScoreGauge(score, theme, max = 100, size = 144) {
       </div>
     </div>
   `;
+}
+
+// Lazy composite resolver — used by drill-down (any tab) to get the
+// full 5-pillar shape for one company. If composite has already been
+// computed (via SPIP tab or a prior drill-down), returns the cached
+// result. Otherwise lazy-fetches technicals.json + macro.json and runs
+// composite.scoreCompositeOne. Returns null if compute fails.
+async function ensureCompositeFor(co) {
+  if (!co) return null;
+  const slug = companyKey(co);
+  if (!slug) return null;
+  if (state.compositeBySlug.has(slug)) return state.compositeBySlug.get(slug);
+  if (co._composite) {
+    state.compositeBySlug.set(slug, co._composite);
+    return co._composite;
+  }
+  // Need technicals + macro to compute pillars. Load each once globally.
+  if (!state.lazyTechBySlug) {
+    try {
+      const tj = await fetch("data/technicals.json").then((r) => r.json());
+      const trows = (tj.companies || tj) || [];
+      state.lazyTechBySlug = new Map();
+      for (const t of trows) {
+        const k = String(t.ticker || "").toUpperCase();
+        if (k) state.lazyTechBySlug.set(k, t);
+      }
+    } catch { state.lazyTechBySlug = new Map(); }
+  }
+  if (!state.lazyMacroCtx) {
+    try { state.lazyMacroCtx = await fetch("data/macro.json").then((r) => r.json()); }
+    catch { state.lazyMacroCtx = {}; }
+  }
+  try {
+    const techCo = state.lazyTechBySlug.get(slug) || null;
+    const result = composite.scoreCompositeOne(co, techCo, state.lazyMacroCtx);
+    state.compositeBySlug.set(slug, result);
+    return result;
+  } catch { return null; }
 }
 
 // Pillar card — premium card per pillar showing raw score, %, weight, and
@@ -1947,6 +2102,14 @@ function wire() {
   $$(".tab-btn").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
   $("#search").addEventListener("input", (e) => { state.search = e.target.value; applyFilters(); });
   $("#score-filter").addEventListener("change", (e) => { state.scoreFilter = e.target.value; applyFilters(); });
+  // Watchlist toggle — click toggles "show only watchlisted" mode
+  const watchBtn = $("#watch-toggle");
+  if (watchBtn) watchBtn.addEventListener("click", () => {
+    state.watchOnly = !state.watchOnly;
+    updateWatchCount();
+    applyFilters();
+  });
+  updateWatchCount();
   $("#export-btn").addEventListener("click", exportToExcel);
   $("#drill-overlay").addEventListener("click", closeDrillDown);
   $("#help-btn")?.addEventListener("click", openHelpModal);
