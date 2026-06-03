@@ -175,7 +175,7 @@ const CONFIGS = {
         const r = co._composite?.rating;
         if (!r) return `<span class="text-slate-400">—</span>`;
         const cls = composite.ratingClass(r);
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ring-1 ${cls}">${escapeHtml(r)}</span>`;
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${cls}">${escapeHtml(r)}</span>`;
       } },
       { label: "Fund", get: (co) => `${co._composite?.pillars?.fundamentals?.raw ?? "—"}/29` },
       { label: "Tech", get: (co) => co._composite?.pillars?.technicals?.raw == null ? "—" : `${co._composite.pillars.technicals.raw}/${co._composite.pillars.technicals.max}` },
