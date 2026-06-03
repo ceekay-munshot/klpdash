@@ -1,13 +1,11 @@
-name: Technicals source scrape (TradingView via Firecrawl)
+name: Technicals source scrape (TradingView via Playwright)
 
-# Scrapes per-company technical indicators (RSI, MACD, ADX, ATR, MAs) from
-# TradingView so our dashboard values match what an analyst sees on their
-# screen. Falls back to OHLCV-calculated values in tech-scoring.js for any
-# company / indicator the source page doesn't expose.
+# Scrapes per-company technical indicators (RSI, MACD, ADX, MAs, etc.) from
+# TradingView using Playwright on the GitHub Actions runner — free vs the
+# ~$83/month Firecrawl tier the prior version needed.
 #
-# Initial batch: TECHNICALS_SOURCE_BATCH=25 top-SPIP companies per run.
-# Cron fires daily 07:45 IST after revenue-mix TODO regeneration (07:15)
-# so the priority order is freshly computed.
+# Falls back to OHLCV-calculated values in tech-scoring.js for any company
+# or indicator the source page doesn't expose.
 
 on:
   workflow_dispatch:
@@ -17,14 +15,13 @@ on:
         required: false
         default: "25"
   schedule:
-    # 02:15 UTC = 07:45 IST — after revenue-mix TODO regen + after Yahoo
-    # OHLCV scrape in daily-refresh, so we have CMP for sanity checks.
+    # 02:15 UTC = 07:45 IST — after revenue-mix TODO regen + Yahoo OHLCV scrape
     - cron: "15 2 * * *"
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     permissions:
       contents: write
     steps:
@@ -33,12 +30,17 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install Playwright
+        run: |
+          npm install playwright@1 --no-save
+          npx playwright install --with-deps chromium
+
       - name: Run technicals source scraper
-        continue-on-error: true  # Don't blow up other workflows if Firecrawl times out
+        continue-on-error: true
         env:
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           TECHNICALS_SOURCE_BATCH: ${{ inputs.batch_size || '25' }}
           TECHNICALS_SOURCE_THROTTLE: "1500"
+          TECHNICALS_SOURCE_TIMEOUT: "30000"
         run: node screener-test/scrape-technicals-source.mjs
 
       - name: Commit refreshed technicals-source.json
