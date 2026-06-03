@@ -98,6 +98,16 @@ if (existsSync(OUT_PATH)) {
 }
 if (!out.companies) out.companies = {};
 
+// Persist current state to disk after every successful scrape. Critical
+// for long runs (504 companies × ~10s each ≈ 80 min) — without this, a
+// workflow timeout / runner crash wipes everything since the previous
+// commit. Resume on next run picks up only the slugs still missing.
+function checkpointSave() {
+  out.generated_at = new Date().toISOString();
+  out.total_companies_covered = Object.keys(out.companies).length;
+  writeFileSync(OUT_PATH, JSON.stringify(out, null, 2) + "\n");
+}
+
 // ---------- Parse a single page's text into structured indicators ----------
 // TradingView's rendered text has each indicator on its own visual row;
 // each row contains: name <whitespace> value <whitespace> action.
@@ -154,10 +164,23 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
-let ok = 0, fail = 0, skipped = 0;
+// Resume mechanic: skip slugs that already have a scrape from THIS run's day.
+// On a 504-company run that times out at company #200, the workflow's next
+// fire (or a manual re-trigger) picks up at #201 without re-scraping.
+const RESUME_FRESH_HOURS = Number(process.env.TECHNICALS_SOURCE_RESUME_HOURS || 18);
+
+let ok = 0, fail = 0, skipped = 0, resumed = 0;
 for (const slug of ordered) {
+  const existing = out.companies[slug];
+  if (existing?.scraped_at) {
+    const ageHours = (Date.now() - new Date(existing.scraped_at).getTime()) / 3_600_000;
+    if (ageHours < RESUME_FRESH_HOURS) {
+      resumed++;
+      continue;   // already scraped this run-window; skip silently
+    }
+  }
   const url = `https://in.tradingview.com/symbols/NSE-${slug}/technicals/`;
-  process.stdout.write(`[${ok + fail + skipped + 1}/${ordered.length}] ${slug.padEnd(14)} `);
+  process.stdout.write(`[${ok + fail + skipped + resumed + 1}/${ordered.length}] ${slug.padEnd(14)} `);
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
     // Wait for the page's JS-driven tables to populate. The signal:
@@ -180,6 +203,7 @@ for (const slug of ordered) {
       continue;
     }
     out.companies[slug] = { ...parsed, url, scraped_at: new Date().toISOString() };
+    checkpointSave();   // persist after every success — survives timeouts/crashes
     console.log(`OK · ${indicatorCount} indicators · summary=${parsed.summary?.verdict || "—"}`);
     ok++;
   } catch (err) {
@@ -191,14 +215,12 @@ for (const slug of ordered) {
 
 await browser.close();
 
-out.generated_at = new Date().toISOString();
 out.last_batch_ok = ok;
 out.last_batch_fail = fail;
 out.last_batch_skipped_empty = skipped;
-out.total_companies_covered = Object.keys(out.companies).length;
+out.last_batch_resumed = resumed;
+checkpointSave();
 
-writeFileSync(OUT_PATH, JSON.stringify(out, null, 2) + "\n");
-
-console.log(`\nDone. ok=${ok}  fail=${fail}  skipped=${skipped}`);
+console.log(`\nDone. ok=${ok}  fail=${fail}  skipped=${skipped}  resumed=${resumed}`);
 console.log(`Total companies covered: ${out.total_companies_covered}`);
 console.log(`Wrote ${OUT_PATH}`);
