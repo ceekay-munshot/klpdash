@@ -21,7 +21,9 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # ~10s per company × 504 ≈ 84 min; bump to 150 with headroom for slow
+    # pages + resume-on-rerun if a single run still gets cut short.
+    timeout-minutes: 150
     permissions:
       contents: write
     steps:
