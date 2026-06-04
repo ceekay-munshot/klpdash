@@ -11,16 +11,20 @@ on:
   workflow_dispatch:
     inputs:
       batch_size:
-        description: "Number of companies to scrape this run (default 25)"
+        description: "Companies to scrape this run. Leave 0 (default) = all NSE-listed companies in the current universe. Use a small number only for testing."
         required: false
-        default: "25"
+        default: "0"
       force_refresh:
         description: "Wipe technicals-source.json before starting (re-scrape everything)"
         required: false
         type: boolean
         default: false
   schedule:
-    # 02:15 UTC = 07:45 IST — after revenue-mix TODO regen + Yahoo OHLCV scrape
+    # 02:15 UTC = 07:45 IST — after revenue-mix TODO regen + Yahoo OHLCV scrape.
+    # Daily run processes the FULL universe (BATCH_SIZE=0) so any company
+    # added to screener-companies.json overnight gets scraped the next day.
+    # Resume mechanic skips already-fresh entries, so steady-state runs
+    # only do new + stale companies — usually a few minutes wall-clock.
     - cron: "15 2 * * *"
 
 jobs:
@@ -51,7 +55,10 @@ jobs:
       - name: Run technicals source scraper
         continue-on-error: true
         env:
-          TECHNICALS_SOURCE_BATCH: ${{ inputs.batch_size || '25' }}
+          # 0 = no limit (scrape every NSE-listed company in screener-companies.json).
+          # The resume mechanic skips entries scraped in the last 18h, so a daily
+          # cron with BATCH_SIZE=0 only does new + stale companies on most runs.
+          TECHNICALS_SOURCE_BATCH: ${{ inputs.batch_size || '0' }}
           TECHNICALS_SOURCE_THROTTLE: "1500"
           TECHNICALS_SOURCE_TIMEOUT: "30000"
         run: node screener-test/scrape-technicals-source.mjs
