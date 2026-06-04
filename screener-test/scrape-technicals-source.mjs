@@ -118,14 +118,27 @@ function checkpointSave() {
 // (the "14" in "RSI (14)") instead of the actual value. Always extract
 // from the text after the last ")" on the line, or fall through to
 // the next non-label line if the label is alone.
+//
+// CRITICAL: large numbers come through with thousands separators —
+// "5,210.73". Strip commas BEFORE running the digit regex so values
+// like the 50/100/200 SMAs on a ₹5000 stock parse correctly.
+function parseValue(s) {
+  if (s == null) return null;
+  const cleaned = String(s).replace(/,/g, "");
+  const m = cleaned.match(/-?\d+\.?\d*/);
+  return m ? Number(m[0]) : null;
+}
+function isJustNumber(s) {
+  if (!s) return false;
+  return /^-?\d{1,3}(?:,\d{3})*(?:\.\d+)?$|^-?\d+(?:\.\d+)?$/.test(String(s).trim());
+}
+
 function parsePageText(text) {
   const result = { summary: {}, oscillators: {}, moving_averages: {} };
   const lines = text.split(/\n+/).map((s) => s.trim()).filter(Boolean);
 
   // Summary verdict — TradingView shows "Strong Buy" / "Buy" / "Neutral" /
-  // "Sell" / "Strong Sell" as a standalone heading line. Match the most
-  // specific verdict that appears as a whole-line entry; this avoids
-  // matching "Neutral" inside indicator rows.
+  // "Sell" / "Strong Sell" as a standalone heading line.
   for (const verdict of ["Strong Buy", "Strong Sell", "Buy", "Sell", "Neutral"]) {
     if (lines.some((l) => l === verdict)) {
       result.summary.verdict = verdict;
@@ -139,24 +152,24 @@ function parsePageText(text) {
   if (sellM)    result.summary.sell_count    = Number(sellM[1]);
   if (neutralM) result.summary.neutral_count = Number(neutralM[1]);
 
-  // Per-indicator: label → value
+  // Per-indicator: label → value (handles "5,210.73" via parseValue).
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     for (const [pattern, bucket, field] of INDICATOR_MAP) {
       if (!pattern.test(line)) continue;
 
-      // 1) Try inline format — look ONLY at text after the last closing
-      //    paren on the label line (skips over the parameter numbers).
+      // 1) Inline format — text AFTER the last closing paren on the label line.
       const afterParen = line.includes(")") ? line.split(")").pop().trim() : "";
-      let m = afterParen.match(/-?\d+\.?\d*/);
-      if (m) { result[bucket][field] = Number(m[0]); break; }
+      if (afterParen) {
+        const v = parseValue(afterParen);
+        if (v != null) { result[bucket][field] = v; break; }
+      }
 
-      // 2) Otherwise scan the next few non-empty lines for a pure number.
-      //    Stop if we hit another indicator label.
+      // 2) Stacked format — scan next few lines for a number line.
       for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
         const candidate = lines[j];
-        if (/^-?\d+\.?\d*$/.test(candidate)) {
-          result[bucket][field] = Number(candidate);
+        if (isJustNumber(candidate)) {
+          result[bucket][field] = parseValue(candidate);
           break;
         }
         if (INDICATOR_MAP.some(([p]) => p.test(candidate))) break;
