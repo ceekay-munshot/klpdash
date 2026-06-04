@@ -22,7 +22,12 @@ const SCREENER_PATH = resolve(__dirname, "../public/data/screener-companies.json
 const TODO_PATH     = resolve(__dirname, "../public/data/revenue-mix-todo.csv");
 const OUT_PATH      = resolve(__dirname, "../public/data/technicals-source.json");
 
-const BATCH_SIZE        = Number(process.env.TECHNICALS_SOURCE_BATCH    || 25);
+// BATCH_SIZE = 0 means "no limit — scrape every NSE-listed company in
+// the universe". The daily auto-run uses 0 so we cover whatever the
+// Screener daily-refresh has added overnight. The resume mechanic then
+// skips any company already scraped today, so steady-state daily runs
+// process only the new + stale companies in a few minutes.
+const BATCH_SIZE        = Number(process.env.TECHNICALS_SOURCE_BATCH    || 0);
 const THROTTLE_MS       = Number(process.env.TECHNICALS_SOURCE_THROTTLE || 1500);
 const NAV_TIMEOUT_MS    = Number(process.env.TECHNICALS_SOURCE_TIMEOUT  || 30_000);
 const PAGE_WAIT_MS      = 3_000;   // give JS-rendered tables time to populate
@@ -83,12 +88,17 @@ if (existsSync(TODO_PATH)) {
         if (slug && !/^\d+$/.test(slug)) { ordered.push(slug); break; }
       }
     }
-    if (ordered.length >= BATCH_SIZE) break;
+    if (BATCH_SIZE > 0 && ordered.length >= BATCH_SIZE) break;
   }
 }
-if (ordered.length === 0) ordered = [...screenerBySlug.keys()].sort().slice(0, BATCH_SIZE);
+// Fallback when revenue-mix-todo.csv hasn't been generated yet: full
+// alphabetical sweep of the universe, capped by BATCH_SIZE when set.
+if (ordered.length === 0) {
+  const all = [...screenerBySlug.keys()].sort();
+  ordered = BATCH_SIZE > 0 ? all.slice(0, BATCH_SIZE) : all;
+}
 
-console.log(`Will scrape ${ordered.length} companies (batch=${BATCH_SIZE})`);
+console.log(`Will scrape ${ordered.length} companies (batch=${BATCH_SIZE === 0 ? "all" : BATCH_SIZE})`);
 console.log(`First 5: ${ordered.slice(0, 5).join(", ")}`);
 
 // ---------- Load existing output (resume on same-day re-run) ----------
