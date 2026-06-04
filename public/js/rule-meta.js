@@ -31,6 +31,34 @@ const YAHOO = (c) => {
   const ticker = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
   return { url: ticker ? `https://finance.yahoo.com/quote/${ticker}.NS` : "https://finance.yahoo.com", label: "Yahoo Finance", section: "Historical daily OHLCV (1Y)" };
 };
+// Per-company Annual Report location. Used by the Auditor rule, and by
+// every macro rule whose verdict is driven by c._revenue_mix when the
+// daily AR-extraction routine has populated data for the ticker.
+//
+// Rules:
+// - Numeric URL slug = BSE code → link to that company's BSE Annual
+//   Reports page (PDF archive).
+// - Otherwise → link to the company's Screener page, which carries an
+//   "Annual Reports" section in the left nav that links to the same
+//   BSE-filed PDFs (and is reachable when bseindia.com is bot-blocked).
+const AR_PAGE = (c) => {
+  const slug = c?.ticker || (String(c?.["Screener URL"] || "").match(/\/company\/([^/]+)/)?.[1]) || "";
+  if (slug && /^\d+$/.test(slug)) {
+    return {
+      url: `https://www.bseindia.com/corporates/AnnualReport_New.aspx?scripcd=${slug}`,
+      label: "BSE — Annual Reports",
+      section: "Most recent annual report PDF (filed on BSE)",
+    };
+  }
+  if (c?.["Screener URL"]) {
+    return {
+      url: c["Screener URL"],
+      label: "Screener.in — Annual Reports",
+      section: "Annual Reports section on the company page (left nav, links to BSE-filed PDFs)",
+    };
+  }
+  return { url: "https://www.bseindia.com/", label: "BSE India", section: "Annual Reports" };
+};
 // TradingView is the source of truth for an indicator value WHEN we successfully
 // scraped it (scrape-technicals-source.mjs writes to technicals-source.json,
 // app.js sets row._source_tech_fields per overwritten field). Without a scrape
@@ -175,7 +203,7 @@ export const META = {
       ourLogic: null,
     },
     auditorRemarks: {
-      source: () => ({ url: "https://www.bseindia.com/", label: "BSE India — Annual Reports", section: "Independent Auditor's Report section of the latest filed annual report" }),
+      source: AR_PAGE,
       // Direct extraction from a primary source — no computation, so no Calculation button.
       calculation: null,
       clientLogic: "PASS if clean unqualified opinion; 2 pts. Any qualification or emphasis-of-matter = 1 pt. Adverse opinion or disclaimer = hard fail.",
@@ -291,29 +319,29 @@ export const META = {
 
   macro: {
     infra: {
-      source: (c) => ({ url: "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=2003687", label: "PIB / Union Budget", section: "FY26 Budget capex announcement" }),
-      // Sector membership check against curated infra-beneficiary list — no formula.
+      // When the per-company AR extraction has data for this ticker, the
+      // verdict is driven by govt_capex.revenue_pct from MD&A — link to
+      // the AR. Otherwise the rule falls back to sector proxy + PIB
+      // budget context — link to PIB.
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=2003687", label: "PIB / Union Budget", section: "FY26 Budget capex announcement" }),
       calculation: null,
       clientLogic: "PASS if stock is in Capital Goods / Cement / Roads sector with active govt capex; 2 pts. No exposure = 0 pts.",
       ourLogic: null,
     },
     ratecut: {
-      source: (c) => ({ url: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx", label: "RBI", section: "Monetary Policy Committee statements" }),
-      // Sector membership check against curated rate-sensitive list — no formula.
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx", label: "RBI", section: "Monetary Policy Committee statements" }),
       calculation: null,
       clientLogic: "PASS if sector benefits from falling rates and RBI stance is accommodative; 2 pts. Neutral = 1 pt.",
       ourLogic: null,
     },
     chinaplus1: {
-      source: (c) => ({ url: "https://www.dpiit.gov.in/", label: "DPIIT / Ministry of Commerce", section: "PLI scheme + China+1 substitution disclosures" }),
-      // Direct lookup in curated company list + sector fallback — no formula.
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://www.dpiit.gov.in/", label: "DPIIT / Ministry of Commerce", section: "PLI scheme + China+1 substitution disclosures" }),
       calculation: null,
       clientLogic: "PASS if company derives > 15% revenue from China+1 substitution or EMS theme; 2 pts.",
       ourLogic: "Hybrid approach. Primary path: curated company list (~50 names with material China+1 / EMS revenue exposure — full 2 pts on match). Fallback path: sector membership for companies not on the explicit list (1 pt partial credit). Closes the previous sector-only proxy.",
     },
     rural: {
-      source: (c) => ({ url: "https://nabard.org/", label: "NABARD / IMD", section: "Rural recovery + monsoon indicators" }),
-      // Sector membership check against curated rural-facing list — no formula.
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://nabard.org/", label: "NABARD / IMD", section: "Rural recovery + monsoon indicators" }),
       calculation: null,
       clientLogic: "PASS if rural indicators improving (MSP hike, normal monsoon, kharif sowing); 1 pt. Drought risk = 0 pts.",
       ourLogic: null,
@@ -349,7 +377,7 @@ export const META = {
       ourLogic: "Live G-Sec yield is fetched daily from a small chain of public sources (Yahoo Finance under several candidate symbols, then a worldgovernmentbonds.com HTML scrape). Falls back to the static value in macro-context.json if all live fetches fail. Trend is computed from the 30-day window when Yahoo returns history; from the same-day change column when scraping worldgovernmentbonds.",
     },
     pli: {
-      source: PIB_PLI,
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : PIB_PLI(c),
       // Direct lookup in curated PLI beneficiary list — no formula.
       calculation: null,
       clientLogic: "PASS if company has approved PLI allocation or confirmed PLI-scheme revenue; 2 pts.",
