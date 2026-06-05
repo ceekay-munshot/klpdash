@@ -2603,6 +2603,172 @@ async function exportToExcel() {
   });
 }
 
+// ---------------- global search (header typeahead) ----------------
+// Universal search across the whole universe. Selecting a company
+// opens the composite drill so every pillar's data (fundamentals,
+// technicals, macro, sentiment, liquidity) appears in one modal —
+// no tab-switching required. Composite cache lazy-loads on first
+// focus if the user hasn't visited the SPIP basket yet.
+const globalSearch = { matches: [], selectedIdx: -1, lastQuery: "" };
+
+async function ensureCompositeForSearch() {
+  if (state.cache.composite) return true;
+  const results = $("#global-search-results");
+  if (results) {
+    results.innerHTML = `<div class="px-4 py-6 text-center text-sm text-slate-400">Loading universe…</div>`;
+    results.classList.remove("hidden");
+  }
+  try {
+    await loadTab("composite");
+    return true;
+  } catch (e) {
+    if (results) results.innerHTML = `<div class="px-4 py-6 text-center text-sm text-rose-500">Couldn't load — try again</div>`;
+    return false;
+  }
+}
+
+function setupGlobalSearch() {
+  const input = $("#global-search");
+  const results = $("#global-search-results");
+  if (!input || !results) return;
+
+  // Use Mac key symbol if user is on Mac, else "Ctrl K"
+  const kbd = $("#global-search-kbd");
+  if (kbd && !/Mac|iPhone|iPad/.test(navigator.platform || "")) kbd.textContent = "Ctrl K";
+
+  function closeDropdown() {
+    results.classList.add("hidden");
+    globalSearch.matches = [];
+    globalSearch.selectedIdx = -1;
+  }
+
+  function renderRow(s, i) {
+    const name = s.company?.Company || "—";
+    const sector = s.company?.Sector || s.company?.["Broad Industry"] || "";
+    const marketCap = s.company?.["Market Cap"] || "";
+    const { color, initials } = avatarFor(name);
+    const cls = composite.ratingClass(s.rating);
+    const comp = s.composite != null ? s.composite.toFixed(1) : "—";
+    const active = i === globalSearch.selectedIdx;
+    return `
+      <button data-search-idx="${i}" class="result-row w-full text-left flex items-center gap-3 px-3.5 py-2.5 border-b border-slate-100 last:border-b-0 transition-colors ${active ? "bg-indigo-50" : "hover:bg-slate-50"}">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-xs flex-shrink-0">${initials}</div>
+        <div class="min-w-0 flex-1">
+          <div class="font-semibold text-slate-900 text-sm truncate">${escapeHtml(name)}</div>
+          <div class="text-[11px] text-slate-500 truncate">${escapeHtml(sector)}${marketCap ? ` · ${escapeHtml(marketCap)}` : ""}</div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <div class="text-base font-bold tabular-nums text-slate-900 leading-none">${comp}</div>
+          <span class="inline-flex items-center mt-1 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${cls}">${escapeHtml(s.rating || "—")}</span>
+        </div>
+      </button>
+    `;
+  }
+
+  function repaint() {
+    if (globalSearch.matches.length === 0) {
+      results.innerHTML = `<div class="px-4 py-6 text-center text-sm text-slate-400">No companies found</div>`;
+    } else {
+      results.innerHTML =
+        `<div class="px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/70 border-b border-slate-100">${globalSearch.matches.length} match${globalSearch.matches.length === 1 ? "" : "es"} · ↑↓ navigate · ↵ open</div>` +
+        globalSearch.matches.map((s, i) => renderRow(s, i)).join("");
+      results.querySelectorAll(".result-row").forEach((el) => {
+        el.addEventListener("click", () => openSearchResult(Number(el.dataset.searchIdx)));
+        el.addEventListener("mouseenter", () => {
+          globalSearch.selectedIdx = Number(el.dataset.searchIdx);
+          highlightSelected();
+        });
+      });
+    }
+    results.classList.remove("hidden");
+  }
+
+  function highlightSelected() {
+    results.querySelectorAll(".result-row").forEach((el, i) => {
+      const active = i === globalSearch.selectedIdx;
+      el.classList.toggle("bg-indigo-50", active);
+      el.classList.toggle("hover:bg-slate-50", !active);
+      if (active) el.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function openSearchResult(idx) {
+    const match = globalSearch.matches[idx];
+    if (!match) return;
+    closeDropdown();
+    input.blur();
+    input.value = "";
+    openCompositeDrill(match);
+  }
+
+  async function update(q) {
+    q = q.trim().toLowerCase();
+    if (q.length < 1) { closeDropdown(); globalSearch.lastQuery = ""; return; }
+    if (q === globalSearch.lastQuery) return;
+    globalSearch.lastQuery = q;
+    const ok = await ensureCompositeForSearch();
+    if (!ok) return;
+    const scored = state.cache.composite?.scored || [];
+    // Rank: name starts-with first, then contains. Hide hard-failed at
+    // the bottom but still surface them — analyst may want to inspect.
+    const startsWith = [];
+    const contains = [];
+    for (const s of scored) {
+      const n = (s.company?.Company || "").toLowerCase();
+      if (!n) continue;
+      if (n.startsWith(q)) startsWith.push(s);
+      else if (n.includes(q)) contains.push(s);
+    }
+    globalSearch.matches = [...startsWith, ...contains].slice(0, 10);
+    globalSearch.selectedIdx = globalSearch.matches.length > 0 ? 0 : -1;
+    repaint();
+  }
+
+  let debounce;
+  input.addEventListener("input", (e) => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => update(e.target.value), 80);
+  });
+  input.addEventListener("focus", () => {
+    if (input.value.trim().length >= 1) update(input.value);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { closeDropdown(); input.blur(); }
+    else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (globalSearch.matches.length > 0) {
+        globalSearch.selectedIdx = (globalSearch.selectedIdx + 1) % globalSearch.matches.length;
+        highlightSelected();
+      }
+    }
+    else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (globalSearch.matches.length > 0) {
+        globalSearch.selectedIdx = (globalSearch.selectedIdx - 1 + globalSearch.matches.length) % globalSearch.matches.length;
+        highlightSelected();
+      }
+    }
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      if (globalSearch.selectedIdx >= 0) openSearchResult(globalSearch.selectedIdx);
+    }
+  });
+
+  // Click outside closes the dropdown
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target) && !results.contains(e.target)) closeDropdown();
+  });
+
+  // ⌘K / Ctrl+K focuses search from anywhere on the page
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+}
+
 // ---------------- wiring ----------------
 function wire() {
   $$(".tab-btn").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
@@ -2620,6 +2786,7 @@ function wire() {
   $("#drill-overlay").addEventListener("click", closeDrillDown);
   $("#help-btn")?.addEventListener("click", openHelpModal);
   $("#sources-btn")?.addEventListener("click", openSourcesModal);
+  setupGlobalSearch();
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrillDown(); });
 }
 

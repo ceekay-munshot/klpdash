@@ -104,7 +104,7 @@
     <!-- HEADER -->
     <header class="max-w-7xl mx-auto px-6 pt-8 pb-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-shrink-0">
           <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-extrabold text-lg shadow-lg">
             LKP
           </div>
@@ -113,7 +113,23 @@
             <p class="text-sm text-slate-500">Multi-screen scoring · NSE 500 universe</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 text-xs text-slate-500">
+
+        <!-- GLOBAL SEARCH — typeaheads across the full universe; selecting
+             a company opens the composite drill so every pillar's data
+             appears in one place (no tab-switching). -->
+        <div class="flex-1 max-w-xl mx-auto w-full sm:px-4 relative">
+          <div class="relative">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+            </svg>
+            <input id="global-search" type="text" autocomplete="off" placeholder="Search any company — Reliance, ITC, HDFC…"
+              class="w-full pl-10 pr-14 py-2.5 bg-white text-sm text-slate-800 ring-1 ring-slate-200 rounded-xl shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-shadow"/>
+            <kbd id="global-search-kbd" class="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 rounded ring-1 ring-slate-200 pointer-events-none">⌘K</kbd>
+          </div>
+          <div id="global-search-results" class="hidden absolute top-full left-0 right-0 sm:left-4 sm:right-4 mt-2 bg-white rounded-xl shadow-2xl ring-1 ring-slate-200 max-h-[420px] overflow-y-auto z-50"></div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-500 flex-shrink-0">
           <button id="sources-btn" type="button" title="See all data sources used in this dashboard" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/70 ring-1 ring-slate-200 rounded-full hover:bg-indigo-50 hover:ring-indigo-200 hover:text-indigo-700 transition-colors">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
             <span class="font-medium">Sources</span>
