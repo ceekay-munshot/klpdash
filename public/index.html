@@ -114,6 +114,10 @@
           </div>
         </div>
         <div class="flex items-center gap-2 text-xs text-slate-500">
+          <button id="sources-btn" type="button" title="See all data sources used in this dashboard" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/70 ring-1 ring-slate-200 rounded-full hover:bg-indigo-50 hover:ring-indigo-200 hover:text-indigo-700 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            <span class="font-medium">Sources</span>
+          </button>
           <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 ring-1 ring-emerald-100 rounded-full">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="font-medium text-emerald-700">Live</span>
@@ -140,8 +144,11 @@
         <button data-tab="sentiment" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors">
           Sentiment &amp; Liquidity
         </button>
-        <button data-tab="composite" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
-          SPIP Basket <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">NEW</span>
+        <button data-tab="composite" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors">
+          SPIP Basket
+        </button>
+        <button data-tab="topPicks" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
+          <span class="bg-gradient-to-r from-emerald-600 via-amber-500 to-pink-500 bg-clip-text text-transparent font-bold">★ Top Picks</span>
         </button>
         <button data-tab="history" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
           History <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">SOON</span>
@@ -184,7 +191,6 @@
           <h2 id="top-cards-title" class="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
             <span class="text-amber-500">🏆</span> Top 10 by Score
           </h2>
-          <div class="text-xs text-slate-500">Click any card to see the full breakdown</div>
         </div>
         <div id="top-cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
       </section>
@@ -240,6 +246,11 @@
             <tbody id="table-body"></tbody>
           </table>
         </div>
+      </section>
+
+      <!-- TOP PICKS — premium hero page rendered by renderTopPicks() in app.js -->
+      <section id="top-picks-section" class="hidden">
+        <div id="top-picks-content"></div>
       </section>
 
       <!-- LOCKED TAB PLACEHOLDER (shown on History tab — toggled by switchTab in app.js) -->

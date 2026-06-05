@@ -154,7 +154,10 @@ function weighted(points, max, weightPct) {
 //   techCo  - matching row from technicals.json (Technicals + Senliq)
 //             may be null if Yahoo OHLCV was missing for this ticker
 //   macroCtx - parsed macro.json (live VIX, sentiment, sector themes)
-export function scoreCompositeOne(fundCo, techCo, macroCtx) {
+//   weights  - optional override of PILLAR_WEIGHTS (lets the SPIP basket
+//              tab re-score with client-adjusted weights without changing
+//              the framework constants)
+export function scoreCompositeOne(fundCo, techCo, macroCtx, weights = PILLAR_WEIGHTS) {
   const fundResult  = fund.scoreCompany(fundCo);
   const macroResult = macro.scoreCompany({ ...fundCo, _macro: macroCtx });
 
@@ -178,27 +181,27 @@ export function scoreCompositeOne(fundCo, techCo, macroCtx) {
     fundamentals: {
       raw: fundResult.totalPoints, max: fundResult.totalMax,
       pct: fundResult.scorePct,
-      weighted: weighted(fundResult.totalPoints, fundResult.totalMax, PILLAR_WEIGHTS.fundamentals),
+      weighted: weighted(fundResult.totalPoints, fundResult.totalMax, weights.fundamentals),
     },
     technicals: techResult ? {
       raw: techResult.totalPoints, max: techResult.totalMax,
       pct: techResult.scorePct,
-      weighted: weighted(techResult.totalPoints, techResult.totalMax, PILLAR_WEIGHTS.technicals),
+      weighted: weighted(techResult.totalPoints, techResult.totalMax, weights.technicals),
     } : { raw: null, max: PILLAR_MAX_RAW.technicals, pct: null, weighted: null },
     macro: {
       raw: macroResult.totalPoints, max: macroResult.totalMax,
       pct: macroResult.scorePct,
-      weighted: weighted(macroResult.totalPoints, macroResult.totalMax, PILLAR_WEIGHTS.macro),
+      weighted: weighted(macroResult.totalPoints, macroResult.totalMax, weights.macro),
     },
     sentiment: split ? {
       raw: split.sentiment.points, max: split.sentiment.max,
       pct: split.sentiment.max ? Math.round((split.sentiment.points / split.sentiment.max) * 100) : 0,
-      weighted: weighted(split.sentiment.points, split.sentiment.max, PILLAR_WEIGHTS.sentiment),
+      weighted: weighted(split.sentiment.points, split.sentiment.max, weights.sentiment),
     } : { raw: null, max: PILLAR_MAX_RAW.sentiment, pct: null, weighted: null },
     liquidity: split ? {
       raw: split.liquidity.points, max: split.liquidity.max,
       pct: split.liquidity.max ? Math.round((split.liquidity.points / split.liquidity.max) * 100) : 0,
-      weighted: weighted(split.liquidity.points, split.liquidity.max, PILLAR_WEIGHTS.liquidity),
+      weighted: weighted(split.liquidity.points, split.liquidity.max, weights.liquidity),
     } : { raw: null, max: PILLAR_MAX_RAW.liquidity, pct: null, weighted: null },
   };
 
@@ -231,7 +234,7 @@ export function scoreCompositeOne(fundCo, techCo, macroCtx) {
 // Score every company in the universe. Returns array sorted by
 // composite descending; hard-failed and unrated stocks are kept in
 // the array but sorted to the bottom so the UI can split them out.
-export function scoreCompositeBatch(fundCompanies, techCompanies, macroCtx) {
+export function scoreCompositeBatch(fundCompanies, techCompanies, macroCtx, weights = PILLAR_WEIGHTS) {
   // Build ticker → techCo lookup. extractTicker mirrors what
   // scrape-technicals.mjs does.
   const techByTicker = {};
@@ -246,7 +249,7 @@ export function scoreCompositeBatch(fundCompanies, techCompanies, macroCtx) {
   const results = (fundCompanies || []).map((fc) => {
     const ticker = extractTickerFromUrl(fc["Screener URL"]);
     const tc = ticker ? techByTicker[ticker] : null;
-    return scoreCompositeOne(fc, tc, macroCtx);
+    return scoreCompositeOne(fc, tc, macroCtx, weights);
   });
 
   // Sort: rated stocks descending by composite, then unrated, then filtered last.
