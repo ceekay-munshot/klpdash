@@ -66,6 +66,18 @@ async function run() {
     const close = typeof tc?.cmp === "number" ? tc.cmp : null;
     if (close != null) withClose++; else withoutClose++;
 
+    // Pillar breakdown — lean per-pillar shape so forensics can decompose
+    // composite deltas day-over-day. pct = 0..100, weighted = contribution
+    // to the 100-point composite (sum of all five = composite).
+    const p = s.pillars || {};
+    const pillars = {
+      fundamentals: leanPillar(p.fundamentals),
+      technicals:   leanPillar(p.technicals),
+      macro:        leanPillar(p.macro),
+      sentiment:    leanPillar(p.sentiment),
+      liquidity:    leanPillar(p.liquidity),
+    };
+
     return {
       ticker,
       name: fc.Company || null,
@@ -76,6 +88,7 @@ async function run() {
       hardFailed: !!s.hardFailed,
       dataComplete: !!s.dataComplete,
       close,
+      pillars,
     };
   });
 
@@ -136,4 +149,14 @@ function slugify(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+// Drop {raw, max} from each pillar — keep just pct (0..100) and weighted
+// (contribution to the composite). Round both to 2 decimals.
+function leanPillar(p) {
+  if (!p) return null;
+  return {
+    pct:      p.pct      == null ? null : Number(p.pct.toFixed(2)),
+    weighted: p.weighted == null ? null : Number(p.weighted.toFixed(3)),
+  };
 }
