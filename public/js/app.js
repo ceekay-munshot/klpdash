@@ -193,6 +193,13 @@ const CONFIGS = {
         sub: co._composite?.composite != null ? `Composite ${co._composite.composite.toFixed(1)} / 100` : "Unrated — data missing" },
     ],
   },
+  // Premium hero page — surfaces stocks scoring above 75 composite
+  // (STRONG BUY band) with hard-fails excluded. Renders bespoke cards,
+  // not the standard table layout — handled by renderTopPicks().
+  topPicks: {
+    label: "Top Picks",
+    hero: true,
+  },
   // Stub tab — when active, switchTab toggles the locked placeholder
   // section instead of loading data. Used today for the History tab
   // until the snapshot pipeline (Cloudflare KV) ships.
@@ -206,6 +213,34 @@ const CONFIGS = {
 // Watchlist persisted in localStorage. Stored as an array of company
 // identifiers (Screener URL slug — stable across sessions). Toggled via
 // the ☆/★ button in each row and the "Watchlist" filter pill in the toolbar.
+// Client-adjustable pillar weights — stored in localStorage so the
+// per-client tweak survives reloads. Defaults to the framework's
+// PILLAR_WEIGHTS (40/35/15/5/5). SPIP basket + Top Picks tabs re-score
+// composites whenever the user changes these.
+const PILLAR_WEIGHTS_KEY = "klpdash-pillar-weights-v1";
+function loadPillarWeights() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PILLAR_WEIGHTS_KEY) || "null");
+    if (stored && typeof stored === "object") {
+      // Sanity-clamp + sum normalisation guard so a corrupted value
+      // can't silently break composite scoring.
+      const w = {
+        fundamentals: Math.max(0, Math.min(100, Number(stored.fundamentals) || 0)),
+        technicals:   Math.max(0, Math.min(100, Number(stored.technicals)   || 0)),
+        macro:        Math.max(0, Math.min(100, Number(stored.macro)        || 0)),
+        sentiment:    Math.max(0, Math.min(100, Number(stored.sentiment)    || 0)),
+        liquidity:    Math.max(0, Math.min(100, Number(stored.liquidity)    || 0)),
+      };
+      const sum = w.fundamentals + w.technicals + w.macro + w.sentiment + w.liquidity;
+      if (sum >= 95 && sum <= 105) return w; // accept ±5 tolerance
+    }
+  } catch {}
+  return { ...composite.PILLAR_WEIGHTS };
+}
+function savePillarWeights(w) {
+  try { localStorage.setItem(PILLAR_WEIGHTS_KEY, JSON.stringify(w)); } catch {}
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -230,6 +265,7 @@ const state = {
   sortDir: "desc",
   watchlist: loadWatchlist(),
   watchOnly: false,
+  pillarWeights: loadPillarWeights(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -382,15 +418,25 @@ async function switchTab(tabId) {
   $("#search").value = "";
   $("#score-filter").value = "all";
 
-  // Locked tabs (History etc.) skip data loading + table rendering and
-  // just show their #locked-placeholder section.
+  // Section toggles per tab type:
+  // - Locked (History): only #locked-placeholder visible
+  // - Hero (Top Picks): only #top-picks-section visible
+  // - Normal: hide both, show all other sections
   const c = CONFIGS[tabId];
   const locked = !!c?.locked;
+  const hero = !!c?.hero;
   document.querySelectorAll("main > section").forEach((sec) => {
     if (sec.id === "locked-placeholder") sec.classList.toggle("hidden", !locked);
-    else sec.classList.toggle("hidden", locked);
+    else if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
+    else sec.classList.toggle("hidden", locked || hero);
   });
   if (locked) return;
+  if (hero) {
+    // Composite scoring drives Top Picks. Lazy-build the composite cache.
+    if (!state.cache.composite) await loadTab("composite");
+    renderTopPicks();
+    return;
+  }
 
   if (!state.cache[tabId]) await loadTab(tabId);
   renderAll();
@@ -464,7 +510,7 @@ async function loadTab(tabId) {
       for (const row of techCompanies) if (row.ticker && atrHistory[row.ticker]) row.atr_history = atrHistory[row.ticker];
     } catch {}
 
-    const compositeResults = composite.scoreCompositeBatch(fundCompanies, techCompanies, macroData);
+    const compositeResults = composite.scoreCompositeBatch(fundCompanies, techCompanies, macroData, state.pillarWeights);
     // Stash composite result on the company so column getters can reach it,
     // and map to the score-shape existing renderers expect.
     const scored = compositeResults.map((r) => {
@@ -813,55 +859,103 @@ function renderCompositeTopCards() {
   const total = all.length;
   const inBasket = counts.strong + counts.buy + counts.watch;
 
-  // 3-bucket rating distribution: STRONG BUY · BUY · WATCH only.
-  // AVOID / UNRATED / hard-failed roll into the segmented 100%-width
-  // bar above the cards but don't get their own dedicated card —
-  // those are exit/exclusion states, not basket categories.
+  // Pillar-weight adjuster — collapsible <details> so it stays out of
+  // the way for casual viewers but is one click away for the analyst.
+  const w = state.pillarWeights;
+  const sum = w.fundamentals + w.technicals + w.macro + w.sentiment + w.liquidity;
+  const weightDelta = sum === 100 ? "" : ` (sums to ${sum}, will normalise to 100 on apply)`;
+  const isDefaultWeights = ["fundamentals","technicals","macro","sentiment","liquidity"]
+    .every((k) => w[k] === composite.PILLAR_WEIGHTS[k]);
+  const pillarWeightAdjuster = `
+    <details class="mb-4 group">
+      <summary class="cursor-pointer select-none flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 ring-1 ring-indigo-100 hover:ring-indigo-200 transition">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⚖️</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Pillar Weights</span>
+          <span class="text-xs text-slate-600 tabular-nums">
+            Fund <b>${w.fundamentals}</b> · Tech <b>${w.technicals}</b> · Macro <b>${w.macro}</b> · Sent <b>${w.sentiment}</b> · Liq <b>${w.liquidity}</b>
+          </span>
+          ${isDefaultWeights ? `<span class="text-[10px] text-slate-400 italic">(framework default)</span>` : `<span class="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Custom</span>`}
+        </div>
+        <span class="text-xs text-slate-400 group-open:rotate-180 transition-transform">▾</span>
+      </summary>
+      <div class="mt-2 p-4 rounded-xl bg-white ring-1 ring-slate-200">
+        <p class="text-xs text-slate-600 mb-3">
+          Adjust pillar weights to match your client's mandate. Composite scores update instantly across the SPIP Basket and Top Picks tabs.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
+          ${["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => `
+            <label class="block">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${k.charAt(0).toUpperCase() + k.slice(1)}</div>
+              <div class="flex items-center gap-1">
+                <input type="number" min="0" max="100" step="1" data-weight-key="${k}" value="${w[k]}"
+                  class="w-full px-2 py-1.5 text-sm font-bold tabular-nums bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+                <span class="text-xs text-slate-400">%</span>
+              </div>
+            </label>
+          `).join("")}
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-500">
+            Total: <span id="pillar-weight-sum" class="font-bold tabular-nums ${sum === 100 ? "text-emerald-700" : "text-amber-700"}">${sum}</span>%${weightDelta}
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="pillar-weight-reset" type="button" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">↺ Reset to default</button>
+            <button id="pillar-weight-apply" type="button" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">Apply</button>
+          </div>
+        </div>
+      </div>
+    </details>
+  `;
+
+  // Full 6-bucket breakdown — no hidden math, every one of the `total`
+  // stocks is accounted for in exactly one card. Distribution strip up top
+  // is the same color-coded breakdown as a stacked bar.
   const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
   const pctOf = (n) => total ? (n / total) * 100 : 0;
+  const cats = [
+    { count: counts.strong,   label: "STRONG BUY", sub: "Initiate full position",     from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",     accent: "text-emerald-700", dot: "bg-emerald-500" },
+    { count: counts.buy,      label: "BUY",        sub: "Initiate 50–75% position",   from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",      accent: "text-blue-700",    dot: "bg-blue-500" },
+    { count: counts.watch,    label: "WATCH",      sub: "Watchlist, don't initiate",  from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",     accent: "text-amber-700",   dot: "bg-amber-500" },
+    { count: counts.avoid,    label: "AVOID",      sub: "Score below threshold",      from: "from-rose-500",    to: "to-pink-500",    soft: "from-rose-50 to-pink-50",        accent: "text-rose-700",    dot: "bg-rose-500" },
+    { count: counts.unrated,  label: "UNRATED",    sub: "Data still loading",         from: "from-slate-400",   to: "to-slate-500",   soft: "from-slate-50 to-slate-100",     accent: "text-slate-700",   dot: "bg-slate-400" },
+    { count: counts.filtered, label: "HARD-FAIL",  sub: "Auto-excluded — red flag",   from: "from-slate-600",   to: "to-slate-800",   soft: "from-slate-100 to-slate-200",    accent: "text-slate-800",   dot: "bg-slate-700" },
+  ];
   const distributionStrip = `
-    <div class="mb-3">
-      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100" title="${counts.strong} STRONG BUY · ${counts.buy} BUY · ${counts.watch} WATCH · ${counts.avoid} AVOID · ${counts.unrated} UNRATED · ${counts.filtered} HARD FAIL">
+    <div class="mb-2">
+      <p class="text-sm text-slate-600 mb-2">
+        Of <span class="font-bold text-slate-900 tabular-nums">${total}</span> stocks scanned today, here's where each one landed:
+      </p>
+      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100" title="${cats.map(c=>`${c.count} ${c.label}`).join(" · ")}">
         ${seg(pctOf(counts.strong),   "bg-gradient-to-r from-emerald-500 to-teal-500")}
         ${seg(pctOf(counts.buy),      "bg-gradient-to-r from-blue-500 to-indigo-500")}
         ${seg(pctOf(counts.watch),    "bg-gradient-to-r from-amber-500 to-orange-500")}
         ${seg(pctOf(counts.avoid),    "bg-gradient-to-r from-rose-500 to-pink-500")}
         ${seg(pctOf(counts.unrated),  "bg-slate-300")}
-        ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-500 to-slate-600")}
+        ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-600 to-slate-800")}
       </div>
     </div>
-    <div class="grid grid-cols-3 gap-3 mb-5">
-      ${[
-        { count: counts.strong,   label: "STRONG BUY", from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",   accent: "text-emerald-700" },
-        { count: counts.buy,      label: "BUY",        from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",    accent: "text-blue-700" },
-        { count: counts.watch,    label: "WATCH",      from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",   accent: "text-amber-700" },
-      ].map((b) => `
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-4">
-          <div class="flex items-center gap-1.5 mb-1.5">
-            <span class="w-2 h-2 rounded-full bg-gradient-to-br ${b.from} ${b.to}"></span>
-            <span class="text-[10px] font-bold uppercase tracking-wider ${b.accent}">${b.label}</span>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
+      ${cats.map((b) => `
+        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-3">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-1.5 h-1.5 rounded-full ${b.dot}"></span>
+            <span class="text-[9px] font-bold uppercase tracking-wider ${b.accent}">${b.label}</span>
           </div>
-          <div class="text-3xl font-bold ${b.accent} leading-none">${b.count}</div>
-          <div class="text-[10px] text-slate-500 mt-1.5">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
+          <div class="text-2xl font-bold ${b.accent} leading-none tabular-nums">${b.count}</div>
+          <div class="text-[10px] text-slate-500 mt-1 leading-tight">${b.sub}</div>
+          <div class="text-[9px] text-slate-400 mt-0.5 tabular-nums">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
         </div>
       `).join("")}
     </div>
-    <!-- Funnel: universe → basket → top picks -->
-    <div class="flex items-center justify-center gap-3 mb-6 text-xs">
-      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-white ring-1 ring-slate-200">
-        <div class="text-2xl font-bold text-slate-900">${total}</div>
-        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">Universe</div>
-      </div>
-      <div class="text-slate-400 text-lg">→</div>
-      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 ring-1 ring-indigo-200">
-        <div class="text-2xl font-bold text-indigo-700">${inBasket}</div>
-        <div class="text-[10px] text-indigo-600 uppercase tracking-wider mt-0.5">In SPIP Basket</div>
-      </div>
-      <div class="text-slate-400 text-lg">→</div>
-      <div class="flex-1 max-w-[200px] text-center p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 ring-1 ring-emerald-200">
-        <div class="text-2xl font-bold text-emerald-700">${counts.strong}</div>
-        <div class="text-[10px] text-emerald-600 uppercase tracking-wider mt-0.5">STRONG BUY</div>
-      </div>
+    <!-- One-line summary so the math is explicit -->
+    <div class="mb-5 px-3 py-2 rounded-lg bg-indigo-50/60 ring-1 ring-indigo-100 text-xs text-slate-700 leading-relaxed">
+      <span class="font-bold text-indigo-700 tabular-nums">${inBasket}</span> stocks made the
+      <span class="font-semibold text-indigo-700">SPIP Basket</span>
+      (Strong Buy + Buy + Watch) ·
+      <span class="font-bold text-rose-700 tabular-nums">${counts.avoid + counts.filtered}</span>
+      excluded (Avoid + Hard-Fail) ·
+      <span class="font-bold text-slate-600 tabular-nums">${counts.unrated}</span> pending data.
     </div>
   `;
 
@@ -958,12 +1052,244 @@ function renderCompositeTopCards() {
     ${printCover}
     <div class="col-span-full">
       ${printBtn}
+      ${pillarWeightAdjuster}
       ${distributionStrip}
     </div>
     ${heroCards}
   `;
   $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
   $("#print-pdf-btn")?.addEventListener("click", () => window.print());
+
+  // Pillar-weight sum live indicator + Apply / Reset handlers
+  const sumEl = $("#pillar-weight-sum");
+  const inputs = $$('#top-cards input[data-weight-key]');
+  function recomputeSum() {
+    let s = 0;
+    inputs.forEach((el) => { s += Number(el.value) || 0; });
+    if (sumEl) {
+      sumEl.textContent = String(s);
+      sumEl.classList.toggle("text-emerald-700", s === 100);
+      sumEl.classList.toggle("text-amber-700", s !== 100);
+    }
+  }
+  inputs.forEach((el) => el.addEventListener("input", recomputeSum));
+  $("#pillar-weight-apply")?.addEventListener("click", () => {
+    const next = { fundamentals: 40, technicals: 35, macro: 15, sentiment: 5, liquidity: 5 };
+    inputs.forEach((el) => { next[el.dataset.weightKey] = Math.max(0, Math.min(100, Number(el.value) || 0)); });
+    // Normalise to 100 if user's input doesn't sum exactly.
+    const s = next.fundamentals + next.technicals + next.macro + next.sentiment + next.liquidity;
+    if (s > 0 && s !== 100) {
+      const k = 100 / s;
+      for (const key of Object.keys(next)) next[key] = Math.round(next[key] * k);
+    }
+    state.pillarWeights = next;
+    savePillarWeights(next);
+    // Invalidate composite tab cache so loadTab re-scores with new weights.
+    delete state.cache.composite;
+    delete state.cache.topPicks;
+    state.compositeBySlug.clear();
+    switchTab("composite");
+  });
+  $("#pillar-weight-reset")?.addEventListener("click", () => {
+    state.pillarWeights = { ...composite.PILLAR_WEIGHTS };
+    savePillarWeights(state.pillarWeights);
+    delete state.cache.composite;
+    delete state.cache.topPicks;
+    state.compositeBySlug.clear();
+    switchTab("composite");
+  });
+}
+
+// ---------------- Top Picks (Hero) ----------------
+// Premium, client-facing page. Renders every stock with composite ≥ 75
+// (STRONG BUY band), hard-fails excluded. Uses bespoke card layout —
+// not the standard table — with rank ribbons, gradient backgrounds,
+// pillar profiles, and an auto-generated thesis snippet per company.
+function renderTopPicks() {
+  const st = state.cache.composite;
+  if (!st) return;
+  const picks = st.scored.filter((s) => !s.hardFailed && !s.unrated && (s.composite ?? 0) >= 75);
+  const totalUniverse = st.scored.length;
+  const meta = st.meta || {};
+
+  if (picks.length === 0) {
+    $("#top-picks-content").innerHTML = `
+      <div class="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 p-12 text-center">
+        <div class="text-6xl mb-4">🔍</div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">No stocks above 75 right now</h2>
+        <p class="text-slate-600">The current macro regime + framework rules have produced no STRONG BUY picks today.<br>Try lowering your pillar weights in SPIP Basket or wait for the next refresh.</p>
+      </div>`;
+    return;
+  }
+
+  // Stats for the header strip
+  const avgComposite = (picks.reduce((a, s) => a + (s.composite || 0), 0) / picks.length).toFixed(1);
+  const sectors = new Set();
+  picks.forEach((s) => { const sec = s.company?.["Sector"] || s.company?.["Broad Industry"]; if (sec) sectors.add(sec); });
+  const topPillarSums = { fundamentals: 0, technicals: 0, macro: 0, sentiment: 0, liquidity: 0 };
+  picks.forEach((s) => {
+    for (const k of Object.keys(topPillarSums)) topPillarSums[k] += s.pillars?.[k]?.pct ?? 0;
+  });
+  const avgPillarPcts = Object.fromEntries(Object.entries(topPillarSums).map(([k, v]) => [k, Math.round(v / picks.length)]));
+  const strongestPillarKey = Object.entries(avgPillarPcts).sort((a,b) => b[1]-a[1])[0][0];
+  const pillarLabel = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment", liquidity: "Liquidity" };
+
+  const PILLAR_ICONS = {
+    fundamentals: "📊", technicals: "📈", macro: "🌍", sentiment: "💬", liquidity: "💧",
+  };
+
+  function rankBadge(i) {
+    const medals = ["🥇", "🥈", "🥉"];
+    if (i < 3) return `<div class="absolute -top-2 -left-2 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 via-yellow-300 to-orange-400 ring-4 ring-white shadow-xl flex items-center justify-center text-2xl">${medals[i]}</div>`;
+    return `<div class="absolute -top-2 -left-2 w-11 h-11 rounded-full bg-white ring-2 ring-slate-200 shadow-md flex items-center justify-center text-sm font-bold text-slate-700">#${i+1}</div>`;
+  }
+
+  // Auto-thesis: pick the 2 strongest pillars + the top-scoring rule from each.
+  function buildThesis(s) {
+    const pillars = s.pillars || {};
+    const ranked = Object.entries(pillars)
+      .filter(([_, p]) => p.pct != null)
+      .sort((a, b) => (b[1].pct || 0) - (a[1].pct || 0));
+    const top2 = ranked.slice(0, 2).map(([k, p]) => `<span class="font-semibold text-slate-800">${pillarLabel[k]}</span> ${p.pct}%`);
+    return `Strong on ${top2.join(" · ")}`;
+  }
+
+  // Gradient palette tied to score band.
+  function cardTheme(score) {
+    if (score >= 90) return { ring: "ring-amber-400/40", bg: "bg-gradient-to-br from-amber-50 via-emerald-50 to-teal-50", accent: "from-amber-500 via-emerald-500 to-teal-500", scoreText: "text-emerald-700" };
+    if (score >= 85) return { ring: "ring-emerald-400/40", bg: "bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50", accent: "from-emerald-500 to-teal-500", scoreText: "text-emerald-700" };
+    if (score >= 80) return { ring: "ring-teal-300/50", bg: "bg-gradient-to-br from-teal-50 to-cyan-50", accent: "from-teal-500 to-cyan-500", scoreText: "text-teal-700" };
+    return { ring: "ring-emerald-200/50", bg: "bg-gradient-to-br from-white to-emerald-50/30", accent: "from-emerald-400 to-teal-400", scoreText: "text-emerald-600" };
+  }
+
+  // Pillar mini-bars with icons + values
+  function pillarBars(s) {
+    return ["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => {
+      const p = s.pillars?.[k];
+      const pct = p?.pct ?? 0;
+      const tone = pct >= 75 ? "from-emerald-500 to-teal-500" : pct >= 60 ? "from-blue-500 to-indigo-500" : pct >= 45 ? "from-amber-500 to-orange-500" : "from-rose-400 to-pink-400";
+      return `
+        <div class="flex items-center gap-2">
+          <div class="w-7 text-center text-base leading-none">${PILLAR_ICONS[k]}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-baseline justify-between gap-2 mb-0.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${pillarLabel[k].slice(0,4)}</span>
+              <span class="text-xs font-bold tabular-nums ${pct >= 75 ? "text-emerald-700" : pct >= 60 ? "text-blue-700" : "text-slate-600"}">${pct}%</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full bg-gradient-to-r ${tone}" style="width:${Math.min(100, pct)}%"></div>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  const heroHeader = `
+    <div class="relative overflow-hidden rounded-3xl mb-6 print-hide">
+      <!-- Animated gradient background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"></div>
+      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_50%)]"></div>
+      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_80%_70%,rgba(236,72,153,0.5),transparent_50%)]"></div>
+
+      <div class="relative px-8 py-10 text-white">
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div>
+            <div class="flex items-center gap-2 mb-2 text-amber-200">
+              <span class="text-2xl">★</span>
+              <span class="text-xs font-bold uppercase tracking-widest opacity-90">Hero Picks · Composite ≥ 75</span>
+            </div>
+            <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight">Top ${picks.length} Stocks</h1>
+            <p class="text-white/80 mt-1 text-sm">Hard-fails excluded · Ranked by composite score · Live</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-white/80">
+            ${meta.generated_at ? `<span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full ring-1 ring-white/20">Updated ${relativeTimeFrom(meta.generated_at)}</span>` : ""}
+          </div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
+            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Picks</div>
+            <div class="text-3xl font-bold mt-1 tabular-nums">${picks.length}</div>
+            <div class="text-[11px] text-white/70 mt-0.5">${((picks.length / totalUniverse) * 100).toFixed(1)}% of ${totalUniverse}</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
+            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Avg Composite</div>
+            <div class="text-3xl font-bold mt-1 tabular-nums">${avgComposite}</div>
+            <div class="text-[11px] text-white/70 mt-0.5">out of 100</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
+            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Sectors Covered</div>
+            <div class="text-3xl font-bold mt-1 tabular-nums">${sectors.size}</div>
+            <div class="text-[11px] text-white/70 mt-0.5">distinct industries</div>
+          </div>
+          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
+            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Strongest Pillar</div>
+            <div class="text-2xl font-bold mt-1">${PILLAR_ICONS[strongestPillarKey]} ${pillarLabel[strongestPillarKey]}</div>
+            <div class="text-[11px] text-white/70 mt-0.5 tabular-nums">${avgPillarPcts[strongestPillarKey]}% basket average</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const cards = picks.map((s, i) => {
+    const co = s.company;
+    const name = co.Company || "—";
+    const { color, initials } = avatarFor(name);
+    const theme = cardTheme(s.composite);
+    const sector = co.Sector || co["Broad Industry"] || "";
+    const ratingTheme = composite.ratingTheme(s.rating);
+    return `
+      <button data-pick-idx="${i}" class="pick-card group relative text-left w-full overflow-hidden rounded-3xl ${theme.bg} ring-1 ${theme.ring} hover:ring-2 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 p-5 pt-7">
+        ${rankBadge(i)}
+        <!-- Accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${theme.accent}"></div>
+
+        <div class="flex items-start gap-3 mb-4 mt-1">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">${initials}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-display font-bold text-slate-900 text-lg leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+            ${sector ? `<div class="text-xs text-slate-600 truncate mt-0.5">${escapeHtml(sector)}</div>` : ""}
+          </div>
+        </div>
+
+        <!-- Composite + rating -->
+        <div class="flex items-end justify-between mb-4">
+          <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">Composite</div>
+            <div class="flex items-baseline gap-1">
+              <span class="text-4xl font-extrabold ${theme.scoreText} tabular-nums leading-none">${s.composite.toFixed(1)}</span>
+              <span class="text-xs text-slate-400">/100</span>
+            </div>
+          </div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${ratingTheme.from} ${ratingTheme.to} ${ratingTheme.textOn} text-[10px] font-bold uppercase tracking-wider shadow-md whitespace-nowrap">
+            <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>
+            ${escapeHtml(s.rating)}
+          </div>
+        </div>
+
+        <!-- Pillar profile -->
+        <div class="space-y-2 mb-4">
+          ${pillarBars(s)}
+        </div>
+
+        <!-- Thesis line + CTA -->
+        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between gap-2">
+          <div class="text-xs text-slate-600 truncate">${buildThesis(s)}</div>
+          <span class="text-xs font-semibold text-indigo-600 group-hover:text-indigo-700 whitespace-nowrap">View →</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  $("#top-picks-content").innerHTML = `
+    ${heroHeader}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      ${cards}
+    </div>
+  `;
+  $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openDrillDown(picks[Number(el.dataset.pickIdx)])));
 }
 
 // ---------------- filtering / sorting ----------------
@@ -1176,9 +1502,9 @@ function openDrillDown(s) {
             ${hs.metrics ? `
               <div class="grid grid-cols-${hs.metrics.length} gap-1 mt-1">
                 ${hs.metrics.map((m) => `
-                  <div>
+                  <div class="min-w-0">
                     <div class="text-[9px] text-slate-400 uppercase tracking-wider">${escapeHtml(m.name)}</div>
-                    <div class="text-base font-bold text-slate-900 leading-tight">${escapeHtml(String(m.value))}</div>
+                    <div class="text-sm font-bold text-slate-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis" title="${escapeHtml(String(m.value))}">${escapeHtml(String(m.value))}</div>
                   </div>
                 `).join("")}
               </div>
