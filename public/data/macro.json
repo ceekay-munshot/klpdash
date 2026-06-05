@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-06-04T05:18:24.787Z",
+  "generated_at": "2026-06-05T04:55:49.339Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 97.04,
+      "latest": 95.37,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -11.68,
+      "pct_change_30d": -5.83,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 95.69,
+      "latest": 95.52,
       "latest_unit": "₹/$",
-      "pct_change_30d": 0.53,
+      "pct_change_30d": 0.96,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 16.11,
+      "latest": 15.64,
       "latest_unit": "",
-      "pct_change_30d": -10.04,
+      "pct_change_30d": -12.7,
       "trend": "falling",
-      "history_bars": 24
+      "history_bars": 23
     }
   },
   "economic": {
@@ -45,13 +45,13 @@
   "sentiment": {
     "_note": "Market-wide sentiment signals. FII/DII flow + market breadth are auto-computed by scrape-macro.mjs; these seed values are deliberately neutral so the dashboard never shows an asserted signal before live data is computed.",
     "fii_net_positive_last_20d": "no",
-    "fii_signal_note": "FII net positive in 1 of last 7 reported trading days (auto-computed from rolling daily snapshots).",
+    "fii_signal_note": "FII net positive in 1 of last 8 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": null,
     "put_call_ratio_note": "Live PCR scrape not yet wired — Put Call Ratio rule shows N/A until then.",
-    "market_breadth_ad_ratio": 1.98,
-    "market_breadth_note": "326 advances vs 165 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 2.19,
+    "market_breadth_note": "337 advances vs 154 declines across 497 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 1,
-    "fii_total_days": 7
+    "fii_total_days": 8
   },
   "sector_themes": {
     "infra_push": [
