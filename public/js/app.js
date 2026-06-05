@@ -196,12 +196,12 @@ const CONFIGS = {
     label: "Top Picks",
     hero: true,
   },
-  // Stub tab — when active, switchTab toggles the locked placeholder
-  // section instead of loading data. Used today for the History tab
-  // until the snapshot pipeline (Cloudflare KV) ships.
+  // History — shows realized return on every past STRONG BUY pick.
+  // Data comes from public/data/snapshots/* (daily JSON files written by
+  // screener-test/write-snapshot.mjs). Lazy-loaded on tab activation.
   history: {
     label: "History",
-    locked: true,
+    history: true,
   },
 };
 
@@ -415,22 +415,26 @@ async function switchTab(tabId) {
   $("#score-filter").value = "all";
 
   // Section toggles per tab type:
-  // - Locked (History): only #locked-placeholder visible
-  // - Hero (Top Picks): only #top-picks-section visible
-  // - Normal: hide both, show all other sections
+  // - Hero    (Top Picks): only #top-picks-section visible
+  // - History            : only #history-section visible
+  // - Normal             : all other sections
   const c = CONFIGS[tabId];
-  const locked = !!c?.locked;
   const hero = !!c?.hero;
+  const history = !!c?.history;
+  const bespoke = hero || history;
   document.querySelectorAll("main > section").forEach((sec) => {
-    if (sec.id === "locked-placeholder") sec.classList.toggle("hidden", !locked);
-    else if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
-    else sec.classList.toggle("hidden", locked || hero);
+    if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
+    else if (sec.id === "history-section") sec.classList.toggle("hidden", !history);
+    else sec.classList.toggle("hidden", bespoke);
   });
-  if (locked) return;
   if (hero) {
     // Composite scoring drives Top Picks. Lazy-build the composite cache.
     if (!state.cache.composite) await loadTab("composite");
     renderTopPicks();
+    return;
+  }
+  if (history) {
+    await renderHistory();
     return;
   }
 
@@ -1357,6 +1361,357 @@ function renderTopPicks() {
     ${legend}
   `;
   $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openDrillDown(picks[Number(el.dataset.pickIdx)])));
+}
+
+// ---------------- History (predictions performance) ----------------
+// Loads the snapshot manifest from public/data/snapshots/index.json,
+// fetches every dated snapshot file, and reconstructs per-ticker
+// timelines. For each ticker that was ever rated STRONG BUY, we anchor
+// at the FIRST such day and measure return to today's close — that's
+// the "we said STRONG BUY at ₹444 → today ₹555" story client wants.
+async function renderHistory() {
+  const host = $("#history-content");
+  if (!host) return;
+  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading history…</div>`;
+
+  // Cache the loaded timeline so flipping tabs doesn't re-fetch.
+  if (!state.cache.history) {
+    try {
+      const idx = await fetch("data/snapshots/index.json").then((r) => {
+        if (!r.ok) throw new Error("manifest missing");
+        return r.json();
+      });
+      if (!idx.dates?.length) throw new Error("no snapshot dates");
+      const snapshots = await Promise.all(idx.dates.map((d) =>
+        fetch(`data/snapshots/${d}.json`).then((r) => r.json())
+      ));
+      state.cache.history = { idx, snapshots };
+    } catch (e) {
+      host.innerHTML = renderHistoryEmpty(e.message);
+      return;
+    }
+  }
+  const { idx, snapshots } = state.cache.history;
+
+  // Per-ticker timeline of points {date, close, composite, rating}
+  // plus identity (name, sector).
+  const byTicker = new Map();
+  for (const snap of snapshots) {
+    for (const s of snap.stocks) {
+      if (!s.ticker) continue;
+      const t = byTicker.get(s.ticker) || { ticker: s.ticker, name: s.name, sector: s.sector, slug: s.slug, points: [] };
+      // Always keep the freshest non-null name / sector
+      if (s.name) t.name = s.name;
+      if (s.sector) t.sector = s.sector;
+      if (s.slug) t.slug = s.slug;
+      t.points.push({ date: snap.date, close: s.close, composite: s.composite, rating: s.rating });
+      byTicker.set(s.ticker, t);
+    }
+  }
+
+  // Today's close per ticker (from the most recent snapshot, falling
+  // back to any earlier non-null close if today is missing).
+  const todayDate = idx.dates[idx.dates.length - 1];
+  const todayClose = {};
+  const todayMap = snapshots[snapshots.length - 1];
+  for (const s of todayMap.stocks) if (typeof s.close === "number") todayClose[s.ticker] = s.close;
+
+  // For each ticker that had at least one STRONG BUY day, pin the FIRST
+  // such day as the "we said" anchor and compute realized return.
+  const picks = [];
+  for (const t of byTicker.values()) {
+    const firstSB = t.points.find((p) => p.rating === "STRONG BUY" && typeof p.close === "number");
+    if (!firstSB) continue;
+    const now = todayClose[t.ticker];
+    if (typeof now !== "number") continue;
+    const ret = (now / firstSB.close - 1) * 100;
+    const days = daysBetween(firstSB.date, todayDate);
+    // Has the company stayed in the basket since (latest rating)?
+    let currentRating = null;
+    for (let i = t.points.length - 1; i >= 0; i--) {
+      if (t.points[i].rating) { currentRating = t.points[i].rating; break; }
+    }
+    picks.push({
+      ticker: t.ticker, name: t.name, sector: t.sector,
+      firstSBDate: firstSB.date,
+      firstSBClose: firstSB.close,
+      firstSBComposite: firstSB.composite,
+      todayClose: now,
+      ret, days,
+      currentRating,
+      points: t.points,
+    });
+  }
+
+  picks.sort((a, b) => b.ret - a.ret);
+
+  if (picks.length === 0) {
+    host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+    return;
+  }
+
+  const winners = picks.filter((p) => p.ret > 0);
+  const avg = picks.reduce((a, b) => a + b.ret, 0) / picks.length;
+  const best = picks[0];
+  const dateRange = idx.dates.length > 1 ? `${idx.dates[0]} → ${idx.dates[idx.dates.length - 1]}` : idx.dates[0];
+
+  // --- Hero strip ---
+  const heroHeader = `
+    <div class="relative overflow-hidden rounded-2xl mb-5 print-hide">
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900"></div>
+      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_15%_50%,rgba(34,211,238,0.35),transparent_45%)]"></div>
+      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_85%_30%,rgba(16,185,129,0.4),transparent_50%)]"></div>
+      <div class="relative px-6 py-5 text-white">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-[0.25em] text-cyan-200/80">Predictions · Performance</div>
+            <h1 class="font-display text-2xl sm:text-3xl font-extrabold leading-tight mt-1">${picks.length} past STRONG BUY picks ${avg >= 0 ? "earning" : "down"} <span class="${avg >= 0 ? "text-emerald-300" : "text-rose-300"}">${avg >= 0 ? "+" : ""}${avg.toFixed(1)}%</span> on average</h1>
+            <p class="text-white/70 text-xs mt-1">From ${dateRange} · realized return from first STRONG BUY date → today's close</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          ${heroStat("Picks", picks.length, `${idx.dates.length} day window`)}
+          ${heroStat("Avg return", `${avg >= 0 ? "+" : ""}${avg.toFixed(1)}%`, "since first STRONG BUY")}
+          ${heroStat("Win rate", `${Math.round(winners.length / picks.length * 100)}%`, `${winners.length} of ${picks.length} up`)}
+          ${heroStat("Best pick", `${best.ret >= 0 ? "+" : ""}${best.ret.toFixed(1)}%`, best.name)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // --- Table of past picks (one row per ticker, sortable visually) ---
+  const rows = picks.map((p, i) => {
+    const { color, initials } = avatarFor(p.name || "—");
+    const ratingChipCls = composite.ratingClass(p.currentRating || "—");
+    const inBasket = p.currentRating === "STRONG BUY" || p.currentRating === "BUY";
+    const retCls = p.ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const retBg = p.ret >= 0 ? "bg-emerald-50 ring-emerald-100" : "bg-rose-50 ring-rose-100";
+    return `
+      <button data-pick="${i}" class="hist-row w-full text-left grid grid-cols-12 items-center gap-3 px-4 py-3 rounded-xl bg-white ring-1 ring-slate-200/80 hover:ring-indigo-300 hover:shadow-md hover:-translate-y-px transition-all">
+        <div class="col-span-1 sm:col-span-1 flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-400 tabular-nums">#${String(i + 1).padStart(2, "0")}</span>
+        </div>
+        <div class="col-span-5 sm:col-span-4 flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">${initials}</div>
+          <div class="min-w-0">
+            <div class="font-display font-bold text-slate-900 text-sm leading-tight truncate" title="${escapeHtml(p.name || "")}">${escapeHtml(p.name || "—")}</div>
+            <div class="text-[11px] text-slate-500 truncate">${escapeHtml(p.sector || "")}</div>
+          </div>
+        </div>
+        <div class="hidden sm:block col-span-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">We said STRONG BUY</div>
+          <div class="text-xs text-slate-700 mt-0.5">
+            <span class="font-semibold">${p.firstSBDate}</span>
+            <span class="text-slate-400">·</span>
+            <span>₹${formatPrice(p.firstSBClose)}</span>
+            ${p.firstSBComposite != null ? `<span class="text-slate-400">·</span><span class="font-bold tabular-nums">${p.firstSBComposite.toFixed(1)}</span>` : ""}
+          </div>
+        </div>
+        <div class="hidden sm:block col-span-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Today</div>
+          <div class="text-xs text-slate-700 mt-0.5">
+            <span>₹${formatPrice(p.todayClose)}</span>
+            <span class="text-slate-400">·</span>
+            <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${ratingChipCls}">${escapeHtml(p.currentRating || "—")}</span>
+          </div>
+        </div>
+        <div class="col-span-6 sm:col-span-2 flex items-center justify-end gap-2">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg ring-1 text-sm font-extrabold tabular-nums ${retCls} ${retBg}">${p.ret >= 0 ? "+" : ""}${p.ret.toFixed(1)}%</span>
+          <span class="text-[10px] text-slate-400 tabular-nums whitespace-nowrap">${p.days}d</span>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  host.innerHTML = `
+    ${heroHeader}
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
+        <span class="text-[11px] text-slate-500 tabular-nums">Sorted by return · click any row to see the chart</span>
+      </div>
+      <div class="space-y-1.5">${rows}</div>
+    </div>
+  `;
+  $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
+}
+
+function heroStat(label, value, sub) {
+  return `
+    <div class="bg-white/10 backdrop-blur rounded-xl p-3 ring-1 ring-white/15">
+      <div class="text-[10px] uppercase tracking-wider text-white/60 font-semibold">${escapeHtml(label)}</div>
+      <div class="text-xl font-bold mt-1 tabular-nums">${escapeHtml(String(value))}</div>
+      <div class="text-[10px] text-white/60 mt-0.5 truncate" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
+    </div>
+  `;
+}
+
+function renderHistoryEmpty(reason) {
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-10 sm:p-12 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-2xl mb-4 shadow-lg">📈</div>
+      <h2 class="text-xl font-bold font-display text-slate-900 mb-2">History is building up</h2>
+      <p class="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">${escapeHtml(reason || "We need a few daily snapshots before this view becomes useful.")}<br><br>Each daily refresh appends a snapshot to <code class="text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">public/data/snapshots/</code>. As STRONG BUY picks accumulate, this tab will show realized return per pick + a chart with rating markers overlaid on the price line.</p>
+    </div>
+  `;
+}
+
+function daysBetween(a, b) {
+  const ma = new Date(a + "T00:00:00Z").getTime();
+  const mb = new Date(b + "T00:00:00Z").getTime();
+  return Math.max(0, Math.round((mb - ma) / 86400000));
+}
+
+function formatPrice(n) {
+  if (n == null || !isFinite(n)) return "—";
+  if (n >= 1000) return n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  return n.toFixed(2);
+}
+
+// History drill — modal with a price line + colored rating markers and
+// a tiny composite-trail strip beneath it. Same data already loaded
+// into state.cache.history.
+function openHistoryDrill(pick) {
+  if (!pick) return;
+  const { color, initials } = avatarFor(pick.name || "—");
+
+  // Plot dimensions for the SVG. viewBox is the source of truth — the
+  // SVG element scales to fit the modal width.
+  const W = 760, H = 280, pad = { l: 56, r: 24, t: 24, b: 36 };
+  const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
+
+  const points = pick.points.filter((p) => typeof p.close === "number");
+  if (points.length < 2) return;
+  const closes = points.map((p) => p.close);
+  const yMin = Math.min(...closes), yMax = Math.max(...closes);
+  const ySpan = Math.max(yMax - yMin, 1);
+  const yPad = ySpan * 0.08;                       // breathing room top/bottom
+  const yLo = yMin - yPad, yHi = yMax + yPad;
+
+  function x(i) { return pad.l + (i / (points.length - 1)) * innerW; }
+  function y(close) { return pad.t + innerH - ((close - yLo) / (yHi - yLo)) * innerH; }
+
+  // Line path through all points
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(2)} ${y(p.close).toFixed(2)}`).join(" ");
+  // Filled area below the line for a softer look
+  const areaD = `${pathD} L ${x(points.length - 1).toFixed(2)} ${(pad.t + innerH).toFixed(2)} L ${pad.l.toFixed(2)} ${(pad.t + innerH).toFixed(2)} Z`;
+
+  // Rating-colored markers at every snapshot point. Bigger circles
+  // where the rating CHANGED so transitions pop visually.
+  const RATING_FILL = {
+    "STRONG BUY": "#10b981", "BUY": "#3b82f6", "WATCH": "#f59e0b", "AVOID": "#f43f5e",
+    "FILTERED":   "#64748b", "UNRATED": "#cbd5e1",
+  };
+  let prevRating = null;
+  const markers = points.map((p, i) => {
+    const fill = RATING_FILL[p.rating] || "#cbd5e1";
+    const changed = p.rating !== prevRating;
+    prevRating = p.rating;
+    const r = changed ? 5 : 2.5;
+    const stroke = changed ? "#fff" : fill;
+    const sw = changed ? 1.5 : 0;
+    const compTxt = p.composite != null ? p.composite.toFixed(1) : "—";
+    return `<circle cx="${x(i).toFixed(2)}" cy="${y(p.close).toFixed(2)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"><title>${p.date} · ₹${formatPrice(p.close)} · ${p.rating || "—"} · composite ${compTxt}</title></circle>`;
+  }).join("");
+
+  // X-axis date ticks — at most 8 to avoid clutter
+  const tickEvery = Math.max(1, Math.ceil(points.length / 8));
+  const xTicks = points.map((p, i) => {
+    if (i % tickEvery !== 0 && i !== points.length - 1) return "";
+    return `<text x="${x(i).toFixed(2)}" y="${(pad.t + innerH + 18).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${p.date.slice(5)}</text>`;
+  }).join("");
+
+  // Y-axis price gridlines at 4 evenly spaced steps
+  const yTicks = [0, 1, 2, 3, 4].map((step) => {
+    const price = yLo + (yHi - yLo) * (step / 4);
+    const yy = (pad.t + innerH - (step / 4) * innerH).toFixed(2);
+    return `
+      <line x1="${pad.l}" x2="${(W - pad.r).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="3 3"/>
+      <text x="${(pad.l - 6).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#64748b">₹${formatPrice(price)}</text>
+    `;
+  }).join("");
+
+  // The big "we said vs now" panel — what the client opens this view to see.
+  const ret = pick.ret;
+  const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
+  const retBg = ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
+
+  // Mini composite trail under the chart — one bar per snapshot day
+  const compMax = 100;
+  const compBars = points.map((p, i) => {
+    const c = p.composite ?? 0;
+    const fill = RATING_FILL[p.rating] || "#cbd5e1";
+    return `<rect x="${(x(i) - 4).toFixed(2)}" y="${(280 - (c / compMax) * 36).toFixed(2)}" width="3.5" height="${((c / compMax) * 36).toFixed(2)}" fill="${fill}" fill-opacity="0.85"><title>${p.date} · composite ${c}</title></rect>`;
+  }).join("");
+
+  // Legend mapping marker color → rating
+  const ratings = ["STRONG BUY", "BUY", "WATCH", "AVOID", "FILTERED"];
+  const legend = ratings.map((r) => `
+    <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+      <span class="w-2.5 h-2.5 rounded-full" style="background:${RATING_FILL[r]}"></span>${r}
+    </span>
+  `).join("");
+
+  openModal(`
+    <div class="px-7 py-6">
+      <div class="flex items-start justify-between gap-4 mb-5">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
+          <div class="min-w-0">
+            <div class="font-display font-bold text-slate-900 text-xl leading-tight truncate">${escapeHtml(pick.name || "—")}</div>
+            <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(pick.sector || "")} · ${escapeHtml(pick.ticker)}</div>
+          </div>
+        </div>
+        <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+      </div>
+
+      <!-- "We said vs now" hero strip -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div class="rounded-xl ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">We said STRONG BUY</div>
+          <div class="text-base font-display font-bold text-slate-900 mt-1">${pick.firstSBDate}</div>
+          <div class="text-sm text-slate-700 mt-0.5">at <span class="font-bold tabular-nums">₹${formatPrice(pick.firstSBClose)}</span>${pick.firstSBComposite != null ? ` · composite <span class="font-bold tabular-nums">${pick.firstSBComposite.toFixed(1)}</span>` : ""}</div>
+        </div>
+        <div class="rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today</div>
+          <div class="text-base font-display font-bold text-slate-900 mt-1">${state.cache.history.idx.dates[state.cache.history.idx.dates.length - 1]}</div>
+          <div class="text-sm text-slate-700 mt-0.5">at <span class="font-bold tabular-nums">₹${formatPrice(pick.todayClose)}</span>${pick.currentRating ? ` · <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${composite.ratingClass(pick.currentRating)}">${escapeHtml(pick.currentRating)}</span>` : ""}</div>
+        </div>
+        <div class="rounded-xl ring-1 bg-gradient-to-br ${retBg} p-3">
+          <div class="text-[10px] font-bold uppercase tracking-wider ${retCls}">Realized return</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums mt-1 ${retCls}">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
+          <div class="text-sm text-slate-600 mt-0.5">over ${pick.days} day${pick.days === 1 ? "" : "s"}</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="rounded-xl ring-1 ring-slate-200 bg-white p-3 sm:p-4">
+        <svg viewBox="0 0 ${W} 320" class="w-full" style="max-height:340px">
+          <defs>
+            <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          ${yTicks}
+          <path d="${areaD}" fill="url(#histArea)"/>
+          <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+          ${markers}
+          ${xTicks}
+          <!-- Composite-score sparkline at the bottom -->
+          <g transform="translate(0, 8)">${compBars}</g>
+        </svg>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1">
+          ${legend}
+          <span class="ml-auto text-[10px] text-slate-400">Big rings = rating changed · small dots = same rating</span>
+        </div>
+      </div>
+    </div>
+  `, { size: "magazine" });
+  $("#modal-close-btn")?.addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
 }
 
 // ---------------- filtering / sorting ----------------

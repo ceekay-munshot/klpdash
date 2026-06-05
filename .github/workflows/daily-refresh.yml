@@ -79,6 +79,16 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
         run: node screener-test/scrape-governance-flags.mjs
 
+      # ---- 6. Daily SPIP snapshot for the History tab ----
+      # Replays the composite scorer against the freshly-refreshed inputs
+      # and emits public/data/snapshots/YYYY-MM-DD.json — every company's
+      # composite + rating + close at end of day. The History tab uses
+      # the trail of these files to compute realized return per past
+      # STRONG BUY pick. Cheap (~1s), idempotent (same input → same output).
+      - name: Write today's SPIP snapshot
+        if: always()
+        run: node screener-test/write-snapshot.mjs
+
       # ---- Artifacts (always upload, even on partial failure) ----
       - name: Upload all data artifacts
         if: always()
@@ -93,6 +103,7 @@ jobs:
             public/data/atr-history.json
             public/data/fii-dii-history.json
             public/data/governance-flags.json
+            public/data/snapshots/index.json
           if-no-files-found: warn
 
       # ---- One commit, one push ----
@@ -108,6 +119,8 @@ jobs:
           [ -f public/data/atr-history.json ] && git add public/data/atr-history.json || true
           [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true
           [ -f public/data/governance-flags.json ] && git add public/data/governance-flags.json || true
+          # Today's snapshot (and any newly rebuilt manifest)
+          [ -d public/data/snapshots ] && git add public/data/snapshots || true
           if git diff --cached --quiet; then
             echo "No data changes to commit."
             exit 0
