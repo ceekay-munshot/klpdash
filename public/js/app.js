@@ -1596,10 +1596,10 @@ function openHistoryDrill(pick) {
   // --- SVG geometry ---
   // Single viewBox; everything inside is sized in viewBox units, the
   // <svg> itself scales responsively via w-full.
-  const W = 820, H = 360;
-  const M = { top: 28, right: 24, bottom: 78, left: 64 };     // outer margins
-  const TAPE_H = 12;                                          // rating-tape strip height
-  const TAPE_GAP = 14;                                        // gap between line chart and tape
+  const W = 820, H = 300;
+  const M = { top: 18, right: 24, bottom: 62, left: 64 };     // outer margins
+  const TAPE_H = 10;                                          // rating-tape strip height
+  const TAPE_GAP = 10;                                        // gap between line chart and tape
   const innerW = W - M.left - M.right;
   const innerH = H - M.top - M.bottom - TAPE_H - TAPE_GAP;
   const TAPE_Y = M.top + innerH + TAPE_GAP;
@@ -1683,47 +1683,49 @@ function openHistoryDrill(pick) {
   const retBg = ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
 
   openModal(`
-    <div class="px-7 py-6">
-      <div class="flex items-start justify-between gap-4 mb-5">
+    <div class="px-6 py-4">
+      <div class="flex items-start justify-between gap-4 mb-3">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
           <div class="min-w-0">
-            <div class="font-display font-bold text-slate-900 text-xl leading-tight truncate">${escapeHtml(pick.name || "—")}</div>
+            <div class="font-display font-bold text-slate-900 text-lg leading-tight truncate">${escapeHtml(pick.name || "—")}</div>
             <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(pick.sector || "")} · ${escapeHtml(pick.ticker)}</div>
           </div>
         </div>
         <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <div class="rounded-xl ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">We said STRONG BUY</div>
-          <div class="text-base font-display font-bold text-slate-900 mt-1">${pick.firstSBDate}</div>
-          <div class="text-sm text-slate-700 mt-0.5">at <span class="font-bold tabular-nums">₹${formatPrice(pick.firstSBClose)}</span>${pick.firstSBComposite != null ? ` · composite <span class="font-bold tabular-nums">${pick.firstSBComposite.toFixed(1)}</span>` : ""}</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+        <div class="rounded-xl ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-3 py-2">
+          <div class="text-[9px] font-bold uppercase tracking-wider text-emerald-700">We said STRONG BUY</div>
+          <div class="text-sm font-display font-bold text-slate-900 mt-0.5">${pick.firstSBDate} · <span class="tabular-nums">₹${formatPrice(pick.firstSBClose)}</span></div>
+          ${pick.firstSBComposite != null ? `<div class="text-[11px] text-slate-600 mt-0.5">composite <span class="font-bold tabular-nums">${pick.firstSBComposite.toFixed(1)}</span></div>` : ""}
         </div>
-        <div class="rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today</div>
-          <div class="text-base font-display font-bold text-slate-900 mt-1">${todayDate}</div>
-          <div class="text-sm text-slate-700 mt-0.5">at <span class="font-bold tabular-nums">₹${formatPrice(pick.todayClose)}</span>${pick.currentRating ? ` · <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${composite.ratingClass(pick.currentRating)}">${escapeHtml(pick.currentRating)}</span>` : ""}</div>
+        <div class="rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-slate-50 to-white px-3 py-2">
+          <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Today</div>
+          <div class="text-sm font-display font-bold text-slate-900 mt-0.5">${todayDate} · <span class="tabular-nums">₹${formatPrice(pick.todayClose)}</span></div>
+          ${pick.currentRating ? `<div class="text-[11px] text-slate-600 mt-0.5"><span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${composite.ratingClass(pick.currentRating)}">${escapeHtml(pick.currentRating)}</span></div>` : ""}
         </div>
-        <div class="rounded-xl ring-1 bg-gradient-to-br ${retBg} p-3">
-          <div class="text-[10px] font-bold uppercase tracking-wider ${retCls}">Realized return</div>
-          <div class="text-2xl font-display font-extrabold tabular-nums mt-1 ${retCls}">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
-          <div class="text-sm text-slate-600 mt-0.5">over ${pick.days} day${pick.days === 1 ? "" : "s"}</div>
+        <div class="rounded-xl ring-1 bg-gradient-to-br ${retBg} px-3 py-2 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[9px] font-bold uppercase tracking-wider ${retCls}">Realized return</div>
+            <div class="text-[11px] text-slate-600 mt-0.5">over ${pick.days} day${pick.days === 1 ? "" : "s"}</div>
+          </div>
+          <div class="text-2xl font-display font-extrabold tabular-nums ${retCls} leading-none">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
         </div>
       </div>
 
-      <div class="rounded-2xl ring-1 ring-slate-200 bg-white p-4 sm:p-5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div>
+      <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+          <div class="flex items-baseline gap-2">
             <div class="font-display font-bold text-slate-900 text-sm">Price &amp; rating timeline</div>
-            <div class="text-[11px] text-slate-500 mt-0.5">${points.length} trading days · ${points[0].date} → ${points[points.length - 1].date}</div>
+            <div class="text-[11px] text-slate-500">${points.length} days · ${points[0].date.slice(5)} → ${points[points.length - 1].date.slice(5)}</div>
           </div>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1">${legend}</div>
         </div>
 
         <div id="hist-chart-container" class="relative">
-          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:380px">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:320px">
             <defs>
               <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
