@@ -1568,89 +1568,119 @@ function formatPrice(n) {
   return n.toFixed(2);
 }
 
-// History drill — modal with a price line + colored rating markers and
-// a tiny composite-trail strip beneath it. Same data already loaded
-// into state.cache.history.
+// History drill — premium per-company chart modal.
+// Layout (top to bottom):
+//   - Company header (avatar / name / sector / ticker)
+//   - "We said vs Now" 3-card hero strip
+//   - Chart card:
+//       Title row     · "Price · last N days"  | inline rating legend
+//       Price line    · with rating-colored markers (halo on rating change)
+//       Rating tape   · one colored cell per snapshot day (clearer than
+//                       the old floating sparkbars)
+//       Date labels
+//   - Hover crosshair + floating tooltip card that follows the cursor
+//     and snaps to the nearest data point
+const RATING_FILL = {
+  "STRONG BUY": "#10b981", "BUY": "#3b82f6", "WATCH": "#f59e0b", "AVOID": "#f43f5e",
+  "FILTERED":   "#64748b", "UNRATED": "#cbd5e1",
+};
+
 function openHistoryDrill(pick) {
   if (!pick) return;
   const { color, initials } = avatarFor(pick.name || "—");
-
-  // Plot dimensions for the SVG. viewBox is the source of truth — the
-  // SVG element scales to fit the modal width.
-  const W = 760, H = 280, pad = { l: 56, r: 24, t: 24, b: 36 };
-  const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
+  const todayDate = state.cache.history.idx.dates[state.cache.history.idx.dates.length - 1];
 
   const points = pick.points.filter((p) => typeof p.close === "number");
   if (points.length < 2) return;
+
+  // --- SVG geometry ---
+  // Single viewBox; everything inside is sized in viewBox units, the
+  // <svg> itself scales responsively via w-full.
+  const W = 820, H = 360;
+  const M = { top: 28, right: 24, bottom: 78, left: 64 };     // outer margins
+  const TAPE_H = 12;                                          // rating-tape strip height
+  const TAPE_GAP = 14;                                        // gap between line chart and tape
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom - TAPE_H - TAPE_GAP;
+  const TAPE_Y = M.top + innerH + TAPE_GAP;
+  const X_LABEL_Y = TAPE_Y + TAPE_H + 18;
+
   const closes = points.map((p) => p.close);
   const yMin = Math.min(...closes), yMax = Math.max(...closes);
   const ySpan = Math.max(yMax - yMin, 1);
-  const yPad = ySpan * 0.08;                       // breathing room top/bottom
+  const yPad = ySpan * 0.1;
   const yLo = yMin - yPad, yHi = yMax + yPad;
 
-  function x(i) { return pad.l + (i / (points.length - 1)) * innerW; }
-  function y(close) { return pad.t + innerH - ((close - yLo) / (yHi - yLo)) * innerH; }
+  const xAt = (i) => M.left + (i / (points.length - 1)) * innerW;
+  const yAt = (c) => M.top + innerH - ((c - yLo) / (yHi - yLo)) * innerH;
 
-  // Line path through all points
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(2)} ${y(p.close).toFixed(2)}`).join(" ");
-  // Filled area below the line for a softer look
-  const areaD = `${pathD} L ${x(points.length - 1).toFixed(2)} ${(pad.t + innerH).toFixed(2)} L ${pad.l.toFixed(2)} ${(pad.t + innerH).toFixed(2)} Z`;
+  // Path through closes
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${xAt(i).toFixed(2)} ${yAt(p.close).toFixed(2)}`).join(" ");
+  const areaD = `${pathD} L ${xAt(points.length - 1).toFixed(2)} ${(M.top + innerH).toFixed(2)} L ${M.left.toFixed(2)} ${(M.top + innerH).toFixed(2)} Z`;
 
-  // Rating-colored markers at every snapshot point. Bigger circles
-  // where the rating CHANGED so transitions pop visually.
-  const RATING_FILL = {
-    "STRONG BUY": "#10b981", "BUY": "#3b82f6", "WATCH": "#f59e0b", "AVOID": "#f43f5e",
-    "FILTERED":   "#64748b", "UNRATED": "#cbd5e1",
-  };
-  let prevRating = null;
-  const markers = points.map((p, i) => {
-    const fill = RATING_FILL[p.rating] || "#cbd5e1";
-    const changed = p.rating !== prevRating;
-    prevRating = p.rating;
-    const r = changed ? 5 : 2.5;
-    const stroke = changed ? "#fff" : fill;
-    const sw = changed ? 1.5 : 0;
-    const compTxt = p.composite != null ? p.composite.toFixed(1) : "—";
-    return `<circle cx="${x(i).toFixed(2)}" cy="${y(p.close).toFixed(2)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"><title>${p.date} · ₹${formatPrice(p.close)} · ${p.rating || "—"} · composite ${compTxt}</title></circle>`;
-  }).join("");
-
-  // X-axis date ticks — at most 8 to avoid clutter
-  const tickEvery = Math.max(1, Math.ceil(points.length / 8));
-  const xTicks = points.map((p, i) => {
-    if (i % tickEvery !== 0 && i !== points.length - 1) return "";
-    return `<text x="${x(i).toFixed(2)}" y="${(pad.t + innerH + 18).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${p.date.slice(5)}</text>`;
-  }).join("");
-
-  // Y-axis price gridlines at 4 evenly spaced steps
+  // Y-axis price gridlines + labels (4 steps)
   const yTicks = [0, 1, 2, 3, 4].map((step) => {
     const price = yLo + (yHi - yLo) * (step / 4);
-    const yy = (pad.t + innerH - (step / 4) * innerH).toFixed(2);
+    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
     return `
-      <line x1="${pad.l}" x2="${(W - pad.r).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="#e2e8f0" stroke-width="0.6" stroke-dasharray="3 3"/>
-      <text x="${(pad.l - 6).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="#64748b">₹${formatPrice(price)}</text>
+      <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="#e2e8f0" stroke-width="0.7" stroke-dasharray="3 4" />
+      <text x="${(M.left - 10).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10.5" font-weight="500" fill="#94a3b8">₹${formatPrice(price)}</text>
     `;
   }).join("");
 
-  // The big "we said vs now" panel — what the client opens this view to see.
-  const ret = pick.ret;
-  const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
-  const retBg = ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
-
-  // Mini composite trail under the chart — one bar per snapshot day
-  const compMax = 100;
-  const compBars = points.map((p, i) => {
-    const c = p.composite ?? 0;
+  // Markers — rating-change points get a halo + ring, same-rating days
+  // get a tiny dot. Visual hierarchy makes the explainer footer redundant.
+  let prevRating = null;
+  const markers = points.map((p, i) => {
     const fill = RATING_FILL[p.rating] || "#cbd5e1";
-    return `<rect x="${(x(i) - 4).toFixed(2)}" y="${(280 - (c / compMax) * 36).toFixed(2)}" width="3.5" height="${((c / compMax) * 36).toFixed(2)}" fill="${fill}" fill-opacity="0.85"><title>${p.date} · composite ${c}</title></rect>`;
+    const changed = p.rating && p.rating !== prevRating;
+    prevRating = p.rating;
+    if (changed) {
+      return `
+        <circle cx="${xAt(i).toFixed(2)}" cy="${yAt(p.close).toFixed(2)}" r="10" fill="${fill}" fill-opacity="0.18" />
+        <circle cx="${xAt(i).toFixed(2)}" cy="${yAt(p.close).toFixed(2)}" r="5.5" fill="${fill}" stroke="#fff" stroke-width="2" />
+      `;
+    }
+    return `<circle cx="${xAt(i).toFixed(2)}" cy="${yAt(p.close).toFixed(2)}" r="2.6" fill="#fff" stroke="${fill}" stroke-width="1.5" />`;
   }).join("");
 
-  // Legend mapping marker color → rating
-  const ratings = ["STRONG BUY", "BUY", "WATCH", "AVOID", "FILTERED"];
-  const legend = ratings.map((r) => `
+  // Rating tape — one colored cell per snapshot day. Shows rating
+  // evolution at a glance under the chart, where the floating sparkbars
+  // used to be.
+  const cellW = innerW / points.length;
+  const tapeCells = points.map((p, i) => {
+    const fill = RATING_FILL[p.rating] || "#cbd5e1";
+    const x = M.left + i * cellW;
+    return `<rect x="${x.toFixed(2)}" y="${TAPE_Y}" width="${Math.max(cellW - 1, 1).toFixed(2)}" height="${TAPE_H}" fill="${fill}" fill-opacity="0.92" rx="1.5" />`;
+  }).join("");
+
+  // X-axis date labels — at most 7 to keep the row clean
+  const tickEvery = Math.max(1, Math.ceil(points.length / 7));
+  const xTicks = points.map((p, i) => {
+    if (i % tickEvery !== 0 && i !== points.length - 1) return "";
+    return `<text x="${xAt(i).toFixed(2)}" y="${X_LABEL_Y}" text-anchor="middle" font-size="10.5" font-weight="500" fill="#64748b">${p.date.slice(5)}</text>`;
+  }).join("");
+
+  // Hover guides — initially invisible, JS toggles opacity on mousemove
+  const hoverLayer = `
+    <line id="hist-guide" x1="0" y1="${M.top}" x2="0" y2="${(TAPE_Y + TAPE_H).toFixed(2)}" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2 3" opacity="0" />
+    <circle id="hist-hover-halo" cx="0" cy="0" r="14" fill="#6366f1" fill-opacity="0.16" opacity="0" />
+    <circle id="hist-hover-point" cx="0" cy="0" r="6" fill="#fff" stroke="#6366f1" stroke-width="2.5" opacity="0" />
+    <rect id="hist-hover-capture" x="${M.left}" y="${M.top}" width="${innerW}" height="${(innerH + TAPE_GAP + TAPE_H).toFixed(2)}" fill="transparent" />
+  `;
+
+  // Rating legend (replaces "big rings = ..." footer)
+  const legendRatings = ["STRONG BUY", "BUY", "WATCH", "AVOID", "FILTERED"];
+  const legend = legendRatings.map((r) => `
     <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
       <span class="w-2.5 h-2.5 rounded-full" style="background:${RATING_FILL[r]}"></span>${r}
     </span>
   `).join("");
+
+  // Hero strip values
+  const ret = pick.ret;
+  const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
+  const retBg = ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
 
   openModal(`
     <div class="px-7 py-6">
@@ -1665,7 +1695,6 @@ function openHistoryDrill(pick) {
         <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
       </div>
 
-      <!-- "We said vs now" hero strip -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <div class="rounded-xl ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3">
           <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">We said STRONG BUY</div>
@@ -1674,7 +1703,7 @@ function openHistoryDrill(pick) {
         </div>
         <div class="rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-slate-50 to-white p-3">
           <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today</div>
-          <div class="text-base font-display font-bold text-slate-900 mt-1">${state.cache.history.idx.dates[state.cache.history.idx.dates.length - 1]}</div>
+          <div class="text-base font-display font-bold text-slate-900 mt-1">${todayDate}</div>
           <div class="text-sm text-slate-700 mt-0.5">at <span class="font-bold tabular-nums">₹${formatPrice(pick.todayClose)}</span>${pick.currentRating ? ` · <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${composite.ratingClass(pick.currentRating)}">${escapeHtml(pick.currentRating)}</span>` : ""}</div>
         </div>
         <div class="rounded-xl ring-1 bg-gradient-to-br ${retBg} p-3">
@@ -1684,34 +1713,135 @@ function openHistoryDrill(pick) {
         </div>
       </div>
 
-      <!-- Chart -->
-      <div class="rounded-xl ring-1 ring-slate-200 bg-white p-3 sm:p-4">
-        <svg viewBox="0 0 ${W} 320" class="w-full" style="max-height:340px">
-          <defs>
-            <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
-              <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          ${yTicks}
-          <path d="${areaD}" fill="url(#histArea)"/>
-          <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
-          ${markers}
-          ${xTicks}
-          <!-- Composite-score sparkline at the bottom -->
-          <g transform="translate(0, 8)">${compBars}</g>
-        </svg>
-        <div class="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-x-4 gap-y-1">
-          ${legend}
-          <span class="ml-auto text-[10px] text-slate-400">Big rings = rating changed · small dots = same rating</span>
+      <div class="rounded-2xl ring-1 ring-slate-200 bg-white p-4 sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <div class="font-display font-bold text-slate-900 text-sm">Price &amp; rating timeline</div>
+            <div class="text-[11px] text-slate-500 mt-0.5">${points.length} trading days · ${points[0].date} → ${points[points.length - 1].date}</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">${legend}</div>
+        </div>
+
+        <div id="hist-chart-container" class="relative">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:380px">
+            <defs>
+              <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            ${yTicks}
+            <path d="${areaD}" fill="url(#histArea)"/>
+            <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            ${markers}
+            ${tapeCells}
+            ${xTicks}
+            <text x="${(M.left - 10).toFixed(2)}" y="${(TAPE_Y + TAPE_H / 2).toFixed(2)}" text-anchor="end" dominant-baseline="middle" font-size="9" font-weight="700" fill="#94a3b8" letter-spacing="0.5">RATING</text>
+            ${hoverLayer}
+          </svg>
+          <div id="hist-tooltip" class="hidden absolute z-10 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+14px)] bg-slate-900/95 backdrop-blur text-white text-xs rounded-xl shadow-2xl ring-1 ring-slate-700/60 px-3 py-2 whitespace-nowrap"></div>
         </div>
       </div>
     </div>
   `, { size: "magazine" });
+
   $("#modal-close-btn")?.addEventListener("click", closeModal);
   $("#modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "modal-overlay") closeModal();
   }, { once: true });
+
+  // Wire hover crosshair + tooltip. The capture <rect> spans the chart
+  // + rating-tape band so hovering anywhere reads the same nearest day.
+  const container = $("#hist-chart-container");
+  const svg = container?.querySelector("svg");
+  const capture = $("#hist-hover-capture");
+  const guide = $("#hist-guide");
+  const hoverPt = $("#hist-hover-point");
+  const halo = $("#hist-hover-halo");
+  const tip = $("#hist-tooltip");
+  if (!container || !svg || !capture || !tip) return;
+
+  function show(idx) {
+    const p = points[idx];
+    const px = xAt(idx);
+    const py = yAt(p.close);
+    guide.setAttribute("x1", px); guide.setAttribute("x2", px); guide.setAttribute("opacity", "1");
+    hoverPt.setAttribute("cx", px); hoverPt.setAttribute("cy", py); hoverPt.setAttribute("opacity", "1");
+    halo.setAttribute("cx", px); halo.setAttribute("cy", py); halo.setAttribute("opacity", "1");
+
+    const rect = svg.getBoundingClientRect();
+    // viewBox → pixel mapping (preserveAspectRatio = xMidYMid meet, which
+    // for our box scales by the smaller of width/height ratios — but here
+    // we control the modal width and the chart is the limiting axis, so
+    // x scale equals rect.width / W).
+    const sx = rect.width / W;
+    const sy = rect.height / H;
+    const tipX = px * sx;
+    const tipY = py * sy;
+
+    const ratingColor = RATING_FILL[p.rating] || "#cbd5e1";
+    const compTxt = p.composite != null ? p.composite.toFixed(1) : "—";
+    const first = points[0];
+    const chg = ((p.close - first.close) / first.close) * 100;
+    const chgCls = chg >= 0 ? "text-emerald-300" : "text-rose-300";
+    tip.innerHTML = `
+      <div class="font-bold text-sm leading-tight">${p.date}</div>
+      <div class="mt-1 flex items-center gap-2">
+        <span class="text-base font-extrabold tabular-nums">₹${formatPrice(p.close)}</span>
+        <span class="text-[10px] tabular-nums ${chgCls}">${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 text-[11px]">
+        <span class="inline-flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full" style="background:${ratingColor}"></span>
+          <span class="font-semibold">${p.rating || "—"}</span>
+        </span>
+        <span class="text-slate-300">·</span>
+        <span>composite <span class="font-bold tabular-nums">${compTxt}</span></span>
+      </div>
+    `;
+    tip.classList.remove("hidden");
+    // Position then flip horizontally if too close to container edges.
+    const cw = container.clientWidth;
+    tip.style.left = `${tipX}px`;
+    tip.style.top = `${tipY}px`;
+    tip.style.transform = "translate(-50%, calc(-100% - 14px))";
+    requestAnimationFrame(() => {
+      const tr = tip.getBoundingClientRect();
+      const cr = container.getBoundingClientRect();
+      let dx = 0;
+      if (tr.left < cr.left + 6) dx = (cr.left + 6) - tr.left;
+      else if (tr.right > cr.right - 6) dx = (cr.right - 6) - tr.right;
+      if (dx !== 0) tip.style.transform = `translate(calc(-50% + ${dx}px), calc(-100% - 14px))`;
+    });
+  }
+  function hide() {
+    guide.setAttribute("opacity", "0");
+    hoverPt.setAttribute("opacity", "0");
+    halo.setAttribute("opacity", "0");
+    tip.classList.add("hidden");
+  }
+
+  function eventToIdx(e) {
+    const rect = svg.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const xPx = t.clientX - rect.left;
+    const xView = (xPx / rect.width) * W;
+    let bestI = 0, bestD = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const d = Math.abs(xAt(i) - xView);
+      if (d < bestD) { bestD = d; bestI = i; }
+    }
+    return bestI;
+  }
+
+  capture.addEventListener("mousemove", (e) => show(eventToIdx(e)));
+  capture.addEventListener("mouseleave", hide);
+  capture.addEventListener("touchstart", (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchmove",  (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchend", hide);
+
+  // Surface today (last point) on open so the panel isn't empty.
+  show(points.length - 1);
 }
 
 // ---------------- filtering / sorting ----------------
