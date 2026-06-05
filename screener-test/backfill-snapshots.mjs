@@ -139,6 +139,14 @@ async function buildSnapshotFromCommit(sha, date) {
     const tc = ticker ? techByTicker[ticker] : null;
     const close = typeof tc?.cmp === "number" ? tc.cmp : null;
     if (close != null) withClose++; else withoutClose++;
+    const p = s.pillars || {};
+    const pillars = {
+      fundamentals: leanPillar(p.fundamentals),
+      technicals:   leanPillar(p.technicals),
+      macro:        leanPillar(p.macro),
+      sentiment:    leanPillar(p.sentiment),
+      liquidity:    leanPillar(p.liquidity),
+    };
     return {
       ticker,
       name: fc.Company || null,
@@ -149,6 +157,7 @@ async function buildSnapshotFromCommit(sha, date) {
       hardFailed: !!s.hardFailed,
       dataComplete: !!s.dataComplete,
       close,
+      pillars,
     };
   });
 
@@ -183,4 +192,12 @@ function slugify(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function leanPillar(p) {
+  if (!p) return null;
+  return {
+    pct:      p.pct      == null ? null : Number(p.pct.toFixed(2)),
+    weighted: p.weighted == null ? null : Number(p.weighted.toFixed(3)),
+  };
 }

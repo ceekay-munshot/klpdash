@@ -1385,16 +1385,23 @@ async function renderHistory() {
       const snapshots = await Promise.all(idx.dates.map((d) =>
         fetch(`data/snapshots/${d}.json`).then((r) => r.json())
       ));
-      state.cache.history = { idx, snapshots };
+      // Benchmark history (Nifty 50 / Bank Nifty) is optional — when
+      // the daily workflow hasn't yet written benchmark-history.json,
+      // alpha columns fall back to "—" instead of breaking the view.
+      const benchmark = await fetch("data/benchmark-history.json")
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      state.cache.history = { idx, snapshots, benchmark };
     } catch (e) {
       host.innerHTML = renderHistoryEmpty(e.message);
       return;
     }
   }
-  const { idx, snapshots } = state.cache.history;
+  const { idx, snapshots, benchmark } = state.cache.history;
 
-  // Per-ticker timeline of points {date, close, composite, rating}
-  // plus identity (name, sector).
+  // Per-ticker timeline of points {date, close, composite, rating, pillars}
+  // plus identity (name, sector). Pillars are kept for forensics decomp
+  // in the drill modal — composite delta = sum of per-pillar weighted deltas.
   const byTicker = new Map();
   for (const snap of snapshots) {
     for (const s of snap.stocks) {
@@ -1404,7 +1411,7 @@ async function renderHistory() {
       if (s.name) t.name = s.name;
       if (s.sector) t.sector = s.sector;
       if (s.slug) t.slug = s.slug;
-      t.points.push({ date: snap.date, close: s.close, composite: s.composite, rating: s.rating });
+      t.points.push({ date: snap.date, close: s.close, composite: s.composite, rating: s.rating, pillars: s.pillars || null });
       byTicker.set(s.ticker, t);
     }
   }
@@ -1416,8 +1423,20 @@ async function renderHistory() {
   const todayMap = snapshots[snapshots.length - 1];
   for (const s of todayMap.stocks) if (typeof s.close === "number") todayClose[s.ticker] = s.close;
 
+  // Benchmark series lookup — Nifty close on any date, falling back to
+  // the most recent close on or before the requested date.
+  const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+  const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+  function niftyOn(date) {
+    if (!niftyClosesByDate) return null;
+    if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
+    let last = null;
+    for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
+    return last;
+  }
+
   // For each ticker that had at least one STRONG BUY day, pin the FIRST
-  // such day as the "we said" anchor and compute realized return.
+  // such day as the "we said" anchor and compute realized return + alpha.
   const picks = [];
   for (const t of byTicker.values()) {
     const firstSB = t.points.find((p) => p.rating === "STRONG BUY" && typeof p.close === "number");
@@ -1426,19 +1445,26 @@ async function renderHistory() {
     if (typeof now !== "number") continue;
     const ret = (now / firstSB.close - 1) * 100;
     const days = daysBetween(firstSB.date, todayDate);
-    // Has the company stayed in the basket since (latest rating)?
-    let currentRating = null;
+    // Latest snapshot point (for "current rating" + pillars-now forensics)
+    let lastPoint = null;
     for (let i = t.points.length - 1; i >= 0; i--) {
-      if (t.points[i].rating) { currentRating = t.points[i].rating; break; }
+      if (t.points[i].rating) { lastPoint = t.points[i]; break; }
     }
+    // Alpha vs Nifty over the same window
+    const nStart = niftyOn(firstSB.date), nEnd = niftyOn(todayDate);
+    const niftyReturn = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
+    const alpha = niftyReturn != null ? ret - niftyReturn : null;
     picks.push({
       ticker: t.ticker, name: t.name, sector: t.sector,
       firstSBDate: firstSB.date,
       firstSBClose: firstSB.close,
       firstSBComposite: firstSB.composite,
+      firstSBPillars: firstSB.pillars || null,
       todayClose: now,
+      todayPillars: lastPoint?.pillars || null,
       ret, days,
-      currentRating,
+      niftyReturn, alpha,
+      currentRating: lastPoint?.rating || null,
       points: t.points,
     });
   }
@@ -1455,9 +1481,74 @@ async function renderHistory() {
   const best = picks[0];
   const dateRange = idx.dates.length > 1 ? `${idx.dates[0]} → ${idx.dates[idx.dates.length - 1]}` : idx.dates[0];
 
+  // --- Portfolio backtest (equal-weight, ₹1L per pick at first STRONG BUY) ---
+  // Simulate buying every STRONG BUY equally on its first-appearance date and
+  // holding through today. Daily portfolio value is summed across whatever
+  // picks have entered by that date — the curve shows compounding of the
+  // basket as more picks come in. Drawdown is the peak-to-trough %.
+  const ALLOC = 100000;
+  // ticker → Map<date, close> for daily mark-to-market
+  const closeByTickerDate = new Map();
+  for (const snap of snapshots) {
+    for (const s of snap.stocks) {
+      if (typeof s.close !== "number") continue;
+      let m = closeByTickerDate.get(s.ticker);
+      if (!m) { m = new Map(); closeByTickerDate.set(s.ticker, m); }
+      m.set(snap.date, s.close);
+    }
+  }
+  function closeAt(ticker, date) {
+    const m = closeByTickerDate.get(ticker);
+    if (!m) return null;
+    if (m.has(date)) return m.get(date);
+    // most recent date ≤ requested
+    let last = null;
+    for (const d of [...m.keys()].sort()) { if (d <= date) last = m.get(d); else break; }
+    return last;
+  }
+  const portfolioSeries = idx.dates.map((d) => {
+    let value = 0, invested = 0;
+    for (const p of picks) {
+      if (d < p.firstSBDate) continue;
+      const shares = ALLOC / p.firstSBClose;
+      const c = closeAt(p.ticker, d);
+      if (c == null) continue;
+      value += shares * c;
+      invested += ALLOC;
+    }
+    return { date: d, value, invested, ret: invested > 0 ? (value / invested - 1) * 100 : 0 };
+  });
+  // Max drawdown over the series
+  let peak = 0, maxDD = 0, maxDDdate = null;
+  for (const pt of portfolioSeries) {
+    if (pt.value > peak) peak = pt.value;
+    if (peak > 0) {
+      const dd = (peak - pt.value) / peak * 100;
+      if (dd > maxDD) { maxDD = dd; maxDDdate = pt.date; }
+    }
+  }
+  const lastPt = portfolioSeries[portfolioSeries.length - 1] || { value: 0, invested: 0, ret: 0 };
+  const portInvested = lastPt.invested;
+  const portValue = lastPt.value;
+  const portRet = lastPt.ret;
+  // Same money in Nifty equivalent (only when benchmark data is loaded)
+  let niftyMatchedRet = null;
+  if (niftyClosesByDate) {
+    let niftyValue = 0, niftyInvested = 0;
+    for (const p of picks) {
+      const nStart = niftyOn(p.firstSBDate);
+      const nEnd = niftyOn(todayDate);
+      if (nStart == null || nEnd == null) continue;
+      const units = ALLOC / nStart;
+      niftyValue += units * nEnd;
+      niftyInvested += ALLOC;
+    }
+    if (niftyInvested > 0) niftyMatchedRet = (niftyValue / niftyInvested - 1) * 100;
+  }
+
   // --- Hero strip ---
   const heroHeader = `
-    <div class="relative overflow-hidden rounded-2xl mb-5 print-hide">
+    <div class="relative overflow-hidden rounded-2xl mb-4 print-hide">
       <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900"></div>
       <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_15%_50%,rgba(34,211,238,0.35),transparent_45%)]"></div>
       <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_85%_30%,rgba(16,185,129,0.4),transparent_50%)]"></div>
@@ -1479,13 +1570,46 @@ async function renderHistory() {
     </div>
   `;
 
+  // --- Portfolio backtest card ---
+  // "If you'd bought every STRONG BUY equal-weight" — concrete ₹ numbers
+  // a fund manager can show LPs, plus max drawdown and (when benchmark
+  // data is loaded) the same money invested in Nifty for comparison.
+  const portRetCls = portRet >= 0 ? "text-emerald-700" : "text-rose-700";
+  const portChartH = 80;
+  const portChart = renderPortfolioSparkline(portfolioSeries, portChartH);
+  const portfolioCard = `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div>
+          <h2 class="font-display font-bold text-slate-900 text-base">What if you'd bought every STRONG BUY equal-weight?</h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">₹${formatINR(ALLOC)} per pick on the first STRONG BUY date · mark-to-market each day · held through today</p>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total return</div>
+          <div class="text-3xl font-display font-extrabold tabular-nums leading-none ${portRetCls}">${portRet >= 0 ? "+" : ""}${portRet.toFixed(2)}%</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        ${portfolioStat("Invested", `₹${formatINR(portInvested)}`, `${picks.length} pick${picks.length === 1 ? "" : "s"}`)}
+        ${portfolioStat("Today's value", `₹${formatINR(portValue)}`, `${portValue >= portInvested ? "+" : ""}₹${formatINR(portValue - portInvested)} net`)}
+        ${portfolioStat("Max drawdown", `−${maxDD.toFixed(2)}%`, maxDDdate ? `bottomed ${maxDDdate}` : "—", maxDD > 0 ? "text-rose-700" : "text-slate-500")}
+        ${niftyMatchedRet != null
+          ? portfolioStat("vs Nifty 50", `${niftyMatchedRet >= 0 ? "+" : ""}${niftyMatchedRet.toFixed(2)}%`, `α ${portRet - niftyMatchedRet >= 0 ? "+" : ""}${(portRet - niftyMatchedRet).toFixed(2)}%`, portRet - niftyMatchedRet >= 0 ? "text-emerald-700" : "text-rose-700")
+          : portfolioStat("vs Nifty 50", "—", "loading daily", "text-slate-400")}
+      </div>
+      <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3">
+        ${portChart}
+      </div>
+    </div>
+  `;
+
   // --- Table of past picks (one row per ticker, sortable visually) ---
   const rows = picks.map((p, i) => {
     const { color, initials } = avatarFor(p.name || "—");
     const ratingChipCls = composite.ratingClass(p.currentRating || "—");
-    const inBasket = p.currentRating === "STRONG BUY" || p.currentRating === "BUY";
     const retCls = p.ret >= 0 ? "text-emerald-700" : "text-rose-700";
     const retBg = p.ret >= 0 ? "bg-emerald-50 ring-emerald-100" : "bg-rose-50 ring-rose-100";
+    const alphaCls = p.alpha == null ? "" : p.alpha >= 0 ? "text-emerald-700" : "text-rose-700";
     return `
       <button data-pick="${i}" class="hist-row w-full text-left grid grid-cols-12 items-center gap-3 px-4 py-3 rounded-xl bg-white ring-1 ring-slate-200/80 hover:ring-indigo-300 hover:shadow-md hover:-translate-y-px transition-all">
         <div class="col-span-1 sm:col-span-1 flex items-center gap-2">
@@ -1515,9 +1639,14 @@ async function renderHistory() {
             <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${ratingChipCls}">${escapeHtml(p.currentRating || "—")}</span>
           </div>
         </div>
-        <div class="col-span-6 sm:col-span-2 flex items-center justify-end gap-2">
-          <span class="inline-flex items-center px-2.5 py-1 rounded-lg ring-1 text-sm font-extrabold tabular-nums ${retCls} ${retBg}">${p.ret >= 0 ? "+" : ""}${p.ret.toFixed(1)}%</span>
-          <span class="text-[10px] text-slate-400 tabular-nums whitespace-nowrap">${p.days}d</span>
+        <div class="col-span-6 sm:col-span-2 flex flex-col items-end gap-0.5">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-lg ring-1 text-sm font-extrabold tabular-nums ${retCls} ${retBg}">${p.ret >= 0 ? "+" : ""}${p.ret.toFixed(1)}%</span>
+            <span class="text-[10px] text-slate-400 tabular-nums whitespace-nowrap">${p.days}d</span>
+          </div>
+          ${p.alpha != null
+            ? `<span class="text-[10px] font-semibold tabular-nums ${alphaCls}">α ${p.alpha >= 0 ? "+" : ""}${p.alpha.toFixed(2)}% vs Nifty</span>`
+            : ""}
         </div>
       </button>
     `;
@@ -1525,6 +1654,7 @@ async function renderHistory() {
 
   host.innerHTML = `
     ${heroHeader}
+    ${portfolioCard}
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
@@ -1534,6 +1664,150 @@ async function renderHistory() {
     </div>
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
+}
+
+// Tiny portfolio-value sparkline drawn inside the backtest card. Shows
+// the running portfolio return (%) day-over-day, with each pick-entry
+// date marked as a small green dot on the line.
+function renderPortfolioSparkline(series, H) {
+  if (!series || series.length < 2) return `<div class="text-[11px] text-slate-400 text-center py-4">Not enough days to draw a curve yet.</div>`;
+  const W = 800;
+  const M = { top: 8, right: 8, bottom: 22, left: 36 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const rets = series.map((p) => p.ret);
+  const yMin = Math.min(0, ...rets);
+  const yMax = Math.max(0, ...rets);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.1, yHi = yMax + ySpan * 0.1;
+  const xAt = (i) => M.left + (i / (series.length - 1)) * innerW;
+  const yAt = (v) => M.top + innerH - ((v - yLo) / (yHi - yLo)) * innerH;
+  const path = series.map((p, i) => `${i === 0 ? "M" : "L"} ${xAt(i).toFixed(1)} ${yAt(p.ret).toFixed(1)}`).join(" ");
+  const lastRet = series[series.length - 1].ret;
+  const lineColor = lastRet >= 0 ? "#10b981" : "#f43f5e";
+  const areaPath = `${path} L ${xAt(series.length - 1).toFixed(1)} ${yAt(yLo).toFixed(1)} L ${M.left.toFixed(1)} ${yAt(yLo).toFixed(1)} Z`;
+  const zeroLineY = yAt(0).toFixed(1);
+  const dateTickEvery = Math.max(1, Math.ceil(series.length / 6));
+  const xLabels = series.map((p, i) => {
+    if (i % dateTickEvery !== 0 && i !== series.length - 1) return "";
+    return `<text x="${xAt(i).toFixed(1)}" y="${(M.top + innerH + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="#94a3b8">${p.date.slice(5)}</text>`;
+  }).join("");
+  return `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full" style="max-height:${H + 20}px">
+      <defs>
+        <linearGradient id="portArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${lineColor}" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="${lineColor}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <line x1="${M.left}" x2="${(M.left + innerW).toFixed(1)}" y1="${zeroLineY}" y2="${zeroLineY}" stroke="#cbd5e1" stroke-width="0.6" stroke-dasharray="3 4" />
+      <text x="${(M.left - 6).toFixed(1)}" y="${zeroLineY}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#94a3b8">0%</text>
+      <text x="${(M.left - 6).toFixed(1)}" y="${(M.top + 6).toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#94a3b8">${yHi >= 0 ? "+" : ""}${yHi.toFixed(1)}%</text>
+      <text x="${(M.left - 6).toFixed(1)}" y="${(M.top + innerH - 2).toFixed(1)}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="#94a3b8">${yLo >= 0 ? "+" : ""}${yLo.toFixed(1)}%</text>
+      <path d="${areaPath}" fill="url(#portArea)" />
+      <path d="${path}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="${xAt(series.length - 1).toFixed(1)}" cy="${yAt(lastRet).toFixed(1)}" r="3.5" fill="${lineColor}" stroke="#fff" stroke-width="1.5" />
+      ${xLabels}
+    </svg>
+  `;
+}
+
+function portfolioStat(label, value, sub, valueCls = "text-slate-900") {
+  return `
+    <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${escapeHtml(label)}</div>
+      <div class="text-base font-display font-extrabold tabular-nums mt-0.5 leading-tight ${valueCls}">${value}</div>
+      <div class="text-[10px] text-slate-500 mt-0.5 truncate" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
+    </div>
+  `;
+}
+
+// Indian-rupee compact formatter — ₹X,XX,XXX up to a lakh, then
+// ₹X.XL / ₹X.XCr for bigger numbers (matches Indian convention).
+function formatINR(n) {
+  if (n == null || !isFinite(n)) return "—";
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
+  if (abs >= 10000000) return `${sign}${(abs / 10000000).toFixed(2)}Cr`;
+  if (abs >= 100000)   return `${sign}${(abs / 100000).toFixed(2)}L`;
+  return `${sign}${Math.round(abs).toLocaleString("en-IN")}`;
+}
+
+// Score forensics — decompose the composite change between the
+// STRONG BUY anchor day and today into per-pillar weighted-delta
+// contributions. The sum of all five deltas equals the composite
+// delta, so a fund manager can see *why* the model changed its mind
+// (or didn't). Quiet if either endpoint lacks pillar data.
+function renderScoreForensics(pick) {
+  const a = pick.firstSBPillars;
+  const b = pick.todayPillars;
+  if (!a || !b) return "";
+  const PILLAR_KEYS = ["fundamentals", "technicals", "macro", "sentiment", "liquidity"];
+  const LABEL = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment", liquidity: "Liquidity" };
+  const COLOR = { fundamentals: "bg-emerald-500", technicals: "bg-indigo-500", macro: "bg-violet-500", sentiment: "bg-amber-500", liquidity: "bg-sky-500" };
+  const deltas = PILLAR_KEYS.map((k) => {
+    const aw = a[k]?.weighted, bw = b[k]?.weighted;
+    const ap = a[k]?.pct,      bp = b[k]?.pct;
+    if (aw == null || bw == null) return { key: k, missing: true };
+    return { key: k, missing: false, aw, bw, ap, bp, delta: bw - aw };
+  });
+  const compDelta = deltas.reduce((s, d) => s + (d.missing ? 0 : d.delta), 0);
+  const compTotalA = pick.firstSBComposite;
+  const compTotalB = (a && b && pick.todayPillars)
+    ? deltas.reduce((s, d) => s + (d.missing ? 0 : d.bw), 0)
+    : null;
+  const maxAbs = Math.max(0.5, ...deltas.map((d) => d.missing ? 0 : Math.abs(d.delta)));
+  const deltaSign = compDelta >= 0 ? "+" : "−";
+  const deltaCls = compDelta >= 0 ? "text-emerald-700" : "text-rose-700";
+  const rowsHtml = deltas.map((d) => {
+    if (d.missing) {
+      return `
+        <div class="grid grid-cols-12 items-center gap-2 py-1.5">
+          <div class="col-span-3 text-xs font-semibold text-slate-400">${LABEL[d.key]}</div>
+          <div class="col-span-9 text-[11px] text-slate-400">no data</div>
+        </div>
+      `;
+    }
+    const pos = d.delta >= 0;
+    const widthPct = (Math.abs(d.delta) / maxAbs) * 50;          // 0..50% of the bar (centered)
+    const valCls = pos ? "text-emerald-700" : "text-rose-700";
+    const barCls = pos ? "bg-emerald-500" : "bg-rose-500";
+    const dot = COLOR[d.key];
+    return `
+      <div class="grid grid-cols-12 items-center gap-2 py-1.5">
+        <div class="col-span-3 flex items-center gap-1.5 text-xs">
+          <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>
+          <span class="font-semibold text-slate-800">${LABEL[d.key]}</span>
+        </div>
+        <div class="col-span-5 relative h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div class="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300"></div>
+          <div class="absolute top-0 bottom-0 ${barCls}" style="${pos ? `left:50%;width:${widthPct.toFixed(2)}%` : `right:50%;width:${widthPct.toFixed(2)}%`}"></div>
+        </div>
+        <div class="col-span-2 text-[11px] font-bold tabular-nums text-right ${valCls}">${pos ? "+" : "−"}${Math.abs(d.delta).toFixed(2)}</div>
+        <div class="col-span-2 text-[10px] tabular-nums text-slate-400 text-right whitespace-nowrap">${d.ap}% → ${d.bp}%</div>
+      </div>
+    `;
+  }).join("");
+  return `
+    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3 mb-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+        <div class="flex items-baseline gap-2">
+          <div class="font-display font-bold text-slate-900 text-sm">Score forensics</div>
+          <div class="text-[11px] text-slate-500">why the composite ${compDelta >= 0 ? "moved up" : "moved down"} since ${pick.firstSBDate}</div>
+        </div>
+        <div class="flex items-baseline gap-2 text-xs tabular-nums">
+          <span class="text-slate-500">${compTotalA != null ? compTotalA.toFixed(1) : "—"}</span>
+          <span class="text-slate-400">→</span>
+          <span class="font-bold text-slate-900">${compTotalB != null ? compTotalB.toFixed(1) : "—"}</span>
+          <span class="font-bold ${deltaCls}">${deltaSign}${Math.abs(compDelta).toFixed(2)}</span>
+        </div>
+      </div>
+      <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+        ${rowsHtml}
+      </div>
+      <div class="text-[10px] text-slate-400 mt-1.5">Each row's bar = pillar's contribution change (weighted points). Bars sum to the composite delta on the right.</div>
+    </div>
+  `;
 }
 
 function heroStat(label, value, sub) {
@@ -1714,6 +1988,8 @@ function openHistoryDrill(pick) {
           <div class="text-2xl font-display font-extrabold tabular-nums ${retCls} leading-none">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
         </div>
       </div>
+
+      ${renderScoreForensics(pick)}
 
       <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
