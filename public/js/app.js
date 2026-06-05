@@ -164,13 +164,9 @@ const CONFIGS = {
     sector: (co) => co?.["Sector"] || null,
     industry: (co) => co?.["Broad Industry"] || null,
     // Column getters read from co._composite which loadTab stashes on each row.
+    // Composite-as-number is already shown in the standard Score pill column —
+    // no duplicate column here.
     columns: [
-      { label: "Composite", html: true, get: (co) => {
-        const v = co._composite?.composite;
-        if (v == null) return `<span class="text-slate-400">—</span>`;
-        const tone = v >= 75 ? "text-emerald-700" : v >= 60 ? "text-blue-700" : v >= 45 ? "text-amber-700" : "text-rose-700";
-        return `<span class="font-bold ${tone}">${v.toFixed(1)}</span>`;
-      } },
       { label: "Rating", html: true, get: (co) => {
         const r = co._composite?.rating;
         if (!r) return `<span class="text-slate-400">—</span>`;
@@ -992,27 +988,14 @@ function renderCompositeTopCards() {
     </div>
   `;
 
-  // Export PDF button — sits above the distribution strip on the
-  // SPIP basket tab, prints the page using the @media print CSS.
-  const printBtn = `
-    <div class="flex items-center justify-end gap-2 mb-3 print-hide">
-      <button id="print-pdf-btn" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50 text-xs font-semibold text-slate-700 hover:text-indigo-700 transition-colors shadow-sm">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Export PDF
-      </button>
-    </div>
-  `;
-
   $("#top-cards").innerHTML = `
     ${printCover}
     <div class="col-span-full">
-      ${printBtn}
       ${distributionStrip}
     </div>
     ${heroCards}
   `;
   $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
-  $("#print-pdf-btn")?.addEventListener("click", () => window.print());
   $("#pillar-weight-btn")?.addEventListener("click", () => openPillarWeightsModal());
 }
 
@@ -1187,10 +1170,13 @@ function openSourcesModal() {
 
 // ---------------- Top Picks (Hero) ----------------
 // Client-facing premium tab. Composite ≥ 75 only, hard-fails excluded.
-// Designer-led layout: compact hero strip so picks appear above the
-// fold, large gradient composite score as the visual anchor per card,
-// and a pentagon radar SVG that conveys pillar mix at a glance — no
-// dense bar charts, no thesis sentences, the visuals carry the story.
+// Layout philosophy:
+//   - Compact hero strip — single row, ~80px tall
+//   - Top 3 as a "podium" with showcase cards
+//   - Rest as tight horizontal row cards so 8+ picks fit per viewport
+//   - Each card's visual signature is a stacked horizontal contribution
+//     bar — segment widths = pillar contribution to composite, total
+//     fill = composite score itself. One glance: how high + how earned.
 function renderTopPicks() {
   const st = state.cache.composite;
   if (!st) return;
@@ -1207,147 +1193,152 @@ function renderTopPicks() {
     return;
   }
 
-  // Header summary — kept terse so picks land above the fold.
   const avgComposite = (picks.reduce((a, s) => a + (s.composite || 0), 0) / picks.length).toFixed(1);
   const sectors = new Set();
   picks.forEach((s) => { const sec = s.company?.["Sector"] || s.company?.["Broad Industry"]; if (sec) sectors.add(sec); });
+  const topScore = picks[0]?.composite ?? 0;
 
   const PILLAR_KEYS = ["fundamentals", "technicals", "macro", "sentiment", "liquidity"];
-  const PILLAR_LETTER = { fundamentals: "F", technicals: "T", macro: "M", sentiment: "S", liquidity: "L" };
   const PILLAR_NAME = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment", liquidity: "Liquidity" };
+  // Solid tailwind classes — one per pillar — used by both the per-card
+  // contribution bar and the legend below the grid.
+  const PILLAR_BAR = {
+    fundamentals: "bg-emerald-500",
+    technicals:   "bg-indigo-500",
+    macro:        "bg-violet-500",
+    sentiment:    "bg-amber-500",
+    liquidity:    "bg-sky-500",
+  };
+  const w = state.pillarWeights || composite.PILLAR_WEIGHTS;
 
-  // Pentagon radar — single visual signature for each company's pillar
-  // mix. 5 vertices at the corners (top + 4 around), filled polygon
-  // scaled by each pillar's percentage of 100.
-  function pillarRadar(s, stroke) {
-    const R = 38;                    // max radius in SVG units
-    const angles = PILLAR_KEYS.map((_, i) => (Math.PI * 2 * i) / 5 - Math.PI / 2);
-    const pts = PILLAR_KEYS.map((k, i) => {
-      const r = Math.max(2, ((s.pillars?.[k]?.pct ?? 0) / 100) * R);
-      return [r * Math.cos(angles[i]), r * Math.sin(angles[i])];
+  // The contribution bar — visual signature of each pick.
+  // Each segment's width = pillar_pct × pillar_weight / 100, summed = composite.
+  // Bar total width = 100, so the filled portion equals the composite score.
+  function contributionBar(s) {
+    const segments = PILLAR_KEYS.map((k) => {
+      const pct = s.pillars?.[k]?.pct ?? 0;
+      const wt = w[k] ?? composite.PILLAR_WEIGHTS[k];
+      return { key: k, contribution: (pct / 100) * wt };
     });
-    const polyAt = (pct) => PILLAR_KEYS.map((_, i) => {
-      const r = R * (pct / 100);
-      return `${(r * Math.cos(angles[i])).toFixed(1)},${(r * Math.sin(angles[i])).toFixed(1)}`;
-    }).join(" ");
-    const valuePoly = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-    const labels = PILLAR_KEYS.map((k, i) => {
-      const lr = R + 8;
-      const x = (lr * Math.cos(angles[i])).toFixed(1);
-      const y = (lr * Math.sin(angles[i])).toFixed(1);
-      return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" fill="#64748b">${PILLAR_LETTER[k]}</text>`;
-    }).join("");
     return `
-      <svg viewBox="-50 -50 100 100" class="w-full h-full">
-        <polygon points="${polyAt(25)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
-        <polygon points="${polyAt(50)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
-        <polygon points="${polyAt(75)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
-        <polygon points="${polyAt(100)}" fill="none" stroke="#cbd5e1" stroke-width="0.6"/>
-        <polygon points="${valuePoly}" fill="${stroke}" fill-opacity="0.22" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
-        ${labels}
-      </svg>
+      <div class="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/70">
+        ${segments.map(({ key, contribution }) =>
+          contribution > 0
+            ? `<div class="${PILLAR_BAR[key]} h-full" style="width:${contribution.toFixed(2)}%" title="${PILLAR_NAME[key]}: ${contribution.toFixed(1)} of ${w[key]} possible"></div>`
+            : "").join("")}
+      </div>
     `;
   }
 
-  // Score-band theme — picks the gradient + radar colour per card so
-  // higher scores read warmer/more premium without saying so in copy.
-  function cardTheme(score) {
-    if (score >= 90) return { halo: "from-amber-200/40 via-emerald-200/30 to-teal-200/30", accent: "from-amber-500 via-emerald-500 to-teal-500", scoreFrom: "from-emerald-600", scoreTo: "to-teal-600", radar: "#10b981", ring: "ring-emerald-300/50" };
-    if (score >= 85) return { halo: "from-emerald-200/40 to-teal-200/30",                  accent: "from-emerald-500 to-teal-500",                 scoreFrom: "from-emerald-600", scoreTo: "to-teal-600", radar: "#10b981", ring: "ring-emerald-200/60" };
-    if (score >= 80) return { halo: "from-teal-200/30 to-cyan-200/30",                     accent: "from-teal-500 to-cyan-500",                    scoreFrom: "from-teal-600",    scoreTo: "to-cyan-600", radar: "#14b8a6", ring: "ring-teal-200/60" };
-    return                  { halo: "from-cyan-200/30 to-blue-200/30",                     accent: "from-cyan-500 to-blue-500",                    scoreFrom: "from-cyan-600",    scoreTo: "to-blue-600", radar: "#06b6d4", ring: "ring-cyan-200/60" };
-  }
-
-  function rankCorner(i) {
-    if (i < 3) {
-      const medals = ["🥇", "🥈", "🥉"];
-      return `<div class="absolute top-3 left-3 w-9 h-9 rounded-full bg-white shadow-md ring-1 ring-slate-200 flex items-center justify-center text-xl leading-none">${medals[i]}</div>`;
-    }
-    return `<div class="absolute top-3 left-3 text-[11px] font-bold text-slate-400 tabular-nums tracking-wider">#${String(i + 1).padStart(2, "0")}</div>`;
-  }
-
+  // Hero — slim single-bar header. Picks start ~80px below the tab nav.
   const heroHeader = `
-    <div class="relative overflow-hidden rounded-3xl mb-5 print-hide">
-      <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900"></div>
-      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_15%_50%,rgba(236,72,153,0.4),transparent_45%)]"></div>
-      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_85%_30%,rgba(16,185,129,0.45),transparent_45%)]"></div>
-      <div class="relative px-6 py-5 sm:px-8 sm:py-6 text-white flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center text-2xl shadow-lg ring-2 ring-white/20">★</div>
+    <div class="relative overflow-hidden rounded-2xl mb-5 print-hide">
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-indigo-900 to-violet-900"></div>
+      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_10%_50%,rgba(245,158,11,0.35),transparent_45%)]"></div>
+      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_90%_30%,rgba(16,185,129,0.4),transparent_50%)]"></div>
+      <div class="relative px-6 py-4 text-white flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="text-2xl leading-none">★</div>
           <div>
-            <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/90">The Top Picks</div>
-            <h1 class="font-display text-3xl sm:text-4xl font-extrabold leading-none mt-0.5">${picks.length} <span class="text-white/60 font-bold text-xl">stocks above the 75 line</span></h1>
+            <div class="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-200/80">The Top Picks</div>
+            <h1 class="font-display text-2xl sm:text-[28px] font-extrabold leading-none mt-0.5">${picks.length} <span class="text-base font-bold text-white/60">stocks · composite ≥ 75</span></h1>
           </div>
         </div>
         <div class="flex items-center gap-2 text-[11px]">
-          <span class="bg-white/10 backdrop-blur px-3 py-2 rounded-xl ring-1 ring-white/15">
-            <span class="block text-[9px] uppercase tracking-wider text-white/60 font-semibold">Avg score</span>
-            <span class="font-bold tabular-nums text-base text-white">${avgComposite}</span>
-          </span>
-          <span class="bg-white/10 backdrop-blur px-3 py-2 rounded-xl ring-1 ring-white/15">
-            <span class="block text-[9px] uppercase tracking-wider text-white/60 font-semibold">Sectors</span>
-            <span class="font-bold tabular-nums text-base text-white">${sectors.size}</span>
-          </span>
-          ${meta.generated_at ? `<span class="text-white/50 ml-2 whitespace-nowrap">Updated ${relativeTimeFrom(meta.generated_at)}</span>` : ""}
+          <span class="bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg ring-1 ring-white/15"><span class="text-white/60">Top</span> <span class="font-bold tabular-nums text-white">${topScore.toFixed(1)}</span></span>
+          <span class="bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg ring-1 ring-white/15"><span class="text-white/60">Avg</span> <span class="font-bold tabular-nums text-white">${avgComposite}</span></span>
+          <span class="bg-white/10 backdrop-blur px-3 py-1.5 rounded-lg ring-1 ring-white/15"><span class="text-white/60">Sectors</span> <span class="font-bold tabular-nums text-white">${sectors.size}</span></span>
+          ${meta.generated_at ? `<span class="text-white/50 whitespace-nowrap">${relativeTimeFrom(meta.generated_at)}</span>` : ""}
         </div>
       </div>
     </div>
   `;
 
-  const cards = picks.map((s, i) => {
+  // Podium: top 3 as showcase cards
+  function podiumCard(s, i) {
     const co = s.company;
     const name = co.Company || "—";
     const { color, initials } = avatarFor(name);
-    const theme = cardTheme(s.composite);
     const sector = co.Sector || co["Broad Industry"] || "";
-    const rt = composite.ratingTheme(s.rating);
+    const marketCap = co["Market Cap"] || "";
+    const medals = ["🥇", "🥈", "🥉"];
+    const haloByRank = [
+      "from-amber-100/80 via-yellow-50 to-white",
+      "from-slate-100 via-slate-50 to-white",
+      "from-orange-100/70 via-amber-50 to-white",
+    ];
+    const accentByRank = [
+      "from-amber-400 via-yellow-400 to-orange-400",
+      "from-slate-300 via-slate-400 to-slate-500",
+      "from-orange-400 via-amber-400 to-amber-500",
+    ];
     return `
-      <button data-pick-idx="${i}" class="pick-card group relative text-left w-full overflow-hidden rounded-2xl bg-white ring-1 ${theme.ring} hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
-        <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${theme.halo} pointer-events-none"></div>
-        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.accent}"></div>
-        ${rankCorner(i)}
-
-        <div class="relative p-5 pt-12">
-          <!-- Composite as hero -->
-          <div class="flex items-start justify-between gap-4 mb-3">
+      <button data-pick-idx="${i}" class="pick-card group relative text-left w-full overflow-hidden rounded-2xl bg-gradient-to-br ${haloByRank[i]} ring-1 ring-slate-200/80 hover:ring-emerald-300 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${accentByRank[i]}"></div>
+        <div class="p-5">
+          <div class="flex items-start justify-between gap-4 mb-4">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
+              <div class="text-3xl leading-none">${medals[i]}</div>
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-base shadow-md flex-shrink-0">${initials}</div>
               <div class="min-w-0">
                 <div class="font-display font-bold text-slate-900 text-base leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-                ${sector ? `<div class="text-[11px] text-slate-500 truncate mt-0.5">${escapeHtml(sector)}</div>` : ""}
+                <div class="text-[11px] text-slate-500 truncate mt-0.5">${escapeHtml(sector)}${marketCap ? ` · ${escapeHtml(marketCap)}` : ""}</div>
               </div>
             </div>
             <div class="text-right flex-shrink-0">
-              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold leading-none mb-1">Score</div>
-              <div class="text-4xl font-extrabold tabular-nums leading-none bg-gradient-to-br ${theme.scoreFrom} ${theme.scoreTo} bg-clip-text text-transparent">${s.composite.toFixed(1)}</div>
+              <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold leading-none mb-1">Composite</div>
+              <div class="text-[40px] font-extrabold tabular-nums leading-none bg-gradient-to-br from-emerald-600 to-teal-600 bg-clip-text text-transparent">${s.composite.toFixed(1)}</div>
             </div>
           </div>
-
-          <!-- Radar visualization — pillar mix at a glance -->
-          <div class="flex justify-center py-2">
-            <div class="w-28 h-28">${pillarRadar(s, theme.radar)}</div>
-          </div>
-
-          <!-- Rating chip + CTA -->
-          <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${rt.from} ${rt.to} ${rt.textOn} text-[10px] font-bold uppercase tracking-wider shadow-sm">
-              <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>${escapeHtml(s.rating)}
+          <div class="mb-1">${contributionBar(s)}</div>
+          <div class="flex items-center justify-between mt-3">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>STRONG BUY
             </span>
-            <span class="text-[11px] font-semibold text-slate-400 group-hover:text-indigo-600 transition-colors">View →</span>
+            <span class="text-[11px] font-semibold text-slate-400 group-hover:text-emerald-600 transition-colors">View details →</span>
           </div>
         </div>
       </button>
     `;
-  }).join("");
+  }
 
-  // Tiny legend under the grid so the F/T/M/S/L vertex letters parse
-  // without making each card carry full pillar labels.
+  // Compact horizontal row card — one full-width row per pick. Heavy
+  // info-density: 7-8 picks visible per viewport on a desktop monitor.
+  function rowCard(s, i) {
+    const co = s.company;
+    const name = co.Company || "—";
+    const { color, initials } = avatarFor(name);
+    const sector = co.Sector || co["Broad Industry"] || "";
+    const marketCap = co["Market Cap"] || "";
+    return `
+      <button data-pick-idx="${i}" class="pick-card group w-full text-left flex items-center gap-3 sm:gap-4 px-4 py-3 rounded-xl bg-white ring-1 ring-slate-200/80 hover:ring-emerald-300 hover:shadow-md hover:-translate-y-px transition-all">
+        <div class="w-8 flex-shrink-0 text-center text-xs font-bold text-slate-400 tabular-nums tracking-wider">#${String(i + 1).padStart(2, "0")}</div>
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">${initials}</div>
+        <div class="min-w-0 flex-1">
+          <div class="font-display font-bold text-slate-900 text-sm leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+          <div class="text-[11px] text-slate-500 truncate mt-0.5">${escapeHtml(sector)}${marketCap ? ` · ${escapeHtml(marketCap)}` : ""}</div>
+        </div>
+        <div class="hidden md:block flex-1 max-w-[260px]">${contributionBar(s)}</div>
+        <div class="text-right flex-shrink-0 w-16">
+          <div class="text-2xl font-extrabold tabular-nums leading-none bg-gradient-to-br from-emerald-600 to-teal-600 bg-clip-text text-transparent">${s.composite.toFixed(1)}</div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold mt-0.5">/100</div>
+        </div>
+        <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 text-[9px] font-bold uppercase tracking-wider flex-shrink-0">STRONG BUY</span>
+        <span class="text-slate-300 group-hover:text-emerald-600 transition-colors flex-shrink-0">→</span>
+      </button>
+    `;
+  }
+
+  const podium = picks.slice(0, 3).map((s, i) => podiumCard(s, i)).join("");
+  const rest = picks.slice(3).map((s, i) => rowCard(s, i + 3)).join("");
+
+  // Legend tied to the contribution bar's pillar colors.
   const legend = `
-    <div class="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] text-slate-500">
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Pillar mix:</span>
       ${PILLAR_KEYS.map((k) => `
         <span class="inline-flex items-center gap-1.5">
-          <span class="w-4 h-4 rounded-full bg-slate-100 ring-1 ring-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600">${PILLAR_LETTER[k]}</span>
-          ${PILLAR_NAME[k]}
+          <span class="w-2.5 h-2.5 rounded-full ${PILLAR_BAR[k]}"></span>${PILLAR_NAME[k]}
         </span>
       `).join("")}
     </div>
@@ -1355,9 +1346,14 @@ function renderTopPicks() {
 
   $("#top-picks-content").innerHTML = `
     ${heroHeader}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      ${cards}
-    </div>
+    ${picks.length > 0 ? `
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+        ${podium}
+      </div>` : ""}
+    ${picks.length > 3 ? `
+      <div class="space-y-1.5">
+        ${rest}
+      </div>` : ""}
     ${legend}
   `;
   $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openDrillDown(picks[Number(el.dataset.pickIdx)])));
@@ -1440,7 +1436,7 @@ function renderTable() {
         </td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold ${scoreBadgeClass(s.scorePct)}">${s.totalPoints}/${s.totalMax}</span>
+            <span class="inline-flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-lg text-sm font-bold tabular-nums ${scoreBadgeClass(s.scorePct)}">${c.composite ? Number(s.totalPoints).toFixed(1) : s.totalPoints}/${s.totalMax}</span>
             ${flagged ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-rose-100 text-rose-700 ring-1 ring-rose-200" title="${escapeHtml(s.hardFails.join(", "))}">⚠ Red Flag</span>` : ""}
             ${s.tickerError ? `<span class="text-[10px] text-slate-400 italic" title="${escapeHtml(s.tickerError)}">no data</span>` : ""}
           </div>
