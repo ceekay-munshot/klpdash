@@ -859,103 +859,58 @@ function renderCompositeTopCards() {
   const total = all.length;
   const inBasket = counts.strong + counts.buy + counts.watch;
 
-  // Pillar-weight adjuster — collapsible <details> so it stays out of
-  // the way for casual viewers but is one click away for the analyst.
+  // Pillar-weight summary — just a compact pill showing current weights
+  // with a small "Adjust" button. Full editor lives in a modal so the
+  // SPIP basket header stays clean.
   const w = state.pillarWeights;
-  const sum = w.fundamentals + w.technicals + w.macro + w.sentiment + w.liquidity;
-  const weightDelta = sum === 100 ? "" : ` (sums to ${sum}, will normalise to 100 on apply)`;
   const isDefaultWeights = ["fundamentals","technicals","macro","sentiment","liquidity"]
     .every((k) => w[k] === composite.PILLAR_WEIGHTS[k]);
-  const pillarWeightAdjuster = `
-    <details class="mb-4 group">
-      <summary class="cursor-pointer select-none flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 ring-1 ring-indigo-100 hover:ring-indigo-200 transition">
-        <div class="flex items-center gap-2">
-          <span class="text-base">⚖️</span>
-          <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Pillar Weights</span>
-          <span class="text-xs text-slate-600 tabular-nums">
-            Fund <b>${w.fundamentals}</b> · Tech <b>${w.technicals}</b> · Macro <b>${w.macro}</b> · Sent <b>${w.sentiment}</b> · Liq <b>${w.liquidity}</b>
-          </span>
-          ${isDefaultWeights ? `<span class="text-[10px] text-slate-400 italic">(framework default)</span>` : `<span class="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Custom</span>`}
-        </div>
-        <span class="text-xs text-slate-400 group-open:rotate-180 transition-transform">▾</span>
-      </summary>
-      <div class="mt-2 p-4 rounded-xl bg-white ring-1 ring-slate-200">
-        <p class="text-xs text-slate-600 mb-3">
-          Adjust pillar weights to match your client's mandate. Composite scores update instantly across the SPIP Basket and Top Picks tabs.
-        </p>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3">
-          ${["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => `
-            <label class="block">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${k.charAt(0).toUpperCase() + k.slice(1)}</div>
-              <div class="flex items-center gap-1">
-                <input type="number" min="0" max="100" step="1" data-weight-key="${k}" value="${w[k]}"
-                  class="w-full px-2 py-1.5 text-sm font-bold tabular-nums bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
-                <span class="text-xs text-slate-400">%</span>
-              </div>
-            </label>
-          `).join("")}
-        </div>
-        <div class="flex items-center justify-between gap-2">
-          <div class="text-xs text-slate-500">
-            Total: <span id="pillar-weight-sum" class="font-bold tabular-nums ${sum === 100 ? "text-emerald-700" : "text-amber-700"}">${sum}</span>%${weightDelta}
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="pillar-weight-reset" type="button" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">↺ Reset to default</button>
-            <button id="pillar-weight-apply" type="button" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">Apply</button>
-          </div>
-        </div>
-      </div>
-    </details>
+  const pillarWeightPill = `
+    <button id="pillar-weight-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs rounded-full bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50 transition shadow-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-1m3 1l3-1"/></svg>
+      <span class="font-semibold text-slate-700">Weights</span>
+      <span class="tabular-nums text-slate-500">${w.fundamentals}·${w.technicals}·${w.macro}·${w.sentiment}·${w.liquidity}</span>
+      ${isDefaultWeights ? "" : `<span class="text-[9px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Custom</span>`}
+    </button>
   `;
 
-  // Full 6-bucket breakdown — no hidden math, every one of the `total`
-  // stocks is accounted for in exactly one card. Distribution strip up top
-  // is the same color-coded breakdown as a stacked bar.
+  // Compact single-line breakdown — distribution bar + inline chips for
+  // each bucket. One row, easy to scan, no scrolling needed before the
+  // user reaches the picks below.
   const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
   const pctOf = (n) => total ? (n / total) * 100 : 0;
   const cats = [
-    { count: counts.strong,   label: "STRONG BUY", sub: "Initiate full position",     from: "from-emerald-500", to: "to-teal-500",    soft: "from-emerald-50 to-teal-50",     accent: "text-emerald-700", dot: "bg-emerald-500" },
-    { count: counts.buy,      label: "BUY",        sub: "Initiate 50–75% position",   from: "from-blue-500",    to: "to-indigo-500",  soft: "from-blue-50 to-indigo-50",      accent: "text-blue-700",    dot: "bg-blue-500" },
-    { count: counts.watch,    label: "WATCH",      sub: "Watchlist, don't initiate",  from: "from-amber-500",   to: "to-orange-500",  soft: "from-amber-50 to-orange-50",     accent: "text-amber-700",   dot: "bg-amber-500" },
-    { count: counts.avoid,    label: "AVOID",      sub: "Score below threshold",      from: "from-rose-500",    to: "to-pink-500",    soft: "from-rose-50 to-pink-50",        accent: "text-rose-700",    dot: "bg-rose-500" },
-    { count: counts.unrated,  label: "UNRATED",    sub: "Data still loading",         from: "from-slate-400",   to: "to-slate-500",   soft: "from-slate-50 to-slate-100",     accent: "text-slate-700",   dot: "bg-slate-400" },
-    { count: counts.filtered, label: "HARD-FAIL",  sub: "Auto-excluded — red flag",   from: "from-slate-600",   to: "to-slate-800",   soft: "from-slate-100 to-slate-200",    accent: "text-slate-800",   dot: "bg-slate-700" },
+    { count: counts.strong,   label: "Strong Buy", dot: "bg-emerald-500" },
+    { count: counts.buy,      label: "Buy",        dot: "bg-blue-500" },
+    { count: counts.watch,    label: "Watch",      dot: "bg-amber-500" },
+    { count: counts.avoid,    label: "Avoid",      dot: "bg-rose-500" },
+    { count: counts.unrated,  label: "Unrated",    dot: "bg-slate-400" },
+    { count: counts.filtered, label: "Hard-Fail",  dot: "bg-slate-700" },
   ];
   const distributionStrip = `
-    <div class="mb-2">
-      <p class="text-sm text-slate-600 mb-2">
-        Of <span class="font-bold text-slate-900 tabular-nums">${total}</span> stocks scanned today, here's where each one landed:
-      </p>
-      <div class="flex h-3 w-full overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100" title="${cats.map(c=>`${c.count} ${c.label}`).join(" · ")}">
-        ${seg(pctOf(counts.strong),   "bg-gradient-to-r from-emerald-500 to-teal-500")}
-        ${seg(pctOf(counts.buy),      "bg-gradient-to-r from-blue-500 to-indigo-500")}
-        ${seg(pctOf(counts.watch),    "bg-gradient-to-r from-amber-500 to-orange-500")}
-        ${seg(pctOf(counts.avoid),    "bg-gradient-to-r from-rose-500 to-pink-500")}
-        ${seg(pctOf(counts.unrated),  "bg-slate-300")}
-        ${seg(pctOf(counts.filtered), "bg-gradient-to-r from-slate-600 to-slate-800")}
-      </div>
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
-      ${cats.map((b) => `
-        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br ${b.soft} ring-1 ring-slate-200/80 p-3">
-          <div class="flex items-center gap-1.5 mb-1">
-            <span class="w-1.5 h-1.5 rounded-full ${b.dot}"></span>
-            <span class="text-[9px] font-bold uppercase tracking-wider ${b.accent}">${b.label}</span>
-          </div>
-          <div class="text-2xl font-bold ${b.accent} leading-none tabular-nums">${b.count}</div>
-          <div class="text-[10px] text-slate-500 mt-1 leading-tight">${b.sub}</div>
-          <div class="text-[9px] text-slate-400 mt-0.5 tabular-nums">${total ? ((b.count/total)*100).toFixed(1) : "0.0"}% of universe</div>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <div class="flex items-center gap-3 flex-1 min-w-[320px]">
+        <span class="text-xs text-slate-500 whitespace-nowrap">${total} stocks scanned</span>
+        <div class="flex-1 flex h-2 overflow-hidden rounded-full ring-1 ring-slate-200/80 bg-slate-100" title="${cats.map(c=>`${c.count} ${c.label}`).join(" · ")}">
+          ${seg(pctOf(counts.strong),   "bg-emerald-500")}
+          ${seg(pctOf(counts.buy),      "bg-blue-500")}
+          ${seg(pctOf(counts.watch),    "bg-amber-500")}
+          ${seg(pctOf(counts.avoid),    "bg-rose-500")}
+          ${seg(pctOf(counts.unrated),  "bg-slate-300")}
+          ${seg(pctOf(counts.filtered), "bg-slate-700")}
         </div>
-      `).join("")}
+      </div>
+      ${pillarWeightPill}
     </div>
-    <!-- One-line summary so the math is explicit -->
-    <div class="mb-5 px-3 py-2 rounded-lg bg-indigo-50/60 ring-1 ring-indigo-100 text-xs text-slate-700 leading-relaxed">
-      <span class="font-bold text-indigo-700 tabular-nums">${inBasket}</span> stocks made the
-      <span class="font-semibold text-indigo-700">SPIP Basket</span>
-      (Strong Buy + Buy + Watch) ·
-      <span class="font-bold text-rose-700 tabular-nums">${counts.avoid + counts.filtered}</span>
-      excluded (Avoid + Hard-Fail) ·
-      <span class="font-bold text-slate-600 tabular-nums">${counts.unrated}</span> pending data.
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5 text-xs text-slate-600">
+      ${cats.map((c) => `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>
+          <span class="font-semibold text-slate-900 tabular-nums">${c.count}</span>
+          <span class="text-slate-500">${c.label}</span>
+        </span>
+      `).join("")}
+      <span class="ml-auto text-slate-400">→ <span class="font-semibold text-indigo-700 tabular-nums">${inBasket}</span> in basket</span>
     </div>
   `;
 
@@ -1052,17 +1007,61 @@ function renderCompositeTopCards() {
     ${printCover}
     <div class="col-span-full">
       ${printBtn}
-      ${pillarWeightAdjuster}
       ${distributionStrip}
     </div>
     ${heroCards}
   `;
   $$("#top-cards .top-card").forEach((el) => el.addEventListener("click", () => openDrillDown(top[Number(el.dataset.idx)])));
   $("#print-pdf-btn")?.addEventListener("click", () => window.print());
+  $("#pillar-weight-btn")?.addEventListener("click", () => openPillarWeightsModal());
+}
 
-  // Pillar-weight sum live indicator + Apply / Reset handlers
+// Pillar Weights modal — invoked from the SPIP basket header pill.
+function openPillarWeightsModal() {
+  const w = state.pillarWeights;
+  const isDefault = ["fundamentals","technicals","macro","sentiment","liquidity"]
+    .every((k) => w[k] === composite.PILLAR_WEIGHTS[k]);
+  openModal(`
+    <div class="px-7 py-6">
+      <div class="flex items-start justify-between gap-4 mb-1">
+        <div>
+          <h2 class="font-display text-xl font-bold text-slate-900">Adjust Pillar Weights</h2>
+          <p class="text-sm text-slate-500 mt-1">Set the relative importance of each pillar. Composite scores update across SPIP Basket and Top Picks.</p>
+        </div>
+        <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+      </div>
+      <div class="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
+        ${["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => `
+          <label class="block">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">${k.charAt(0).toUpperCase() + k.slice(1)}</div>
+            <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:bg-white">
+              <input type="number" min="0" max="100" step="1" data-weight-key="${k}" value="${w[k]}"
+                class="w-full px-2 py-2 text-base font-bold tabular-nums bg-transparent border-0 focus:outline-none">
+              <span class="text-xs text-slate-400 pr-2">%</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1">Default: ${composite.PILLAR_WEIGHTS[k]}</div>
+          </label>
+        `).join("")}
+      </div>
+      <div class="mt-5 flex items-center justify-between gap-2 pt-4 border-t border-slate-100">
+        <div class="text-sm text-slate-600">
+          Total: <span id="pillar-weight-sum" class="font-bold tabular-nums text-emerald-700">${w.fundamentals+w.technicals+w.macro+w.sentiment+w.liquidity}</span>%
+          <span class="text-xs text-slate-400" id="pillar-weight-hint">${isDefault ? "(framework default)" : ""}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="pillar-weight-reset" type="button" class="px-3 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition">↺ Reset to default</button>
+          <button id="pillar-weight-apply" type="button" class="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition">Apply</button>
+        </div>
+      </div>
+    </div>
+  `, { size: "wide" });
+  $("#modal-close-btn")?.addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
   const sumEl = $("#pillar-weight-sum");
-  const inputs = $$('#top-cards input[data-weight-key]');
+  const hintEl = $("#pillar-weight-hint");
+  const inputs = $$('#modal-content input[data-weight-key]');
   function recomputeSum() {
     let s = 0;
     inputs.forEach((el) => { s += Number(el.value) || 0; });
@@ -1071,45 +1070,131 @@ function renderCompositeTopCards() {
       sumEl.classList.toggle("text-emerald-700", s === 100);
       sumEl.classList.toggle("text-amber-700", s !== 100);
     }
+    if (hintEl) hintEl.textContent = s === 100 ? "" : `(will normalise to 100 on Apply)`;
   }
   inputs.forEach((el) => el.addEventListener("input", recomputeSum));
+  function commitAndClose(next) {
+    state.pillarWeights = next;
+    savePillarWeights(next);
+    delete state.cache.composite;
+    delete state.cache.topPicks;
+    state.compositeBySlug.clear();
+    closeModal();
+    // Re-route to whichever rating tab the user is on (composite or topPicks).
+    switchTab(state.activeTab === "topPicks" ? "topPicks" : "composite");
+  }
   $("#pillar-weight-apply")?.addEventListener("click", () => {
     const next = { fundamentals: 40, technicals: 35, macro: 15, sentiment: 5, liquidity: 5 };
     inputs.forEach((el) => { next[el.dataset.weightKey] = Math.max(0, Math.min(100, Number(el.value) || 0)); });
-    // Normalise to 100 if user's input doesn't sum exactly.
     const s = next.fundamentals + next.technicals + next.macro + next.sentiment + next.liquidity;
     if (s > 0 && s !== 100) {
       const k = 100 / s;
       for (const key of Object.keys(next)) next[key] = Math.round(next[key] * k);
     }
-    state.pillarWeights = next;
-    savePillarWeights(next);
-    // Invalidate composite tab cache so loadTab re-scores with new weights.
-    delete state.cache.composite;
-    delete state.cache.topPicks;
-    state.compositeBySlug.clear();
-    switchTab("composite");
+    commitAndClose(next);
   });
-  $("#pillar-weight-reset")?.addEventListener("click", () => {
-    state.pillarWeights = { ...composite.PILLAR_WEIGHTS };
-    savePillarWeights(state.pillarWeights);
-    delete state.cache.composite;
-    delete state.cache.topPicks;
-    state.compositeBySlug.clear();
-    switchTab("composite");
-  });
+  $("#pillar-weight-reset")?.addEventListener("click", () => commitAndClose({ ...composite.PILLAR_WEIGHTS }));
+}
+
+// Sources modal — single place to see every data source the dashboard
+// touches, grouped by domain. Add new sources here as we wire them.
+function openSourcesModal() {
+  const groups = [
+    {
+      title: "Market data — live", icon: "💹",
+      items: [
+        { name: "Yahoo Finance", url: "https://finance.yahoo.com", desc: "Daily OHLCV for the universe, plus Brent crude, USD/INR and India VIX live values" },
+        { name: "TradingView", url: "https://in.tradingview.com/", desc: "RSI, MACD, ADX, moving averages — scraped daily so dashboard values match the analyst's screen" },
+      ],
+    },
+    {
+      title: "Fundamentals", icon: "📊",
+      items: [
+        { name: "Screener.in", url: "https://www.screener.in/", desc: "Top ratios, P&L / cash-flow / shareholding series — daily scrape via the saved-screen workflow" },
+        { name: "BSE — Annual Reports", url: "https://www.bseindia.com/corporates/AnnualReport_New.aspx", desc: "Auditor opinion + per-company revenue-mix MD&A extraction (weekly routine)" },
+      ],
+    },
+    {
+      title: "Shareholding · Insider · Liquidity", icon: "🤝",
+      items: [
+        { name: "NSE PIT (Insider Trading)", url: "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading", desc: "Reg 7(2) disclosures — daily" },
+        { name: "NSE F&O eligible list", url: "https://www.nseindia.com/products-services/equity-derivatives-list-underlyings", desc: "Stocks with active futures + options — routine-refreshed monthly" },
+        { name: "NSE BhavCopy", url: "https://www.nseindia.com/all-reports", desc: "Daily delivery percentage from sec_bhavdata_full" },
+        { name: "NSE FII / DII flow", url: "https://www.nseindia.com/reports/fii-dii", desc: "Daily institutional buying / selling" },
+        { name: "NSE option chain", url: "https://www.nseindia.com/option-chain", desc: "Put-Call Ratio via Firecrawl" },
+      ],
+    },
+    {
+      title: "Governance", icon: "⚖️",
+      items: [
+        { name: "SEBI — Orders + Press Releases", url: "https://www.sebi.gov.in/enforcement/orders.html", desc: "Active proceedings against listed entities — weekly Firecrawl" },
+        { name: "Mint / Business Standard / ET — SEBI topic pages", url: "https://www.livemint.com/topic/sebi", desc: "News-driven detection of enforcement actions" },
+      ],
+    },
+    {
+      title: "Macro · Economic", icon: "🌍",
+      items: [
+        { name: "MoSPI", url: "https://www.mospi.gov.in/press-release", desc: "Quarterly GDP + monthly CPI — weekly routine" },
+        { name: "RBI — MPC", url: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx", desc: "Rate-cut / hold cycle, policy rate" },
+        { name: "CCIL / RBI", url: "https://www.ccilindia.com/", desc: "10-year G-Sec benchmark yield" },
+        { name: "PIB / Union Budget", url: "https://pib.gov.in/", desc: "Government capex push, PLI scheme additions" },
+        { name: "DPIIT / Ministry of Commerce", url: "https://www.dpiit.gov.in/", desc: "China+1 substitution + trade policy commentary" },
+        { name: "NABARD / IMD", url: "https://nabard.org/", desc: "Rural-recovery + monsoon indicators" },
+        { name: "MNRE", url: "https://mnre.gov.in/", desc: "Renewable energy capacity additions" },
+      ],
+    },
+  ];
+  openModal(`
+    <div class="px-7 py-6 max-h-[80vh] overflow-y-auto scrollbar-thin">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h2 class="font-display text-2xl font-bold text-slate-900">All Data Sources</h2>
+          <p class="text-sm text-slate-500 mt-1">Every external source that feeds this dashboard, grouped by domain.</p>
+        </div>
+        <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+      </div>
+      <div class="space-y-5">
+        ${groups.map((g) => `
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-base">${g.icon}</span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-700">${g.title}</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${g.items.map((it) => `
+                <a href="${it.url}" target="_blank" rel="noopener" class="group block p-3 rounded-xl bg-slate-50 hover:bg-indigo-50/60 ring-1 ring-slate-200/70 hover:ring-indigo-200 transition">
+                  <div class="flex items-start justify-between gap-2 mb-0.5">
+                    <span class="font-semibold text-slate-900 text-sm group-hover:text-indigo-700">${it.name}</span>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 group-hover:text-indigo-500 flex-shrink-0 mt-1"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  </div>
+                  <div class="text-[11px] text-slate-500 leading-snug">${it.desc}</div>
+                </a>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-400 leading-relaxed">
+        Each rule's drill-down has its own Source button that deep-links to the exact page (or PDF) where THAT number lives.
+      </div>
+    </div>
+  `, { size: "magazine" });
+  $("#modal-close-btn")?.addEventListener("click", closeModal);
+  $("#modal-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "modal-overlay") closeModal();
+  }, { once: true });
 }
 
 // ---------------- Top Picks (Hero) ----------------
-// Premium, client-facing page. Renders every stock with composite ≥ 75
-// (STRONG BUY band), hard-fails excluded. Uses bespoke card layout —
-// not the standard table — with rank ribbons, gradient backgrounds,
-// pillar profiles, and an auto-generated thesis snippet per company.
+// Client-facing premium tab. Composite ≥ 75 only, hard-fails excluded.
+// Designer-led layout: compact hero strip so picks appear above the
+// fold, large gradient composite score as the visual anchor per card,
+// and a pentagon radar SVG that conveys pillar mix at a glance — no
+// dense bar charts, no thesis sentences, the visuals carry the story.
 function renderTopPicks() {
   const st = state.cache.composite;
   if (!st) return;
   const picks = st.scored.filter((s) => !s.hardFailed && !s.unrated && (s.composite ?? 0) >= 75);
-  const totalUniverse = st.scored.length;
   const meta = st.meta || {};
 
   if (picks.length === 0) {
@@ -1117,117 +1202,93 @@ function renderTopPicks() {
       <div class="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 p-12 text-center">
         <div class="text-6xl mb-4">🔍</div>
         <h2 class="text-2xl font-bold text-slate-900 mb-2">No stocks above 75 right now</h2>
-        <p class="text-slate-600">The current macro regime + framework rules have produced no STRONG BUY picks today.<br>Try lowering your pillar weights in SPIP Basket or wait for the next refresh.</p>
+        <p class="text-slate-600">The current macro regime + framework rules have produced no STRONG BUY picks today.<br>Try adjusting your pillar weights or wait for the next refresh.</p>
       </div>`;
     return;
   }
 
-  // Stats for the header strip
+  // Header summary — kept terse so picks land above the fold.
   const avgComposite = (picks.reduce((a, s) => a + (s.composite || 0), 0) / picks.length).toFixed(1);
   const sectors = new Set();
   picks.forEach((s) => { const sec = s.company?.["Sector"] || s.company?.["Broad Industry"]; if (sec) sectors.add(sec); });
-  const topPillarSums = { fundamentals: 0, technicals: 0, macro: 0, sentiment: 0, liquidity: 0 };
-  picks.forEach((s) => {
-    for (const k of Object.keys(topPillarSums)) topPillarSums[k] += s.pillars?.[k]?.pct ?? 0;
-  });
-  const avgPillarPcts = Object.fromEntries(Object.entries(topPillarSums).map(([k, v]) => [k, Math.round(v / picks.length)]));
-  const strongestPillarKey = Object.entries(avgPillarPcts).sort((a,b) => b[1]-a[1])[0][0];
-  const pillarLabel = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment", liquidity: "Liquidity" };
 
-  const PILLAR_ICONS = {
-    fundamentals: "📊", technicals: "📈", macro: "🌍", sentiment: "💬", liquidity: "💧",
-  };
+  const PILLAR_KEYS = ["fundamentals", "technicals", "macro", "sentiment", "liquidity"];
+  const PILLAR_LETTER = { fundamentals: "F", technicals: "T", macro: "M", sentiment: "S", liquidity: "L" };
+  const PILLAR_NAME = { fundamentals: "Fundamentals", technicals: "Technicals", macro: "Macro", sentiment: "Sentiment", liquidity: "Liquidity" };
 
-  function rankBadge(i) {
-    const medals = ["🥇", "🥈", "🥉"];
-    if (i < 3) return `<div class="absolute -top-2 -left-2 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 via-yellow-300 to-orange-400 ring-4 ring-white shadow-xl flex items-center justify-center text-2xl">${medals[i]}</div>`;
-    return `<div class="absolute -top-2 -left-2 w-11 h-11 rounded-full bg-white ring-2 ring-slate-200 shadow-md flex items-center justify-center text-sm font-bold text-slate-700">#${i+1}</div>`;
-  }
-
-  // Auto-thesis: pick the 2 strongest pillars + the top-scoring rule from each.
-  function buildThesis(s) {
-    const pillars = s.pillars || {};
-    const ranked = Object.entries(pillars)
-      .filter(([_, p]) => p.pct != null)
-      .sort((a, b) => (b[1].pct || 0) - (a[1].pct || 0));
-    const top2 = ranked.slice(0, 2).map(([k, p]) => `<span class="font-semibold text-slate-800">${pillarLabel[k]}</span> ${p.pct}%`);
-    return `Strong on ${top2.join(" · ")}`;
-  }
-
-  // Gradient palette tied to score band.
-  function cardTheme(score) {
-    if (score >= 90) return { ring: "ring-amber-400/40", bg: "bg-gradient-to-br from-amber-50 via-emerald-50 to-teal-50", accent: "from-amber-500 via-emerald-500 to-teal-500", scoreText: "text-emerald-700" };
-    if (score >= 85) return { ring: "ring-emerald-400/40", bg: "bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50", accent: "from-emerald-500 to-teal-500", scoreText: "text-emerald-700" };
-    if (score >= 80) return { ring: "ring-teal-300/50", bg: "bg-gradient-to-br from-teal-50 to-cyan-50", accent: "from-teal-500 to-cyan-500", scoreText: "text-teal-700" };
-    return { ring: "ring-emerald-200/50", bg: "bg-gradient-to-br from-white to-emerald-50/30", accent: "from-emerald-400 to-teal-400", scoreText: "text-emerald-600" };
-  }
-
-  // Pillar mini-bars with icons + values
-  function pillarBars(s) {
-    return ["fundamentals","technicals","macro","sentiment","liquidity"].map((k) => {
-      const p = s.pillars?.[k];
-      const pct = p?.pct ?? 0;
-      const tone = pct >= 75 ? "from-emerald-500 to-teal-500" : pct >= 60 ? "from-blue-500 to-indigo-500" : pct >= 45 ? "from-amber-500 to-orange-500" : "from-rose-400 to-pink-400";
-      return `
-        <div class="flex items-center gap-2">
-          <div class="w-7 text-center text-base leading-none">${PILLAR_ICONS[k]}</div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-baseline justify-between gap-2 mb-0.5">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${pillarLabel[k].slice(0,4)}</span>
-              <span class="text-xs font-bold tabular-nums ${pct >= 75 ? "text-emerald-700" : pct >= 60 ? "text-blue-700" : "text-slate-600"}">${pct}%</span>
-            </div>
-            <div class="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full bg-gradient-to-r ${tone}" style="width:${Math.min(100, pct)}%"></div>
-            </div>
-          </div>
-        </div>`;
+  // Pentagon radar — single visual signature for each company's pillar
+  // mix. 5 vertices at the corners (top + 4 around), filled polygon
+  // scaled by each pillar's percentage of 100.
+  function pillarRadar(s, stroke) {
+    const R = 38;                    // max radius in SVG units
+    const angles = PILLAR_KEYS.map((_, i) => (Math.PI * 2 * i) / 5 - Math.PI / 2);
+    const pts = PILLAR_KEYS.map((k, i) => {
+      const r = Math.max(2, ((s.pillars?.[k]?.pct ?? 0) / 100) * R);
+      return [r * Math.cos(angles[i]), r * Math.sin(angles[i])];
+    });
+    const polyAt = (pct) => PILLAR_KEYS.map((_, i) => {
+      const r = R * (pct / 100);
+      return `${(r * Math.cos(angles[i])).toFixed(1)},${(r * Math.sin(angles[i])).toFixed(1)}`;
+    }).join(" ");
+    const valuePoly = pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+    const labels = PILLAR_KEYS.map((k, i) => {
+      const lr = R + 8;
+      const x = (lr * Math.cos(angles[i])).toFixed(1);
+      const y = (lr * Math.sin(angles[i])).toFixed(1);
+      return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" fill="#64748b">${PILLAR_LETTER[k]}</text>`;
     }).join("");
+    return `
+      <svg viewBox="-50 -50 100 100" class="w-full h-full">
+        <polygon points="${polyAt(25)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
+        <polygon points="${polyAt(50)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
+        <polygon points="${polyAt(75)}" fill="none" stroke="#e2e8f0" stroke-width="0.4"/>
+        <polygon points="${polyAt(100)}" fill="none" stroke="#cbd5e1" stroke-width="0.6"/>
+        <polygon points="${valuePoly}" fill="${stroke}" fill-opacity="0.22" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+        ${labels}
+      </svg>
+    `;
+  }
+
+  // Score-band theme — picks the gradient + radar colour per card so
+  // higher scores read warmer/more premium without saying so in copy.
+  function cardTheme(score) {
+    if (score >= 90) return { halo: "from-amber-200/40 via-emerald-200/30 to-teal-200/30", accent: "from-amber-500 via-emerald-500 to-teal-500", scoreFrom: "from-emerald-600", scoreTo: "to-teal-600", radar: "#10b981", ring: "ring-emerald-300/50" };
+    if (score >= 85) return { halo: "from-emerald-200/40 to-teal-200/30",                  accent: "from-emerald-500 to-teal-500",                 scoreFrom: "from-emerald-600", scoreTo: "to-teal-600", radar: "#10b981", ring: "ring-emerald-200/60" };
+    if (score >= 80) return { halo: "from-teal-200/30 to-cyan-200/30",                     accent: "from-teal-500 to-cyan-500",                    scoreFrom: "from-teal-600",    scoreTo: "to-cyan-600", radar: "#14b8a6", ring: "ring-teal-200/60" };
+    return                  { halo: "from-cyan-200/30 to-blue-200/30",                     accent: "from-cyan-500 to-blue-500",                    scoreFrom: "from-cyan-600",    scoreTo: "to-blue-600", radar: "#06b6d4", ring: "ring-cyan-200/60" };
+  }
+
+  function rankCorner(i) {
+    if (i < 3) {
+      const medals = ["🥇", "🥈", "🥉"];
+      return `<div class="absolute top-3 left-3 w-9 h-9 rounded-full bg-white shadow-md ring-1 ring-slate-200 flex items-center justify-center text-xl leading-none">${medals[i]}</div>`;
+    }
+    return `<div class="absolute top-3 left-3 text-[11px] font-bold text-slate-400 tabular-nums tracking-wider">#${String(i + 1).padStart(2, "0")}</div>`;
   }
 
   const heroHeader = `
-    <div class="relative overflow-hidden rounded-3xl mb-6 print-hide">
-      <!-- Animated gradient background -->
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"></div>
-      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent_50%)]"></div>
-      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_80%_70%,rgba(236,72,153,0.5),transparent_50%)]"></div>
-
-      <div class="relative px-8 py-10 text-white">
-        <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="relative overflow-hidden rounded-3xl mb-5 print-hide">
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900"></div>
+      <div class="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_15%_50%,rgba(236,72,153,0.4),transparent_45%)]"></div>
+      <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_85%_30%,rgba(16,185,129,0.45),transparent_45%)]"></div>
+      <div class="relative px-6 py-5 sm:px-8 sm:py-6 text-white flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center text-2xl shadow-lg ring-2 ring-white/20">★</div>
           <div>
-            <div class="flex items-center gap-2 mb-2 text-amber-200">
-              <span class="text-2xl">★</span>
-              <span class="text-xs font-bold uppercase tracking-widest opacity-90">Hero Picks · Composite ≥ 75</span>
-            </div>
-            <h1 class="font-display text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight">Top ${picks.length} Stocks</h1>
-            <p class="text-white/80 mt-1 text-sm">Hard-fails excluded · Ranked by composite score · Live</p>
-          </div>
-          <div class="flex items-center gap-2 text-xs text-white/80">
-            ${meta.generated_at ? `<span class="bg-white/15 backdrop-blur px-3 py-1.5 rounded-full ring-1 ring-white/20">Updated ${relativeTimeFrom(meta.generated_at)}</span>` : ""}
+            <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200/90">The Top Picks</div>
+            <h1 class="font-display text-3xl sm:text-4xl font-extrabold leading-none mt-0.5">${picks.length} <span class="text-white/60 font-bold text-xl">stocks above the 75 line</span></h1>
           </div>
         </div>
-
-        <!-- Stats strip -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
-            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Picks</div>
-            <div class="text-3xl font-bold mt-1 tabular-nums">${picks.length}</div>
-            <div class="text-[11px] text-white/70 mt-0.5">${((picks.length / totalUniverse) * 100).toFixed(1)}% of ${totalUniverse}</div>
-          </div>
-          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
-            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Avg Composite</div>
-            <div class="text-3xl font-bold mt-1 tabular-nums">${avgComposite}</div>
-            <div class="text-[11px] text-white/70 mt-0.5">out of 100</div>
-          </div>
-          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
-            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Sectors Covered</div>
-            <div class="text-3xl font-bold mt-1 tabular-nums">${sectors.size}</div>
-            <div class="text-[11px] text-white/70 mt-0.5">distinct industries</div>
-          </div>
-          <div class="bg-white/10 backdrop-blur rounded-2xl p-4 ring-1 ring-white/20">
-            <div class="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Strongest Pillar</div>
-            <div class="text-2xl font-bold mt-1">${PILLAR_ICONS[strongestPillarKey]} ${pillarLabel[strongestPillarKey]}</div>
-            <div class="text-[11px] text-white/70 mt-0.5 tabular-nums">${avgPillarPcts[strongestPillarKey]}% basket average</div>
-          </div>
+        <div class="flex items-center gap-2 text-[11px]">
+          <span class="bg-white/10 backdrop-blur px-3 py-2 rounded-xl ring-1 ring-white/15">
+            <span class="block text-[9px] uppercase tracking-wider text-white/60 font-semibold">Avg score</span>
+            <span class="font-bold tabular-nums text-base text-white">${avgComposite}</span>
+          </span>
+          <span class="bg-white/10 backdrop-blur px-3 py-2 rounded-xl ring-1 ring-white/15">
+            <span class="block text-[9px] uppercase tracking-wider text-white/60 font-semibold">Sectors</span>
+            <span class="font-bold tabular-nums text-base text-white">${sectors.size}</span>
+          </span>
+          ${meta.generated_at ? `<span class="text-white/50 ml-2 whitespace-nowrap">Updated ${relativeTimeFrom(meta.generated_at)}</span>` : ""}
         </div>
       </div>
     </div>
@@ -1239,55 +1300,65 @@ function renderTopPicks() {
     const { color, initials } = avatarFor(name);
     const theme = cardTheme(s.composite);
     const sector = co.Sector || co["Broad Industry"] || "";
-    const ratingTheme = composite.ratingTheme(s.rating);
+    const rt = composite.ratingTheme(s.rating);
     return `
-      <button data-pick-idx="${i}" class="pick-card group relative text-left w-full overflow-hidden rounded-3xl ${theme.bg} ring-1 ${theme.ring} hover:ring-2 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 p-5 pt-7">
-        ${rankBadge(i)}
-        <!-- Accent bar -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${theme.accent}"></div>
+      <button data-pick-idx="${i}" class="pick-card group relative text-left w-full overflow-hidden rounded-2xl bg-white ring-1 ${theme.ring} hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+        <div class="absolute inset-x-0 top-0 h-24 bg-gradient-to-br ${theme.halo} pointer-events-none"></div>
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${theme.accent}"></div>
+        ${rankCorner(i)}
 
-        <div class="flex items-start gap-3 mb-4 mt-1">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">${initials}</div>
-          <div class="flex-1 min-w-0">
-            <div class="font-display font-bold text-slate-900 text-lg leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-            ${sector ? `<div class="text-xs text-slate-600 truncate mt-0.5">${escapeHtml(sector)}</div>` : ""}
-          </div>
-        </div>
-
-        <!-- Composite + rating -->
-        <div class="flex items-end justify-between mb-4">
-          <div>
-            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-0.5">Composite</div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-4xl font-extrabold ${theme.scoreText} tabular-nums leading-none">${s.composite.toFixed(1)}</span>
-              <span class="text-xs text-slate-400">/100</span>
+        <div class="relative p-5 pt-12">
+          <!-- Composite as hero -->
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
+              <div class="min-w-0">
+                <div class="font-display font-bold text-slate-900 text-base leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                ${sector ? `<div class="text-[11px] text-slate-500 truncate mt-0.5">${escapeHtml(sector)}</div>` : ""}
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold leading-none mb-1">Score</div>
+              <div class="text-4xl font-extrabold tabular-nums leading-none bg-gradient-to-br ${theme.scoreFrom} ${theme.scoreTo} bg-clip-text text-transparent">${s.composite.toFixed(1)}</div>
             </div>
           </div>
-          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${ratingTheme.from} ${ratingTheme.to} ${ratingTheme.textOn} text-[10px] font-bold uppercase tracking-wider shadow-md whitespace-nowrap">
-            <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>
-            ${escapeHtml(s.rating)}
+
+          <!-- Radar visualization — pillar mix at a glance -->
+          <div class="flex justify-center py-2">
+            <div class="w-28 h-28">${pillarRadar(s, theme.radar)}</div>
           </div>
-        </div>
 
-        <!-- Pillar profile -->
-        <div class="space-y-2 mb-4">
-          ${pillarBars(s)}
-        </div>
-
-        <!-- Thesis line + CTA -->
-        <div class="pt-3 border-t border-slate-200/70 flex items-center justify-between gap-2">
-          <div class="text-xs text-slate-600 truncate">${buildThesis(s)}</div>
-          <span class="text-xs font-semibold text-indigo-600 group-hover:text-indigo-700 whitespace-nowrap">View →</span>
+          <!-- Rating chip + CTA -->
+          <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r ${rt.from} ${rt.to} ${rt.textOn} text-[10px] font-bold uppercase tracking-wider shadow-sm">
+              <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>${escapeHtml(s.rating)}
+            </span>
+            <span class="text-[11px] font-semibold text-slate-400 group-hover:text-indigo-600 transition-colors">View →</span>
+          </div>
         </div>
       </button>
     `;
   }).join("");
 
+  // Tiny legend under the grid so the F/T/M/S/L vertex letters parse
+  // without making each card carry full pillar labels.
+  const legend = `
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] text-slate-500">
+      ${PILLAR_KEYS.map((k) => `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="w-4 h-4 rounded-full bg-slate-100 ring-1 ring-slate-200 flex items-center justify-center text-[9px] font-bold text-slate-600">${PILLAR_LETTER[k]}</span>
+          ${PILLAR_NAME[k]}
+        </span>
+      `).join("")}
+    </div>
+  `;
+
   $("#top-picks-content").innerHTML = `
     ${heroHeader}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       ${cards}
     </div>
+    ${legend}
   `;
   $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openDrillDown(picks[Number(el.dataset.pickIdx)])));
 }
@@ -2552,6 +2623,7 @@ function wire() {
   $("#export-btn").addEventListener("click", exportToExcel);
   $("#drill-overlay").addEventListener("click", closeDrillDown);
   $("#help-btn")?.addEventListener("click", openHelpModal);
+  $("#sources-btn")?.addEventListener("click", openSourcesModal);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrillDown(); });
 }
 
