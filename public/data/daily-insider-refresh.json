@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-06-06T00:00:00Z",
+  "source": "BSE — Reg 7(2) insider disclosures (last 48h)",
+  "as_of": "2026-06-06",
+  "filings": [],
+  "_extraction_note": "All sources blocked (HTTP 403): BSE Insider_Trading_new.aspx, BSE API endpoints, BSE corpfiling PDFs (AttachLive/AttachHis), NSE archives (nsearchives.nseindia.com), MoneyControl, Economic Times, Trendlyne, InsiderScreener, Insights.market, ChittorGarh, StockAnalysis, Screener.in, Tickertape, Finology. No extraction was possible for this run. The merger workflow should accept this silently.",
+  "_attempted_sources": [
+    "https://www.bseindia.com/corporates/Insider_Trading_new.aspx",
+    "https://api.bseindia.com/BseIndiaAPI/api/InsiderTradingNew/w",
+    "https://www.bseindia.com/corporates/Regulation_7.aspx",
+    "https://www.moneycontrol.com/stocks/marketinfo/insider-trading.php",
+    "https://economictimes.indiatimes.com/markets/stocks/insider-trades",
+    "https://trendlyne.com/equity/group-insider-trading-sast/",
+    "https://www.insiderscreener.com/en/india/insider-trading/",
+    "https://insights.market/insider-trading",
+    "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading",
+    "nsearchives.nseindia.com (PDFs)"
+  ]
+}
