@@ -326,25 +326,25 @@ export const META = {
       source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=2003687", label: "PIB / Union Budget", section: "FY26 Budget capex announcement" }),
       calculation: null,
       clientLogic: "PASS if stock is in Capital Goods / Cement / Roads sector with active govt capex; 2 pts. No exposure = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.govt_capex.revenue_pct` drives PASS (≥20%) / partial (10–20%) / FAIL (<10%). (2) Fallback: sector membership in Capital Goods / Cement / Roads / Railways for tickers without AR data yet, scored against the macro regime's capex_push_active flag.",
     },
     ratecut: {
       source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx", label: "RBI", section: "Monetary Policy Committee statements" }),
       calculation: null,
       clientLogic: "PASS if sector benefits from falling rates and RBI stance is accommodative; 2 pts. Neutral = 1 pt.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.rate_sensitive.floating_rate_liability_pct` drives the verdict during an active rate-cut cycle. (2) Fallback: sector membership in Banks / NBFCs / Real Estate / Auto for tickers without AR data, scored against `regime.rate_cut_cycle`.",
     },
     chinaplus1: {
       source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://www.dpiit.gov.in/", label: "DPIIT / Ministry of Commerce", section: "PLI scheme + China+1 substitution disclosures" }),
       calculation: null,
       clientLogic: "PASS if company derives > 15% revenue from China+1 substitution or EMS theme; 2 pts.",
-      ourLogic: "Hybrid approach. Primary path: curated company list (~50 names with material China+1 / EMS revenue exposure — full 2 pts on match). Fallback path: sector membership for companies not on the explicit list (1 pt partial credit). Closes the previous sector-only proxy.",
+      ourLogic: "Three-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.china_plus_one.strength` × `geography.export_pct` drives PASS (strong + ≥40% export) / partial (moderate or strong + 25–40%) / FAIL (weak or none). (2) Fallback: curated company list — full 2 pts if the ticker is on the explicit ~50-name China+1 / EMS list. (3) Second fallback: sector membership — 1 pt partial credit for benefiting sectors. All paths gated on `regime.china_plus_one_active`.",
     },
     rural: {
       source: (c) => c?._revenue_mix ? AR_PAGE(c) : ({ url: "https://nabard.org/", label: "NABARD / IMD", section: "Rural recovery + monsoon indicators" }),
       calculation: null,
       clientLogic: "PASS if rural indicators improving (MSP hike, normal monsoon, kharif sowing); 1 pt. Drought risk = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.rural.revenue_pct` drives PASS (≥30%) / partial (15–30%) / FAIL (<15%) when rural narrative is positive. (2) Fallback: sector membership in FMCG / Two-wheelers / Tractors / Agri-chem for tickers without AR data, scored against `regime.rural_demand` strength.",
     },
     gdp: {
       source: MOSPI,
@@ -359,16 +359,16 @@ export const META = {
       ourLogic: null,
     },
     crude: {
-      source: YAHOO_CRUDE,
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : YAHOO_CRUDE,
       calculation: "Read latest Brent crude price (Yahoo BZ=F) + 30-day trend. PASS for beneficiary sectors (Paints, Aviation, OMCs) if crude < $85. FAIL for hurt sectors (Aviation, Logistics, Refineries) if crude > $90.",
       clientLogic: "PASS for beneficiaries if crude < $85/bbl; 1 pt. Score for importers. Flag at $90+.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.crude_exposure.raw_material_pct` flips the sign: high % = hurt by costly crude, low % with crude-linked output = beneficiary. (2) Fallback: sector membership for tickers without AR data — Aviation, Paints, OMCs, Logistics, Refineries scored against live Brent + 30-day trend.",
     },
     inr: {
-      source: YAHOO_INRUSD,
+      source: (c) => c?._revenue_mix ? AR_PAGE(c) : YAHOO_INRUSD,
       calculation: "Read latest USD/INR (Yahoo USDINR=X) + 30-day trend. PASS for exporters (IT, Pharma) if INR weakening (USD/INR rising). FAIL for importers (Refineries, Capital Goods) if INR weakening.",
       clientLogic: "PASS for IT / Pharma exporters if INR weakening trend; 1 pt. Strong INR hurts exporters = 0 pts.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.inr_exposure.usd_revenue_pct` decides exposure direction: high USD revenue = exporter benefits from weakening INR. (2) Fallback: sector membership for tickers without AR data — IT / Pharma / specialty Chem treated as exporters, Refineries / Capital Goods as importers, scored against live USD/INR trend.",
     },
     bonds: {
       source: (c) => ({ url: "https://www.ccilindia.com/", label: "CCIL / RBI", section: "10-year G-Sec yield + trend" }),
@@ -381,7 +381,7 @@ export const META = {
       // Direct lookup in curated PLI beneficiary list — no formula.
       calculation: null,
       clientLogic: "PASS if company has approved PLI allocation or confirmed PLI-scheme revenue; 2 pts.",
-      ourLogic: null,
+      ourLogic: "Two-path scoring. (1) Primary: per-company truth from AR MD&A — `revenue_mix.pli_scheme.is_beneficiary` directly tags inclusion when the AR mentions a PLI scheme allocation. (2) Fallback: curated PLI beneficiary list maintained from PIB announcements for tickers without AR data.",
     },
     renewable: {
       source: MNRE,
