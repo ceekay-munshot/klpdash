@@ -237,6 +237,20 @@ function savePillarWeights(w) {
   try { localStorage.setItem(PILLAR_WEIGHTS_KEY, JSON.stringify(w)); } catch {}
 }
 
+// Client-configurable allocation per pick for the History portfolio
+// backtest. Defaults to ₹1L. Stored as a plain integer in localStorage.
+const ALLOC_KEY = "klpdash-alloc-per-pick-v1";
+function loadAllocPerPick() {
+  try {
+    const v = Number(localStorage.getItem(ALLOC_KEY));
+    if (Number.isFinite(v) && v >= 1000) return v;
+  } catch {}
+  return 100000;
+}
+function saveAllocPerPick(n) {
+  try { localStorage.setItem(ALLOC_KEY, String(n)); } catch {}
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -262,6 +276,7 @@ const state = {
   watchlist: loadWatchlist(),
   watchOnly: false,
   pillarWeights: loadPillarWeights(),
+  allocPerPick: loadAllocPerPick(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -1481,12 +1496,12 @@ async function renderHistory() {
   const best = picks[0];
   const dateRange = idx.dates.length > 1 ? `${idx.dates[0]} → ${idx.dates[idx.dates.length - 1]}` : idx.dates[0];
 
-  // --- Portfolio backtest (equal-weight, ₹1L per pick at first STRONG BUY) ---
+  // --- Portfolio backtest (equal-weight, client-set ₹ per pick at first STRONG BUY) ---
   // Simulate buying every STRONG BUY equally on its first-appearance date and
   // holding through today. Daily portfolio value is summed across whatever
   // picks have entered by that date — the curve shows compounding of the
   // basket as more picks come in. Drawdown is the peak-to-trough %.
-  const ALLOC = 100000;
+  const ALLOC = state.allocPerPick;
   // ticker → Map<date, close> for daily mark-to-market
   const closeByTickerDate = new Map();
   for (const snap of snapshots) {
@@ -1577,12 +1592,31 @@ async function renderHistory() {
   const portRetCls = portRet >= 0 ? "text-emerald-700" : "text-rose-700";
   const portChartH = 80;
   const portChart = renderPortfolioSparkline(portfolioSeries, portChartH);
+  const presets = [
+    { v: 50000,   label: "₹50K"  },
+    { v: 100000,  label: "₹1L"   },
+    { v: 500000,  label: "₹5L"   },
+    { v: 1000000, label: "₹10L"  },
+  ];
+  const presetChips = presets.map((p) => {
+    const active = p.v === ALLOC;
+    return `<button type="button" data-alloc-preset="${p.v}" class="px-2 py-1 text-[11px] font-semibold rounded-lg ring-1 transition ${active ? "bg-indigo-600 text-white ring-indigo-600 shadow-sm" : "bg-white text-slate-600 ring-slate-200 hover:ring-indigo-300 hover:text-indigo-700"}">${p.label}</button>`;
+  }).join("");
   const portfolioCard = `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
       <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
         <div>
           <h2 class="font-display font-bold text-slate-900 text-base">What if you'd bought every STRONG BUY equal-weight?</h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">₹${formatINR(ALLOC)} per pick on the first STRONG BUY date · mark-to-market each day · held through today</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Mark-to-market each day · held through today</p>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+              <span>₹</span>
+              <input id="alloc-input" type="number" inputmode="numeric" min="1000" step="1000" value="${ALLOC}"
+                class="w-24 px-2 py-1 text-xs font-bold tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <span class="text-slate-400 font-normal">per pick</span>
+            </label>
+            <div class="flex items-center gap-1">${presetChips}</div>
+          </div>
         </div>
         <div class="text-right">
           <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total return</div>
@@ -1664,6 +1698,24 @@ async function renderHistory() {
     </div>
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
+
+  // Allocation editor — preset chips snap to common ₹ amounts, the
+  // number input takes any custom value. % return, drawdown, alpha are
+  // all unchanged by ALLOC (they're proportional), but the absolute
+  // ₹ figures rescale, so we re-render the History tab on commit.
+  function applyAlloc(v) {
+    const n = Math.max(1000, Math.round(Number(v) || 0));
+    if (n === state.allocPerPick) return;
+    state.allocPerPick = n;
+    saveAllocPerPick(n);
+    renderHistory();
+  }
+  $$("#history-content [data-alloc-preset]").forEach((btn) => btn.addEventListener("click", () => applyAlloc(btn.dataset.allocPreset)));
+  const allocInput = $("#alloc-input");
+  if (allocInput) {
+    allocInput.addEventListener("change", (e) => applyAlloc(e.target.value));
+    allocInput.addEventListener("keydown", (e) => { if (e.key === "Enter") applyAlloc(e.target.value); });
+  }
 }
 
 // Tiny portfolio-value sparkline drawn inside the backtest card. Shows
@@ -1762,9 +1814,9 @@ function renderScoreForensics(pick) {
   const rowsHtml = deltas.map((d) => {
     if (d.missing) {
       return `
-        <div class="grid grid-cols-12 items-center gap-2 py-1.5">
-          <div class="col-span-3 text-xs font-semibold text-slate-400">${LABEL[d.key]}</div>
-          <div class="col-span-9 text-[11px] text-slate-400">no data</div>
+        <div class="grid grid-cols-12 items-center gap-2 py-0.5">
+          <div class="col-span-3 text-[11px] font-semibold text-slate-400">${LABEL[d.key]}</div>
+          <div class="col-span-9 text-[10px] text-slate-400">no data</div>
         </div>
       `;
     }
@@ -1774,26 +1826,26 @@ function renderScoreForensics(pick) {
     const barCls = pos ? "bg-emerald-500" : "bg-rose-500";
     const dot = COLOR[d.key];
     return `
-      <div class="grid grid-cols-12 items-center gap-2 py-1.5">
-        <div class="col-span-3 flex items-center gap-1.5 text-xs">
-          <span class="w-1.5 h-1.5 rounded-full ${dot}"></span>
-          <span class="font-semibold text-slate-800">${LABEL[d.key]}</span>
+      <div class="grid grid-cols-12 items-center gap-2 py-0.5">
+        <div class="col-span-3 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full ${dot} flex-shrink-0"></span>
+          <span class="text-[11px] font-semibold text-slate-800">${LABEL[d.key]}</span>
         </div>
-        <div class="col-span-5 relative h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div class="col-span-5 relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
           <div class="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300"></div>
           <div class="absolute top-0 bottom-0 ${barCls}" style="${pos ? `left:50%;width:${widthPct.toFixed(2)}%` : `right:50%;width:${widthPct.toFixed(2)}%`}"></div>
         </div>
         <div class="col-span-2 text-[11px] font-bold tabular-nums text-right ${valCls}">${pos ? "+" : "−"}${Math.abs(d.delta).toFixed(2)}</div>
-        <div class="col-span-2 text-[10px] tabular-nums text-slate-400 text-right whitespace-nowrap">${d.ap}% → ${d.bp}%</div>
+        <div class="col-span-2 text-[10px] tabular-nums text-slate-400 text-right whitespace-nowrap">${d.ap}→${d.bp}%</div>
       </div>
     `;
   }).join("");
   return `
-    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3 mb-3">
-      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 mb-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1.5">
         <div class="flex items-baseline gap-2">
           <div class="font-display font-bold text-slate-900 text-sm">Score forensics</div>
-          <div class="text-[11px] text-slate-500">why the composite ${compDelta >= 0 ? "moved up" : "moved down"} since ${pick.firstSBDate}</div>
+          <div class="text-[11px] text-slate-500">why composite ${compDelta >= 0 ? "rose" : "dropped"} since ${pick.firstSBDate}</div>
         </div>
         <div class="flex items-baseline gap-2 text-xs tabular-nums">
           <span class="text-slate-500">${compTotalA != null ? compTotalA.toFixed(1) : "—"}</span>
@@ -1802,10 +1854,9 @@ function renderScoreForensics(pick) {
           <span class="font-bold ${deltaCls}">${deltaSign}${Math.abs(compDelta).toFixed(2)}</span>
         </div>
       </div>
-      <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+      <div class="rounded-lg bg-slate-50 ring-1 ring-slate-100 px-3 py-1.5">
         ${rowsHtml}
       </div>
-      <div class="text-[10px] text-slate-400 mt-1.5">Each row's bar = pillar's contribution change (weighted points). Bars sum to the composite delta on the right.</div>
     </div>
   `;
 }
@@ -1870,10 +1921,10 @@ function openHistoryDrill(pick) {
   // --- SVG geometry ---
   // Single viewBox; everything inside is sized in viewBox units, the
   // <svg> itself scales responsively via w-full.
-  const W = 820, H = 300;
-  const M = { top: 18, right: 24, bottom: 62, left: 64 };     // outer margins
-  const TAPE_H = 10;                                          // rating-tape strip height
-  const TAPE_GAP = 10;                                        // gap between line chart and tape
+  const W = 820, H = 260;
+  const M = { top: 14, right: 24, bottom: 56, left: 64 };     // outer margins
+  const TAPE_H = 9;                                           // rating-tape strip height
+  const TAPE_GAP = 8;                                         // gap between line chart and tape
   const innerW = W - M.left - M.right;
   const innerH = H - M.top - M.bottom - TAPE_H - TAPE_GAP;
   const TAPE_Y = M.top + innerH + TAPE_GAP;
@@ -2001,7 +2052,7 @@ function openHistoryDrill(pick) {
         </div>
 
         <div id="hist-chart-container" class="relative">
-          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:320px">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:280px">
             <defs>
               <linearGradient id="histArea" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
