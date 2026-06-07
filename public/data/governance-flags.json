@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-06-06T04:36:29.044Z",
+  "generated_at": "2026-06-07T05:04:33.233Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 22,
+  "total_entities_seen": 27,
   "flagged_companies": {
     "ICICIBANK": {
       "primary_name": "ICICI Bank",
@@ -19,15 +19,9 @@
           "origin": "scraper",
           "order_type": "sebi-warning",
           "snippet": "Sebi warns ICICI Bank over FPI fund repatriation under VRR framework"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-fine",
-          "snippet": "ICICI Bank shares in focus after lender receives Sebi’s warning letter. Here's why"
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "SUZLON": {
       "primary_name": "Suzlon Energy",
@@ -55,16 +49,16 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+          "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         },
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
+          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -83,7 +77,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -102,7 +96,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -121,7 +115,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -140,7 +134,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -159,7 +153,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-06T04:36:29.043Z"
+      "first_seen_at": "2026-06-07T05:04:33.233Z"
     }
   },
   "unmatched_sample": [
@@ -177,7 +171,13 @@
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-ban",
+      "type": "show-cause",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "enforcement-order",
       "source": "Mint — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -195,19 +195,25 @@
     },
     {
       "name": "Rajesh Exports",
+      "type": "show-cause",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "enforcement-order",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
       "type": "sebi-investigation",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-enforcement-order",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-ban",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -219,13 +225,37 @@
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-ban",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-fine",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -235,36 +265,48 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-06T04:35:46.927Z",
+      "at": "2026-06-07T05:03:41.384Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "SEBI alleges Rajesh Exports misrepresented revenue over five years, raising concerns about financial statements accuracy."
+          "snippet": "Rajesh Exports Under Sebi Lens: ₹770 Crore Of LIC, Retail Investors' Money At Risk In This Company"
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi flags ₹15 trillion misstatement in Rajesh Exports accounts."
+          "snippet": "Rajesh Exports share price falls 5% after SEBI flags ₹15 lakh crore misstatement in accounts"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "show-cause",
           "is_listed_entity": true,
-          "snippet": "Sebi has alleged that ₹15.15 trillion in revenue was misrepresented, and flagged gaps in disclosures."
+          "snippet": "Sebi order casts shadow on Rajesh Exports’ battery PLI project"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "enforcement-order",
+          "is_listed_entity": true,
+          "snippet": "Rajesh Exports shares under sebi lens: Rs 338 crore of LIC, retail investors money at risk in this small-cap stock"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Markets: Rajesh Exports share price falls below ₹100, hits 5% lower circuit for 2nd straight session; here's why"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 4,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -272,17 +314,22 @@
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
-          "snippet": "SEBI alleges Rajesh Exports misrepresented revenue over five years, raising concerns about financial statements accuracy"
+          "snippet": "Rajesh Exports Under Sebi Lens: ₹770 Crore Of LIC, Retail Investors' Money At Risk In This Company"
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-fine",
-          "snippet": "Sebi flags ₹15 trillion misstatement in Rajesh Exports accounts."
+          "snippet": "Rajesh Exports share price falls 5% after SEBI flags ₹15 lakh crore misstatement in accounts"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
-          "snippet": "Sebi has alleged that ₹15.15 trillion in revenue was misrepresented, and flagged gaps in disclosures."
+          "order_type": "show-cause",
+          "snippet": "Sebi order casts shadow on Rajesh Exports’ battery PLI project"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "enforcement-order",
+          "snippet": "Rajesh Exports shares under sebi lens: Rs 338 crore of LIC, retail investors money at risk in this small-cap stock"
         }
       ]
     },
@@ -290,12 +337,12 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-06T04:35:51.487Z",
+      "at": "2026-06-07T05:03:51.648Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 7,
+      "total_extracted": 7,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
@@ -304,16 +351,22 @@
           "snippet": "Sebi bars Rajesh Exports, flags ₹15.15 trn revenue inflation scam"
         },
         {
-          "name": "ICICI Bank",
-          "order_type": "sebi-warning",
-          "is_listed_entity": true,
-          "snippet": "Sebi warns ICICI Bank over FPI fund repatriation under VRR framework"
-        },
-        {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "LIC's Rajesh Exports stake under scrutiny after Sebi's interim order"
+          "snippet": "Sebi cracks whip on Rajesh Exports promoter over alleged fund diversion"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "show-cause",
+          "is_listed_entity": true,
+          "snippet": "How a shareholder's complaint led Sebi to Rajesh Exports' ₹15 trn puzzle"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "enforcement-order",
+          "is_listed_entity": true,
+          "snippet": "Rajesh Exports hits lower circuit; Sebi flags ₹15-trn revenue inflation"
         },
         {
           "name": "Rajesh Exports",
@@ -322,10 +375,10 @@
           "snippet": "Rajesh Exports says 400 GB data shared with Sebi amid accounting row"
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-enforcement-order",
+          "name": "ICICI Bank",
+          "order_type": "sebi-warning",
           "is_listed_entity": true,
-          "snippet": "Sebi cracks whip on Rajesh Exports promoter over alleged fund diversion"
+          "snippet": "Sebi warns ICICI Bank over FPI fund repatriation under VRR framework"
         },
         {
           "name": "Suzlon Energy",
@@ -334,7 +387,7 @@
           "snippet": "Sebi fines Suzlon Energy, KMPs ₹29 crore for 'financial misreporting'"
         }
       ],
-      "after_filter_count": 6,
+      "after_filter_count": 7,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -348,14 +401,19 @@
           "snippet": "Sebi bars Rajesh Exports, flags ₹15.15 trn revenue inflation scam"
         },
         {
-          "name": "ICICI Bank",
-          "order_type": "sebi-warning",
-          "snippet": "Sebi warns ICICI Bank over FPI fund repatriation under VRR framework"
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi cracks whip on Rajesh Exports promoter over alleged fund diversion"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "LIC's Rajesh Exports stake under scrutiny after Sebi's interim order"
+          "order_type": "show-cause",
+          "snippet": "How a shareholder's complaint led Sebi to Rajesh Exports' ₹15 trn puzzle"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "enforcement-order",
+          "snippet": "Rajesh Exports hits lower circuit; Sebi flags ₹15-trn revenue inflation"
         },
         {
           "name": "Rajesh Exports",
@@ -363,9 +421,9 @@
           "snippet": "Rajesh Exports says 400 GB data shared with Sebi amid accounting row"
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-enforcement-order",
-          "snippet": "Sebi cracks whip on Rajesh Exports promoter over alleged fund diversion"
+          "name": "ICICI Bank",
+          "order_type": "sebi-warning",
+          "snippet": "Sebi warns ICICI Bank over FPI fund repatriation under VRR framework"
         },
         {
           "name": "Suzlon Energy",
@@ -378,12 +436,12 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-06T04:35:56.434Z",
+      "at": "2026-06-07T05:04:02.835Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 11,
-      "total_extracted": 11,
+      "total_extracted_raw": 13,
+      "total_extracted": 13,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
@@ -393,9 +451,21 @@
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Rajesh Exports shares hit 5% lower circuit for 2nd day; firm cites 'communication gap' after Sebi order"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Congress questions LIC's 10.8% stake in SEBI-probed Rajesh Exports"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Explained: Inside Sebi's Rs 15.15 lakh crore revenue inflation allegations against Rajesh Exports"
         },
         {
           "name": "Rajesh Exports",
@@ -405,13 +475,7 @@
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-fine",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
         },
@@ -419,7 +483,25 @@
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "The curious case of Rajesh Exports: Massive revenues, meagre profits"
+          "snippet": "LIC shares slip after Sebi's crackdown on Rajesh Exports. What's the connection?"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Who is Rajesh Mehta, man behind Rajesh Exports, facing SEBI ban over alleged Rs 15.15 lakh crore 'fraud' impacting LIC, others?"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "An Indian gold firm allegedly inflated revenue by $159 billion using its Swiss unit"
         },
         {
           "name": "Suzlon Energy",
@@ -431,39 +513,37 @@
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+          "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         },
         {
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
-        },
-        {
-          "name": "Reliance Industries",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Reliance Industries gets partial relief from Supreme Court as it sets aside Rs 447 crore Sebi recovery order"
-        },
-        {
-          "name": "ICICI Bank",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "ICICI Bank shares in focus after lender receives Sebi’s warning letter. Here's why"
+          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
         }
       ],
-      "after_filter_count": 8,
+      "after_filter_count": 11,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 1,
-        "resolved_in_favour": 2,
+        "resolved_in_favour": 1,
         "no_name": 0
       },
       "sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-investigation",
+          "snippet": "Rajesh Exports shares hit 5% lower circuit for 2nd day; firm cites 'communication gap' after Sebi order"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "snippet": "Congress questions LIC's 10.8% stake in SEBI-probed Rajesh Exports"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Explained: Inside Sebi's Rs 15.15 lakh crore revenue inflation allegations against Rajesh Exports"
         },
         {
           "name": "Rajesh Exports",
@@ -472,13 +552,23 @@
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-investigation",
           "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-fine",
-          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
+          "order_type": "sebi-investigation",
+          "snippet": "LIC shares slip after Sebi's crackdown on Rajesh Exports. What's the connection?"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Who is Rajesh Mehta, man behind Rajesh Exports, facing SEBI ban over alleged Rs 15.15 lakh crore 'fraud' impacting LIC, "
         },
         {
           "name": "Suzlon Energy",
@@ -488,17 +578,7 @@
         {
           "name": "Suzlon Energy",
           "order_type": "sebi-fine",
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
-        },
-        {
-          "name": "Suzlon Energy",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi imposes penalty on Suzlon, executives for misstating financials"
-        },
-        {
-          "name": "ICICI Bank",
-          "order_type": "sebi-fine",
-          "snippet": "ICICI Bank shares in focus after lender receives Sebi’s warning letter. Here's why"
+          "snippet": "'Misleading financial statements': Suzlon to challenge Sebi's penalty order before SAT"
         }
       ]
     },
@@ -506,29 +586,16 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-06T04:36:19.499Z",
+      "at": "2026-06-07T05:04:30.925Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
-      "prefilter_sample": [
-        {
-          "name": "Citrus Check Inns Limited",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
-        },
-        {
-          "name": "Royal Twinkle Star Club Pvt. Ltd",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
-        }
-      ],
+      "total_extracted_raw": 0,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 2,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
