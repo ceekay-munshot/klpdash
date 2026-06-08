@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T05:04:46.991Z",
+  "generated_at": "2026-06-08T05:13:03.672Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -7,9 +7,9 @@
     "label": "Muns Auditor Opinion agent"
   },
   "cache_max_age_days": 30,
-  "total_universe": 504,
-  "total_cached": 504,
-  "total_live_opinion": 504,
+  "total_universe": 506,
+  "total_cached": 506,
+  "total_live_opinion": 506,
   "total_not_disclosed": 0,
   "total_errors": 0,
   "companies": {
@@ -1866,23 +1866,6 @@
       "auditor_emphasis_of_matter": "None",
       "auditor_key_concerns": "None",
       "auditor_confidence": "Medium",
-      "_origin": "routine"
-    },
-    "JAINREC": {
-      "name": "Jain Resource",
-      "opinion": "Clean (Unmodified Opinion)",
-      "source": "BSE annual report — extracted by routine (confidence: Low)",
-      "conclusion_block": "None",
-      "error": null,
-      "http_status": 200,
-      "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.442Z",
-      "auditor_firm": "MSKC & Associates LLP, Chartered Accountants",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "None",
-      "auditor_key_concerns": "None",
-      "auditor_confidence": "Low",
       "_origin": "routine"
     },
     "ALIVUS": {
@@ -8158,22 +8141,45 @@
       "auditor_confidence": "Medium",
       "_origin": "routine"
     },
-    "TRIDENT": {
-      "name": "Trident",
-      "opinion": "Clean (Unmodified Opinion)",
-      "source": "BSE annual report — extracted by routine (confidence: Medium)",
-      "conclusion_block": "None",
+    "INGERRAND": {
+      "name": "Ingersoll-Rand",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report/company details; source unavailable",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Company not specified | Disclaimer of Opinion | Analysis provided no annual report/company details; source unavailable |",
       "error": null,
-      "http_status": 200,
+      "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.441Z",
-      "auditor_firm": "S. R. Batliboi & Co. LLP, Chartered Accountants (Firm Registration No. 301003E/E300005)",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "None",
-      "auditor_key_concerns": "None",
-      "auditor_confidence": "Medium",
-      "_origin": "routine"
+      "fetched_at": "2026-06-08T05:13:03.411Z"
+    },
+    "INDGN": {
+      "name": "Indegene",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis states “No successful information was gathered”; annual report not identified",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states “No successful information was gathered”; annual report not identified |",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-08T05:13:02.882Z"
+    },
+    "CONCORDBIO": {
+      "name": "Concord Biotech",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report/company details",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-08T05:13:03.671Z"
+    },
+    "AEQUS": {
+      "name": "Aequs",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no company or annual report details",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no company or annual report details |",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-08T05:13:03.528Z"
     }
   }
 }
