@@ -1406,13 +1406,18 @@ async function renderHistory() {
       const benchmark = await fetch("data/benchmark-history.json")
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
-      state.cache.history = { idx, snapshots, benchmark };
+      // LKP manual picks (client's hand-curated basket) — best-effort; the
+      // section simply hides if the file is missing.
+      const lkp = await fetch("data/lkp-manual-picks.json")
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      state.cache.history = { idx, snapshots, benchmark, lkp };
     } catch (e) {
       host.innerHTML = renderHistoryEmpty(e.message);
       return;
     }
   }
-  const { idx, snapshots, benchmark } = state.cache.history;
+  const { idx, snapshots, benchmark, lkp } = state.cache.history;
 
   // Per-ticker timeline of points {date, close, composite, rating, pillars}
   // plus identity (name, sector). Pillars are kept for forensics decomp
@@ -1686,6 +1691,8 @@ async function renderHistory() {
     `;
   }).join("");
 
+  const lkpCard = renderLkpCard(lkp, byTicker, todayClose);
+
   host.innerHTML = `
     ${heroHeader}
     ${portfolioCard}
@@ -1696,6 +1703,7 @@ async function renderHistory() {
       </div>
       <div class="space-y-1.5">${rows}</div>
     </div>
+    ${lkpCard}
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
 
@@ -1716,6 +1724,91 @@ async function renderHistory() {
     allocInput.addEventListener("change", (e) => applyAlloc(e.target.value));
     allocInput.addEventListener("keydown", (e) => { if (e.key === "Enter") applyAlloc(e.target.value); });
   }
+}
+
+// LKP Manual picks — the client's hand-curated basket (public/data/
+// lkp-manual-picks.json), tracked with the SAME data as our STRONG BUY
+// history. Entry is the client's range (midpoint = cost basis); we show
+// realized return to today's snapshot close, distance to each target / SL,
+// and OUR own current rating on the same stock as a cross-check. Picks below
+// our market-cap coverage (in_universe:false) render greyed with the client's
+// levels but no live tracking. Returns "" when the file is absent.
+function renderLkpCard(lkp, byTicker, todayClose) {
+  if (!lkp || !Array.isArray(lkp.picks) || !lkp.picks.length) return "";
+  const body = lkp.picks.map((pk, i) => {
+    const t = pk.ticker;
+    let name = pk.selection, sector = "", rating = null;
+    if (t && byTicker.has(t)) {
+      const tk = byTicker.get(t);
+      name = tk.name || pk.selection;
+      sector = tk.sector || "";
+      for (let j = tk.points.length - 1; j >= 0; j--) {
+        if (tk.points[j].rating) { rating = tk.points[j].rating; break; }
+      }
+    }
+    const close = t ? (todayClose[t] ?? null) : null;
+    const covered = !!pk.in_universe && close != null;
+    const ret = covered ? (close / pk.entry - 1) * 100 : null;
+    const { color, initials } = avatarFor(name || pk.selection || "—");
+    const retCls = ret == null ? "text-slate-400" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const retBg  = ret == null ? "bg-slate-50 ring-slate-100" : ret >= 0 ? "bg-emerald-50 ring-emerald-100" : "bg-rose-50 ring-rose-100";
+    const ratingChip = covered && rating
+      ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(rating)}">${escapeHtml(rating)}</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-amber-50 text-amber-700 ring-amber-200" title="${escapeHtml(pk.out_reason || "Outside our coverage universe")}">NOT COVERED</span>`;
+    const pill = (label, val, isSL) => {
+      if (!covered) return `<span class="px-1.5 py-0.5 rounded bg-slate-50 ring-1 ring-slate-100 text-slate-400 text-[10px] font-semibold tabular-nums">${label} ₹${formatPrice(val)}</span>`;
+      const hit = isSL ? close <= val : close >= val;
+      const dist = (val / close - 1) * 100;
+      const cls = hit
+        ? (isSL ? "bg-rose-100 ring-rose-200 text-rose-700" : "bg-emerald-100 ring-emerald-200 text-emerald-700")
+        : "bg-slate-50 ring-slate-100 text-slate-600";
+      const txt = hit ? "hit" : `${dist >= 0 ? "+" : ""}${dist.toFixed(1)}%`;
+      return `<span class="px-1.5 py-0.5 rounded ring-1 ${cls} text-[10px] font-semibold tabular-nums">${label} ₹${formatPrice(val)} · ${txt}</span>`;
+    };
+    return `
+      <div class="grid grid-cols-12 items-center gap-3 px-4 py-3 rounded-xl bg-white ring-1 ring-slate-200/80 ${covered ? "" : "opacity-70"}">
+        <div class="col-span-1 flex items-center">
+          <span class="text-xs font-bold text-slate-400 tabular-nums">#${String(i + 1).padStart(2, "0")}</span>
+        </div>
+        <div class="col-span-7 sm:col-span-4 flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">${initials}</div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="font-display font-bold text-slate-900 text-sm leading-tight truncate" title="${escapeHtml(name)}">${escapeHtml(pk.selection)}</span>
+              ${ratingChip}
+            </div>
+            <div class="text-[11px] text-slate-500 truncate">${covered ? escapeHtml(sector || name) : escapeHtml(pk.out_reason || "Below our coverage")}</div>
+          </div>
+        </div>
+        <div class="hidden sm:flex sm:col-span-3 flex-col gap-0.5">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Entry → Today</div>
+          <div class="text-xs text-slate-700">
+            <span class="font-semibold tabular-nums">₹${pk.entry_low}–${pk.entry_high}</span>
+            <span class="text-slate-300">→</span>
+            <span class="tabular-nums">${covered ? "₹" + formatPrice(close) : "—"}</span>
+          </div>
+        </div>
+        <div class="col-span-4 flex flex-col items-end gap-1">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg ring-1 text-sm font-extrabold tabular-nums ${retCls} ${retBg}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(1) + "%"}</span>
+          <div class="flex flex-wrap items-center justify-end gap-1">
+            ${pill("T1", pk.tgt1, false)}
+            ${pill("T2", pk.tgt2, false)}
+            ${pill("SL", pk.sl, true)}
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+
+  const coveredCount = lkp.picks.filter((p) => p.in_universe).length;
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mt-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h2 class="font-display font-bold text-slate-900 text-base">LKP Manual picks</h2>
+        <span class="text-[11px] text-slate-500">${coveredCount}/${lkp.picks.length} in coverage · entry → today, vs target / SL</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mb-3 leading-relaxed">Client's hand-picked basket. Entry is the client's range (midpoint used for return); <span class="font-semibold">T1/T2</span> are targets, <span class="font-semibold">SL</span> the stop-loss. The rating chip is <span class="font-semibold">our system's</span> current read on the same stock — a cross-check against the manual call.</p>
+      <div class="space-y-1.5">${body}</div>
+    </div>`;
 }
 
 // Tiny portfolio-value sparkline drawn inside the backtest card. Shows

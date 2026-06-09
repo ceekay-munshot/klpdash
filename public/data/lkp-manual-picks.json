@@ -1,0 +1,15 @@
+{
+  "label": "LKP Manual picks",
+  "note": "Client's manually-recommended basket (pre-dashboard). Entry is a price RANGE; midpoint is used as the cost basis for realized return. Two targets (TGT1, TGT2) plus a stop-loss (SL). 'ticker' is our NSE symbol for data lookup; 'in_universe' false means the stock sits below our ~Rs 12,500 Cr market-cap coverage floor, so we show the client's levels but cannot track it live.",
+  "generated_at": "2026-06-09T00:00:00.000Z",
+  "source": "LKP manual recommendation sheet (client-provided)",
+  "picks": [
+    { "selection": "KIMS",        "ticker": "KIMS",       "in_universe": true,  "entry_low": 782,  "entry_high": 796,  "entry": 789,    "tgt1": 844,  "tgt2": 867,  "sl": 631,  "cmp_at_reco": 789 },
+    { "selection": "ADANIENT",    "ticker": "ADANIENT",   "in_universe": true,  "entry_low": 3010, "entry_high": 3070, "entry": 3040,   "tgt1": 3258, "tgt2": 3366, "sl": 2438, "cmp_at_reco": 3048 },
+    { "selection": "ATHERENERGY", "ticker": "ATHERENERG", "in_universe": true,  "entry_low": 1021, "entry_high": 1042, "entry": 1031.5, "tgt1": 1104, "tgt2": 1155, "sl": 827,  "cmp_at_reco": 1034 },
+    { "selection": "ELECON",      "ticker": null,         "in_universe": false, "out_reason": "Below our ~Rs 12,500 Cr market-cap coverage floor", "entry_low": 525, "entry_high": 536, "entry": 530.5, "tgt1": 568, "tgt2": 583, "sl": 425, "cmp_at_reco": 531 },
+    { "selection": "EXIDE",       "ticker": "EXIDEIND",   "in_universe": true,  "entry_low": 397,  "entry_high": 403,  "entry": 400,    "tgt1": 430,  "tgt2": 442,  "sl": 320,  "cmp_at_reco": 400 },
+    { "selection": "TATATECH",    "ticker": "TATATECH",   "in_universe": true,  "entry_low": 763,  "entry_high": 779,  "entry": 771,    "tgt1": 824,  "tgt2": 848,  "sl": 617,  "cmp_at_reco": 771 },
+    { "selection": "FEDERALBANK", "ticker": "FEDERALBNK", "in_universe": true,  "entry_low": 301,  "entry_high": 307,  "entry": 304,    "tgt1": 324,  "tgt2": 335,  "sl": 243,  "cmp_at_reco": 304 }
+  ]
+}
