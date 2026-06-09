@@ -1,50 +1,129 @@
 {
-  "generated_at": "2026-06-01T08:34:09.691Z",
-  "watch_tickers": [
-    "INOXINDIA"
+  "probe": "RELIANCE",
+  "generated_at": "2026-06-09T10:00:10.320Z",
+  "parsed_as": "markdown-table",
+  "raw_head": "| Company                 | Insider                                              | Category                     | Security Type | Transaction | Trade Shares | Trade % | Trade Value | Post Holding Shares | Post Holding % | Mode                 | From Date  | To Date    | Broadcast Date | Source    |\n| ----------------------- | ---------------------------------------------------- | ---------------------------- | ------------- | ----------- | ------------ | ------- | ----------- | ------------------- | -------------- | -------------------- | ---------- | ---------- | -------------- | --------- |\n| Reliance Industries Ltd | Anish Shah                                           | Designated Person            | Equity Shares | Acquisition | 880          | 0       | 1196580     | 509298              | 0              | Inheritance          | 2026-05-20 | 2026-05-20 | 2026-05-22     | BSE       |\n| Reliance Industries Ltd | Radhika Merchant                                     | Directors Immediate Relative | Equity Shares | Revoke      | 4895         | 0       | 6541678     | 8506                | 0              | Revocation Of Pledge | 2026-05-15 | 2026-05-15 | 2026-05-20     | BSE       |\n",
+  "header_columns": [
+    "Company",
+    "Insider",
+    "Category",
+    "Security Type",
+    "Transaction",
+    "Trade Shares",
+    "Trade %",
+    "Trade Value",
+    "Post Holding Shares",
+    "Post Holding %",
+    "Mode",
+    "From Date",
+    "To Date",
+    "Broadcast Date",
+    "Source"
   ],
-  "total_trades_in_pull": 7183,
-  "type_distribution": {
-    "Buy": 4259,
-    "Pledge": 329,
-    "Sell": 2310,
-    "Pledge Revoke": 223,
-    "-": 37,
-    "Pledge Invoke": 25
+  "row_count": 100,
+  "classification": {
+    "buy": 22,
+    "pledge": 11,
+    "sell": 67
   },
-  "date_range_rows_seen": 2,
-  "date_range_rows": [
+  "in_window": 6,
+  "undated": 0,
+  "sample_rows": [
     {
-      "symbol": "INOXINDIA",
-      "type": "Buy",
-      "secAcq": "2537750",
-      "secVal": "0",
-      "acqMode": "Others",
-      "personCategory": "Promoters",
-      "date": "19-Feb-2026 16:16",
-      "intimDt": "18-Feb-2026",
-      "acqfromDt": "16-Feb-2026",
-      "acqtoDt": "16-Feb-2026"
+      "Company": "Reliance Industries Ltd",
+      "Insider": "Anish Shah",
+      "Category": "Designated Person",
+      "Security Type": "Equity Shares",
+      "Transaction": "Acquisition",
+      "Trade Shares": "880",
+      "Trade %": "0",
+      "Trade Value": "1196580",
+      "Post Holding Shares": "509298",
+      "Post Holding %": "0",
+      "Mode": "Inheritance",
+      "From Date": "2026-05-20",
+      "To Date": "2026-05-20",
+      "Broadcast Date": "2026-05-22",
+      "Source": "BSE"
     },
     {
-      "symbol": "INOXINDIA",
-      "type": "Buy",
-      "secAcq": "2853550",
-      "secVal": "0",
-      "acqMode": "Others",
-      "personCategory": "Promoters",
-      "date": "19-Feb-2026 16:16",
-      "intimDt": "18-Feb-2026",
-      "acqfromDt": "16-Feb-2026",
-      "acqtoDt": "16-Feb-2026"
+      "Company": "Reliance Industries Ltd",
+      "Insider": "Radhika Merchant",
+      "Category": "Directors Immediate Relative",
+      "Security Type": "Equity Shares",
+      "Transaction": "Revoke",
+      "Trade Shares": "4895",
+      "Trade %": "0",
+      "Trade Value": "6541678",
+      "Post Holding Shares": "8506",
+      "Post Holding %": "0",
+      "Mode": "Revocation Of Pledge",
+      "From Date": "2026-05-15",
+      "To Date": "2026-05-15",
+      "Broadcast Date": "2026-05-20",
+      "Source": "BSE"
+    },
+    {
+      "Company": "Reliance Industries Ltd",
+      "Insider": "B Narayan",
+      "Category": "Designated Person",
+      "Security Type": "Equity Shares",
+      "Transaction": "Disposal",
+      "Trade Shares": "2320",
+      "Trade %": "0",
+      "Trade Value": "3294168",
+      "Post Holding Shares": "1600",
+      "Post Holding %": "0",
+      "Mode": "Off Market",
+      "From Date": "2026-02-13",
+      "To Date": "2026-02-13",
+      "Broadcast Date": "2026-02-18",
+      "Source": "BSE"
+    },
+    {
+      "Company": "Reliance Industries Ltd",
+      "Insider": "Shaila Narayan",
+      "Category": "Immediate Relative",
+      "Security Type": "Equity Shares",
+      "Transaction": "Acquisition",
+      "Trade Shares": "3120",
+      "Trade %": "0",
+      "Trade Value": "4430088",
+      "Post Holding Shares": "29620",
+      "Post Holding %": "0",
+      "Mode": "Off Market",
+      "From Date": "2026-02-13",
+      "To Date": "2026-02-13",
+      "Broadcast Date": "2026-02-18",
+      "Source": "BSE"
+    },
+    {
+      "Company": "Reliance Industries Ltd",
+      "Insider": "Ashwini Darshan Naphade",
+      "Category": "Immediate Relative",
+      "Security Type": "Equity Shares",
+      "Transaction": "Acquisition",
+      "Trade Shares": "960",
+      "Trade %": "0",
+      "Trade Value": "1334544",
+      "Post Holding Shares": "1104",
+      "Post Holding %": "0",
+      "Mode": "Inheritance",
+      "From Date": "2026-02-02",
+      "To Date": "2026-02-02",
+      "Broadcast Date": "2026-02-09",
+      "Source": "BSE"
     }
   ],
-  "per_symbol_experiment": {
-    "INOXINDIA": {
-      "window": "02-05-2026 → 01-06-2026",
-      "count": 0,
-      "rows": []
-    }
-  },
-  "firecrawl_response": null
+  "aggregated": {
+    "buy_shares": 4960,
+    "sell_shares": 2320,
+    "buy_value": 6961212,
+    "sell_value": 3294168,
+    "transactions": 4,
+    "pledges_excluded": 2,
+    "last_date": "2026-05-22",
+    "net_shares": 2640,
+    "net_value": 3667044
+  }
 }
