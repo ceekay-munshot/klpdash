@@ -3,6 +3,10 @@
 //   POST https://devde.muns.io/filings/data/insider_trades
 //   body: { "ticker": "RELIANCE", "country": "India" }
 //   auth: Bearer <MUNS_TOKEN>
+//   response: a MARKDOWN PIPE TABLE (not JSON, despite the Accept header) —
+//     columns: Company, Insider, Category, Security Type, Transaction, Trade
+//     Shares, Trade %, Trade Value, Post Holding Shares, Post Holding %,
+//     Mode, From Date, To Date, Broadcast Date, Source.
 //
 // Replaces the old NSE PIT direct-scrape + Firecrawl supplement. muns.io
 // already aggregates BSE + Trendlyne disclosures with full history and no
@@ -49,12 +53,13 @@ const FIXTURE_PATH  = (process.env.MUNS_FIXTURE || "").trim();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// ---------- response parsing (tolerant of exact key spellings) ----------
-// The API returns JSON; we don't hard-code the envelope or key names so a
-// minor schema tweak upstream doesn't silently zero us out. extractRows
-// digs out the array-of-disclosures; fieldGetter matches columns by a
-// normalised (lowercase, alphanumeric-only) key so trade_shares / Trade
-// Shares / tradeShares all resolve identically.
+// ---------- response parsing ----------
+// The muns.io endpoint returns its result as a MARKDOWN PIPE TABLE (despite
+// the application/json Accept header) — the body literally starts with
+// "| Company | Insider | ...". parseRows() handles that, and still accepts
+// real JSON in case the API changes later. fieldGetter matches columns by a
+// normalised (lowercase, alphanumeric-only) key, so the table headers
+// ("Trade Shares", "Broadcast Date", …) resolve without hard-coding spelling.
 
 function extractRows(json) {
   const PREFERRED = ["data", "insider_trades", "insiderTrades", "result", "results",
@@ -72,6 +77,40 @@ function extractRows(json) {
     return null;
   }
   return dig(json, 0) || [];
+}
+
+// Sniff the response: a markdown pipe-table is parsed column-by-column into
+// row objects keyed by the header labels; anything starting with [ or { is
+// tried as JSON (future-proofing). Returns an array of row objects either way.
+function parseRows(body) {
+  const text = String(body || "").trim();
+  if (!text) return [];
+  if (text[0] === "[" || text[0] === "{") {
+    try { return extractRows(JSON.parse(text)); } catch { /* not JSON — fall through */ }
+  }
+  if (text.includes("|")) return parseMarkdownTable(text);
+  return [];
+}
+
+function parseMarkdownTable(text) {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.includes("|"));
+  if (lines.length < 2) return [];
+  const cells = (l) => {
+    let s = l;
+    if (s.startsWith("|")) s = s.slice(1);
+    if (s.endsWith("|")) s = s.slice(0, -1);
+    return s.split("|").map((c) => c.trim());
+  };
+  const header = cells(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (/^[\s|:\-]+$/.test(lines[i])) continue;   // markdown separator row (---|---)
+    const c = cells(lines[i]);
+    const obj = {};
+    header.forEach((h, j) => { obj[h] = c[j] !== undefined ? c[j] : ""; });
+    rows.push(obj);
+  }
+  return rows;
 }
 
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -191,7 +230,7 @@ async function fetchInsider(ticker) {
       continue;
     }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
+    return await r.text();   // body is a markdown table, not JSON — parse downstream
   }
 }
 
@@ -204,7 +243,7 @@ async function runPool(tickers) {
     while (i < tickers.length) {
       const t = tickers[i++];
       try {
-        const rows = extractRows(await fetchInsider(t));
+        const rows = parseRows(await fetchInsider(t));
         results[t] = rows;
         stats.ok++;
         if (!rows.length) stats.empty++;
@@ -238,11 +277,10 @@ function loadTickers() {
 function runFixture() {
   // Validate the parser/aggregator against a saved response, offline.
   console.log(`FIXTURE mode — reading ${FIXTURE_PATH}`);
-  const json = JSON.parse(readFileSync(FIXTURE_PATH, "utf8"));
-  const rows = extractRows(json);
-  console.log(`Top-level: ${Array.isArray(json) ? "array" : "object {" + Object.keys(json).join(", ") + "}"}`);
-  console.log(`Extracted ${rows.length} rows.`);
-  if (rows[0]) console.log(`First row keys: ${Object.keys(rows[0]).join(", ")}`);
+  const body = readFileSync(FIXTURE_PATH, "utf8");
+  const rows = parseRows(body);
+  console.log(`Parsed ${rows.length} rows (${body.trim()[0] === "|" ? "markdown table" : "json"}).`);
+  if (rows[0]) console.log(`Row keys: ${Object.keys(rows[0]).join(", ")}`);
   const breakdown = {};
   for (const row of rows) {
     const get = fieldGetter(row);
@@ -258,15 +296,17 @@ function runFixture() {
 
 async function runProbe() {
   console.log(`PROBE mode — fetching one ticker live: ${PROBE_TICKER}`);
-  const json = await fetchInsider(PROBE_TICKER);
-  const rows = extractRows(json);
-  console.log(`Top-level type: ${Array.isArray(json) ? "array" : typeof json}`);
-  if (!Array.isArray(json) && json) console.log(`Top-level keys: ${Object.keys(json).join(", ")}`);
-  console.log(`Extracted ${rows.length} rows. First row keys: ${rows[0] ? Object.keys(rows[0]).join(", ") : "(none)"}`);
+  const body = await fetchInsider(PROBE_TICKER);
+  const rows = parseRows(body);
+  const head = body.trim()[0];
+  const parsedAs = head === "|" ? "markdown-table" : (head === "[" || head === "{") ? "json" : "unknown";
+  console.log(`Response parsed as: ${parsedAs}. Rows: ${rows.length}.`);
+  console.log(`Row keys: ${rows[0] ? Object.keys(rows[0]).join(", ") : "(none)"}`);
   const breakdown = {};
   for (const row of rows) {
     const g = fieldGetter(row);
-    breakdown[classify(g(F.type), g(F.mode))] = (breakdown[classify(g(F.type), g(F.mode))] || 0) + 1;
+    const k = classify(g(F.type), g(F.mode));
+    breakdown[k] = (breakdown[k] || 0) + 1;
   }
   console.log(`Classification across all rows: ${JSON.stringify(breakdown)}`);
   const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000);
@@ -274,7 +314,8 @@ async function runProbe() {
   mkdirSync(dirname(DEBUG_PATH), { recursive: true });
   writeFileSync(DEBUG_PATH, JSON.stringify({
     probe: PROBE_TICKER, generated_at: new Date().toISOString(),
-    top_level_keys: Array.isArray(json) ? null : Object.keys(json || {}),
+    parsed_as: parsedAs, raw_head: body.slice(0, 1200),
+    header_columns: rows[0] ? Object.keys(rows[0]) : [],
     row_count: rows.length, classification: breakdown, in_window: inWindow, undated,
     sample_rows: rows.slice(0, 5), aggregated: entry,
   }, null, 2) + "\n");
