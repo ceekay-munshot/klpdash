@@ -11,11 +11,12 @@ name: Insider supplement merger (routine output → supplement file)
 # buy/sell aggregates (matches the scoring rule's behaviour).
 
 on:
+  # Retired: muns.io (screener-test/scrape-insider-muns.mjs) now supplies
+  # recent + historical insider disclosures directly, so the BSE-routine
+  # supplement is redundant and merging it would double-count. Kept
+  # dispatch-only for archival; the auto-trigger on daily-insider-refresh.json
+  # pushes is removed so it can't re-populate the supplement file.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'public/data/daily-insider-refresh.json'
 
 jobs:
   merge:

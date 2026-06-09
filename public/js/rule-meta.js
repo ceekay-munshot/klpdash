@@ -84,6 +84,7 @@ const YAHOO_NIFTY500 = () => ({ url: "https://finance.yahoo.com/quote/%5ECRSLDX"
 const NSE_BHAVCOPY = () => ({ url: "https://www.nseindia.com/all-reports", label: "NSE archives", section: "sec_bhavdata_full daily CSV" });
 const NSE_FII = () => ({ url: "https://www.nseindia.com/reports/fii-dii", label: "NSE", section: "Daily FII/DII activity report" });
 const NSE_PIT = () => ({ url: "https://www.nseindia.com/companies-listing/corporate-filings-insider-trading", label: "NSE corporate filings", section: "PIT (Prohibition of Insider Trading) disclosures" });
+const MUNS_INSIDER = () => ({ url: "https://muns.io", label: "muns.io filings", section: "Insider trades — BSE + Trendlyne (SEBI Reg 7(2)) disclosures" });
 const NSE_FNO_LIST = () => ({ url: "https://www.nseindia.com/products-services/equity-derivatives-list-underlyings", label: "NSE F&O eligible list", section: "Stocks with active futures + options" });
 const RBI_DBIE = () => ({ url: "https://dbie.rbi.org.in/", label: "RBI Database on Indian Economy", section: "Macro statistics — GDP, CPI, G-Sec yield" });
 const MOSPI = () => ({ url: "https://www.mospi.gov.in/press-release", label: "MoSPI", section: "Quarterly GDP + monthly CPI press releases" });
@@ -190,10 +191,10 @@ export const META = {
       ourLogic: null,
     },
     insider: {
-      source: NSE_PIT,
-      calculation: "Pull NSE PIT (Prohibition of Insider Trading) disclosures over the last 180 calendar days. Aggregate per ticker by tdpTransactionType: Buy → buy_shares + buy_value; Sell → sell_shares + sell_value; Pledge / Pledge Release / Invocation → EXCLUDED (collateral movements aren't buy/sell of beneficial ownership). Score by net rupee value when available, else fall back to net shares (NSE PIT often omits execution prices). > 1% of float sold = hard fail per client spec; float estimated from market_cap / cmp.",
+      source: MUNS_INSIDER,
+      calculation: "Pull muns.io insider-trade disclosures (BSE + Trendlyne, SEBI Reg 7(2)) per ticker over the last 180 calendar days. Aggregate per ticker by Transaction: Acquisition → buy_shares + buy_value; Disposal → sell_shares + sell_value; Pledge / Revoke → EXCLUDED (collateral movements, not buy/sell of beneficial ownership). Score by net rupee value when available, else fall back to net shares (some filings omit execution prices). > 1% of float sold = hard fail per client spec; float estimated from market_cap / cmp.",
       clientLogic: "PASS if net insider buying in last 2 quarters; 1 pt. Insider selling > 1% holding = 0 pts.",
-      ourLogic: "Pledge / pledge-release / invocation filings are excluded from the trade count — they show up under Reg 7(2) on NSE's PIT page but they're collateral movements, not buy/sell of beneficial ownership. The cell value reads e.g. '(2 trades · 4 pledges excluded)' so the count matches NSE only after you discount pledges.",
+      ourLogic: "Pledge / pledge-release (Revoke) / invocation filings are excluded from the trade count — they're collateral movements, not buy/sell of beneficial ownership. The cell value reads e.g. '(2 trades · 4 pledges excluded)' so the count only matches the raw disclosure list after you discount pledges. Source is muns.io aggregating BSE + Trendlyne Reg 7(2) disclosures (full history, no recent-window blackout), which replaced the earlier NSE PIT scrape + Firecrawl supplement.",
     },
     div: {
       source: SCREENER,

@@ -9,7 +9,7 @@ name: Daily refresh (all scrapers)
 # because auditor-opinions-refresh.yml chains off this exact name via
 # workflow_run — renaming would silently break the Muns agent trigger.
 #
-# Total runtime budget: ~9 min (Technicals ~4, Insider ~1, Sentiment <1,
+# Total runtime budget: ~11 min (Technicals ~4, Insider ~3, Sentiment <1,
 # Macro <1, Governance ~3).
 
 on:
@@ -39,17 +39,17 @@ jobs:
       - name: Run technicals scraper
         run: node screener-test/scrape-technicals.mjs
 
-      # ---- 2. Insider trades (NSE PIT) — ~1 min, non-fatal ----
-      # NSE occasionally returns 403/empty on bot detection. Don't kill
-      # the whole daily refresh over insider data — surface as a warning.
-      - name: Run insider scraper
+      # ---- 2. Insider trades (muns.io) — ~3 min, non-fatal ----
+      # muns.io aggregates BSE + Trendlyne SEBI Reg 7(2) disclosures (full
+      # history, no recent-window blackout), replacing the old NSE PIT scrape
+      # + Firecrawl supplement. One POST per Nifty-500 ticker; the scraper
+      # preserves the last-good file if a run yields nothing, so a transient
+      # outage can't zero out the rule. Non-fatal to the rest of the refresh.
+      - name: Run insider scraper (muns.io)
         continue-on-error: true
         env:
-          # Firecrawl supplement fills in the last ~30 days that NSE's
-          # public PIT API doesn't surface — see PR #97. Required for
-          # recent disclosures (Sells, Pledges) to appear in the output.
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: node screener-test/scrape-insider.mjs
+          MUNS_TOKEN: ${{ secrets.MUNS_TOKEN }}
+        run: node screener-test/scrape-insider-muns.mjs
 
       # ---- 3. Sentiment extras via Firecrawl (PCR + Impact Cost) — ~1 min, non-fatal ----
       # NSE blocks direct GHA-runner fetches for option-chain (PCR) and the
