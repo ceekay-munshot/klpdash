@@ -1504,70 +1504,9 @@ async function renderHistory() {
   const best = picks[0];
   const dateRange = idx.dates.length > 1 ? `${idx.dates[0]} → ${idx.dates[idx.dates.length - 1]}` : idx.dates[0];
 
-  // --- Portfolio backtest (equal-weight, client-set ₹ per pick at first STRONG BUY) ---
-  // Simulate buying every STRONG BUY equally on its first-appearance date and
-  // holding through today. Daily portfolio value is summed across whatever
-  // picks have entered by that date — the curve shows compounding of the
-  // basket as more picks come in. Drawdown is the peak-to-trough %.
-  const ALLOC = state.allocPerPick;
-  // ticker → Map<date, close> for daily mark-to-market
-  const closeByTickerDate = new Map();
-  for (const snap of snapshots) {
-    for (const s of snap.stocks) {
-      if (typeof s.close !== "number") continue;
-      let m = closeByTickerDate.get(s.ticker);
-      if (!m) { m = new Map(); closeByTickerDate.set(s.ticker, m); }
-      m.set(snap.date, s.close);
-    }
-  }
-  function closeAt(ticker, date) {
-    const m = closeByTickerDate.get(ticker);
-    if (!m) return null;
-    if (m.has(date)) return m.get(date);
-    // most recent date ≤ requested
-    let last = null;
-    for (const d of [...m.keys()].sort()) { if (d <= date) last = m.get(d); else break; }
-    return last;
-  }
-  const portfolioSeries = idx.dates.map((d) => {
-    let value = 0, invested = 0;
-    for (const p of picks) {
-      if (d < p.firstSBDate) continue;
-      const shares = ALLOC / p.firstSBClose;
-      const c = closeAt(p.ticker, d);
-      if (c == null) continue;
-      value += shares * c;
-      invested += ALLOC;
-    }
-    return { date: d, value, invested, ret: invested > 0 ? (value / invested - 1) * 100 : 0 };
-  });
-  // Max drawdown over the series
-  let peak = 0, maxDD = 0, maxDDdate = null;
-  for (const pt of portfolioSeries) {
-    if (pt.value > peak) peak = pt.value;
-    if (peak > 0) {
-      const dd = (peak - pt.value) / peak * 100;
-      if (dd > maxDD) { maxDD = dd; maxDDdate = pt.date; }
-    }
-  }
-  const lastPt = portfolioSeries[portfolioSeries.length - 1] || { value: 0, invested: 0, ret: 0 };
-  const portInvested = lastPt.invested;
-  const portValue = lastPt.value;
-  const portRet = lastPt.ret;
-  // Same money in Nifty equivalent (only when benchmark data is loaded)
-  let niftyMatchedRet = null;
-  if (niftyClosesByDate) {
-    let niftyValue = 0, niftyInvested = 0;
-    for (const p of picks) {
-      const nStart = niftyOn(p.firstSBDate);
-      const nEnd = niftyOn(todayDate);
-      if (nStart == null || nEnd == null) continue;
-      const units = ALLOC / nStart;
-      niftyValue += units * nEnd;
-      niftyInvested += ALLOC;
-    }
-    if (niftyInvested > 0) niftyMatchedRet = (niftyValue / niftyInvested - 1) * 100;
-  }
+  // Portfolio ₹-backtest removed — funds judge on relative % / alpha, not the
+  // absolute "₹X invested → ₹Y today" simulation. Avg return %, win rate, and
+  // per-pick alpha vs Nifty carry the relative story.
 
   // --- Hero strip ---
   const heroHeader = `
@@ -1589,58 +1528,6 @@ async function renderHistory() {
           ${heroStat("Win rate", `${Math.round(winners.length / picks.length * 100)}%`, `${winners.length} of ${picks.length} up`)}
           ${heroStat("Best pick", `${best.ret >= 0 ? "+" : ""}${best.ret.toFixed(1)}%`, best.name)}
         </div>
-      </div>
-    </div>
-  `;
-
-  // --- Portfolio backtest card ---
-  // "If you'd bought every STRONG BUY equal-weight" — concrete ₹ numbers
-  // a fund manager can show LPs, plus max drawdown and (when benchmark
-  // data is loaded) the same money invested in Nifty for comparison.
-  const portRetCls = portRet >= 0 ? "text-emerald-700" : "text-rose-700";
-  const portChartH = 80;
-  const portChart = renderPortfolioSparkline(portfolioSeries, portChartH);
-  const presets = [
-    { v: 50000,   label: "₹50K"  },
-    { v: 100000,  label: "₹1L"   },
-    { v: 500000,  label: "₹5L"   },
-    { v: 1000000, label: "₹10L"  },
-  ];
-  const presetChips = presets.map((p) => {
-    const active = p.v === ALLOC;
-    return `<button type="button" data-alloc-preset="${p.v}" class="px-2 py-1 text-[11px] font-semibold rounded-lg ring-1 transition ${active ? "bg-indigo-600 text-white ring-indigo-600 shadow-sm" : "bg-white text-slate-600 ring-slate-200 hover:ring-indigo-300 hover:text-indigo-700"}">${p.label}</button>`;
-  }).join("");
-  const portfolioCard = `
-    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
-      <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
-        <div>
-          <h2 class="font-display font-bold text-slate-900 text-base">What if you'd bought every STRONG BUY equal-weight?</h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">Mark-to-market each day · held through today</p>
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
-              <span>₹</span>
-              <input id="alloc-input" type="number" inputmode="numeric" min="1000" step="1000" value="${ALLOC}"
-                class="w-24 px-2 py-1 text-xs font-bold tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <span class="text-slate-400 font-normal">per pick</span>
-            </label>
-            <div class="flex items-center gap-1">${presetChips}</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total return</div>
-          <div class="text-3xl font-display font-extrabold tabular-nums leading-none ${portRetCls}">${portRet >= 0 ? "+" : ""}${portRet.toFixed(2)}%</div>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-        ${portfolioStat("Invested", `₹${formatINR(portInvested)}`, `${picks.length} pick${picks.length === 1 ? "" : "s"}`)}
-        ${portfolioStat("Today's value", `₹${formatINR(portValue)}`, `${portValue >= portInvested ? "+" : ""}₹${formatINR(portValue - portInvested)} net`)}
-        ${portfolioStat("Max drawdown", `−${maxDD.toFixed(2)}%`, maxDDdate ? `bottomed ${maxDDdate}` : "—", maxDD > 0 ? "text-rose-700" : "text-slate-500")}
-        ${niftyMatchedRet != null
-          ? portfolioStat("vs Nifty 50", `${niftyMatchedRet >= 0 ? "+" : ""}${niftyMatchedRet.toFixed(2)}%`, `α ${portRet - niftyMatchedRet >= 0 ? "+" : ""}${(portRet - niftyMatchedRet).toFixed(2)}%`, portRet - niftyMatchedRet >= 0 ? "text-emerald-700" : "text-rose-700")
-          : portfolioStat("vs Nifty 50", "—", "loading daily", "text-slate-400")}
-      </div>
-      <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3">
-        ${portChart}
       </div>
     </div>
   `;
@@ -1699,7 +1586,6 @@ async function renderHistory() {
 
   host.innerHTML = `
     ${heroHeader}
-    ${portfolioCard}
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
@@ -1717,23 +1603,6 @@ async function renderHistory() {
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
 
-  // Allocation editor — preset chips snap to common ₹ amounts, the
-  // number input takes any custom value. % return, drawdown, alpha are
-  // all unchanged by ALLOC (they're proportional), but the absolute
-  // ₹ figures rescale, so we re-render the History tab on commit.
-  function applyAlloc(v) {
-    const n = Math.max(1000, Math.round(Number(v) || 0));
-    if (n === state.allocPerPick) return;
-    state.allocPerPick = n;
-    saveAllocPerPick(n);
-    renderHistory();
-  }
-  $$("#history-content [data-alloc-preset]").forEach((btn) => btn.addEventListener("click", () => applyAlloc(btn.dataset.allocPreset)));
-  const allocInput = $("#alloc-input");
-  if (allocInput) {
-    allocInput.addEventListener("change", (e) => applyAlloc(e.target.value));
-    allocInput.addEventListener("keydown", (e) => { if (e.key === "Enter") applyAlloc(e.target.value); });
-  }
 }
 
 // Build pick objects for the LKP basket from the committed file + snapshot
@@ -1848,7 +1717,6 @@ function renderLkpCard(picks, isOverride) {
           ${uploadBtn}
         </div>
       </div>
-      <p class="text-[11px] text-slate-500 mb-3 leading-relaxed">Client's hand-picked basket. Entry is the client's range (midpoint used for return); <span class="font-semibold">T1/T2</span> are targets, <span class="font-semibold">SL</span> the stop-loss. The rating chip is <span class="font-semibold">our system's</span> current read on the same stock — a cross-check against the manual call.</p>
       ${overrideBanner}
       <div class="space-y-1.5">${body}</div>
       ${emptyState}
@@ -2093,54 +1961,68 @@ function renderScoreForensics(pick) {
   const maxAbs = Math.max(0.5, ...deltas.map((d) => d.missing ? 0 : Math.abs(d.delta)));
   const deltaSign = compDelta >= 0 ? "+" : "−";
   const deltaCls = compDelta >= 0 ? "text-emerald-700" : "text-rose-700";
-  const rowsHtml = deltas.map((d) => {
+
+  // How often each pillar's inputs actually move, so a reader knows a flat
+  // Fundamentals / Macro is expected and the day-to-day swing is the fast ones.
+  const CADENCE = { fundamentals: "quarterly", technicals: "daily", macro: "monthly", sentiment: "daily", liquidity: "daily" };
+  const CADENCE_CLS = { daily: "bg-sky-50 text-sky-700 ring-sky-200", monthly: "bg-violet-50 text-violet-700 ring-violet-200", quarterly: "bg-slate-100 text-slate-500 ring-slate-200" };
+  const cadenceChip = (k) => `<span class="text-[8px] font-bold uppercase tracking-wide px-1 py-px rounded ring-1 ${CADENCE_CLS[CADENCE[k]]} whitespace-nowrap">${CADENCE[k]}</span>`;
+
+  // Movers first (largest absolute contribution) so the eye lands on what
+  // actually changed instead of a wall of "+0.00".
+  const ordered = [...deltas].sort((x, y) => (x.missing ? -1 : Math.abs(x.delta)) < (y.missing ? -1 : Math.abs(y.delta)) ? 1 : -1);
+
+  const rowsHtml = ordered.map((d) => {
     if (d.missing) {
       return `
-        <div class="grid grid-cols-12 items-center gap-2 py-0.5">
-          <div class="col-span-3 text-[11px] font-semibold text-slate-400">${LABEL[d.key]}</div>
-          <div class="col-span-9 text-[10px] text-slate-400">no data</div>
-        </div>
-      `;
+        <div class="grid grid-cols-12 items-center gap-2 py-1">
+          <div class="col-span-6 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0"></span><span class="text-[11px] font-semibold text-slate-400">${LABEL[d.key]}</span>${cadenceChip(d.key)}</div>
+          <div class="col-span-6 text-[10px] text-slate-400 text-right">no data</div>
+        </div>`;
     }
     const pos = d.delta >= 0;
+    const changed = Math.abs(d.delta) >= 0.01;
     const widthPct = (Math.abs(d.delta) / maxAbs) * 50;          // 0..50% of the bar (centered)
-    const valCls = pos ? "text-emerald-700" : "text-rose-700";
-    const barCls = pos ? "bg-emerald-500" : "bg-rose-500";
-    const dot = COLOR[d.key];
+    const valCls = !changed ? "text-slate-400" : pos ? "text-emerald-700" : "text-rose-700";
+    const barCls = !changed ? "bg-slate-300" : pos ? "bg-emerald-500" : "bg-rose-500";
     return `
-      <div class="grid grid-cols-12 items-center gap-2 py-0.5">
-        <div class="col-span-3 flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full ${dot} flex-shrink-0"></span>
-          <span class="text-[11px] font-semibold text-slate-800">${LABEL[d.key]}</span>
+      <div class="grid grid-cols-12 items-center gap-2 py-1">
+        <div class="col-span-5 flex items-center gap-1.5 min-w-0">
+          <span class="w-1.5 h-1.5 rounded-full ${COLOR[d.key]} flex-shrink-0"></span>
+          <span class="text-[11px] font-semibold text-slate-800 truncate">${LABEL[d.key]}</span>
+          ${cadenceChip(d.key)}
         </div>
-        <div class="col-span-5 relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div class="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300"></div>
-          <div class="absolute top-0 bottom-0 ${barCls}" style="${pos ? `left:50%;width:${widthPct.toFixed(2)}%` : `right:50%;width:${widthPct.toFixed(2)}%`}"></div>
+        <div class="col-span-3 text-[10px] tabular-nums text-right whitespace-nowrap"><span class="text-slate-400">${d.ap}%</span> <span class="text-slate-300">→</span> <span class="font-semibold text-slate-700">${d.bp}%</span></div>
+        <div class="col-span-4 flex items-center justify-end gap-2">
+          <div class="relative h-1.5 w-12 sm:w-16 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
+            <div class="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300"></div>
+            <div class="absolute top-0 bottom-0 ${barCls}" style="${pos ? `left:50%;width:${widthPct.toFixed(2)}%` : `right:50%;width:${widthPct.toFixed(2)}%`}"></div>
+          </div>
+          <span class="text-[11px] font-bold tabular-nums ${valCls} w-11 text-right">${changed ? (pos ? "+" : "−") + Math.abs(d.delta).toFixed(2) : "0.00"}</span>
         </div>
-        <div class="col-span-2 text-[11px] font-bold tabular-nums text-right ${valCls}">${pos ? "+" : "−"}${Math.abs(d.delta).toFixed(2)}</div>
-        <div class="col-span-2 text-[10px] tabular-nums text-slate-400 text-right whitespace-nowrap">${d.ap}→${d.bp}%</div>
-      </div>
-    `;
+      </div>`;
   }).join("");
+
   return `
-    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 mb-3">
-      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1.5">
-        <div class="flex items-baseline gap-2">
-          <div class="font-display font-bold text-slate-900 text-sm">Score forensics</div>
-          <div class="text-[11px] text-slate-500">why composite ${compDelta >= 0 ? "rose" : "dropped"} since ${pick.firstSBDate}</div>
-        </div>
-        <div class="flex items-baseline gap-2 text-xs tabular-nums">
+    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3 mb-3">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+        <div class="font-display font-bold text-slate-900 text-sm">What moved the score</div>
+        <div class="flex items-baseline gap-1.5 text-xs tabular-nums">
           <span class="text-slate-500">${compTotalA != null ? compTotalA.toFixed(1) : "—"}</span>
           <span class="text-slate-400">→</span>
           <span class="font-bold text-slate-900">${compTotalB != null ? compTotalB.toFixed(1) : "—"}</span>
           <span class="font-bold ${deltaCls}">${deltaSign}${Math.abs(compDelta).toFixed(2)}</span>
+          <span class="text-[10px] text-slate-400 font-normal">since ${pick.firstSBDate}</span>
         </div>
       </div>
-      <div class="rounded-lg bg-slate-50 ring-1 ring-slate-100 px-3 py-1.5">
-        ${rowsHtml}
+      <div class="grid grid-cols-12 gap-2 px-0.5 pb-1 mb-0.5 border-b border-slate-100 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+        <div class="col-span-5">Pillar · refresh</div>
+        <div class="col-span-3 text-right">Score</div>
+        <div class="col-span-4 text-right">Contribution</div>
       </div>
-    </div>
-  `;
+      <div class="divide-y divide-slate-50">${rowsHtml}</div>
+      <p class="text-[10px] text-slate-400 leading-relaxed mt-2 pt-2 border-t border-slate-100"><span class="font-semibold text-slate-500">Contribution</span> = how much each pillar pushed the composite (the five sum to the total change). The chip is how often it refreshes — <span class="font-semibold">Fundamentals</span> (quarterly) and <span class="font-semibold">Macro</span> (monthly) barely move day-to-day, so short-term swings come from <span class="font-semibold">Technicals / Sentiment / Liquidity</span> (daily).</p>
+    </div>`;
 }
 
 function heroStat(label, value, sub) {
