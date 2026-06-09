@@ -1,7 +1,8 @@
 name: Daily refresh (all scrapers)
 
-# Daily scrapers that change day-to-day: Technicals, Insider, Sentiment
-# extras, Macro, Governance flags. The slow Fundamentals + PLI/Renewable
+# Daily scrapers that change day-to-day: Technicals, Sentiment extras,
+# Macro, Governance flags. (Insider trades are refreshed MANUALLY via
+# insider-scrape.yml, not here.) The slow Fundamentals + PLI/Renewable
 # scrapes still live in weekly-refresh.yml (Sun 23:53 IST) because those
 # numbers are quarterly/annual and don't move daily.
 #
@@ -9,8 +10,8 @@ name: Daily refresh (all scrapers)
 # because auditor-opinions-refresh.yml chains off this exact name via
 # workflow_run — renaming would silently break the Muns agent trigger.
 #
-# Total runtime budget: ~11 min (Technicals ~4, Insider ~3, Sentiment <1,
-# Macro <1, Governance ~3).
+# Total runtime budget: ~8 min (Technicals ~4, Sentiment <1, Macro <1,
+# Governance ~3).
 
 on:
   workflow_dispatch:
@@ -39,17 +40,11 @@ jobs:
       - name: Run technicals scraper
         run: node screener-test/scrape-technicals.mjs
 
-      # ---- 2. Insider trades (muns.io) — ~3 min, non-fatal ----
-      # muns.io aggregates BSE + Trendlyne SEBI Reg 7(2) disclosures (full
-      # history, no recent-window blackout), replacing the old NSE PIT scrape
-      # + Firecrawl supplement. One POST per Nifty-500 ticker; the scraper
-      # preserves the last-good file if a run yields nothing, so a transient
-      # outage can't zero out the rule. Non-fatal to the rest of the refresh.
-      - name: Run insider scraper (muns.io)
-        continue-on-error: true
-        env:
-          MUNS_TOKEN: ${{ secrets.MUNS_TOKEN }}
-        run: node screener-test/scrape-insider-muns.mjs
+      # ---- 2. Insider trades — MANUAL ONLY (not run here) ----
+      # Insider refresh runs via .github/workflows/insider-scrape.yml (muns.io),
+      # triggered by hand in 5-at-a-time batches (the `tickers` input). It is
+      # intentionally NOT part of the daily auto-refresh. insider-trades.json
+      # is still read below by the snapshot step; it just isn't regenerated here.
 
       # ---- 3. Sentiment extras via Firecrawl (PCR + Impact Cost) — ~1 min, non-fatal ----
       # NSE blocks direct GHA-runner fetches for option-chain (PCR) and the
