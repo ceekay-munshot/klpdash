@@ -5,8 +5,13 @@ on:
   # ad-hoc reruns and for probing the muns.io API shape via probe_ticker.
   workflow_dispatch:
     inputs:
+      tickers:
+        description: "Comma-separated tickers to refresh and MERGE into insider-trades.json (e.g. RELIANCE,TCS,INFY,HDFCBANK,ICICIBANK). Only these are touched; every other company is preserved. Leave blank for a full universe run."
+        required: false
+        type: string
+        default: ""
       probe_ticker:
-        description: "Probe ONE ticker (e.g. RELIANCE) — dumps the raw API shape to public/data/insider-debug.json WITHOUT touching insider-trades.json. Leave blank for a full universe run."
+        description: "Inspect ONE ticker only — dumps the raw API shape to insider-debug.json WITHOUT touching insider-trades.json. Takes precedence over `tickers` if both are set."
         required: false
         type: string
         default: ""
@@ -30,6 +35,7 @@ jobs:
         env:
           MUNS_TOKEN: ${{ secrets.MUNS_TOKEN }}
           MUNS_PROBE_TICKER: ${{ inputs.probe_ticker }}
+          MUNS_TICKERS: ${{ inputs.tickers }}
         run: node screener-test/scrape-insider-muns.mjs
 
       - name: Upload insider data (artifact)
@@ -44,18 +50,22 @@ jobs:
 
       - name: Commit refreshed insider data
         if: success() && github.ref == 'refs/heads/main'
+        env:
+          BATCH_TICKERS: ${{ inputs.tickers }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # A probe run only rewrites insider-debug.json; a full run rewrites
-          # insider-trades.json. Stage whichever actually changed.
+          # A probe run only rewrites insider-debug.json; a full or batch run
+          # rewrites insider-trades.json. Stage whichever actually changed.
           [ -f public/data/insider-trades.json ] && git add public/data/insider-trades.json || true
           [ -f public/data/insider-debug.json ]  && git add public/data/insider-debug.json  || true
           if git diff --cached --quiet; then
             echo "No insider data changes to commit."
             exit 0
           fi
-          git commit -m "Insider scrape via muns.io ($(date -u +%Y-%m-%d))"
+          MSG="Insider scrape via muns.io ($(date -u +%Y-%m-%d))"
+          if [ -n "$BATCH_TICKERS" ]; then MSG="Insider refresh (muns.io): $BATCH_TICKERS ($(date -u +%Y-%m-%d))"; fi
+          git commit -m "$MSG"
           for attempt in 1 2 3 4; do
             if git push origin HEAD:main; then
               echo "Push succeeded on attempt $attempt."

@@ -50,6 +50,7 @@ const DELAY_MS      = Number(process.env.MUNS_DELAY_MS || 120);   // gap between
 const MAX_RETRIES   = Number(process.env.MUNS_MAX_RETRIES || 3);
 const PROBE_TICKER  = (process.env.MUNS_PROBE_TICKER || "").trim().toUpperCase();
 const FIXTURE_PATH  = (process.env.MUNS_FIXTURE || "").trim();
+const TICKERS_ENV   = (process.env.MUNS_TICKERS || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -323,6 +324,60 @@ async function runProbe() {
   console.log(`Wrote ${DEBUG_PATH}`);
 }
 
+// Merge mode: refresh only an explicit set of tickers into the existing
+// insider-trades.json, preserving every other company. Powers the manual,
+// incremental 5-at-a-time rollout via the workflow's `tickers` input. Each
+// named ticker's entry is REPLACED with its fresh muns aggregate (or removed
+// if it has no in-window disclosures); re-running the same ticker is
+// idempotent — no additive double-counting.
+async function runBatch(tickers) {
+  console.log(`BATCH (merge) mode — refreshing ${tickers.length}: ${tickers.join(", ")}`);
+  let companies = {};
+  try {
+    const existing = JSON.parse(readFileSync(OUT_PATH, "utf8"));
+    companies = existing.companies || {};
+    console.log(`Loaded existing file: ${Object.keys(companies).length} companies preserved.`);
+  } catch {
+    console.log("No existing insider-trades.json — starting a fresh companies map.");
+  }
+  const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000);
+  const updated = [], emptied = [], failed = [];
+  for (const t of tickers) {
+    try {
+      const { entry } = aggregateTicker(parseRows(await fetchInsider(t)), cutoff);
+      if (entry.transactions > 0 || entry.pledges_excluded > 0) {
+        companies[t] = entry;
+        updated.push(`${t}: ${entry.transactions} trades / ${entry.pledges_excluded} pledges / net ${entry.net_shares >= 0 ? "+" : ""}${entry.net_shares} sh`);
+      } else if (companies[t]) {
+        delete companies[t];
+        emptied.push(`${t} (stale entry removed)`);
+      } else {
+        emptied.push(t);
+      }
+    } catch (err) {
+      failed.push(`${t}: ${err.message}`);
+    }
+    await sleep(DELAY_MS);
+  }
+  if (!updated.length && !emptied.length) {
+    console.error(`All ${tickers.length} requested ticker(s) failed — not writing. Errors: ${failed.join(" | ")}`);
+    process.exit(1);
+  }
+  const totalTrades = Object.values(companies).reduce((a, c) => a + (c.transactions || 0) + (c.pledges_excluded || 0), 0);
+  mkdirSync(dirname(OUT_PATH), { recursive: true });
+  writeFileSync(OUT_PATH, JSON.stringify({
+    generated_at: new Date().toISOString(),
+    source: "muns.io filings/insider_trades (BSE + Trendlyne) — rolling merge",
+    lookback_days: LOOKBACK_DAYS,
+    total_trades: totalTrades,
+    companies,
+  }) + "\n");
+  console.log(`\nUpdated (${updated.length}): ${updated.join("  |  ") || "none"}`);
+  if (emptied.length) console.log(`No in-window disclosures (${emptied.length}): ${emptied.join(", ")}`);
+  if (failed.length) console.log(`Failed (${failed.length}): ${failed.join("  |  ")}`);
+  console.log(`Wrote ${OUT_PATH} — ${Object.keys(companies).length} companies total, ${totalTrades} trades.`);
+}
+
 async function run() {
   if (FIXTURE_PATH) { runFixture(); return; }
 
@@ -335,6 +390,7 @@ async function run() {
   }
 
   if (PROBE_TICKER) { await runProbe(); return; }
+  if (TICKERS_ENV.length) { await runBatch(TICKERS_ENV); return; }
 
   const tickers = loadTickers();
   console.log(`Universe: ${tickers.length} tickers · country=${COUNTRY} · lookback=${LOOKBACK_DAYS}d · concurrency=${CONCURRENCY}`);
