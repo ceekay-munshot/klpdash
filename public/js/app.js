@@ -1417,7 +1417,10 @@ async function renderHistory() {
       return;
     }
   }
-  const { idx, snapshots, benchmark, lkp } = state.cache.history;
+  const { idx, snapshots, benchmark } = state.cache.history;
+  // Uploaded basket (localStorage) takes precedence over the committed file so
+  // an Excel upload previews instantly; cleared via "Reset to published".
+  const lkp = lkpOverride() || state.cache.history.lkp;
 
   // Per-ticker timeline of points {date, close, composite, rating, pillars}
   // plus identity (name, sector). Pillars are kept for forensics decomp
@@ -1692,7 +1695,7 @@ async function renderHistory() {
   }).join("");
 
   const lkpPicks = buildLkpPicks(lkp, byTicker, todayClose);
-  const lkpCard = renderLkpCard(lkpPicks);
+  const lkpCard = renderLkpCard(lkpPicks, !!lkpOverride());
 
   host.innerHTML = `
     ${heroHeader}
@@ -1708,6 +1711,11 @@ async function renderHistory() {
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
   $$("#history-content .lkp-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(lkpPicks[Number(el.dataset.lkp)])));
+  // LKP Excel-upload controls
+  $("#lkp-upload-btn")?.addEventListener("click", () => $("#lkp-file-input")?.click());
+  $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
+  $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
+  $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
 
   // Allocation editor — preset chips snap to common ₹ amounts, the
   // number input takes any custom value. % return, drawdown, alpha are
@@ -1756,8 +1764,8 @@ function buildLkpPicks(lkp, byTicker, todayClose) {
 // open the same price+rating drill chart; picks below our market-cap coverage
 // render greyed with the client's levels but no live tracking. Returns "" when
 // there are no picks.
-function renderLkpCard(picks) {
-  if (!picks || !picks.length) return "";
+function renderLkpCard(picks, isOverride) {
+  if ((!picks || !picks.length) && !isOverride) return "";
   const body = picks.map((p, i) => {
     const covered = p.covered;
     const { color, initials } = avatarFor(p.name || p.selection || "—");
@@ -1767,6 +1775,7 @@ function renderLkpCard(picks) {
       ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(p.currentRating)}">${escapeHtml(p.currentRating)}</span>`
       : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-amber-50 text-amber-700 ring-amber-200" title="${escapeHtml(p.out_reason || "Outside our coverage universe")}">NOT COVERED</span>`;
     const pill = (label, val, isSL) => {
+      if (val == null) return "";
       if (!covered) return `<span class="px-1.5 py-0.5 rounded bg-slate-50 ring-1 ring-slate-100 text-slate-400 text-[10px] font-semibold tabular-nums">${label} ₹${formatPrice(val)}</span>`;
       const hit = isSL ? p.close <= val : p.close >= val;
       const dist = (val / p.close - 1) * 100;
@@ -1818,14 +1827,31 @@ function renderLkpCard(picks) {
   }).join("");
 
   const coveredCount = picks.filter((p) => p.in_universe).length;
+  const uploadBtn = `
+    <input id="lkp-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+    <button id="lkp-upload-btn" type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition">⬆ Upload Excel</button>`;
+  const overrideBanner = isOverride ? `
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2">
+      <div class="text-[11px] text-amber-800 leading-relaxed"><span class="font-bold">Preview only</span> — this uploaded basket is saved on <span class="font-semibold">this device</span>, not yet published to other viewers. Download it and commit as <code class="bg-amber-100 px-1 rounded">public/data/lkp-manual-picks.json</code> (or send it to me) to publish.</div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button id="lkp-download-btn" type="button" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700">Download JSON</button>
+        <button id="lkp-reset-btn" type="button" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-slate-300">Reset to published</button>
+      </div>
+    </div>` : "";
+  const emptyState = !picks.length ? `<div class="text-center text-slate-500 text-sm py-8">No picks yet — click <span class="font-semibold">Upload Excel</span> to load the client's basket.<br><span class="text-[11px] text-slate-400">Expected columns: Selection, Entry (range ok), TGT1, TGT2, SL.</span></div>` : "";
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mt-4">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
         <h2 class="font-display font-bold text-slate-900 text-base">LKP Manual picks</h2>
-        <span class="text-[11px] text-slate-500">${coveredCount}/${picks.length} in coverage · click a covered row for its chart</span>
+        <div class="flex items-center gap-3">
+          ${picks.length ? `<span class="text-[11px] text-slate-500 hidden sm:inline">${coveredCount}/${picks.length} in coverage · click a covered row for its chart</span>` : ""}
+          ${uploadBtn}
+        </div>
       </div>
       <p class="text-[11px] text-slate-500 mb-3 leading-relaxed">Client's hand-picked basket. Entry is the client's range (midpoint used for return); <span class="font-semibold">T1/T2</span> are targets, <span class="font-semibold">SL</span> the stop-loss. The rating chip is <span class="font-semibold">our system's</span> current read on the same stock — a cross-check against the manual call.</p>
+      ${overrideBanner}
       <div class="space-y-1.5">${body}</div>
+      ${emptyState}
     </div>`;
 }
 
@@ -1835,6 +1861,7 @@ function renderLkpCard(picks) {
 function renderLkpTargets(pick) {
   const close = pick.close;
   const card = (label, val, isSL) => {
+    if (val == null) return "";
     const hit = isSL ? close <= val : close >= val;
     const dist = (val / close - 1) * 100;
     const distCls = hit ? (isSL ? "text-rose-700" : "text-emerald-700") : "text-slate-600";
@@ -1850,6 +1877,127 @@ function renderLkpTargets(pick) {
     ${card("Target 2", pick.tgt2, false)}
     ${card("Stop-loss", pick.sl, true)}
   </div>`;
+}
+
+// ---------------- LKP Excel upload ----------------
+// Client self-service: parse an uploaded Excel/CSV in the browser, match each
+// row to our NSE symbol, and preview the basket instantly (localStorage). The
+// committed public/data/lkp-manual-picks.json stays the shared source of
+// truth — "Download JSON" exports the parsed basket so it can be committed.
+const LKP_OVERRIDE_KEY = "lkp_manual_override_v1";
+function lkpOverride() { try { const s = localStorage.getItem(LKP_OVERRIDE_KEY); return s ? JSON.parse(s) : null; } catch { return null; } }
+function saveLkpOverride(d) { try { localStorage.setItem(LKP_OVERRIDE_KEY, JSON.stringify(d)); } catch {} }
+function clearLkpOverride() { try { localStorage.removeItem(LKP_OVERRIDE_KEY); } catch {} }
+
+const lkpNk = (s) => String(s == null ? "" : s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+function lkpNum(v) { const n = Number(String(v == null ? "" : v).replace(/[,₹\s]/g, "")); return Number.isFinite(n) ? n : null; }
+function lkpParseRange(s) {
+  const str = String(s || "");
+  const m = str.match(/(\d[\d,]*\.?\d*)\s*(?:[-–—]|to)\s*(\d[\d,]*\.?\d*)/i);
+  if (m) return [lkpNum(m[1]), lkpNum(m[2])];
+  const one = lkpNum(str);
+  return one != null ? [one, one] : [null, null];
+}
+
+// Lazy-load SheetJS from CDN, only when an .xlsx is actually uploaded. CSV is
+// parsed natively (no dependency), so it always works even offline.
+let _xlsxPromise = null;
+function loadSheetJS() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (_xlsxPromise) return _xlsxPromise;
+  _xlsxPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    s.onload = () => resolve(window.XLSX);
+    s.onerror = () => reject(new Error("Couldn't load the Excel parser — check your connection, or save the sheet as .csv and upload that."));
+    document.head.appendChild(s);
+  });
+  return _xlsxPromise;
+}
+function lkpParseCsv(text) {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+  const cells = (l) => (l.match(/("(?:[^"]|"")*"|[^,]*)(?=,|$)/g) || []).map((c) => c.replace(/^"|"$/g, "").replace(/""/g, '"').trim());
+  const header = cells(lines[0]);
+  return lines.slice(1).map((l) => { const c = cells(l); const o = {}; header.forEach((h, i) => (o[h] = c[i] ?? "")); return o; });
+}
+async function lkpParseSheet(file) {
+  if ((file.name || "").toLowerCase().endsWith(".csv")) return lkpParseCsv(await file.text());
+  const XLSX = await loadSheetJS();
+  const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+}
+
+// Map an uploaded label to our NSE symbol using the latest snapshot universe.
+// Conservative: exact ticker, curated aliases, exact/unique normalized name —
+// no loose fuzzy that could mis-match.
+function buildLkpUniverse() {
+  const snaps = state.cache?.history?.snapshots || [];
+  const last = snaps[snaps.length - 1];
+  const m = new Map();
+  if (last) for (const s of last.stocks) if (s.ticker) m.set(s.ticker.toUpperCase(), lkpNk(s.name || ""));
+  return m;
+}
+const LKP_ALIAS = { EXIDE: "EXIDEIND", FEDERALBANK: "FEDERALBNK", ATHERENERGY: "ATHERENERG", ATHER: "ATHERENERG", LANDT: "LT", BAJAJFINANCE: "BAJFINANCE" };
+function lkpMatchTicker(label, universe) {
+  const L = lkpNk(label);
+  if (!L) return null;
+  if (universe.has(L)) return L;                                    // exact ticker
+  if (LKP_ALIAS[L] && universe.has(LKP_ALIAS[L])) return LKP_ALIAS[L]; // curated alias
+  for (const [t, nName] of universe) if (nName && nName === L) return t; // exact normalized name
+  if (L.length >= 4) {
+    const tp = [...universe.keys()].filter((t) => t.startsWith(L));
+    if (tp.length === 1) return tp[0];                              // unique ticker prefix
+    const np = [...universe].filter(([, nName]) => nName && nName.startsWith(L));
+    if (np.length === 1) return np[0][0];                           // unique name prefix
+  }
+  return null;
+}
+function lkpRowToPick(row, universe) {
+  const get = (aliases) => { for (const [k, v] of Object.entries(row)) if (aliases.includes(lkpNk(k))) return v; return ""; };
+  const sel = String(get(["SELECTION", "STOCK", "TICKER", "SYMBOL", "SCRIP", "NAME", "COMPANY"]) || "").trim();
+  if (!sel) return null;
+  const [low, high] = lkpParseRange(get(["ENTRY", "ENTRYPRICE", "BUYRANGE", "BUY", "ENTRYRANGE", "RANGE"]));
+  const entry = (low != null && high != null) ? (low + high) / 2 : (low ?? high);
+  if (entry == null) return null;
+  const ticker = lkpMatchTicker(sel, universe);
+  return {
+    selection: sel.toUpperCase(),
+    ticker,
+    in_universe: !!ticker,
+    out_reason: ticker ? undefined : "Not matched to our coverage — check the NSE symbol, or it's below our market-cap floor",
+    entry_low: low ?? entry, entry_high: high ?? entry, entry,
+    tgt1: lkpNum(get(["TGT1", "TARGET1", "T1", "TARGET", "TGT"])),
+    tgt2: lkpNum(get(["TGT2", "TARGET2", "T2"])),
+    sl: lkpNum(get(["SL", "STOPLOSS", "STOP", "STOPLOSSPRICE"])),
+  };
+}
+async function handleLkpExcelUpload(file) {
+  try {
+    const rows = await lkpParseSheet(file);
+    const universe = buildLkpUniverse();
+    const picks = rows.map((r) => lkpRowToPick(r, universe)).filter(Boolean);
+    if (!picks.length) { alert("No valid rows found. Expected columns like: Selection, Entry, TGT1, TGT2, SL."); return; }
+    saveLkpOverride({ label: "LKP Manual picks", source: "Excel upload (browser preview)", generated_at: new Date().toISOString(), picks });
+    renderHistory();
+    const matched = picks.filter((p) => p.in_universe).length;
+    if (matched < picks.length) {
+      const miss = picks.filter((p) => !p.in_universe).map((p) => p.selection).join(", ");
+      alert(`Loaded ${picks.length} picks. ${matched} matched our coverage; ${picks.length - matched} not matched (${miss}). Those show greyed — fix the NSE symbol in the sheet and re-upload if needed.`);
+    }
+  } catch (e) {
+    alert("Couldn't read that file: " + (e?.message || e));
+  }
+}
+function downloadLkpJson() {
+  const data = lkpOverride();
+  if (!data) return;
+  const blob = new Blob([JSON.stringify(data, null, 2) + "\n"], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "lkp-manual-picks.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // Tiny portfolio-value sparkline drawn inside the backtest card. Shows
