@@ -1,12 +1,12 @@
-name: Insider trades scrape
+name: Insider trades scrape (muns.io)
 
 on:
-  # Scheduled runs live in daily-refresh.yml. Kept here for manual reruns
-  # and ad-hoc debugging via the watch_tickers input.
+  # Scheduled runs live in daily-refresh.yml. This manual entrypoint is for
+  # ad-hoc reruns and for probing the muns.io API shape via probe_ticker.
   workflow_dispatch:
     inputs:
-      watch_tickers:
-        description: "Optional: comma-separated tickers to dump every raw API row for, in the workflow logs (debug)"
+      probe_ticker:
+        description: "Probe ONE ticker (e.g. RELIANCE) — dumps the raw API shape to public/data/insider-debug.json WITHOUT touching insider-trades.json. Leave blank for a full universe run."
         required: false
         type: string
         default: ""
@@ -26,21 +26,20 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Run insider scraper
+      - name: Run insider scraper (muns.io)
         env:
-          WATCH_TICKERS: ${{ inputs.watch_tickers }}
-          # Firecrawl supplement fills in the last ~30 days that NSE's
-          # public PIT API doesn't surface — see PR #97. Required for
-          # recent disclosures (Sells, Pledges) to appear in the output.
-          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-        run: node screener-test/scrape-insider.mjs
+          MUNS_TOKEN: ${{ secrets.MUNS_TOKEN }}
+          MUNS_PROBE_TICKER: ${{ inputs.probe_ticker }}
+        run: node screener-test/scrape-insider-muns.mjs
 
       - name: Upload insider data (artifact)
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: insider-trades
-          path: public/data/insider-trades.json
+          path: |
+            public/data/insider-trades.json
+            public/data/insider-debug.json
           if-no-files-found: warn
 
       - name: Commit refreshed insider data
@@ -48,17 +47,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/insider-trades.json
-          # When WATCH_TICKERS was set, the scraper also wrote a debug
-          # dump file with the raw API rows for those tickers — commit
-          # it too so we can audit what NSE returned without needing
-          # to log into GitHub Actions to read the workflow logs.
-          [ -f public/data/insider-debug.json ] && git add public/data/insider-debug.json || true
+          # A probe run only rewrites insider-debug.json; a full run rewrites
+          # insider-trades.json. Stage whichever actually changed.
+          [ -f public/data/insider-trades.json ] && git add public/data/insider-trades.json || true
+          [ -f public/data/insider-debug.json ]  && git add public/data/insider-debug.json  || true
           if git diff --cached --quiet; then
             echo "No insider data changes to commit."
             exit 0
           fi
-          git commit -m "Daily insider-trades refresh ($(date -u +%Y-%m-%d))"
+          git commit -m "Insider scrape via muns.io ($(date -u +%Y-%m-%d))"
           for attempt in 1 2 3 4; do
             if git push origin HEAD:main; then
               echo "Push succeeded on attempt $attempt."

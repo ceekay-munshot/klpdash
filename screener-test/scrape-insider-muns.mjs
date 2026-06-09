@@ -263,13 +263,19 @@ async function runProbe() {
   console.log(`Top-level type: ${Array.isArray(json) ? "array" : typeof json}`);
   if (!Array.isArray(json) && json) console.log(`Top-level keys: ${Object.keys(json).join(", ")}`);
   console.log(`Extracted ${rows.length} rows. First row keys: ${rows[0] ? Object.keys(rows[0]).join(", ") : "(none)"}`);
+  const breakdown = {};
+  for (const row of rows) {
+    const g = fieldGetter(row);
+    breakdown[classify(g(F.type), g(F.mode))] = (breakdown[classify(g(F.type), g(F.mode))] || 0) + 1;
+  }
+  console.log(`Classification across all rows: ${JSON.stringify(breakdown)}`);
   const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000);
   const { entry, inWindow, undated } = aggregateTicker(rows, cutoff);
   mkdirSync(dirname(DEBUG_PATH), { recursive: true });
   writeFileSync(DEBUG_PATH, JSON.stringify({
     probe: PROBE_TICKER, generated_at: new Date().toISOString(),
     top_level_keys: Array.isArray(json) ? null : Object.keys(json || {}),
-    row_count: rows.length, in_window: inWindow, undated,
+    row_count: rows.length, classification: breakdown, in_window: inWindow, undated,
     sample_rows: rows.slice(0, 5), aggregated: entry,
   }, null, 2) + "\n");
   console.log(`In-window: ${inWindow}, undated: ${undated}. Aggregated:\n${JSON.stringify(entry, null, 2)}`);
@@ -296,12 +302,18 @@ async function run() {
 
   const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86400000);
   const companies = {};
-  let totalTrades = 0, withData = 0, undatedTotal = 0;
+  let totalTrades = 0, withData = 0, undatedTotal = 0, inWindowTotal = 0;
   for (const [t, rows] of Object.entries(results)) {
     if (!rows.length) continue;
     const { entry, inWindow, undated } = aggregateTicker(rows, cutoff);
     undatedTotal += undated;
-    if (inWindow > 0) {
+    inWindowTotal += inWindow;
+    // Keep a ticker only if it has a real classified disclosure. If a schema
+    // drift made classify() return "other" for every row, transactions and
+    // pledges_excluded stay 0 for every ticker → withData ends up 0 → the
+    // guard below preserves the last-good file instead of overwriting the
+    // whole universe with zero-trade entries.
+    if (entry.transactions > 0 || entry.pledges_excluded > 0) {
       companies[t] = entry;
       withData++;
       totalTrades += entry.transactions + entry.pledges_excluded;
@@ -317,7 +329,10 @@ async function run() {
     // Whole run produced nothing usable (transient outage / schema drift).
     // Preserve the last-good file rather than overwrite it with zeros, which
     // would flip the Insider rule to N/A across the entire universe.
-    console.error("No in-window disclosures from any ticker — preserving last-good insider-trades.json and failing the step.");
+    const hint = inWindowTotal > 0
+      ? `Saw ${inWindowTotal} in-window rows but classified none as Buy/Sell/Pledge — the API's transaction labels probably changed. Run with MUNS_PROBE_TICKER=RELIANCE and inspect insider-debug.json.`
+      : "No in-window rows returned at all — check the response envelope, date parsing, or auth.";
+    console.error(`No usable insider data — preserving last-good insider-trades.json and failing the step.\n  ${hint}`);
     process.exit(1);
   }
 
