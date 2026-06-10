@@ -1526,12 +1526,18 @@ async function renderHistory() {
   const cohortTracker = currentCohort
     ? renderCohortTracker(cohorts, currentCohort, cohortSeriesData, cohortClientPicks, todayClose)
     : "";
+  // Previous-month summary — silently empty today (one cohort only);
+  // auto-appears once July 1 lands a second cohort.
+  const getClientPicksForMonth = (m) => lkpPicksForMonth(lkp, m, mostRecentMonth);
+  const prevMonthCard = currentCohort
+    ? renderPrevMonthSummary(cohorts, getClientPicksForMonth, niftyOn, currentCohort.month)
+    : "";
 
   // No STRONG BUYs yet? Render the cohort tracker on its own so a flat
   // period (like today) doesn't hide the founder's feature.
   if (picks.length === 0) {
     if (currentCohort) {
-      host.innerHTML = cohortTracker;
+      host.innerHTML = cohortTracker + prevMonthCard;
       $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
       if (cohortSeriesData) setupCohortHover(cohortSeriesData);
     } else {
@@ -1627,6 +1633,7 @@ async function renderHistory() {
 
   host.innerHTML = `
     ${cohortTracker}
+    ${prevMonthCard}
     ${heroHeader}
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-3">
@@ -2238,11 +2245,14 @@ function cohortSeries(cohort, clientPicksInput, niftyOn) {
 
 const COHORT_COLOR = { ours: "#6366f1", client: "#f59e0b", nifty: "#64748b" };
 
-function renderCohortTracker(cohorts, current, series, lkp, todayClose) {
+function renderCohortTracker(cohorts, current, series, clientPicks, todayClose) {
   if (!current) return "";
   const monthLabel = formatYearMonth(current.month);
   const days = series.points.length - 1;                   // days since entry (0-indexed in series)
   const last = series.points[series.points.length - 1];
+  // 🔁 Repeater detection — tickers that lived in any prior cohort too.
+  // Empty today (only one cohort exists); activates on July 1.
+  const repeaters = findRepeaters(current, cohorts);
 
   // Month picker — most recent first
   const monthOpts = cohorts.slice().reverse().map((c) =>
@@ -2298,6 +2308,13 @@ function renderCohortTracker(cohorts, current, series, lkp, todayClose) {
     const rating = cur?.rating || s.rating;
     const ratingCls = COHORT_RATING_BG[rating] || "bg-slate-100 text-slate-700 ring-slate-200";
     const fail = !!cur?.hardFailed;
+    // Repeater badge — shown only when this ticker was in a prior
+    // cohort. Tooltip lists which months. Empty today, activates as
+    // more cohorts accumulate.
+    const priorMonths = repeaters.get(s.ticker) || [];
+    const repeatBadge = priorMonths.length > 0
+      ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[9px] font-bold uppercase tracking-wider mr-1" title="Also in: ${priorMonths.map(formatYearMonth).join(', ')}">🔁 ${priorMonths.length}m</span>`
+      : "";
     return `
       <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${fail ? "bg-rose-50/40 ring-1 ring-rose-200" : "hover:bg-slate-50"}">
         <div class="col-span-5 sm:col-span-4 min-w-0">
@@ -2309,6 +2326,7 @@ function renderCohortTracker(cohorts, current, series, lkp, todayClose) {
           <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${ratingCls}">${escapeHtml(rating || "—")}</span>
         </div>
         <div class="col-span-2 sm:col-span-3 text-right">
+          ${repeatBadge}
           ${fail ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200 text-[9px] font-bold uppercase tracking-wider">⚠ hard-fail</span>` : ""}
         </div>
       </div>
@@ -2579,6 +2597,85 @@ function formatYearMonth(ym) {
   const [y, m] = ym.split("-");
   const names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   return `${names[Number(m) - 1] || m} ${y}`;
+}
+
+// Detect which current-cohort tickers also appeared in any PRIOR
+// cohort's locked top 7. For each repeater, return the list of prior
+// months it was in — the cohort table renders a 🔁 badge with that
+// list as the tooltip. Empty array until we have ≥ 2 cohorts (organic
+// activation come July 1).
+function findRepeaters(currentCohort, allCohorts) {
+  if (!currentCohort || allCohorts.length < 2) return new Map();
+  const currentTickers = new Set(currentCohort.top7.map((s) => s.ticker));
+  const priorByTicker = new Map();                       // ticker → [month, month, ...]
+  for (const c of allCohorts) {
+    if (c.month >= currentCohort.month) continue;
+    for (const s of c.top7) {
+      if (!currentTickers.has(s.ticker)) continue;
+      if (!priorByTicker.has(s.ticker)) priorByTicker.set(s.ticker, []);
+      priorByTicker.get(s.ticker).push(c.month);
+    }
+  }
+  return priorByTicker;
+}
+
+// Previous month summary card — final outcome of the cohort that just
+// closed. Renders only when ≥ 2 cohorts exist; today (June 2026) is
+// the first cohort so this is silently absent. Comes alive
+// automatically once July 1's snapshot lands and June becomes the
+// "previous" month.
+function renderPrevMonthSummary(cohorts, getClientPicks, niftyOn, currentMonth) {
+  if (!cohorts || cohorts.length < 2) return "";
+  // The "previous" month is the cohort immediately before the one
+  // currently selected. If user scrubs back via the picker, we always
+  // show the cohort right before that one.
+  const idx = cohorts.findIndex((c) => c.month === currentMonth);
+  if (idx <= 0) return "";
+  const prev = cohorts[idx - 1];
+
+  const clientPicks = getClientPicks(prev.month);
+  const series = cohortSeries(prev, clientPicks, niftyOn);
+  const final = series.points[series.points.length - 1];
+  if (!final) return "";
+
+  const fmt = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const cls = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
+  const alpha = (final.ourAvg != null && final.niftyRet != null) ? final.ourAvg - final.niftyRet : null;
+  const daysHeld = series.points.length - 1;
+
+  // Stock-by-stock row for the prior cohort
+  const stockRows = prev.top7.map((s) => {
+    const cur = final.perStockOurs[s.ticker];
+    const ret = cur?.ret;
+    const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    return `
+      <div class="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-slate-50 text-[11px]">
+        <span class="font-semibold text-slate-700 truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</span>
+        <span class="tabular-nums font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
+      <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Previous month · closed</div>
+          <h2 class="font-display font-bold text-slate-900 text-base mt-0.5">${formatYearMonth(prev.month)} cohort · final outcome</h2>
+          <div class="text-[11px] text-slate-500 mt-0.5">Entry ${prev.entryDate} → close of ${final.date} · ${daysHeld} trading day${daysHeld === 1 ? "" : "s"}</div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ring-1 ring-slate-200 bg-slate-50 text-[11px]"><span class="w-2 h-2 rounded-full" style="background:${COHORT_COLOR.ours}"></span><span class="text-slate-500">Ours</span> <span class="font-bold tabular-nums ${cls(final.ourAvg)}">${fmt(final.ourAvg)}</span></span>
+          ${series.hasClient ? `<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ring-1 ring-slate-200 bg-slate-50 text-[11px]"><span class="w-2 h-2 rounded-full" style="background:${COHORT_COLOR.client}"></span><span class="text-slate-500">Client</span> <span class="font-bold tabular-nums ${cls(final.clientAvg)}">${fmt(final.clientAvg)}</span></span>` : ""}
+          ${series.hasNifty ? `<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ring-1 ring-slate-200 bg-slate-50 text-[11px]"><span class="w-2 h-2 rounded-full" style="background:${COHORT_COLOR.nifty}"></span><span class="text-slate-500">Nifty</span> <span class="font-bold tabular-nums ${cls(final.niftyRet)}">${fmt(final.niftyRet)}</span></span>` : ""}
+          ${alpha != null ? `<span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg ring-1 ring-slate-200 bg-slate-50 text-[11px]"><span class="text-slate-500">α</span> <span class="font-bold tabular-nums ${cls(alpha)}">${fmt(alpha)}</span></span>` : ""}
+        </div>
+      </div>
+      <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-0.5">
+        ${stockRows}
+      </div>
+    </div>
+  `;
 }
 
 function renderHistoryEmpty(reason) {
