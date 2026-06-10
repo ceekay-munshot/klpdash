@@ -1510,8 +1510,33 @@ async function renderHistory() {
 
   picks.sort((a, b) => b.ret - a.ret);
 
+  // --- Monthly cohort tracker (founder-asked feature) ---
+  // Independent of the STRONG BUY history above — cohort uses top 7 by
+  // composite regardless of band, so it still renders on flat months
+  // where no stock is currently STRONG BUY (computed BEFORE the empty-
+  // picks early return below).
+  const cohorts = buildCohorts(snapshots);
+  const mostRecentMonth = cohorts[cohorts.length - 1]?.month || null;
+  const selectedMonth = state.cohortMonth && cohorts.find((c) => c.month === state.cohortMonth)
+    ? state.cohortMonth
+    : mostRecentMonth;
+  const currentCohort = cohorts.find((c) => c.month === selectedMonth) || null;
+  const cohortClientPicks = currentCohort ? lkpPicksForMonth(lkp, currentCohort.month, mostRecentMonth) : [];
+  const cohortSeriesData = currentCohort ? cohortSeries(currentCohort, cohortClientPicks, niftyOn) : null;
+  const cohortTracker = currentCohort
+    ? renderCohortTracker(cohorts, currentCohort, cohortSeriesData, cohortClientPicks, todayClose)
+    : "";
+
+  // No STRONG BUYs yet? Render the cohort tracker on its own so a flat
+  // period (like today) doesn't hide the founder's feature.
   if (picks.length === 0) {
-    host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+    if (currentCohort) {
+      host.innerHTML = cohortTracker;
+      $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
+      if (cohortSeriesData) setupCohortHover(cohortSeriesData);
+    } else {
+      host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+    }
     return;
   }
 
@@ -1519,21 +1544,6 @@ async function renderHistory() {
   const avg = picks.reduce((a, b) => a + b.ret, 0) / picks.length;
   const best = picks[0];
   const dateRange = idx.dates.length > 1 ? `${idx.dates[0]} → ${idx.dates[idx.dates.length - 1]}` : idx.dates[0];
-
-  // --- Monthly cohort tracker (founder-asked feature) ---
-  // Lock the SPIP top 7 at each month-end snapshot, then plot their
-  // daily average return alongside the client's locked LKP basket and
-  // the Nifty 50 for the same window. Most recent cohort selected by
-  // default; analyst can scrub backward via the month picker.
-  const cohorts = buildCohorts(snapshots);
-  const selectedMonth = state.cohortMonth && cohorts.find((c) => c.month === state.cohortMonth)
-    ? state.cohortMonth
-    : (cohorts[cohorts.length - 1]?.month || null);
-  const currentCohort = cohorts.find((c) => c.month === selectedMonth) || null;
-  const cohortSeriesData = currentCohort ? cohortSeries(currentCohort, snapshots, lkp, niftyOn) : null;
-  const cohortTracker = currentCohort
-    ? renderCohortTracker(cohorts, currentCohort, cohortSeriesData, lkp, todayClose)
-    : "";
 
   // Portfolio ₹-backtest removed — funds judge on relative % / alpha, not the
   // absolute "₹X invested → ₹Y today" simulation. Avg return %, win rate, and
@@ -2106,8 +2116,11 @@ function buildCohorts(snapshots) {
     const prior = byMonth.get(months[i - 1]);
     const entrySnap = prior[prior.length - 1];
     const tracking = byMonth.get(month);
+    // Hard-failed stocks are excluded from the SPIP basket elsewhere in
+    // the app — the cohort mirrors that, so we never lock in a stock the
+    // strategy itself wouldn't have held.
     const top7 = entrySnap.stocks
-      .filter((s) => s.composite != null && s.dataComplete)
+      .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
       .sort((a, b) => b.composite - a.composite)
       .slice(0, 7);
     out.push({ month, entryDate: entrySnap.date, entrySnap, tracking, top7 });
@@ -2115,38 +2128,62 @@ function buildCohorts(snapshots) {
   return out;
 }
 
+// Per-month client basket lookup.
+// Preferred shape: lkp.picksByMonth["YYYY-MM"] -> array of pick objects.
+// Legacy fallback: lkp.picks (single basket). The fallback only applies
+// to the MOST RECENT cohort month, so uploading a new latest basket
+// doesn't silently rewrite client baskets in older months' charts.
+function lkpPicksForMonth(lkp, cohortMonth, mostRecentMonth) {
+  if (!lkp) return [];
+  if (lkp.picksByMonth && Array.isArray(lkp.picksByMonth[cohortMonth])) {
+    return lkp.picksByMonth[cohortMonth];
+  }
+  if (cohortMonth === mostRecentMonth && Array.isArray(lkp.picks)) {
+    return lkp.picks;
+  }
+  return [];
+}
+
 // Compute the three time series for the cohort chart. All series start
 // at 0% on the entry date. Each track point includes per-stock returns
 // + the running rating per ticker so the cohort table can show the
 // latest state and any hard-fail alert.
-function cohortSeries(cohort, snapshots, lkp, niftyOn) {
+//
+// Important: missing closes are forward-filled from the last known
+// price so the cohort denominator stays at its fixed size (we're
+// modelling a HELD basket — a missing print doesn't shrink the basket).
+function cohortSeries(cohort, clientPicksInput, niftyOn) {
   const ourEntry = {};
   for (const s of cohort.top7) ourEntry[s.ticker] = s.close;
+  const ourLastClose = { ...ourEntry };                  // forward-fill state
+  const ourLastRating = {};
+  for (const s of cohort.top7) ourLastRating[s.ticker] = s.rating || null;
 
-  // Client cohort: in-universe LKP tickers. Per founder's "client enters
-  // at month-end" framing, cost basis is the month-end snapshot CLOSE
-  // (not the LKP file's nominal entry range), so both baskets start the
-  // chart at exactly 0%. The LKP file's entry/targets/SL are still
-  // surfaced in the separate LKP card below.
-  const clientPicks = (lkp?.picks || []).filter((p) => p.in_universe && p.ticker);
+  // Client cohort: in-universe LKP tickers for THIS month. Per the
+  // founder's "client enters at month-end" framing, cost basis is the
+  // month-end snapshot CLOSE (not the LKP file's nominal entry range),
+  // so both baskets start the chart at exactly 0%. The LKP file's
+  // entry/targets/SL still surface in the separate LKP card below.
+  const clientPicks = (clientPicksInput || []).filter((p) => p && p.in_universe && p.ticker);
   const clientEntry = {};
   for (const p of clientPicks) {
     const s = cohort.entrySnap.stocks.find((x) => x.ticker === p.ticker);
     if (s && s.close != null) clientEntry[p.ticker] = s.close;
   }
+  const clientLastClose = { ...clientEntry };
 
   const niftyAtEntry = niftyOn(cohort.entryDate);
 
   // Day 0 — both baskets at 0%, Nifty at 0%.
   const day0PerStock = {};
-  for (const t of Object.keys(ourEntry)) day0PerStock[t] = { rating: cohort.top7.find((x) => x.ticker === t)?.rating || null, close: ourEntry[t], ret: 0 };
+  for (const t of Object.keys(ourEntry)) day0PerStock[t] = { rating: ourLastRating[t], close: ourEntry[t], ret: 0 };
   const points = [{
     date: cohort.entryDate,
     ourAvg: 0,
-    clientAvg: clientPicks.length ? 0 : null,
+    clientAvg: Object.keys(clientEntry).length ? 0 : null,
     niftyRet: niftyAtEntry != null ? 0 : null,
     perStockOurs: day0PerStock,
-    perStockClient: Object.fromEntries(clientPicks.map((p) => [p.ticker, { close: p.entry, ret: 0 }])),
+    perStockClient: Object.fromEntries(Object.entries(clientEntry).map(([t, c]) => [t, { close: c, ret: 0 }])),
   }];
 
   // For each tracking day, compute per-stock returns + averages.
@@ -2155,9 +2192,14 @@ function cohortSeries(cohort, snapshots, lkp, niftyOn) {
     let ourSum = 0, ourN = 0;
     for (const ticker of Object.keys(ourEntry)) {
       const s = day.stocks.find((x) => x.ticker === ticker);
-      if (!s || s.close == null) { perOurs[ticker] = { rating: null, close: null, ret: null }; continue; }
-      const r = (s.close / ourEntry[ticker] - 1) * 100;
-      perOurs[ticker] = { rating: s.rating, close: s.close, ret: r, hardFailed: !!s.hardFailed };
+      let close = s?.close;
+      let stale = false;
+      if (close == null) { close = ourLastClose[ticker]; stale = true; }
+      else { ourLastClose[ticker] = close; }
+      if (s?.rating != null) ourLastRating[ticker] = s.rating;
+      if (close == null) { perOurs[ticker] = { rating: ourLastRating[ticker], close: null, ret: null }; continue; }
+      const r = (close / ourEntry[ticker] - 1) * 100;
+      perOurs[ticker] = { rating: ourLastRating[ticker], close, ret: r, hardFailed: !!s?.hardFailed, stale };
       ourSum += r; ourN++;
     }
     const ourAvg = ourN > 0 ? ourSum / ourN : null;
@@ -2166,9 +2208,13 @@ function cohortSeries(cohort, snapshots, lkp, niftyOn) {
     let clSum = 0, clN = 0;
     for (const ticker of Object.keys(clientEntry)) {
       const s = day.stocks.find((x) => x.ticker === ticker);
-      if (!s || s.close == null) { perClient[ticker] = { close: null, ret: null }; continue; }
-      const r = (s.close / clientEntry[ticker] - 1) * 100;
-      perClient[ticker] = { close: s.close, ret: r };
+      let close = s?.close;
+      let stale = false;
+      if (close == null) { close = clientLastClose[ticker]; stale = true; }
+      else { clientLastClose[ticker] = close; }
+      if (close == null) { perClient[ticker] = { close: null, ret: null }; continue; }
+      const r = (close / clientEntry[ticker] - 1) * 100;
+      perClient[ticker] = { close, ret: r, stale };
       clSum += r; clN++;
     }
     const clientAvg = clN > 0 ? clSum / clN : null;
@@ -2424,7 +2470,7 @@ function renderCohortChart(series) {
       <circle id="cohort-hover-ours" cx="0" cy="0" r="4" fill="#fff" stroke="${COHORT_COLOR.ours}" stroke-width="2" opacity="0" />
       <circle id="cohort-hover-client" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.client}" stroke-width="2" opacity="0" />
       <circle id="cohort-hover-nifty" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.nifty}" stroke-width="2" opacity="0" />
-      <rect id="cohort-hover-capture" x="${M.left}" y="${M.top}" width="${innerW}" height="${innerH}" fill="transparent" />
+      <rect id="cohort-hover-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
     </svg>
   `;
 }
@@ -2655,7 +2701,7 @@ function openHistoryDrill(pick) {
     <line id="hist-guide" x1="0" y1="${M.top}" x2="0" y2="${(TAPE_Y + TAPE_H).toFixed(2)}" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2 3" opacity="0" />
     <circle id="hist-hover-halo" cx="0" cy="0" r="14" fill="#6366f1" fill-opacity="0.16" opacity="0" />
     <circle id="hist-hover-point" cx="0" cy="0" r="6" fill="#fff" stroke="#6366f1" stroke-width="2.5" opacity="0" />
-    <rect id="hist-hover-capture" x="${M.left}" y="${M.top}" width="${innerW}" height="${(innerH + TAPE_GAP + TAPE_H).toFixed(2)}" fill="transparent" />
+    <rect id="hist-hover-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
   `;
 
   // Rating legend (replaces "big rings = ..." footer)
