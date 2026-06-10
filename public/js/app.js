@@ -251,6 +251,21 @@ function saveAllocPerPick(n) {
   try { localStorage.setItem(ALLOC_KEY, String(n)); } catch {}
 }
 
+// Client's locked-in cohort, one per month. Founder asked for parity
+// with the way the firm actually runs: at each month-end, the client
+// picks their own 7 stocks (CSV upload here) and we track them along-
+// side our SPIP top 7. Keyed by month "YYYY-MM" (the month the cohort
+// is HELD, not the month-end entry date — June 2026 = "2026-06"; the
+// entry close comes from the last May snapshot).
+const CLIENT_COHORT_KEY = "klpdash-client-cohort-v1";
+function loadClientCohorts() {
+  try { return JSON.parse(localStorage.getItem(CLIENT_COHORT_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveClientCohorts(d) {
+  try { localStorage.setItem(CLIENT_COHORT_KEY, JSON.stringify(d)); } catch {}
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -277,6 +292,7 @@ const state = {
   watchOnly: false,
   pillarWeights: loadPillarWeights(),
   allocPerPick: loadAllocPerPick(),
+  cohortMonth: null,            // selected month in the History tab's cohort tracker
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -1494,8 +1510,33 @@ async function renderHistory() {
 
   picks.sort((a, b) => b.ret - a.ret);
 
+  // --- Monthly cohort tracker (founder-asked feature) ---
+  // Independent of the STRONG BUY history above — cohort uses top 7 by
+  // composite regardless of band, so it still renders on flat months
+  // where no stock is currently STRONG BUY (computed BEFORE the empty-
+  // picks early return below).
+  const cohorts = buildCohorts(snapshots);
+  const mostRecentMonth = cohorts[cohorts.length - 1]?.month || null;
+  const selectedMonth = state.cohortMonth && cohorts.find((c) => c.month === state.cohortMonth)
+    ? state.cohortMonth
+    : mostRecentMonth;
+  const currentCohort = cohorts.find((c) => c.month === selectedMonth) || null;
+  const cohortClientPicks = currentCohort ? lkpPicksForMonth(lkp, currentCohort.month, mostRecentMonth) : [];
+  const cohortSeriesData = currentCohort ? cohortSeries(currentCohort, cohortClientPicks, niftyOn) : null;
+  const cohortTracker = currentCohort
+    ? renderCohortTracker(cohorts, currentCohort, cohortSeriesData, cohortClientPicks, todayClose)
+    : "";
+
+  // No STRONG BUYs yet? Render the cohort tracker on its own so a flat
+  // period (like today) doesn't hide the founder's feature.
   if (picks.length === 0) {
-    host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+    if (currentCohort) {
+      host.innerHTML = cohortTracker;
+      $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
+      if (cohortSeriesData) setupCohortHover(cohortSeriesData);
+    } else {
+      host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+    }
     return;
   }
 
@@ -1585,6 +1626,7 @@ async function renderHistory() {
   const lkpCard = renderLkpCard(lkpPicks, !!lkpOverride());
 
   host.innerHTML = `
+    ${cohortTracker}
     ${heroHeader}
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-3">
@@ -1602,6 +1644,9 @@ async function renderHistory() {
   $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
+  // Cohort tracker month picker + hover wiring
+  $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
+  if (cohortSeriesData) setupCohortHover(cohortSeriesData);
 
 }
 
@@ -2035,6 +2080,507 @@ function heroStat(label, value, sub) {
   `;
 }
 
+// ---------------- Monthly Cohort Tracker ----------------
+// At each month-end, lock the SPIP basket's top 7 (highest composite,
+// regardless of band) as the cohort that's HELD through the next
+// month. Compute daily average return for that locked group, alongside
+// the client's LKP picks (same entry-month logic, midpoint of entry
+// range as cost basis) and Nifty over the same window. Three lines
+// on one chart so a fund manager can see the basket vs the client's
+// pick vs the index for each calendar month.
+
+const COHORT_RATING_BG = {
+  "STRONG BUY": "bg-emerald-100 text-emerald-700 ring-emerald-200",
+  "BUY":        "bg-blue-100 text-blue-700 ring-blue-200",
+  "WATCH":      "bg-amber-100 text-amber-700 ring-amber-200",
+  "AVOID":      "bg-rose-100 text-rose-700 ring-rose-200",
+  "FILTERED":   "bg-rose-50 text-rose-700 ring-rose-200",
+};
+
+// Build cohorts from the snapshot trail. One cohort per month, anchored
+// on the LAST snapshot date of the prior month (= the "month-end" close
+// the client would have used to enter at). Skips months with no prior
+// snapshot to anchor on.
+function buildCohorts(snapshots) {
+  const byMonth = new Map();
+  for (const snap of snapshots) {
+    const ym = snap.date.slice(0, 7);
+    if (!byMonth.has(ym)) byMonth.set(ym, []);
+    byMonth.get(ym).push(snap);
+  }
+  for (const arr of byMonth.values()) arr.sort((a, b) => a.date.localeCompare(b.date));
+  const months = [...byMonth.keys()].sort();
+  const out = [];
+  for (let i = 1; i < months.length; i++) {
+    const month = months[i];
+    const prior = byMonth.get(months[i - 1]);
+    const entrySnap = prior[prior.length - 1];
+    const tracking = byMonth.get(month);
+    // Hard-failed stocks are excluded from the SPIP basket elsewhere in
+    // the app — the cohort mirrors that, so we never lock in a stock the
+    // strategy itself wouldn't have held.
+    const top7 = entrySnap.stocks
+      .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
+      .sort((a, b) => b.composite - a.composite)
+      .slice(0, 7);
+    out.push({ month, entryDate: entrySnap.date, entrySnap, tracking, top7 });
+  }
+  return out;
+}
+
+// Per-month client basket lookup.
+// Preferred shape: lkp.picksByMonth["YYYY-MM"] -> array of pick objects.
+// Legacy fallback: lkp.picks (single basket). The fallback only applies
+// to the MOST RECENT cohort month, so uploading a new latest basket
+// doesn't silently rewrite client baskets in older months' charts.
+function lkpPicksForMonth(lkp, cohortMonth, mostRecentMonth) {
+  if (!lkp) return [];
+  if (lkp.picksByMonth && Array.isArray(lkp.picksByMonth[cohortMonth])) {
+    return lkp.picksByMonth[cohortMonth];
+  }
+  if (cohortMonth === mostRecentMonth && Array.isArray(lkp.picks)) {
+    return lkp.picks;
+  }
+  return [];
+}
+
+// Compute the three time series for the cohort chart. All series start
+// at 0% on the entry date. Each track point includes per-stock returns
+// + the running rating per ticker so the cohort table can show the
+// latest state and any hard-fail alert.
+//
+// Important: missing closes are forward-filled from the last known
+// price so the cohort denominator stays at its fixed size (we're
+// modelling a HELD basket — a missing print doesn't shrink the basket).
+function cohortSeries(cohort, clientPicksInput, niftyOn) {
+  const ourEntry = {};
+  for (const s of cohort.top7) ourEntry[s.ticker] = s.close;
+  const ourLastClose = { ...ourEntry };                  // forward-fill state
+  const ourLastRating = {};
+  for (const s of cohort.top7) ourLastRating[s.ticker] = s.rating || null;
+
+  // Client cohort: in-universe LKP tickers for THIS month. Per the
+  // founder's "client enters at month-end" framing, cost basis is the
+  // month-end snapshot CLOSE (not the LKP file's nominal entry range),
+  // so both baskets start the chart at exactly 0%. The LKP file's
+  // entry/targets/SL still surface in the separate LKP card below.
+  const clientPicks = (clientPicksInput || []).filter((p) => p && p.in_universe && p.ticker);
+  const clientEntry = {};
+  for (const p of clientPicks) {
+    const s = cohort.entrySnap.stocks.find((x) => x.ticker === p.ticker);
+    if (s && s.close != null) clientEntry[p.ticker] = s.close;
+  }
+  const clientLastClose = { ...clientEntry };
+
+  const niftyAtEntry = niftyOn(cohort.entryDate);
+
+  // Day 0 — both baskets at 0%, Nifty at 0%.
+  const day0PerStock = {};
+  for (const t of Object.keys(ourEntry)) day0PerStock[t] = { rating: ourLastRating[t], close: ourEntry[t], ret: 0 };
+  const points = [{
+    date: cohort.entryDate,
+    ourAvg: 0,
+    clientAvg: Object.keys(clientEntry).length ? 0 : null,
+    niftyRet: niftyAtEntry != null ? 0 : null,
+    perStockOurs: day0PerStock,
+    perStockClient: Object.fromEntries(Object.entries(clientEntry).map(([t, c]) => [t, { close: c, ret: 0 }])),
+  }];
+
+  // For each tracking day, compute per-stock returns + averages.
+  for (const day of cohort.tracking) {
+    const perOurs = {};
+    let ourSum = 0, ourN = 0;
+    for (const ticker of Object.keys(ourEntry)) {
+      const s = day.stocks.find((x) => x.ticker === ticker);
+      let close = s?.close;
+      let stale = false;
+      if (close == null) { close = ourLastClose[ticker]; stale = true; }
+      else { ourLastClose[ticker] = close; }
+      if (s?.rating != null) ourLastRating[ticker] = s.rating;
+      if (close == null) { perOurs[ticker] = { rating: ourLastRating[ticker], close: null, ret: null }; continue; }
+      const r = (close / ourEntry[ticker] - 1) * 100;
+      perOurs[ticker] = { rating: ourLastRating[ticker], close, ret: r, hardFailed: !!s?.hardFailed, stale };
+      ourSum += r; ourN++;
+    }
+    const ourAvg = ourN > 0 ? ourSum / ourN : null;
+
+    const perClient = {};
+    let clSum = 0, clN = 0;
+    for (const ticker of Object.keys(clientEntry)) {
+      const s = day.stocks.find((x) => x.ticker === ticker);
+      let close = s?.close;
+      let stale = false;
+      if (close == null) { close = clientLastClose[ticker]; stale = true; }
+      else { clientLastClose[ticker] = close; }
+      if (close == null) { perClient[ticker] = { close: null, ret: null }; continue; }
+      const r = (close / clientEntry[ticker] - 1) * 100;
+      perClient[ticker] = { close, ret: r, stale };
+      clSum += r; clN++;
+    }
+    const clientAvg = clN > 0 ? clSum / clN : null;
+
+    const nD = niftyOn(day.date);
+    const niftyRet = (niftyAtEntry != null && nD != null) ? (nD / niftyAtEntry - 1) * 100 : null;
+
+    points.push({ date: day.date, ourAvg, clientAvg, niftyRet, perStockOurs: perOurs, perStockClient: perClient });
+  }
+
+  return {
+    entryDate: cohort.entryDate,
+    month: cohort.month,
+    cohort,
+    points,
+    clientPicks,                                           // for the table
+    hasClient: clientPicks.length > 0,
+    hasNifty: niftyAtEntry != null,
+  };
+}
+
+const COHORT_COLOR = { ours: "#6366f1", client: "#f59e0b", nifty: "#64748b" };
+
+function renderCohortTracker(cohorts, current, series, lkp, todayClose) {
+  if (!current) return "";
+  const monthLabel = formatYearMonth(current.month);
+  const days = series.points.length - 1;                   // days since entry (0-indexed in series)
+  const last = series.points[series.points.length - 1];
+
+  // Month picker — most recent first
+  const monthOpts = cohorts.slice().reverse().map((c) =>
+    `<option value="${c.month}" ${c.month === current.month ? "selected" : ""}>${formatYearMonth(c.month)}</option>`
+  ).join("");
+
+  // Stat cards
+  const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const sign = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
+  const alpha = (last.ourAvg != null && last.niftyRet != null) ? last.ourAvg - last.niftyRet : null;
+  const statBlock = (label, value, sub, valueCls = "text-slate-900", dotColor = null) => `
+    <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+      <div class="flex items-center gap-1.5">
+        ${dotColor ? `<span class="inline-block w-2 h-2 rounded-full" style="background:${dotColor}"></span>` : ""}
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(label)}</div>
+      </div>
+      <div class="text-xl font-display font-extrabold tabular-nums leading-tight mt-0.5 ${valueCls}">${value}</div>
+      <div class="text-[10px] text-slate-500 mt-0.5 truncate" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
+    </div>
+  `;
+
+  const stats = `
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+      ${statBlock("Our top 7", fmtPct(last.ourAvg), `${days}-day avg return`, sign(last.ourAvg), COHORT_COLOR.ours)}
+      ${statBlock(
+        "Client basket",
+        series.hasClient ? fmtPct(last.clientAvg) : "—",
+        series.hasClient ? `${series.clientPicks.length} stocks · LKP basket` : "Upload basket below",
+        sign(last.clientAvg),
+        COHORT_COLOR.client
+      )}
+      ${statBlock(
+        "Nifty 50",
+        series.hasNifty ? fmtPct(last.niftyRet) : "—",
+        series.hasNifty ? `Benchmark over same window` : "Loading daily",
+        sign(last.niftyRet),
+        COHORT_COLOR.nifty
+      )}
+      ${statBlock(
+        "Alpha vs Nifty",
+        alpha == null ? "—" : fmtPct(alpha),
+        "Our top 7 − Nifty",
+        sign(alpha)
+      )}
+    </div>
+  `;
+
+  // Cohort table — our 7 with current return + rating chip + hard-fail badge
+  const ourRows = current.top7.map((s) => {
+    const cur = last.perStockOurs[s.ticker];
+    const ret = cur?.ret;
+    const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const rating = cur?.rating || s.rating;
+    const ratingCls = COHORT_RATING_BG[rating] || "bg-slate-100 text-slate-700 ring-slate-200";
+    const fail = !!cur?.hardFailed;
+    return `
+      <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${fail ? "bg-rose-50/40 ring-1 ring-rose-200" : "hover:bg-slate-50"}">
+        <div class="col-span-5 sm:col-span-4 min-w-0">
+          <div class="font-semibold text-slate-900 text-xs truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
+        </div>
+        <div class="col-span-2 sm:col-span-2 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+        <div class="col-span-3 sm:col-span-3 text-right">
+          <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${ratingCls}">${escapeHtml(rating || "—")}</span>
+        </div>
+        <div class="col-span-2 sm:col-span-3 text-right">
+          ${fail ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200 text-[9px] font-bold uppercase tracking-wider">⚠ hard-fail</span>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Client basket table — in-universe LKP picks. Entry shown is the
+  // month-end snapshot close (the cost basis the cohort chart uses), so
+  // the table's return % reconciles with the chart line. The LKP file's
+  // own entry / targets / SL still live in the separate LKP card below.
+  const clientRows = series.clientPicks.length
+    ? series.clientPicks.map((p) => {
+        const cur = last.perStockClient[p.ticker];
+        const entrySnapClose = current.entrySnap.stocks.find((x) => x.ticker === p.ticker)?.close;
+        const ret = cur?.ret;
+        const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+        return `
+          <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50">
+            <div class="col-span-7 min-w-0">
+              <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(p.selection || p.ticker)}</div>
+              <div class="text-[10px] text-slate-500 tabular-nums">₹${entrySnapClose != null ? formatPrice(entrySnapClose) : "—"} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
+            </div>
+            <div class="col-span-5 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+          </div>
+        `;
+      }).join("")
+    : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded for this month.<br>Use the LKP picks card below to upload one.</div>`;
+
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
+      <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+        <div>
+          <h2 class="font-display font-bold text-slate-900 text-base">Monthly Cohort Tracker</h2>
+          <div class="text-[11px] text-slate-500 mt-0.5">Top 7 SPIP picks locked at month-end vs client basket vs Nifty · entry ${current.entryDate} · ${days} trading day${days === 1 ? "" : "s"} so far</div>
+        </div>
+        <select id="cohort-month-picker" class="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          ${monthOpts}
+        </select>
+      </div>
+
+      ${stats}
+
+      <div id="cohort-chart-container" class="relative rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3 mb-3">
+        ${renderCohortChart(series)}
+        <div id="cohort-tooltip" class="hidden absolute z-10 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+12px)] bg-slate-900/95 backdrop-blur text-white text-xs rounded-xl shadow-2xl ring-1 ring-slate-700/60 px-3 py-2 whitespace-nowrap"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.ours}"></span>
+            Our top 7 cohort
+          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">
+            ${ourRows}
+          </div>
+        </div>
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.client}"></span>
+            Client basket (LKP)
+          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">
+            ${clientRows}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// 3-line cohort chart — shares Y-axis, dates on X. Includes hidden
+// hover-guide elements + a capture rect so setupCohortHover() can wire
+// crosshair + tooltip after the HTML is in the DOM.
+function renderCohortChart(series) {
+  const pts = series.points;
+  if (pts.length < 2) return `<div class="text-[11px] text-slate-400 text-center py-6">Not enough days to draw a curve yet — come back tomorrow.</div>`;
+  const W = 800, H = 200;
+  const M = { top: 14, right: 16, bottom: 30, left: 44 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const allRets = [];
+  for (const p of pts) {
+    if (p.ourAvg != null) allRets.push(p.ourAvg);
+    if (p.clientAvg != null) allRets.push(p.clientAvg);
+    if (p.niftyRet != null) allRets.push(p.niftyRet);
+  }
+  const yMin = Math.min(0, ...allRets);
+  const yMax = Math.max(0, ...allRets);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
+  const xAt = (i) => M.left + (i / (pts.length - 1)) * innerW;
+  const yAt = (v) => M.top + innerH - ((v - yLo) / (yHi - yLo)) * innerH;
+
+  function linePath(key) {
+    const segs = [];
+    for (let i = 0; i < pts.length; i++) {
+      const v = pts[i][key];
+      if (v == null) { segs.push(null); continue; }
+      segs.push([xAt(i), yAt(v)]);
+    }
+    let d = "";
+    let pending = "M";
+    for (const s of segs) {
+      if (s == null) { pending = "M"; continue; }
+      d += `${pending} ${s[0].toFixed(2)} ${s[1].toFixed(2)} `;
+      pending = "L";
+    }
+    return d.trim();
+  }
+
+  const oursPath = linePath("ourAvg");
+  const clientPath = series.hasClient ? linePath("clientAvg") : "";
+  const niftyPath = series.hasNifty ? linePath("niftyRet") : "";
+
+  // Filled area under "ours" line for visual prominence
+  let oursArea = "";
+  const oursPoints = pts.map((p, i) => p.ourAvg == null ? null : [xAt(i), yAt(p.ourAvg)]).filter(Boolean);
+  if (oursPoints.length >= 2) {
+    const first = oursPoints[0], lastPt = oursPoints[oursPoints.length - 1];
+    const baseY = yAt(0).toFixed(2);
+    const d = oursPoints.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
+    oursArea = `${d} L ${lastPt[0].toFixed(2)} ${baseY} L ${first[0].toFixed(2)} ${baseY} Z`;
+  }
+
+  // Y-axis: 4 gridline steps + labels
+  const yTicks = [0, 1, 2, 3, 4].map((step) => {
+    const v = yLo + (yHi - yLo) * (step / 4);
+    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
+    const isZero = Math.abs(v) < 0.05;
+    return `
+      <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" />
+      <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>
+    `;
+  }).join("");
+
+  // X-axis date ticks (max 6)
+  const tickEvery = Math.max(1, Math.ceil(pts.length / 6));
+  const xTicks = pts.map((p, i) => {
+    if (i % tickEvery !== 0 && i !== pts.length - 1) return "";
+    return `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${p.date.slice(5)}</text>`;
+  }).join("");
+
+  return `
+    <svg id="cohort-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:240px">
+      <defs>
+        <linearGradient id="cohortOursArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${COHORT_COLOR.ours}" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="${COHORT_COLOR.ours}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${yTicks}
+      ${oursArea ? `<path d="${oursArea}" fill="url(#cohortOursArea)" />` : ""}
+      ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="${COHORT_COLOR.nifty}" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 4" stroke-linecap="round" />` : ""}
+      ${clientPath ? `<path d="${clientPath}" fill="none" stroke="${COHORT_COLOR.client}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />` : ""}
+      <path d="${oursPath}" fill="none" stroke="${COHORT_COLOR.ours}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+      ${xTicks}
+      <line id="cohort-guide" x1="0" y1="${M.top}" x2="0" y2="${(M.top + innerH).toFixed(2)}" stroke="#94a3b8" stroke-width="0.7" stroke-dasharray="2 3" opacity="0" />
+      <circle id="cohort-hover-ours" cx="0" cy="0" r="4" fill="#fff" stroke="${COHORT_COLOR.ours}" stroke-width="2" opacity="0" />
+      <circle id="cohort-hover-client" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.client}" stroke-width="2" opacity="0" />
+      <circle id="cohort-hover-nifty" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.nifty}" stroke-width="2" opacity="0" />
+      <rect id="cohort-hover-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
+    </svg>
+  `;
+}
+
+function setupCohortHover(series) {
+  const W = 800, H = 200;
+  const M = { left: 44, right: 16, top: 14, bottom: 30 };
+  const innerW = W - M.left - M.right;
+  const pts = series.points;
+  if (pts.length < 2) return;
+  const allRets = [];
+  for (const p of pts) {
+    if (p.ourAvg != null) allRets.push(p.ourAvg);
+    if (p.clientAvg != null) allRets.push(p.clientAvg);
+    if (p.niftyRet != null) allRets.push(p.niftyRet);
+  }
+  const yMin = Math.min(0, ...allRets);
+  const yMax = Math.max(0, ...allRets);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
+  const innerH = H - M.top - M.bottom;
+  const xAt = (i) => M.left + (i / (pts.length - 1)) * innerW;
+  const yAt = (v) => M.top + innerH - ((v - yLo) / (yHi - yLo)) * innerH;
+
+  const container = $("#cohort-chart-container");
+  const svg = $("#cohort-svg");
+  const capture = $("#cohort-hover-capture");
+  const guide = $("#cohort-guide");
+  const ho = $("#cohort-hover-ours");
+  const hc = $("#cohort-hover-client");
+  const hn = $("#cohort-hover-nifty");
+  const tip = $("#cohort-tooltip");
+  if (!container || !svg || !capture || !tip) return;
+
+  function show(idx) {
+    const p = pts[idx];
+    const x = xAt(idx);
+    guide.setAttribute("x1", x); guide.setAttribute("x2", x); guide.setAttribute("opacity", "1");
+    if (p.ourAvg != null) {
+      ho.setAttribute("cx", x); ho.setAttribute("cy", yAt(p.ourAvg)); ho.setAttribute("opacity", "1");
+    } else ho.setAttribute("opacity", "0");
+    if (p.clientAvg != null) {
+      hc.setAttribute("cx", x); hc.setAttribute("cy", yAt(p.clientAvg)); hc.setAttribute("opacity", "1");
+    } else hc.setAttribute("opacity", "0");
+    if (p.niftyRet != null) {
+      hn.setAttribute("cx", x); hn.setAttribute("cy", yAt(p.niftyRet)); hn.setAttribute("opacity", "1");
+    } else hn.setAttribute("opacity", "0");
+
+    const line = (label, val, color) =>
+      `<div class="flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full" style="background:${color}"></span>
+        <span class="text-slate-300">${label}</span>
+        <span class="ml-auto tabular-nums font-bold ${val == null ? "text-slate-400" : val >= 0 ? "text-emerald-300" : "text-rose-300"}">${val == null ? "—" : (val >= 0 ? "+" : "") + val.toFixed(2) + "%"}</span>
+      </div>`;
+    tip.innerHTML = `
+      <div class="font-bold text-sm leading-tight mb-1">${p.date}</div>
+      <div class="space-y-0.5 min-w-[160px]">
+        ${line("Our top 7", p.ourAvg, COHORT_COLOR.ours)}
+        ${series.hasClient ? line("Client basket", p.clientAvg, COHORT_COLOR.client) : ""}
+        ${series.hasNifty ? line("Nifty 50", p.niftyRet, COHORT_COLOR.nifty) : ""}
+      </div>
+    `;
+    tip.classList.remove("hidden");
+    const rect = svg.getBoundingClientRect();
+    const px = (x / W) * rect.width;
+    const py = (M.top + innerH / 2) / H * rect.height;       // tooltip vertically anchored to middle of chart
+    tip.style.left = `${px}px`;
+    tip.style.top = `${py}px`;
+    tip.style.transform = "translate(-50%, calc(-100% - 16px))";
+    requestAnimationFrame(() => {
+      const tr = tip.getBoundingClientRect();
+      const cr = container.getBoundingClientRect();
+      let dx = 0;
+      if (tr.left < cr.left + 6) dx = (cr.left + 6) - tr.left;
+      else if (tr.right > cr.right - 6) dx = (cr.right - 6) - tr.right;
+      if (dx !== 0) tip.style.transform = `translate(calc(-50% + ${dx}px), calc(-100% - 16px))`;
+    });
+  }
+  function hide() {
+    guide.setAttribute("opacity", "0");
+    ho.setAttribute("opacity", "0"); hc.setAttribute("opacity", "0"); hn.setAttribute("opacity", "0");
+    tip.classList.add("hidden");
+  }
+  function eventToIdx(e) {
+    const rect = svg.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const xPx = t.clientX - rect.left;
+    const xView = (xPx / rect.width) * W;
+    let bestI = 0, bestD = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const d = Math.abs(xAt(i) - xView);
+      if (d < bestD) { bestD = d; bestI = i; }
+    }
+    return bestI;
+  }
+  capture.addEventListener("mousemove", (e) => show(eventToIdx(e)));
+  capture.addEventListener("mouseleave", hide);
+  capture.addEventListener("touchstart", (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchmove",  (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchend", hide);
+  // Surface the most-recent point on initial render so the tooltip isn't empty.
+  show(pts.length - 1);
+}
+
+function formatYearMonth(ym) {
+  const [y, m] = ym.split("-");
+  const names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return `${names[Number(m) - 1] || m} ${y}`;
+}
+
 function renderHistoryEmpty(reason) {
   return `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-10 sm:p-12 text-center">
@@ -2155,7 +2701,7 @@ function openHistoryDrill(pick) {
     <line id="hist-guide" x1="0" y1="${M.top}" x2="0" y2="${(TAPE_Y + TAPE_H).toFixed(2)}" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2 3" opacity="0" />
     <circle id="hist-hover-halo" cx="0" cy="0" r="14" fill="#6366f1" fill-opacity="0.16" opacity="0" />
     <circle id="hist-hover-point" cx="0" cy="0" r="6" fill="#fff" stroke="#6366f1" stroke-width="2.5" opacity="0" />
-    <rect id="hist-hover-capture" x="${M.left}" y="${M.top}" width="${innerW}" height="${(innerH + TAPE_GAP + TAPE_H).toFixed(2)}" fill="transparent" />
+    <rect id="hist-hover-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
   `;
 
   // Rating legend (replaces "big rings = ..." footer)
