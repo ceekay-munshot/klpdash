@@ -315,6 +315,7 @@ const state = {
   compositeBySlug: new Map(),
   lazyTechBySlug: null,        // Map slug → tech row (loaded on demand)
   lazyMacroCtx: null,          // raw macro.json (loaded on demand)
+  lazyFundByTicker: null,      // Map ticker → fundamentals row (loaded on demand)
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -3174,8 +3175,25 @@ function openHistoryDrill(pick) {
   const retSubHtml = isLkp ? "vs entry midpoint" : `over ${pick.days} day${pick.days === 1 ? "" : "s"}`;
   const midBlockHtml = isLkp ? renderLkpTargets(pick) : renderScoreForensics(pick);
 
+  // Reason panel for currently-FILTERED stocks. Snapshots store only the
+  // hardFailed boolean (not which rules fired), so we render a placeholder
+  // immediately and asynchronously fetch the live composite for this ticker
+  // to fill in the failing rule names below.
+  const isFiltered = pick.currentRating === "FILTERED";
+  const hardFailPanelHtml = isFiltered ? `
+    <div id="hist-hardfail-panel" class="rounded-xl ring-1 ring-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 px-3 py-2.5 mb-2">
+      <div class="flex items-start gap-2">
+        <div class="text-rose-600 text-base leading-none">⚠</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-rose-900 text-sm">Currently auto-excluded from basket</div>
+          <div class="text-[11px] text-rose-700/90 mt-0.5">Hard-failed per client framework. Held in the cohort per the held-basket rule, but the strategy itself would have exited.</div>
+          <div id="hist-hardfail-rules" class="text-[11px] text-rose-700/80 mt-1.5">Checking which rule fired…</div>
+        </div>
+      </div>
+    </div>` : "";
+
   openModal(`
-    <div class="px-6 py-4">
+    <div class="px-5 py-3">
       <div class="flex items-start justify-between gap-4 mb-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-11 h-11 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">${initials}</div>
@@ -3187,11 +3205,11 @@ function openHistoryDrill(pick) {
         <button id="modal-close-btn" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
         ${entryCardHtml}
         <div class="rounded-xl ring-1 ring-slate-200 bg-gradient-to-br from-slate-50 to-white px-3 py-2">
           <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">Today</div>
-          <div class="text-sm font-display font-bold text-slate-900 mt-0.5">${todayDate} · <span class="tabular-nums">₹${formatPrice(pick.todayClose)}</span></div>
+          <div class="text-sm font-display font-bold text-slate-900 mt-0.5">${fmtDateDMY(todayDate)} · <span class="tabular-nums">₹${formatPrice(pick.todayClose)}</span></div>
           ${pick.currentRating ? `<div class="text-[11px] text-slate-600 mt-0.5"><span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${composite.ratingClass(pick.currentRating)}">${escapeHtml(pick.currentRating)}</span></div>` : ""}
         </div>
         <div class="rounded-xl ring-1 bg-gradient-to-br ${retBg} px-3 py-2 flex items-center justify-between gap-3">
@@ -3203,6 +3221,7 @@ function openHistoryDrill(pick) {
         </div>
       </div>
 
+      ${hardFailPanelHtml}
       ${midBlockHtml}
 
       <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3">
@@ -3241,6 +3260,17 @@ function openHistoryDrill(pick) {
   $("#modal-overlay").addEventListener("click", (e) => {
     if (e.target.id === "modal-overlay") closeModal();
   }, { once: true });
+
+  // Async: when this stock is currently FILTERED, fetch the live composite
+  // for its ticker so we can show which specific rule(s) tripped the
+  // hard-fail. Snapshots only store the boolean — the rule list comes
+  // from a fresh scoreCompositeOne() call.
+  if (isFiltered) {
+    populateHardFailRules(pick.ticker).catch(() => {
+      const el = $("#hist-hardfail-rules");
+      if (el) el.textContent = "Couldn't load live rule list — open SPIP Basket for the full breakdown.";
+    });
+  }
 
   // Wire hover crosshair + tooltip. The capture <rect> spans the chart
   // + rating-tape band so hovering anywhere reads the same nearest day.
@@ -3678,6 +3708,47 @@ async function loadInsiderMerged() {
 // computed (via SPIP tab or a prior drill-down), returns the cached
 // result. Otherwise lazy-fetches technicals.json + macro.json and runs
 // composite.scoreCompositeOne. Returns null if compute fails.
+// Lazy-load the fundamentals universe and index by ticker so the cohort
+// drill can resolve a ticker → company object without forcing the SPIP
+// basket tab to be visited first.
+async function fetchCompanyByTicker(ticker) {
+  if (!ticker) return null;
+  if (!state.lazyFundByTicker) {
+    try {
+      const data = await fetch("data/screener-companies.json").then((r) => r.json());
+      const rows = Array.isArray(data) ? data : (data.companies || []);
+      state.lazyFundByTicker = new Map();
+      for (const r of rows) {
+        const m = String(r["Screener URL"] || "").match(/\/company\/([^/]+)/);
+        if (m) state.lazyFundByTicker.set(m[1].toUpperCase(), r);
+      }
+    } catch { state.lazyFundByTicker = new Map(); }
+  }
+  return state.lazyFundByTicker.get(String(ticker).toUpperCase()) || null;
+}
+
+// Populate the cohort-drill hard-fail panel with the actual rule(s) that
+// tripped — fetched live via composite scoring since snapshots only carry
+// the hardFailed boolean. Failures fall back to a "see SPIP Basket" CTA.
+async function populateHardFailRules(ticker) {
+  const co = await fetchCompanyByTicker(ticker);
+  if (!co) {
+    const el = $("#hist-hardfail-rules");
+    if (el) el.textContent = "Couldn't resolve ticker — open SPIP Basket for the full breakdown.";
+    return;
+  }
+  const result = await ensureCompositeFor(co);
+  const el = $("#hist-hardfail-rules");
+  if (!el) return;
+  const fails = result?.hardFails || [];
+  if (!fails.length) {
+    el.textContent = "Rating is FILTERED but no live hard-fail rule fired — likely a snapshot-vs-live mismatch (rule passed since the last snapshot).";
+    return;
+  }
+  el.innerHTML = `<span class="font-semibold text-rose-800">Failing rule${fails.length === 1 ? "" : "s"}:</span> ` +
+    fails.map((h) => `<span class="inline-flex px-1.5 py-0 rounded bg-white text-rose-700 ring-1 ring-rose-200 font-bold ml-1">${escapeHtml(h)}</span>`).join("");
+}
+
 async function ensureCompositeFor(co) {
   if (!co) return null;
   const slug = companyKey(co);
