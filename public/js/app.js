@@ -266,6 +266,21 @@ function saveClientCohorts(d) {
   try { localStorage.setItem(CLIENT_COHORT_KEY, JSON.stringify(d)); } catch {}
 }
 
+// Performance Tracker view ("monthly" | "weekly"). Persisted in
+// localStorage so the analyst's choice survives reloads. Founder's
+// default preference: weekly, because our screener can move the
+// basket within a month.
+const COHORT_VIEW_KEY = "klpdash-cohort-view-v1";
+function loadCohortView() {
+  try {
+    const v = localStorage.getItem(COHORT_VIEW_KEY);
+    return v === "monthly" ? "monthly" : "weekly";
+  } catch { return "weekly"; }
+}
+function saveCohortView(v) {
+  try { localStorage.setItem(COHORT_VIEW_KEY, v); } catch {}
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -292,7 +307,9 @@ const state = {
   watchOnly: false,
   pillarWeights: loadPillarWeights(),
   allocPerPick: loadAllocPerPick(),
-  cohortMonth: null,            // selected month in the History tab's cohort tracker
+  cohortMonth: null,            // legacy — kept for compat; unused after move to anchor-date model
+  cohortView: loadCohortView(), // "weekly" | "monthly"
+  cohortSegmentIdx: null,       // which week pill is selected (null = latest)
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -1510,36 +1527,30 @@ async function renderHistory() {
 
   picks.sort((a, b) => b.ret - a.ret);
 
-  // --- Monthly cohort tracker (founder-asked feature) ---
-  // Independent of the STRONG BUY history above — cohort uses top 7 by
-  // composite regardless of band, so it still renders on flat months
-  // where no stock is currently STRONG BUY (computed BEFORE the empty-
-  // picks early return below).
-  const cohorts = buildCohorts(snapshots);
-  const mostRecentMonth = cohorts[cohorts.length - 1]?.month || null;
-  const selectedMonth = state.cohortMonth && cohorts.find((c) => c.month === state.cohortMonth)
-    ? state.cohortMonth
-    : mostRecentMonth;
-  const currentCohort = cohorts.find((c) => c.month === selectedMonth) || null;
-  const cohortClientPicks = currentCohort ? lkpPicksForMonth(lkp, currentCohort.month, mostRecentMonth) : [];
-  const cohortSeriesData = currentCohort ? cohortSeries(currentCohort, cohortClientPicks, niftyOn) : null;
-  const cohortTracker = currentCohort
-    ? renderCohortTracker(cohorts, currentCohort, cohortSeriesData, cohortClientPicks, todayClose)
+  // --- Performance Tracker (cohort-style, founder-spec) ---
+  // Anchored at the day the client uploaded their basket (LKP file's
+  // generated_at). View toggle picks Weekly (AI re-locks each Mon) vs
+  // Monthly (AI held the whole window). Both views share the same
+  // upload-date anchor.
+  const cohortAnchor = lkpAnchorDate(lkp, snapshots);
+  const cohort = buildCohort(snapshots, cohortAnchor, state.cohortView);
+  const manualPicks = lkp?.picks || [];
+  const cohortSeriesData = cohort ? buildCohortSeries(cohort, manualPicks, niftyOn) : null;
+  const segCount = cohort?.segments?.length || 0;
+  const selectedSegIdx = (state.cohortSegmentIdx != null && state.cohortSegmentIdx >= 0 && state.cohortSegmentIdx < segCount)
+    ? state.cohortSegmentIdx
+    : Math.max(0, segCount - 1);
+  const cohortTracker = cohort
+    ? renderCohortTracker(cohort, cohortSeriesData, state.cohortView, selectedSegIdx)
     : "";
-  // Previous-month summary — silently empty today (one cohort only);
-  // auto-appears once July 1 lands a second cohort.
-  const getClientPicksForMonth = (m) => lkpPicksForMonth(lkp, m, mostRecentMonth);
-  const prevMonthCard = currentCohort
-    ? renderPrevMonthSummary(cohorts, getClientPicksForMonth, niftyOn, currentCohort.month)
-    : "";
+  const prevMonthCard = "";        // dormant — restored once we have multi-period history
 
   // No STRONG BUYs yet? Render the cohort tracker on its own so a flat
   // period (like today) doesn't hide the founder's feature.
   if (picks.length === 0) {
-    if (currentCohort) {
+    if (cohort) {
       host.innerHTML = cohortTracker + prevMonthCard;
-      $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
-      if (cohortSeriesData) setupCohortHover(cohortSeriesData);
+      wireCohortHandlers(cohortSeriesData);
     } else {
       host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
     }
@@ -1651,10 +1662,28 @@ async function renderHistory() {
   $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
-  // Cohort tracker month picker + hover wiring
-  $("#cohort-month-picker")?.addEventListener("change", (e) => { state.cohortMonth = e.target.value; renderHistory(); });
-  if (cohortSeriesData) setupCohortHover(cohortSeriesData);
+  // Performance Tracker controls (view toggle, week pills, hover)
+  wireCohortHandlers(cohortSeriesData);
 
+}
+
+// Cohort tracker — view toggle (Weekly/Monthly), segment pills (which
+// week's AI basket to show in the table), and chart hover crosshair.
+function wireCohortHandlers(seriesData) {
+  $$("#cohort-view-toggle [data-view]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.view;
+    if (v && v !== state.cohortView) {
+      state.cohortView = v;
+      saveCohortView(v);
+      state.cohortSegmentIdx = null;   // reset segment selection on view change
+      renderHistory();
+    }
+  }));
+  $$("#history-content [data-seg]").forEach((btn) => btn.addEventListener("click", () => {
+    state.cohortSegmentIdx = Number(btn.dataset.seg);
+    renderHistory();
+  }));
+  if (seriesData) setupCohortHover(seriesData);
 }
 
 // Build pick objects for the LKP basket from the committed file + snapshot
@@ -2104,35 +2133,96 @@ const COHORT_RATING_BG = {
   "FILTERED":   "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
-// Build cohorts from the snapshot trail. One cohort per month, anchored
-// on the LAST snapshot date of the prior month (= the "month-end" close
-// the client would have used to enter at). Skips months with no prior
-// snapshot to anchor on.
-function buildCohorts(snapshots) {
-  const byMonth = new Map();
-  for (const snap of snapshots) {
-    const ym = snap.date.slice(0, 7);
-    if (!byMonth.has(ym)) byMonth.set(ym, []);
-    byMonth.get(ym).push(snap);
+// Derive the anchor date — the day the client uploaded their basket.
+// Founder's rule: "the clock starts the day client gave us the basket".
+// Falls back to most-recent month-end snapshot if no LKP file exists
+// yet, so the tracker still shows something (AI line + Nifty line) for
+// internal review.
+function lkpAnchorDate(lkp, snapshots) {
+  if (lkp?.generated_at) {
+    const d = String(lkp.generated_at).slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
   }
-  for (const arr of byMonth.values()) arr.sort((a, b) => a.date.localeCompare(b.date));
-  const months = [...byMonth.keys()].sort();
-  const out = [];
-  for (let i = 1; i < months.length; i++) {
-    const month = months[i];
-    const prior = byMonth.get(months[i - 1]);
-    const entrySnap = prior[prior.length - 1];
-    const tracking = byMonth.get(month);
-    // Hard-failed stocks are excluded from the SPIP basket elsewhere in
-    // the app — the cohort mirrors that, so we never lock in a stock the
-    // strategy itself wouldn't have held.
-    const top7 = entrySnap.stocks
-      .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
-      .sort((a, b) => b.composite - a.composite)
-      .slice(0, 7);
-    out.push({ month, entryDate: entrySnap.date, entrySnap, tracking, top7 });
+  if (!snapshots.length) return null;
+  const today = snapshots[snapshots.length - 1].date;
+  const ym = today.slice(0, 7);
+  for (let i = snapshots.length - 1; i >= 0; i--) {
+    if (snapshots[i].date.slice(0, 7) !== ym) return snapshots[i].date;
   }
-  return out;
+  return snapshots[0].date;
+}
+
+// Build the cohort. Returns a single object with `segments` — one entry
+// for monthly mode (the whole window since anchor), N entries for
+// weekly mode (one per 7-day window). Each segment owns its own AI
+// top-7; in weekly mode the basket re-locks at each segment boundary.
+function buildCohort(snapshots, anchorDate, mode) {
+  if (!snapshots.length || !anchorDate) return null;
+  const today = snapshots[snapshots.length - 1].date;
+  if (anchorDate > today) return null;
+
+  // First snapshot on or after the anchor date. If the upload day was a
+  // non-trading day (weekend / holiday) we snap forward — confirmed (ii).
+  const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
+  if (!anchorSnap) return null;
+
+  const pickTop7 = (snap) => snap.stocks
+    .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
+    .sort((a, b) => b.composite - a.composite)
+    .slice(0, 7);
+
+  if (mode === "monthly") {
+    const tracking = snapshots.filter((s) => s.date >= anchorSnap.date);
+    return {
+      mode: "monthly",
+      anchorDate,
+      effectiveStart: anchorSnap.date,
+      segments: [{
+        index: 0,
+        label: "Since upload",
+        startDate: anchorSnap.date,
+        endDate: tracking[tracking.length - 1].date,
+        entrySnap: anchorSnap,
+        tracking,
+        top7: pickTop7(anchorSnap),
+      }],
+    };
+  }
+
+  // Weekly: rolling 7-day windows starting at the anchor.
+  const fmt = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const dateToMs = (d) => Date.UTC(
+    Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)),
+  );
+  let cursorMs = dateToMs(anchorDate);
+  const todayMs = dateToMs(today);
+  const segments = [];
+  while (cursorMs <= todayMs) {
+    const winStart = fmt(cursorMs);
+    const winEnd = fmt(cursorMs + 6 * 86400000);
+    const entry = snapshots.find((s) => s.date >= winStart && s.date <= winEnd);
+    if (!entry) { cursorMs += 7 * 86400000; continue; }
+    const tracking = snapshots.filter((s) => s.date >= entry.date && s.date <= winEnd);
+    segments.push({
+      index: segments.length,
+      label: `Week ${segments.length + 1}`,
+      startDate: entry.date,
+      endDate: tracking[tracking.length - 1].date,
+      windowStart: winStart,
+      windowEnd: winEnd,
+      entrySnap: entry,
+      tracking,
+      top7: pickTop7(entry),
+    });
+    cursorMs += 7 * 86400000;
+  }
+  if (segments.length === 0) return null;
+  return {
+    mode: "weekly",
+    anchorDate,
+    effectiveStart: segments[0].startDate,
+    segments,
+  };
 }
 
 // Per-month client basket lookup.
@@ -2151,118 +2241,214 @@ function lkpPicksForMonth(lkp, cohortMonth, mostRecentMonth) {
   return [];
 }
 
-// Compute the three time series for the cohort chart. All series start
-// at 0% on the entry date. Each track point includes per-stock returns
-// + the running rating per ticker so the cohort table can show the
-// latest state and any hard-fail alert.
+// Compute the time series for the chart + per-segment tables.
 //
-// Important: missing closes are forward-filled from the last known
-// price so the cohort denominator stays at its fixed size (we're
-// modelling a HELD basket — a missing print doesn't shrink the basket).
-function cohortSeries(cohort, clientPicksInput, niftyOn) {
-  const ourEntry = {};
-  for (const s of cohort.top7) ourEntry[s.ticker] = s.close;
-  const ourLastClose = { ...ourEntry };                  // forward-fill state
-  const ourLastRating = {};
-  for (const s of cohort.top7) ourLastRating[s.ticker] = s.rating || null;
+// Three series get plotted: AI (cumulative if cohort.mode==="weekly",
+// holding-period if monthly), Manual (always anchored at the upload
+// snapshot's close, static basket), Nifty 50.
+//
+// For weekly mode the AI line "re-locks" each Monday and the
+// cumulative factor = product over completed segments of their final
+// factor × current segment's partial factor. The line stays
+// mathematically continuous through each boundary (each segment's
+// own factor starts at 1.0, multiplied by the running cumulative);
+// boundary lines are added on the chart as honest visual markers.
+//
+// Forward-fill behaviour preserved from the prior version: a missing
+// daily close uses the last known price so the basket denominator
+// stays at its locked size.
+function buildCohortSeries(cohort, manualPicksInput, niftyOn) {
+  if (!cohort) return null;
+  const anchorSnap = cohort.segments[0]?.entrySnap;
+  if (!anchorSnap) return null;
+  const anchorDate = anchorSnap.date;
 
-  // Client cohort: in-universe LKP tickers for THIS month. Per the
-  // founder's "client enters at month-end" framing, cost basis is the
-  // month-end snapshot CLOSE (not the LKP file's nominal entry range),
-  // so both baskets start the chart at exactly 0%. The LKP file's
-  // entry/targets/SL still surface in the separate LKP card below.
-  const clientPicks = (clientPicksInput || []).filter((p) => p && p.in_universe && p.ticker);
-  const clientEntry = {};
-  for (const p of clientPicks) {
-    const s = cohort.entrySnap.stocks.find((x) => x.ticker === p.ticker);
-    if (s && s.close != null) clientEntry[p.ticker] = s.close;
+  // Manual basket: in-universe picks only count for the average. Cost
+  // basis = anchor snapshot close (NOT the LKP file's entry range).
+  const manualAll = manualPicksInput || [];
+  const manualInUni = manualAll.filter((p) => p && p.in_universe && p.ticker);
+  const manualEntry = {};
+  const manualLastRating = {};
+  for (const p of manualInUni) {
+    const s = anchorSnap.stocks.find((x) => x.ticker === p.ticker);
+    if (s && s.close != null) {
+      manualEntry[p.ticker] = s.close;
+      manualLastRating[p.ticker] = s.rating || null;
+    }
   }
-  const clientLastClose = { ...clientEntry };
+  const manualLastClose = { ...manualEntry };
 
-  const niftyAtEntry = niftyOn(cohort.entryDate);
+  const niftyAtEntry = niftyOn(anchorDate);
 
-  // Day 0 — both baskets at 0%, Nifty at 0%.
-  const day0PerStock = {};
-  for (const t of Object.keys(ourEntry)) day0PerStock[t] = { rating: ourLastRating[t], close: ourEntry[t], ret: 0 };
-  const points = [{
-    date: cohort.entryDate,
-    ourAvg: 0,
-    clientAvg: Object.keys(clientEntry).length ? 0 : null,
-    niftyRet: niftyAtEntry != null ? 0 : null,
-    perStockOurs: day0PerStock,
-    perStockClient: Object.fromEntries(Object.entries(clientEntry).map(([t, c]) => [t, { close: c, ret: 0 }])),
-  }];
+  // Pre-compute each segment's per-day per-stock detail (with forward
+  // fill) AND the segment's end-factor for the cumulative AI math.
+  for (const seg of cohort.segments) {
+    seg.entryCloses = {};
+    seg.entryRatings = {};
+    for (const s of seg.top7) {
+      seg.entryCloses[s.ticker] = s.close;
+      seg.entryRatings[s.ticker] = s.rating || null;
+    }
+    seg.lastClose = { ...seg.entryCloses };
+    seg.lastRating = { ...seg.entryRatings };
+    seg.dailyPerStock = {};
 
-  // For each tracking day, compute per-stock returns + averages.
-  for (const day of cohort.tracking) {
-    const perOurs = {};
-    let ourSum = 0, ourN = 0;
-    for (const ticker of Object.keys(ourEntry)) {
+    for (const day of seg.tracking) {
+      const perStock = {};
+      for (const ticker of Object.keys(seg.entryCloses)) {
+        const s = day.stocks.find((x) => x.ticker === ticker);
+        let close = s?.close;
+        let stale = false;
+        if (close == null) { close = seg.lastClose[ticker]; stale = true; }
+        else { seg.lastClose[ticker] = close; }
+        if (s?.rating != null) seg.lastRating[ticker] = s.rating;
+        if (close == null) {
+          perStock[ticker] = { close: null, ret: null, rating: seg.lastRating[ticker], stale: true };
+          continue;
+        }
+        const ret = (close / seg.entryCloses[ticker] - 1) * 100;
+        perStock[ticker] = {
+          close, ret, rating: seg.lastRating[ticker],
+          hardFailed: !!s?.hardFailed, stale,
+        };
+      }
+      seg.dailyPerStock[day.date] = perStock;
+    }
+    // End-factor = avg(today's close / entry close) across the basket.
+    const endDate = seg.tracking[seg.tracking.length - 1]?.date;
+    seg.endFactor = endDate ? avgFactorFromPerStock(seg.dailyPerStock[endDate], seg.entryCloses) : null;
+  }
+
+  // Top-level cumulative series (one per snapshot date in the cohort)
+  const points = [];
+  // Day 0 = anchor
+  points.push({
+    date: anchorDate,
+    aiCum: 0,
+    manualCum: Object.keys(manualEntry).length ? 0 : null,
+    niftyCum: niftyAtEntry != null ? 0 : null,
+    segmentIdx: 0,
+    isBoundary: false,
+  });
+
+  let prevSegFactor = 1.0;
+  for (let segIdx = 0; segIdx < cohort.segments.length; segIdx++) {
+    const seg = cohort.segments[segIdx];
+    for (const day of seg.tracking) {
+      if (day.date === anchorDate) continue;
+      const perStock = seg.dailyPerStock[day.date];
+      const curFactor = avgFactorFromPerStock(perStock, seg.entryCloses);
+      const aiCum = curFactor != null ? (prevSegFactor * curFactor - 1) * 100 : null;
+
+      // Manual: always anchored at anchorDate
+      let manualSum = 0, manualN = 0;
+      for (const ticker of Object.keys(manualEntry)) {
+        const s = day.stocks.find((x) => x.ticker === ticker);
+        let close = s?.close;
+        if (close == null) close = manualLastClose[ticker];
+        else manualLastClose[ticker] = close;
+        if (s?.rating != null) manualLastRating[ticker] = s.rating;
+        if (close == null) continue;
+        manualSum += close / manualEntry[ticker];
+        manualN++;
+      }
+      const manualCum = manualN > 0 ? (manualSum / manualN - 1) * 100 : null;
+
+      const niftyClose = niftyOn(day.date);
+      const niftyCum = (niftyAtEntry != null && niftyClose != null)
+        ? (niftyClose / niftyAtEntry - 1) * 100
+        : null;
+
+      const isBoundary = (segIdx > 0 && day.date === seg.startDate);
+      points.push({ date: day.date, aiCum, manualCum, niftyCum, segmentIdx: segIdx, isBoundary });
+    }
+    // Lock in this segment's end factor for the next segment's cumulative.
+    if (seg.endFactor != null && segIdx < cohort.segments.length - 1) {
+      prevSegFactor *= seg.endFactor;
+    }
+  }
+
+  // Manual per-day per-stock (used by the Manual table). Same forward-
+  // fill semantics as AI segments.
+  const manualLastCloseTable = { ...manualEntry };
+  const manualDailyPerStock = {};
+  manualDailyPerStock[anchorDate] = Object.fromEntries(
+    Object.entries(manualEntry).map(([t, c]) => [t, { close: c, ret: 0, rating: manualLastRating[t] }])
+  );
+  // Walk all snapshot dates from the anchor onwards
+  const allTrackingDates = [];
+  const seen = new Set();
+  for (const seg of cohort.segments) for (const d of seg.tracking) {
+    if (!seen.has(d.date)) { allTrackingDates.push(d); seen.add(d.date); }
+  }
+  for (const day of allTrackingDates) {
+    if (day.date === anchorDate) continue;
+    const perStock = {};
+    for (const ticker of Object.keys(manualEntry)) {
       const s = day.stocks.find((x) => x.ticker === ticker);
       let close = s?.close;
       let stale = false;
-      if (close == null) { close = ourLastClose[ticker]; stale = true; }
-      else { ourLastClose[ticker] = close; }
-      if (s?.rating != null) ourLastRating[ticker] = s.rating;
-      if (close == null) { perOurs[ticker] = { rating: ourLastRating[ticker], close: null, ret: null }; continue; }
-      const r = (close / ourEntry[ticker] - 1) * 100;
-      perOurs[ticker] = { rating: ourLastRating[ticker], close, ret: r, hardFailed: !!s?.hardFailed, stale };
-      ourSum += r; ourN++;
+      if (close == null) { close = manualLastCloseTable[ticker]; stale = true; }
+      else { manualLastCloseTable[ticker] = close; }
+      if (s?.rating != null) manualLastRating[ticker] = s.rating;
+      if (close == null) {
+        perStock[ticker] = { close: null, ret: null, rating: manualLastRating[ticker], stale: true };
+        continue;
+      }
+      perStock[ticker] = {
+        close,
+        ret: (close / manualEntry[ticker] - 1) * 100,
+        rating: manualLastRating[ticker],
+        hardFailed: !!s?.hardFailed,
+        stale,
+      };
     }
-    const ourAvg = ourN > 0 ? ourSum / ourN : null;
-
-    const perClient = {};
-    let clSum = 0, clN = 0;
-    for (const ticker of Object.keys(clientEntry)) {
-      const s = day.stocks.find((x) => x.ticker === ticker);
-      let close = s?.close;
-      let stale = false;
-      if (close == null) { close = clientLastClose[ticker]; stale = true; }
-      else { clientLastClose[ticker] = close; }
-      if (close == null) { perClient[ticker] = { close: null, ret: null }; continue; }
-      const r = (close / clientEntry[ticker] - 1) * 100;
-      perClient[ticker] = { close, ret: r, stale };
-      clSum += r; clN++;
-    }
-    const clientAvg = clN > 0 ? clSum / clN : null;
-
-    const nD = niftyOn(day.date);
-    const niftyRet = (niftyAtEntry != null && nD != null) ? (nD / niftyAtEntry - 1) * 100 : null;
-
-    points.push({ date: day.date, ourAvg, clientAvg, niftyRet, perStockOurs: perOurs, perStockClient: perClient });
+    manualDailyPerStock[day.date] = perStock;
   }
 
   return {
-    entryDate: cohort.entryDate,
-    month: cohort.month,
     cohort,
+    anchorDate,
     points,
-    clientPicks,                                           // for the table
-    hasClient: clientPicks.length > 0,
+    manualEntry,
+    manualPicksAll: manualAll,
+    manualPicksInUni: manualInUni,
+    manualDailyPerStock,
+    hasManual: Object.keys(manualEntry).length > 0,
     hasNifty: niftyAtEntry != null,
   };
 }
 
-const COHORT_COLOR = { ours: "#6366f1", client: "#f59e0b", nifty: "#64748b" };
+function avgFactorFromPerStock(perStock, entryCloses) {
+  if (!perStock || !entryCloses) return null;
+  let sum = 0, count = 0;
+  for (const [ticker, ec] of Object.entries(entryCloses)) {
+    if (ec == null) continue;
+    const ps = perStock[ticker];
+    if (!ps || ps.close == null) continue;
+    sum += ps.close / ec;
+    count++;
+  }
+  return count > 0 ? sum / count : null;
+}
 
-function renderCohortTracker(cohorts, current, series, clientPicks, todayClose) {
-  if (!current) return "";
-  const monthLabel = formatYearMonth(current.month);
-  const days = series.points.length - 1;                   // days since entry (0-indexed in series)
+const COHORT_COLOR = { ai: "#6366f1", manual: "#f59e0b", nifty: "#64748b" };
+
+function renderCohortTracker(cohort, series, view, selectedSegIdx) {
+  if (!cohort || !series) return "";
+  const days = series.points.length - 1;
   const last = series.points[series.points.length - 1];
-  // 🔁 Repeater detection — tickers that lived in any prior cohort too.
-  // Empty today (only one cohort exists); activates on July 1.
-  const repeaters = findRepeaters(current, cohorts);
-
-  // Month picker — most recent first
-  const monthOpts = cohorts.slice().reverse().map((c) =>
-    `<option value="${c.month}" ${c.month === current.month ? "selected" : ""}>${formatYearMonth(c.month)}</option>`
-  ).join("");
-
-  // Stat cards
   const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
   const sign = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
-  const alpha = (last.ourAvg != null && last.niftyRet != null) ? last.ourAvg - last.niftyRet : null;
+  const alpha = (last.aiCum != null && last.niftyCum != null) ? last.aiCum - last.niftyCum : null;
+
+  const viewToggle = `
+    <div id="cohort-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
+      <button data-view="weekly" type="button" class="px-2.5 py-1 rounded-md transition ${view === "weekly" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Weekly</button>
+      <button data-view="monthly" type="button" class="px-2.5 py-1 rounded-md transition ${view === "monthly" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Monthly</button>
+    </div>
+  `;
+
   const statBlock = (label, value, sub, valueCls = "text-slate-900", dotColor = null) => `
     <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
       <div class="flex items-center gap-1.5">
@@ -2273,135 +2459,151 @@ function renderCohortTracker(cohorts, current, series, clientPicks, todayClose) 
       <div class="text-[10px] text-slate-500 mt-0.5 truncate" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
     </div>
   `;
-
+  const aiSub = view === "weekly"
+    ? `${cohort.segments.length} week${cohort.segments.length === 1 ? "" : "s"} · re-locks each Mon`
+    : `Held since upload · ${days}d`;
   const stats = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
-      ${statBlock("Our top 7", fmtPct(last.ourAvg), `${days}-day avg return`, sign(last.ourAvg), COHORT_COLOR.ours)}
+      ${statBlock("AI Picks", fmtPct(last.aiCum), aiSub, sign(last.aiCum), COHORT_COLOR.ai)}
       ${statBlock(
-        "Client basket",
-        series.hasClient ? fmtPct(last.clientAvg) : "—",
-        series.hasClient ? `${series.clientPicks.length} stocks · LKP basket` : "Upload basket below",
-        sign(last.clientAvg),
-        COHORT_COLOR.client
+        "Manual Picks",
+        series.hasManual ? fmtPct(last.manualCum) : "—",
+        series.hasManual ? `${series.manualPicksInUni.length} in coverage · static basket` : "Upload basket below",
+        sign(last.manualCum),
+        COHORT_COLOR.manual,
       )}
       ${statBlock(
         "Nifty 50",
-        series.hasNifty ? fmtPct(last.niftyRet) : "—",
+        series.hasNifty ? fmtPct(last.niftyCum) : "—",
         series.hasNifty ? `Benchmark over same window` : "Loading daily",
-        sign(last.niftyRet),
-        COHORT_COLOR.nifty
+        sign(last.niftyCum),
+        COHORT_COLOR.nifty,
       )}
-      ${statBlock(
-        "Alpha vs Nifty",
-        alpha == null ? "—" : fmtPct(alpha),
-        "Our top 7 − Nifty",
-        sign(alpha)
-      )}
+      ${statBlock("Alpha vs Nifty", alpha == null ? "—" : fmtPct(alpha), "AI − Nifty", sign(alpha))}
     </div>
   `;
 
-  // Cohort table — our 7 with current return + rating chip + hard-fail badge
-  const ourRows = current.top7.map((s) => {
-    const cur = last.perStockOurs[s.ticker];
+  // Weekly mode: pill picker for selecting which segment's table to show.
+  const segPills = view === "weekly" && cohort.segments.length > 0 ? `
+    <div class="flex flex-wrap items-center gap-1 mb-3 overflow-x-auto">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">AI basket per week</span>
+      ${cohort.segments.map((seg, i) => `
+        <button data-seg="${i}" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition ${i === selectedSegIdx ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-indigo-300 hover:text-indigo-700"}">
+          ${escapeHtml(seg.label)} · ${seg.startDate.slice(5)}–${seg.endDate.slice(5)}
+        </button>
+      `).join("")}
+    </div>` : "";
+
+  // AI table — for the SELECTED segment (week pill in weekly mode, the
+  // single segment in monthly).
+  const seg = cohort.segments[selectedSegIdx] || cohort.segments[cohort.segments.length - 1];
+  const segLastDate = seg.tracking[seg.tracking.length - 1]?.date;
+  const segLastPerStock = seg.dailyPerStock[segLastDate] || {};
+  const aiRows = seg.top7.map((s) => {
+    const cur = segLastPerStock[s.ticker];
     const ret = cur?.ret;
     const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
     const rating = cur?.rating || s.rating;
     const ratingCls = COHORT_RATING_BG[rating] || "bg-slate-100 text-slate-700 ring-slate-200";
     const fail = !!cur?.hardFailed;
-    // Repeater badge — shown only when this ticker was in a prior
-    // cohort. Tooltip lists which months. Empty today, activates as
-    // more cohorts accumulate.
-    const priorMonths = repeaters.get(s.ticker) || [];
-    const repeatBadge = priorMonths.length > 0
-      ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[9px] font-bold uppercase tracking-wider mr-1" title="Also in: ${priorMonths.map(formatYearMonth).join(', ')}">🔁 ${priorMonths.length}m</span>`
-      : "";
     return `
       <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${fail ? "bg-rose-50/40 ring-1 ring-rose-200" : "hover:bg-slate-50"}">
-        <div class="col-span-5 sm:col-span-4 min-w-0">
+        <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
         </div>
-        <div class="col-span-2 sm:col-span-2 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
-        <div class="col-span-3 sm:col-span-3 text-right">
+        <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+        <div class="col-span-3 sm:col-span-2 text-right">
           <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${ratingCls}">${escapeHtml(rating || "—")}</span>
         </div>
-        <div class="col-span-2 sm:col-span-3 text-right">
-          ${repeatBadge}
+        <div class="hidden sm:block col-span-2 text-right">
           ${fail ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200 text-[9px] font-bold uppercase tracking-wider">⚠ hard-fail</span>` : ""}
         </div>
-      </div>
-    `;
+      </div>`;
   }).join("");
+  const aiHeader = view === "weekly"
+    ? `${escapeHtml(seg.label)} · ${seg.startDate.slice(5)} → ${seg.endDate.slice(5)} · 7 stocks`
+    : `Held since ${cohort.effectiveStart} · 7 stocks`;
 
-  // Client basket table — in-universe LKP picks. Entry shown is the
-  // month-end snapshot close (the cost basis the cohort chart uses), so
-  // the table's return % reconciles with the chart line. The LKP file's
-  // own entry / targets / SL still live in the separate LKP card below.
-  const clientRows = series.clientPicks.length
-    ? series.clientPicks.map((p) => {
-        const cur = last.perStockClient[p.ticker];
-        const entrySnapClose = current.entrySnap.stocks.find((x) => x.ticker === p.ticker)?.close;
+  // Manual table — ALWAYS shows the same basket (founder: client updates
+  // monthly even in weekly mode). Out-of-universe picks now appear here
+  // with a "NOT COVERED" badge instead of being silently dropped.
+  const lastManualPerStock = series.manualDailyPerStock[segLastDate] || series.manualDailyPerStock[series.anchorDate] || {};
+  const manualRows = series.manualPicksAll.length
+    ? series.manualPicksAll.map((p) => {
+        if (!p.in_universe || !p.ticker || series.manualEntry[p.ticker] == null) {
+          // Not-covered: shown with reason; doesn't enter the average.
+          return `
+            <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg bg-slate-50/40">
+              <div class="col-span-8 min-w-0">
+                <div class="font-semibold text-slate-500 text-xs truncate" title="${escapeHtml(p.out_reason || "Not in our coverage universe")}">${escapeHtml(p.selection || p.ticker || "—")}</div>
+                <div class="text-[10px] text-slate-400 truncate">${escapeHtml(p.out_reason || "Below market-cap floor / not matched")}</div>
+              </div>
+              <div class="col-span-4 text-right">
+                <span class="inline-flex items-center px-1.5 py-0 rounded bg-slate-200 text-slate-600 ring-1 ring-slate-300 text-[9px] font-bold uppercase tracking-wider">Not Covered</span>
+              </div>
+            </div>`;
+        }
+        const cur = lastManualPerStock[p.ticker];
+        const entryClose = series.manualEntry[p.ticker];
         const ret = cur?.ret;
         const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
         return `
           <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50">
-            <div class="col-span-7 min-w-0">
+            <div class="col-span-8 min-w-0">
               <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(p.selection || p.ticker)}</div>
-              <div class="text-[10px] text-slate-500 tabular-nums">₹${entrySnapClose != null ? formatPrice(entrySnapClose) : "—"} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
+              <div class="text-[10px] text-slate-500 tabular-nums">₹${entryClose != null ? formatPrice(entryClose) : "—"} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
             </div>
-            <div class="col-span-5 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
-          </div>
-        `;
+            <div class="col-span-4 text-right tabular-nums text-[11px] font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+          </div>`;
       }).join("")
-    : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded for this month.<br>Use the LKP picks card below to upload one.</div>`;
+    : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded.<br>Use the LKP picks card below to upload one.</div>`;
 
+  const anchorLabel = `${cohort.anchorDate}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${cohort.effectiveStart}` : ""}`;
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
       <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div>
-          <h2 class="font-display font-bold text-slate-900 text-base">Monthly Cohort Tracker</h2>
-          <div class="text-[11px] text-slate-500 mt-0.5">Top 7 SPIP picks locked at month-end vs client basket vs Nifty · entry ${current.entryDate} · ${days} trading day${days === 1 ? "" : "s"} so far</div>
+          <h2 class="font-display font-bold text-slate-900 text-base">Performance Tracker</h2>
+          <div class="text-[11px] text-slate-500 mt-0.5">AI Picks vs Manual Picks vs Nifty · clock starts on client upload (<span class="font-semibold">${anchorLabel}</span>) · ${days} trading day${days === 1 ? "" : "s"}</div>
         </div>
-        <select id="cohort-month-picker" class="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          ${monthOpts}
-        </select>
+        ${viewToggle}
       </div>
 
       ${stats}
 
       <div id="cohort-chart-container" class="relative rounded-xl bg-slate-50 ring-1 ring-slate-100 p-3 mb-3">
-        ${renderCohortChart(series)}
+        ${renderCohortChart(series, view)}
         <div id="cohort-tooltip" class="hidden absolute z-10 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+12px)] bg-slate-900/95 backdrop-blur text-white text-xs rounded-xl shadow-2xl ring-1 ring-slate-700/60 px-3 py-2 whitespace-nowrap"></div>
       </div>
+
+      ${segPills}
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div>
           <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
-            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.ours}"></span>
-            Our top 7 cohort
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.ai}"></span>
+            AI Picks · <span class="text-slate-400 normal-case font-medium">${escapeHtml(aiHeader)}</span>
           </div>
-          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">
-            ${ourRows}
-          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">${aiRows}</div>
         </div>
         <div>
           <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
-            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.client}"></span>
-            Client basket (LKP)
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.manual}"></span>
+            Manual Picks · <span class="text-slate-400 normal-case font-medium">${series.manualPicksAll.length} stocks · ${series.manualPicksInUni.length} in coverage</span>
           </div>
-          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">
-            ${clientRows}
-          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">${manualRows}</div>
         </div>
       </div>
     </div>
   `;
 }
 
-// 3-line cohort chart — shares Y-axis, dates on X. Includes hidden
-// hover-guide elements + a capture rect so setupCohortHover() can wire
-// crosshair + tooltip after the HTML is in the DOM.
-function renderCohortChart(series) {
+// 3-line cohort chart — AI / Manual / Nifty. In weekly mode, vertical
+// dotted boundary lines mark each AI re-balance ("rebalance" markers).
+// Hidden hover-guide elements + a capture rect so setupCohortHover()
+// can wire crosshair + tooltip after render.
+function renderCohortChart(series, view) {
   const pts = series.points;
   if (pts.length < 2) return `<div class="text-[11px] text-slate-400 text-center py-6">Not enough days to draw a curve yet — come back tomorrow.</div>`;
   const W = 800, H = 200;
@@ -2410,9 +2612,9 @@ function renderCohortChart(series) {
   const innerH = H - M.top - M.bottom;
   const allRets = [];
   for (const p of pts) {
-    if (p.ourAvg != null) allRets.push(p.ourAvg);
-    if (p.clientAvg != null) allRets.push(p.clientAvg);
-    if (p.niftyRet != null) allRets.push(p.niftyRet);
+    if (p.aiCum != null) allRets.push(p.aiCum);
+    if (p.manualCum != null) allRets.push(p.manualCum);
+    if (p.niftyCum != null) allRets.push(p.niftyCum);
   }
   const yMin = Math.min(0, ...allRets);
   const yMax = Math.max(0, ...allRets);
@@ -2422,48 +2624,55 @@ function renderCohortChart(series) {
   const yAt = (v) => M.top + innerH - ((v - yLo) / (yHi - yLo)) * innerH;
 
   function linePath(key) {
-    const segs = [];
-    for (let i = 0; i < pts.length; i++) {
-      const v = pts[i][key];
-      if (v == null) { segs.push(null); continue; }
-      segs.push([xAt(i), yAt(v)]);
-    }
     let d = "";
     let pending = "M";
-    for (const s of segs) {
-      if (s == null) { pending = "M"; continue; }
-      d += `${pending} ${s[0].toFixed(2)} ${s[1].toFixed(2)} `;
+    for (let i = 0; i < pts.length; i++) {
+      const v = pts[i][key];
+      if (v == null) { pending = "M"; continue; }
+      d += `${pending} ${xAt(i).toFixed(2)} ${yAt(v).toFixed(2)} `;
       pending = "L";
     }
     return d.trim();
   }
 
-  const oursPath = linePath("ourAvg");
-  const clientPath = series.hasClient ? linePath("clientAvg") : "";
-  const niftyPath = series.hasNifty ? linePath("niftyRet") : "";
+  const aiPath = linePath("aiCum");
+  const manualPath = series.hasManual ? linePath("manualCum") : "";
+  const niftyPath = series.hasNifty ? linePath("niftyCum") : "";
 
-  // Filled area under "ours" line for visual prominence
-  let oursArea = "";
-  const oursPoints = pts.map((p, i) => p.ourAvg == null ? null : [xAt(i), yAt(p.ourAvg)]).filter(Boolean);
-  if (oursPoints.length >= 2) {
-    const first = oursPoints[0], lastPt = oursPoints[oursPoints.length - 1];
+  // Filled area under AI line for visual prominence
+  let aiArea = "";
+  const aiPoints = pts.map((p, i) => p.aiCum == null ? null : [xAt(i), yAt(p.aiCum)]).filter(Boolean);
+  if (aiPoints.length >= 2) {
+    const first = aiPoints[0], lastPt = aiPoints[aiPoints.length - 1];
     const baseY = yAt(0).toFixed(2);
-    const d = oursPoints.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
-    oursArea = `${d} L ${lastPt[0].toFixed(2)} ${baseY} L ${first[0].toFixed(2)} ${baseY} Z`;
+    const d = aiPoints.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
+    aiArea = `${d} L ${lastPt[0].toFixed(2)} ${baseY} L ${first[0].toFixed(2)} ${baseY} Z`;
   }
 
-  // Y-axis: 4 gridline steps + labels
+  // Vertical boundary markers — weekly only.
+  const boundaryLines = view === "weekly"
+    ? pts.map((p, i) => p.isBoundary
+        ? `<line x1="${xAt(i).toFixed(2)}" x2="${xAt(i).toFixed(2)}" y1="${M.top}" y2="${(M.top + innerH).toFixed(2)}" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="3 4" opacity="0.6"><title>Rebalance — AI basket changed (${p.date})</title></line>`
+        : "").join("")
+    : "";
+  // Tiny label above each boundary line
+  const boundaryLabels = view === "weekly"
+    ? pts.map((p, i) => p.isBoundary
+        ? `<text x="${xAt(i).toFixed(2)}" y="${(M.top - 2).toFixed(2)}" text-anchor="middle" font-size="8" font-weight="600" fill="#94a3b8">↻</text>`
+        : "").join("")
+    : "";
+
+  // Y-axis
   const yTicks = [0, 1, 2, 3, 4].map((step) => {
     const v = yLo + (yHi - yLo) * (step / 4);
     const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
     const isZero = Math.abs(v) < 0.05;
     return `
       <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" />
-      <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>
-    `;
+      <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
   }).join("");
 
-  // X-axis date ticks (max 6)
+  // X-axis date ticks
   const tickEvery = Math.max(1, Math.ceil(pts.length / 6));
   const xTicks = pts.map((p, i) => {
     if (i % tickEvery !== 0 && i !== pts.length - 1) return "";
@@ -2473,20 +2682,22 @@ function renderCohortChart(series) {
   return `
     <svg id="cohort-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:240px">
       <defs>
-        <linearGradient id="cohortOursArea" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${COHORT_COLOR.ours}" stop-opacity="0.22"/>
-          <stop offset="100%" stop-color="${COHORT_COLOR.ours}" stop-opacity="0"/>
+        <linearGradient id="cohortAiArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${COHORT_COLOR.ai}" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="${COHORT_COLOR.ai}" stop-opacity="0"/>
         </linearGradient>
       </defs>
       ${yTicks}
-      ${oursArea ? `<path d="${oursArea}" fill="url(#cohortOursArea)" />` : ""}
+      ${boundaryLines}
+      ${aiArea ? `<path d="${aiArea}" fill="url(#cohortAiArea)" />` : ""}
       ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="${COHORT_COLOR.nifty}" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="4 4" stroke-linecap="round" />` : ""}
-      ${clientPath ? `<path d="${clientPath}" fill="none" stroke="${COHORT_COLOR.client}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />` : ""}
-      <path d="${oursPath}" fill="none" stroke="${COHORT_COLOR.ours}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+      ${manualPath ? `<path d="${manualPath}" fill="none" stroke="${COHORT_COLOR.manual}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />` : ""}
+      <path d="${aiPath}" fill="none" stroke="${COHORT_COLOR.ai}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+      ${boundaryLabels}
       ${xTicks}
       <line id="cohort-guide" x1="0" y1="${M.top}" x2="0" y2="${(M.top + innerH).toFixed(2)}" stroke="#94a3b8" stroke-width="0.7" stroke-dasharray="2 3" opacity="0" />
-      <circle id="cohort-hover-ours" cx="0" cy="0" r="4" fill="#fff" stroke="${COHORT_COLOR.ours}" stroke-width="2" opacity="0" />
-      <circle id="cohort-hover-client" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.client}" stroke-width="2" opacity="0" />
+      <circle id="cohort-hover-ai" cx="0" cy="0" r="4" fill="#fff" stroke="${COHORT_COLOR.ai}" stroke-width="2" opacity="0" />
+      <circle id="cohort-hover-manual" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.manual}" stroke-width="2" opacity="0" />
       <circle id="cohort-hover-nifty" cx="0" cy="0" r="3" fill="#fff" stroke="${COHORT_COLOR.nifty}" stroke-width="2" opacity="0" />
       <rect id="cohort-hover-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
     </svg>
@@ -2501,9 +2712,9 @@ function setupCohortHover(series) {
   if (pts.length < 2) return;
   const allRets = [];
   for (const p of pts) {
-    if (p.ourAvg != null) allRets.push(p.ourAvg);
-    if (p.clientAvg != null) allRets.push(p.clientAvg);
-    if (p.niftyRet != null) allRets.push(p.niftyRet);
+    if (p.aiCum != null) allRets.push(p.aiCum);
+    if (p.manualCum != null) allRets.push(p.manualCum);
+    if (p.niftyCum != null) allRets.push(p.niftyCum);
   }
   const yMin = Math.min(0, ...allRets);
   const yMax = Math.max(0, ...allRets);
@@ -2517,8 +2728,8 @@ function setupCohortHover(series) {
   const svg = $("#cohort-svg");
   const capture = $("#cohort-hover-capture");
   const guide = $("#cohort-guide");
-  const ho = $("#cohort-hover-ours");
-  const hc = $("#cohort-hover-client");
+  const ha = $("#cohort-hover-ai");
+  const hm = $("#cohort-hover-manual");
   const hn = $("#cohort-hover-nifty");
   const tip = $("#cohort-tooltip");
   if (!container || !svg || !capture || !tip) return;
@@ -2527,14 +2738,14 @@ function setupCohortHover(series) {
     const p = pts[idx];
     const x = xAt(idx);
     guide.setAttribute("x1", x); guide.setAttribute("x2", x); guide.setAttribute("opacity", "1");
-    if (p.ourAvg != null) {
-      ho.setAttribute("cx", x); ho.setAttribute("cy", yAt(p.ourAvg)); ho.setAttribute("opacity", "1");
-    } else ho.setAttribute("opacity", "0");
-    if (p.clientAvg != null) {
-      hc.setAttribute("cx", x); hc.setAttribute("cy", yAt(p.clientAvg)); hc.setAttribute("opacity", "1");
-    } else hc.setAttribute("opacity", "0");
-    if (p.niftyRet != null) {
-      hn.setAttribute("cx", x); hn.setAttribute("cy", yAt(p.niftyRet)); hn.setAttribute("opacity", "1");
+    if (p.aiCum != null) {
+      ha.setAttribute("cx", x); ha.setAttribute("cy", yAt(p.aiCum)); ha.setAttribute("opacity", "1");
+    } else ha.setAttribute("opacity", "0");
+    if (p.manualCum != null) {
+      hm.setAttribute("cx", x); hm.setAttribute("cy", yAt(p.manualCum)); hm.setAttribute("opacity", "1");
+    } else hm.setAttribute("opacity", "0");
+    if (p.niftyCum != null) {
+      hn.setAttribute("cx", x); hn.setAttribute("cy", yAt(p.niftyCum)); hn.setAttribute("opacity", "1");
     } else hn.setAttribute("opacity", "0");
 
     const line = (label, val, color) =>
@@ -2543,13 +2754,16 @@ function setupCohortHover(series) {
         <span class="text-slate-300">${label}</span>
         <span class="ml-auto tabular-nums font-bold ${val == null ? "text-slate-400" : val >= 0 ? "text-emerald-300" : "text-rose-300"}">${val == null ? "—" : (val >= 0 ? "+" : "") + val.toFixed(2) + "%"}</span>
       </div>`;
+    const boundaryNote = p.isBoundary
+      ? `<div class="text-[10px] text-amber-300 mt-1">↻ Rebalance (basket changed)</div>` : "";
     tip.innerHTML = `
       <div class="font-bold text-sm leading-tight mb-1">${p.date}</div>
       <div class="space-y-0.5 min-w-[160px]">
-        ${line("Our top 7", p.ourAvg, COHORT_COLOR.ours)}
-        ${series.hasClient ? line("Client basket", p.clientAvg, COHORT_COLOR.client) : ""}
-        ${series.hasNifty ? line("Nifty 50", p.niftyRet, COHORT_COLOR.nifty) : ""}
+        ${line("AI Picks", p.aiCum, COHORT_COLOR.ai)}
+        ${series.hasManual ? line("Manual Picks", p.manualCum, COHORT_COLOR.manual) : ""}
+        ${series.hasNifty ? line("Nifty 50", p.niftyCum, COHORT_COLOR.nifty) : ""}
       </div>
+      ${boundaryNote}
     `;
     tip.classList.remove("hidden");
     const rect = svg.getBoundingClientRect();
