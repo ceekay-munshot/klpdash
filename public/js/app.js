@@ -1534,7 +1534,13 @@ async function renderHistory() {
   // upload-date anchor.
   const cohortAnchor = lkpAnchorDate(lkp, snapshots);
   const cohort = buildCohort(snapshots, cohortAnchor, state.cohortView);
-  const manualPicks = lkp?.picks || [];
+  // Manual basket source: prefer month-keyed picksByMonth (the documented
+  // future shape so each month can lock its own client basket); fall back
+  // to the single top-level picks array (legacy single-basket file).
+  const anchorMonthKey = cohortAnchor ? cohortAnchor.slice(0, 7) : null;
+  const manualPicks = (anchorMonthKey && lkp?.picksByMonth?.[anchorMonthKey])
+    || lkp?.picks
+    || [];
   const cohortSeriesData = cohort ? buildCohortSeries(cohort, manualPicks, niftyOn) : null;
   const segCount = cohort?.segments?.length || 0;
   const selectedSegIdx = (state.cohortSegmentIdx != null && state.cohortSegmentIdx >= 0 && state.cohortSegmentIdx < segCount)
@@ -2159,7 +2165,11 @@ function lkpAnchorDate(lkp, snapshots) {
 function buildCohort(snapshots, anchorDate, mode) {
   if (!snapshots.length || !anchorDate) return null;
   const today = snapshots[snapshots.length - 1].date;
-  if (anchorDate > today) return null;
+  // Upload date outruns the snapshot trail (e.g. analyst uploaded a fresh
+  // basket today before the daily refresh ran). Clamp the anchor to the
+  // latest available snapshot so the tracker still renders — the chart
+  // will be a single-point preview until the next snapshot lands.
+  if (anchorDate > today) anchorDate = today;
 
   // First snapshot on or after the anchor date. If the upload day was a
   // non-trading day (weekend / holiday) we snap forward — confirmed (ii).
@@ -2783,7 +2793,7 @@ function setupCohortHover(series) {
   }
   function hide() {
     guide.setAttribute("opacity", "0");
-    ho.setAttribute("opacity", "0"); hc.setAttribute("opacity", "0"); hn.setAttribute("opacity", "0");
+    ha.setAttribute("opacity", "0"); hm.setAttribute("opacity", "0"); hn.setAttribute("opacity", "0");
     tip.classList.add("hidden");
   }
   function eventToIdx(e) {
