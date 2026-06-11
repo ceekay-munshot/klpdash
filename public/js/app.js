@@ -2499,7 +2499,7 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
       <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">AI basket per week</span>
       ${cohort.segments.map((seg, i) => `
         <button data-seg="${i}" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition ${i === selectedSegIdx ? "bg-indigo-600 text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-indigo-300 hover:text-indigo-700"}">
-          ${escapeHtml(seg.label)} · ${seg.startDate.slice(5)}–${seg.endDate.slice(5)}
+          ${escapeHtml(seg.label)} · ${fmtDateDM(seg.startDate)}–${fmtDateDM(seg.endDate)}
         </button>
       `).join("")}
     </div>` : "";
@@ -2532,8 +2532,8 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
       </div>`;
   }).join("");
   const aiHeader = view === "weekly"
-    ? `${escapeHtml(seg.label)} · ${seg.startDate.slice(5)} → ${seg.endDate.slice(5)} · 7 stocks`
-    : `Held since ${cohort.effectiveStart} · 7 stocks`;
+    ? `${escapeHtml(seg.label)} · ${fmtDateDM(seg.startDate)} → ${fmtDateDM(seg.endDate)} · 7 stocks`
+    : `Held since ${fmtDateDMY(cohort.effectiveStart)} · 7 stocks`;
 
   // Manual table — ALWAYS shows the same basket (founder: client updates
   // monthly even in weekly mode). Out-of-universe picks now appear here
@@ -2569,7 +2569,7 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
       }).join("")
     : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded.<br>Use the LKP picks card below to upload one.</div>`;
 
-  const anchorLabel = `${cohort.anchorDate}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${cohort.effectiveStart}` : ""}`;
+  const anchorLabel = `${fmtDateDMY(cohort.anchorDate)}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${fmtDateDMY(cohort.effectiveStart)}` : ""}`;
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
       <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
@@ -2682,11 +2682,11 @@ function renderCohortChart(series, view) {
       <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
   }).join("");
 
-  // X-axis date ticks
+  // X-axis date ticks (DD-MM, Indian convention)
   const tickEvery = Math.max(1, Math.ceil(pts.length / 6));
   const xTicks = pts.map((p, i) => {
     if (i % tickEvery !== 0 && i !== pts.length - 1) return "";
-    return `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${p.date.slice(5)}</text>`;
+    return `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(p.date)}</text>`;
   }).join("");
 
   return `
@@ -2767,7 +2767,7 @@ function setupCohortHover(series) {
     const boundaryNote = p.isBoundary
       ? `<div class="text-[10px] text-amber-300 mt-1">↻ Rebalance (basket changed)</div>` : "";
     tip.innerHTML = `
-      <div class="font-bold text-sm leading-tight mb-1">${p.date}</div>
+      <div class="font-bold text-sm leading-tight mb-1">${fmtDateDMY(p.date)}</div>
       <div class="space-y-0.5 min-w-[160px]">
         ${line("AI Picks", p.aiCum, COHORT_COLOR.ai)}
         ${series.hasManual ? line("Manual Picks", p.manualCum, COHORT_COLOR.manual) : ""}
@@ -2821,6 +2821,22 @@ function formatYearMonth(ym) {
   const [y, m] = ym.split("-");
   const names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   return `${names[Number(m) - 1] || m} ${y}`;
+}
+
+// Indian-convention date formatters: DD-MM (compact, for chart ticks +
+// inline cohort labels) and DD-MM-YY (full, for tooltips + subtitles).
+// Both accept a YYYY-MM-DD string.
+function fmtDateDM(d) {
+  if (!d || typeof d !== "string") return d;
+  const parts = d.split("-");
+  if (parts.length !== 3) return d;
+  return `${parts[2]}-${parts[1]}`;
+}
+function fmtDateDMY(d) {
+  if (!d || typeof d !== "string") return d;
+  const parts = d.split("-");
+  if (parts.length !== 3) return d;
+  return `${parts[2]}-${parts[1]}-${parts[0].slice(2)}`;
 }
 
 // Detect which current-cohort tickers also appeared in any PRIOR
