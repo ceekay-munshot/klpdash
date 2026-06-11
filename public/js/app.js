@@ -2185,25 +2185,30 @@ function renderScoreForensics(pick) {
   }).join("");
 
   return `
-    <div class="rounded-2xl ring-1 ring-slate-200 bg-white px-3 py-2.5 sm:px-4 sm:py-3 mb-3">
-      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-        <div class="font-display font-bold text-slate-900 text-sm">What moved the score</div>
+    <details class="rounded-2xl ring-1 ring-slate-200 bg-white mb-2 group">
+      <summary class="cursor-pointer select-none flex flex-wrap items-baseline justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5 hover:bg-slate-50 rounded-2xl">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 group-open:rotate-90 transition-transform text-xs">▸</span>
+          <span class="font-display font-bold text-slate-900 text-sm">What moved the score</span>
+        </div>
         <div class="flex items-baseline gap-1.5 text-xs tabular-nums">
           <span class="text-slate-500">${compTotalA != null ? compTotalA.toFixed(1) : "—"}</span>
           <span class="text-slate-400">→</span>
           <span class="font-bold text-slate-900">${compTotalB != null ? compTotalB.toFixed(1) : "—"}</span>
           <span class="font-bold ${deltaCls}">${deltaSign}${Math.abs(compDelta).toFixed(2)}</span>
-          <span class="text-[10px] text-slate-400 font-normal">since ${pick.firstSBDate}</span>
+          <span class="text-[10px] text-slate-400 font-normal">since ${fmtDateDMY(pick.firstSBDate)}</span>
         </div>
+      </summary>
+      <div class="px-3 pb-3 sm:px-4 sm:pb-3 pt-0">
+        <div class="grid grid-cols-12 gap-2 px-0.5 pb-1 mb-0.5 border-b border-slate-100 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+          <div class="col-span-5">Pillar · refresh</div>
+          <div class="col-span-3 text-right">Score</div>
+          <div class="col-span-4 text-right">Contribution</div>
+        </div>
+        <div class="divide-y divide-slate-50">${rowsHtml}</div>
+        <p class="text-[10px] text-slate-400 leading-relaxed mt-2 pt-2 border-t border-slate-100"><span class="font-semibold text-slate-500">Contribution</span> = how much each pillar pushed the composite (the five sum to the total change). The chip is how often it refreshes — <span class="font-semibold">Fundamentals</span> (quarterly) and <span class="font-semibold">Macro</span> (monthly) barely move day-to-day, so short-term swings come from <span class="font-semibold">Technicals / Sentiment / Liquidity</span> (daily).</p>
       </div>
-      <div class="grid grid-cols-12 gap-2 px-0.5 pb-1 mb-0.5 border-b border-slate-100 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-        <div class="col-span-5">Pillar · refresh</div>
-        <div class="col-span-3 text-right">Score</div>
-        <div class="col-span-4 text-right">Contribution</div>
-      </div>
-      <div class="divide-y divide-slate-50">${rowsHtml}</div>
-      <p class="text-[10px] text-slate-400 leading-relaxed mt-2 pt-2 border-t border-slate-100"><span class="font-semibold text-slate-500">Contribution</span> = how much each pillar pushed the composite (the five sum to the total change). The chip is how often it refreshes — <span class="font-semibold">Fundamentals</span> (quarterly) and <span class="font-semibold">Macro</span> (monthly) barely move day-to-day, so short-term swings come from <span class="font-semibold">Technicals / Sentiment / Liquidity</span> (daily).</p>
-    </div>`;
+    </details>`;
 }
 
 function heroStat(label, value, sub) {
