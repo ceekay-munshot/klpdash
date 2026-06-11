@@ -3178,10 +3178,12 @@ function openHistoryDrill(pick) {
   // Reason panel for currently-FILTERED stocks. Snapshots store only the
   // hardFailed boolean (not which rules fired), so we render a placeholder
   // immediately and asynchronously fetch the live composite for this ticker
-  // to fill in the failing rule names below.
+  // to fill in the failing rule names below. The panel carries the
+  // ticker as data-ticker so a stale async response from a previous
+  // drill can't overwrite the current one.
   const isFiltered = pick.currentRating === "FILTERED";
   const hardFailPanelHtml = isFiltered ? `
-    <div id="hist-hardfail-panel" class="rounded-xl ring-1 ring-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 px-3 py-2.5 mb-2">
+    <div id="hist-hardfail-panel" data-ticker="${escapeHtml(pick.ticker)}" class="rounded-xl ring-1 ring-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 px-3 py-2.5 mb-2">
       <div class="flex items-start gap-2">
         <div class="text-rose-600 text-base leading-none">⚠</div>
         <div class="flex-1 min-w-0">
@@ -3267,8 +3269,11 @@ function openHistoryDrill(pick) {
   // from a fresh scoreCompositeOne() call.
   if (isFiltered) {
     populateHardFailRules(pick.ticker).catch(() => {
+      const panel = $("#hist-hardfail-panel");
       const el = $("#hist-hardfail-rules");
-      if (el) el.textContent = "Couldn't load live rule list — open SPIP Basket for the full breakdown.";
+      if (el && panel && panel.dataset.ticker === pick.ticker) {
+        el.textContent = "Couldn't load live rule list — open SPIP Basket for the full breakdown.";
+      }
     });
   }
 
@@ -3711,8 +3716,21 @@ async function loadInsiderMerged() {
 // Lazy-load the fundamentals universe and index by ticker so the cohort
 // drill can resolve a ticker → company object without forcing the SPIP
 // basket tab to be visited first.
+//
+// Note: prefers the enriched rows from state.cache.composite when SPIP
+// basket has been loaded — those carry supplemental data (auditor opinion,
+// governance flag, revenue-mix) that hard-fail rules depend on. Falls
+// back to raw screener-companies.json otherwise.
 async function fetchCompanyByTicker(ticker) {
   if (!ticker) return null;
+  const tu = String(ticker).toUpperCase();
+  if (state.cache.composite?.rows) {
+    const enriched = state.cache.composite.rows.find((r) => {
+      const m = String(r?.["Screener URL"] || "").match(/\/company\/([^/]+)/);
+      return m && m[1].toUpperCase() === tu;
+    });
+    if (enriched) return enriched;
+  }
   if (!state.lazyFundByTicker) {
     try {
       const data = await fetch("data/screener-companies.json").then((r) => r.json());
@@ -3724,29 +3742,50 @@ async function fetchCompanyByTicker(ticker) {
       }
     } catch { state.lazyFundByTicker = new Map(); }
   }
-  return state.lazyFundByTicker.get(String(ticker).toUpperCase()) || null;
+  return state.lazyFundByTicker.get(tu) || null;
 }
 
 // Populate the cohort-drill hard-fail panel with the actual rule(s) that
-// tripped — fetched live via composite scoring since snapshots only carry
-// the hardFailed boolean. Failures fall back to a "see SPIP Basket" CTA.
+// tripped. Snapshots store the hardFailed boolean but not the rule names —
+// we fetch them via live composite scoring (warming the full composite
+// cache first so supplemental rules like auditor / governance / revenue-
+// mix fire correctly). Includes a stale-write guard via the panel's
+// data-ticker attribute and a distinct load-error path when scoring fails.
 async function populateHardFailRules(ticker) {
+  const writeIfCurrent = (html, asText) => {
+    const panel = $("#hist-hardfail-panel");
+    const el = $("#hist-hardfail-rules");
+    if (!el || !panel || panel.dataset.ticker !== ticker) return;
+    if (asText) el.textContent = html;
+    else el.innerHTML = html;
+  };
+
+  // Warm composite cache first so the company gets the same enrichments
+  // (auditor opinion, governance flags, revenue-mix) the SPIP basket uses.
+  if (!state.cache.composite) {
+    try { await loadTab("composite"); } catch {}
+  }
+
   const co = await fetchCompanyByTicker(ticker);
   if (!co) {
-    const el = $("#hist-hardfail-rules");
-    if (el) el.textContent = "Couldn't resolve ticker — open SPIP Basket for the full breakdown.";
+    writeIfCurrent("Couldn't resolve ticker — open SPIP Basket for the full breakdown.", true);
     return;
   }
   const result = await ensureCompositeFor(co);
-  const el = $("#hist-hardfail-rules");
-  if (!el) return;
-  const fails = result?.hardFails || [];
-  if (!fails.length) {
-    el.textContent = "Rating is FILTERED but no live hard-fail rule fired — likely a snapshot-vs-live mismatch (rule passed since the last snapshot).";
+  if (result == null) {
+    writeIfCurrent("Couldn't load live rule list — open SPIP Basket for the full breakdown.", true);
     return;
   }
-  el.innerHTML = `<span class="font-semibold text-rose-800">Failing rule${fails.length === 1 ? "" : "s"}:</span> ` +
-    fails.map((h) => `<span class="inline-flex px-1.5 py-0 rounded bg-white text-rose-700 ring-1 ring-rose-200 font-bold ml-1">${escapeHtml(h)}</span>`).join("");
+  const fails = Array.isArray(result.hardFails) ? result.hardFails : [];
+  if (!fails.length) {
+    writeIfCurrent("Rating is FILTERED in the snapshot but no live hard-fail rule fired — likely a snapshot-vs-live mismatch (rule passed since the last snapshot).", true);
+    return;
+  }
+  writeIfCurrent(
+    `<span class="font-semibold text-rose-800">Failing rule${fails.length === 1 ? "" : "s"}:</span> ` +
+      fails.map((h) => `<span class="inline-flex px-1.5 py-0 rounded bg-white text-rose-700 ring-1 ring-rose-200 font-bold ml-1">${escapeHtml(h)}</span>`).join(""),
+    false,
+  );
 }
 
 async function ensureCompositeFor(co) {
