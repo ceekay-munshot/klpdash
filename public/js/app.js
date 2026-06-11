@@ -1555,8 +1555,9 @@ async function renderHistory() {
   // period (like today) doesn't hide the founder's feature.
   if (picks.length === 0) {
     if (cohort) {
-      // Same cohort-row lookup cache as the full-render branch.
-      const earlyLkpPicks = buildLkpPicks(lkp, byTicker, todayClose);
+      // Same cohort-row lookup cache as the full-render branch — mirror
+      // the manualPicks list (picksByMonth-aware) used by the table.
+      const earlyLkpPicks = buildLkpPickList(manualPicks, byTicker, todayClose);
       state.cache.history.byTicker = byTicker;
       state.cache.history.todayClose = todayClose;
       state.cache.history.lkpPicksByTicker = new Map(earlyLkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
@@ -1655,11 +1656,14 @@ async function renderHistory() {
   const lkpCard = renderLkpCard(lkpPicks, !!lkpOverride());
 
   // Cache for cohort-row click handlers (Performance Tracker drill).
-  // Stored on state.cache.history so wireCohortHandlers can resolve a
-  // ticker → pick without re-walking snapshots.
+  // Crucially the click cache mirrors the SAME `manualPicks` list the
+  // cohort table renders (picksByMonth when present, else lkp.picks),
+  // so covered Manual rows always resolve to the right entry/targets
+  // pick instead of falling through.
+  const cohortLkpPicks = buildLkpPickList(manualPicks, byTicker, todayClose);
   state.cache.history.byTicker = byTicker;
   state.cache.history.todayClose = todayClose;
-  state.cache.history.lkpPicksByTicker = new Map(lkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
+  state.cache.history.lkpPicksByTicker = new Map(cohortLkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
   state.cache.history.cohortAnchor = cohortAnchor;
 
   host.innerHTML = `
@@ -1710,8 +1714,9 @@ function wireCohortHandlers(seriesData) {
   $$("#history-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
     const ticker = el.dataset.ticker;
     const side = el.dataset.cohortSide;
+    const segAnchor = el.dataset.segAnchor || null;        // weekly mode: per-segment anchor
     if (!ticker) return;
-    const pick = buildCohortClickPick(ticker, side);
+    const pick = buildCohortClickPick(ticker, side, segAnchor);
     if (pick) openHistoryDrill(pick);
   }));
   if (seriesData) setupCohortHover(seriesData);
@@ -1719,21 +1724,30 @@ function wireCohortHandlers(seriesData) {
 
 // Resolve a cohort-table row click to a pick object that openHistoryDrill
 // can render. Manual rows prefer the LKP pick (with entry / targets / SL
-// framing). AI rows fall through to a snapshot-trail pick, anchored at
-// the first STRONG BUY day if there is one, else the cohort anchor.
-function buildCohortClickPick(ticker, side) {
+// framing) when its today-close is usable; otherwise fall back to a
+// snapshot-trail pick so the drill still opens cleanly. AI rows always
+// build from the snapshot trail, anchored at the first STRONG BUY day
+// if any, else at the segment anchor (= selected week start in weekly
+// mode; the cohort upload date in monthly).
+function buildCohortClickPick(ticker, side, segAnchor) {
   const cache = state.cache.history || {};
   const lkpByTicker = cache.lkpPicksByTicker;
-  if (side === "manual" && lkpByTicker?.has(ticker)) return lkpByTicker.get(ticker);
+  if (side === "manual" && lkpByTicker?.has(ticker)) {
+    const lkpPick = lkpByTicker.get(ticker);
+    // Only return the LKP pick if it has usable data — otherwise the
+    // drill modal would crash on null .toFixed / null close. Fall
+    // through to the snapshot-trail builder below.
+    if (lkpPick && lkpPick.ret != null && lkpPick.todayClose != null) return lkpPick;
+  }
 
   const byTicker = cache.byTicker;
   const tk = byTicker?.get(ticker);
   if (!tk || !Array.isArray(tk.points) || tk.points.length < 2) return null;
 
   const firstSB = tk.points.find((p) => p.rating === "STRONG BUY" && typeof p.close === "number");
-  const cohortAnchor = cache.cohortAnchor;
+  const anchorDate = segAnchor || cache.cohortAnchor;
   const anchorPoint = firstSB
-    || (cohortAnchor && tk.points.find((p) => p.date >= cohortAnchor && typeof p.close === "number"))
+    || (anchorDate && tk.points.find((p) => p.date >= anchorDate && typeof p.close === "number"))
     || tk.points.find((p) => typeof p.close === "number");
   if (!anchorPoint) return null;
 
@@ -1769,7 +1783,15 @@ function buildCohortClickPick(ticker, side) {
 // Out-of-coverage picks carry no points and stay non-clickable.
 function buildLkpPicks(lkp, byTicker, todayClose) {
   if (!lkp || !Array.isArray(lkp.picks)) return [];
-  return lkp.picks.map((pk) => {
+  return buildLkpPickList(lkp.picks, byTicker, todayClose);
+}
+
+// Same shape, takes an explicit picks list. Used by the cohort tracker
+// so the click cache can be built from picksByMonth when present (the
+// cohort table reads from the same resolved list).
+function buildLkpPickList(picks, byTicker, todayClose) {
+  if (!Array.isArray(picks)) return [];
+  return picks.map((pk) => {
     const t = pk.ticker;
     let name = pk.selection, sector = "", rating = null, points = [];
     if (t && byTicker.has(t)) {
@@ -2588,7 +2610,7 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
     const ratingCls = COHORT_RATING_BG[rating] || "bg-slate-100 text-slate-700 ring-slate-200";
     const fail = !!cur?.hardFailed;
     return `
-      <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition ${fail ? "bg-rose-50/40 ring-1 ring-rose-200 hover:ring-rose-300" : "hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200"}">
+      <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(seg.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition ${fail ? "bg-rose-50/40 ring-1 ring-rose-200 hover:ring-rose-300" : "hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200"}">
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${cur?.close != null ? formatPrice(cur.close) : "—"}</div>
@@ -3122,8 +3144,8 @@ function openHistoryDrill(pick) {
 
   // Hero strip values
   const ret = pick.ret;
-  const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
-  const retBg = ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
+  const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+  const retBg = ret == null ? "from-slate-50 to-white ring-slate-200" : ret >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
 
   // LKP picks reuse this modal but with a client-entry framing: no "we said
   // STRONG BUY" anchor, and a targets/SL block instead of the pillar forensics.
@@ -3177,7 +3199,7 @@ function openHistoryDrill(pick) {
             <div class="text-[9px] font-bold uppercase tracking-wider ${retCls}">${retLabelHtml}</div>
             <div class="text-[11px] text-slate-600 mt-0.5">${retSubHtml}</div>
           </div>
-          <div class="text-2xl font-display font-extrabold tabular-nums ${retCls} leading-none">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums ${retCls} leading-none">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
         </div>
       </div>
 
