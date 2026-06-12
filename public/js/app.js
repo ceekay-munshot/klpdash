@@ -1538,34 +1538,49 @@ async function renderHistory() {
   picks.sort((a, b) => b.ret - a.ret);
 
   // --- Performance Tracker (cohort-style, founder-spec) ---
-  // Three views drive the anchor and re-lock behavior:
-  //   static  → anchor at prior month-end snapshot, single locked basket
-  //             for the new month (the SPIP production model)
-  //   monthly → anchor at the client upload date, single locked basket
-  //             from there (handles mid-month uploads)
-  //   weekly  → anchor at upload date, AI basket re-locks each Mon
+  // Three views drive the anchor + re-lock behaviour:
+  //   static  → select from prior month-end snapshot, COST BASIS at
+  //             the first held-month snapshot. Per founder's call:
+  //             "assume client bought June 1" — chart day-0 = June 1,
+  //             not May 31. AI top 7 still picked from May 31's
+  //             composite ranking.
+  //   monthly → anchor + cost basis at the client upload date
+  //             (handles mid-month uploads).
+  //   weekly  → anchor at upload date, AI basket re-locks each Mon.
   const view = state.cohortView;
-  const cohortAnchor = view === "static"
-    ? staticAnchorDate(snapshots)
-    : lkpAnchorDate(lkp, snapshots);
+  let cohortAnchor, cohortSelection;
+  if (view === "static") {
+    cohortSelection = staticAnchorDate(snapshots);
+    // Cost basis = first snapshot of the IST-today calendar month after
+    // the selection date. Falls back to the selection date itself
+    // (first day of new month before snapshot lands) so the tracker
+    // still renders something.
+    const heldMonth = istTodayDate().slice(0, 7);
+    const firstHeld = snapshots.find((s) => s.date.slice(0, 7) === heldMonth && s.date > (cohortSelection || ""));
+    cohortAnchor = firstHeld ? firstHeld.date : cohortSelection;
+  } else {
+    cohortAnchor = lkpAnchorDate(lkp, snapshots);
+    cohortSelection = cohortAnchor;
+  }
   const buildMode = view === "weekly" ? "weekly" : "monthly";
-  const cohort = buildCohort(snapshots, cohortAnchor, buildMode);
+  const cohort = buildCohort(snapshots, cohortAnchor, buildMode, { selectionDate: cohortSelection });
   if (cohort) cohort.anchorMode = view;             // for the subtitle copy
-  const cohortLateNote = view === "monthly" && lkp?.generated_at && cohortAnchor
-    ? null   // not used yet — placeholder for "manual basket carried over from prior month" once we have multi-month uploads
-    : null;
-  // Manual basket source: prefer month-keyed picksByMonth (the documented
-  // future shape so each month can lock its own client basket); fall back
-  // to the single top-level picks array (legacy single-basket file).
+
+  // Manual basket source: prefer month-keyed picksByMonth (each month
+  // locks its own client basket); fall back to top-level lkp.picks
+  // (legacy single-basket file).
   //
-  // Held month = IST calendar today's month, NOT the latest snapshot's
-  // month — same source of truth as staticAnchorDate so a month
-  // rollover before the first new-month snapshot lands picks up the
-  // new month's basket immediately. In Static mode anchor = prior
-  // month-end while held = current month, so these intentionally
-  // differ.
-  const heldMonthKey = istTodayDate().slice(0, 7);
-  const manualPicks = (heldMonthKey && lkp?.picksByMonth?.[heldMonthKey])
+  // Held month resolves PER VIEW:
+  //   static  → IST today's calendar month (held month differs from
+  //             the prior month-end anchor)
+  //   monthly → cohortAnchor's month (= client's upload month).
+  //             When client uploads July's picks the anchor moves to
+  //             July, picksByMonth lookup follows.
+  //   weekly  → same as monthly (upload-month based)
+  const manualMonthKey = view === "static"
+    ? istTodayDate().slice(0, 7)
+    : (cohortAnchor ? cohortAnchor.slice(0, 7) : null);
+  const manualPicks = (manualMonthKey && lkp?.picksByMonth?.[manualMonthKey])
     || lkp?.picks
     || [];
   const cohortSeriesData = cohort ? buildCohortSeries(cohort, manualPicks, niftyOn) : null;
@@ -2314,23 +2329,37 @@ function lkpAnchorDate(lkp, snapshots) {
 // for monthly mode (the whole window since anchor), N entries for
 // weekly mode (one per 7-day window). Each segment owns its own AI
 // top-7; in weekly mode the basket re-locks at each segment boundary.
-function buildCohort(snapshots, anchorDate, mode) {
+//
+// `opts.selectionDate` decouples the basket SELECTION day from the
+// COST BASIS day. In Static mode the AI top 7 is picked from the
+// prior month-end snapshot (selectionDate) but the performance
+// window starts at the first held-month snapshot (anchorDate) — per
+// founder's call, "assume client bought June 1" even though the
+// screener output is from May 31's close.
+function buildCohort(snapshots, anchorDate, mode, opts = {}) {
   if (!snapshots.length || !anchorDate) return null;
   const today = snapshots[snapshots.length - 1].date;
-  // Upload date outruns the snapshot trail (e.g. analyst uploaded a fresh
-  // basket today before the daily refresh ran). Clamp the anchor to the
-  // latest available snapshot so the tracker still renders — the chart
-  // will be a single-point preview until the next snapshot lands.
   if (anchorDate > today) anchorDate = today;
 
-  // First snapshot on or after the anchor date. If the upload day was a
-  // non-trading day (weekend / holiday) we snap forward — confirmed (ii).
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   if (!anchorSnap) return null;
+  const selectionSnap = opts.selectionDate
+    ? (snapshots.find((s) => s.date >= opts.selectionDate) || anchorSnap)
+    : anchorSnap;
 
   const pickTop7 = (snap) => snap.stocks
     .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
     .sort((a, b) => b.composite - a.composite)
+    .slice(0, 7);
+
+  // Pick the top 7 from the selection day, but re-base each stock's
+  // close to the cost-basis day (anchorSnap) so chart day-0 = entry
+  // day and returns measure from there. Selection-day rating is
+  // preserved as the display tag.
+  const remapTop7 = (sel, entry) => pickTop7(sel).map((s) => {
+    const eS = entry.stocks.find((x) => x.ticker === s.ticker);
+    return { ...s, close: eS?.close ?? s.close, _selectionDate: sel.date };
+  });
     .slice(0, 7);
 
   if (mode === "monthly") {
@@ -2339,6 +2368,7 @@ function buildCohort(snapshots, anchorDate, mode) {
       mode: "monthly",
       anchorDate,
       effectiveStart: anchorSnap.date,
+      selectionDate: selectionSnap.date,
       segments: [{
         index: 0,
         label: "Since upload",
@@ -2346,12 +2376,14 @@ function buildCohort(snapshots, anchorDate, mode) {
         endDate: tracking[tracking.length - 1].date,
         entrySnap: anchorSnap,
         tracking,
-        top7: pickTop7(anchorSnap),
+        top7: remapTop7(selectionSnap, anchorSnap),
       }],
     };
   }
 
-  // Weekly: rolling 7-day windows starting at the anchor.
+  // Weekly: rolling 7-day windows starting at the anchor. Weekly mode
+  // ignores opts.selectionDate — each week's basket is picked from
+  // that week's own entry snapshot, no cross-window decoupling.
   const fmt = (ms) => new Date(ms).toISOString().slice(0, 10);
   const dateToMs = (d) => Date.UTC(
     Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)),
@@ -2383,6 +2415,7 @@ function buildCohort(snapshots, anchorDate, mode) {
     mode: "weekly",
     anchorDate,
     effectiveStart: segments[0].startDate,
+    selectionDate: selectionSnap.date,
     segments,
   };
 }
@@ -2725,7 +2758,14 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
       }).join("")
     : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded.<br>Use the LKP picks card below to upload one.</div>`;
 
-  const anchorLabel = `${fmtDateDMY(cohort.anchorDate)}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${fmtDateDMY(cohort.effectiveStart)}` : ""}`;
+  // Static mode shows BOTH the selection day (prior month-end snapshot)
+  // and the cost-basis day (first held-month snapshot) so the analyst
+  // sees the apples-to-apples reading: "screener said this on 31-05,
+  // assume client bought 01-06". Monthly/Weekly views have selection
+  // === cost basis, so we just show one date.
+  const anchorLabel = cohort.anchorMode === "static" && cohort.selectionDate && cohort.selectionDate !== cohort.effectiveStart
+    ? `selected ${fmtDateDMY(cohort.selectionDate)} · cost basis ${fmtDateDMY(cohort.effectiveStart)}`
+    : `${fmtDateDMY(cohort.anchorDate)}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${fmtDateDMY(cohort.effectiveStart)}` : ""}`;
   const anchorSourceLabel = cohort.anchorMode === "static"
     ? "frozen at prior month-end"
     : cohort.anchorMode === "weekly"
