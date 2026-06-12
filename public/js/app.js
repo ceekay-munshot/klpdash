@@ -266,16 +266,20 @@ function saveClientCohorts(d) {
   try { localStorage.setItem(CLIENT_COHORT_KEY, JSON.stringify(d)); } catch {}
 }
 
-// Performance Tracker view ("monthly" | "weekly"). Persisted in
-// localStorage so the analyst's choice survives reloads. Founder's
-// default preference: weekly, because our screener can move the
-// basket within a month.
+// Performance Tracker view ("static" | "monthly" | "weekly"). Persisted
+// in localStorage so the analyst's choice survives reloads.
+//   - static  : prior month-end snapshot is the anchor; AI top 7 frozen
+//               for the whole new month (the SPIP production model)
+//   - monthly : anchored at the client's upload date; AI top 7 frozen
+//               from THAT date — handles mid-month uploads
+//   - weekly  : anchored at upload date; AI re-locks each Monday
 const COHORT_VIEW_KEY = "klpdash-cohort-view-v1";
+const COHORT_VIEWS = ["static", "monthly", "weekly"];
 function loadCohortView() {
   try {
     const v = localStorage.getItem(COHORT_VIEW_KEY);
-    return v === "monthly" ? "monthly" : "weekly";
-  } catch { return "weekly"; }
+    return COHORT_VIEWS.includes(v) ? v : "static";
+  } catch { return "static"; }
 }
 function saveCohortView(v) {
   try { localStorage.setItem(COHORT_VIEW_KEY, v); } catch {}
@@ -1534,12 +1538,22 @@ async function renderHistory() {
   picks.sort((a, b) => b.ret - a.ret);
 
   // --- Performance Tracker (cohort-style, founder-spec) ---
-  // Anchored at the day the client uploaded their basket (LKP file's
-  // generated_at). View toggle picks Weekly (AI re-locks each Mon) vs
-  // Monthly (AI held the whole window). Both views share the same
-  // upload-date anchor.
-  const cohortAnchor = lkpAnchorDate(lkp, snapshots);
-  const cohort = buildCohort(snapshots, cohortAnchor, state.cohortView);
+  // Three views drive the anchor and re-lock behavior:
+  //   static  → anchor at prior month-end snapshot, single locked basket
+  //             for the new month (the SPIP production model)
+  //   monthly → anchor at the client upload date, single locked basket
+  //             from there (handles mid-month uploads)
+  //   weekly  → anchor at upload date, AI basket re-locks each Mon
+  const view = state.cohortView;
+  const cohortAnchor = view === "static"
+    ? staticAnchorDate(snapshots)
+    : lkpAnchorDate(lkp, snapshots);
+  const buildMode = view === "weekly" ? "weekly" : "monthly";
+  const cohort = buildCohort(snapshots, cohortAnchor, buildMode);
+  if (cohort) cohort.anchorMode = view;             // for the subtitle copy
+  const cohortLateNote = view === "monthly" && lkp?.generated_at && cohortAnchor
+    ? null   // not used yet — placeholder for "manual basket carried over from prior month" once we have multi-month uploads
+    : null;
   // Manual basket source: prefer month-keyed picksByMonth (the documented
   // future shape so each month can lock its own client basket); fall back
   // to the single top-level picks array (legacy single-basket file).
@@ -2243,6 +2257,20 @@ const COHORT_RATING_BG = {
   "FILTERED":   "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
+// Last snapshot of the calendar month immediately before today's date.
+// Used by the Static view ("month-end") so the AI top 7 is locked from
+// e.g. 31-05-26 for the entire month of June. If only one month of
+// snapshots exists, falls back to the earliest available snapshot so
+// the tracker still renders something.
+function staticAnchorDate(snapshots) {
+  if (!snapshots.length) return null;
+  const todayMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
+  for (let i = snapshots.length - 1; i >= 0; i--) {
+    if (snapshots[i].date.slice(0, 7) !== todayMonth) return snapshots[i].date;
+  }
+  return snapshots[0].date;
+}
+
 // Derive the anchor date — the day the client uploaded their basket.
 // Founder's rule: "the clock starts the day client gave us the basket".
 // Falls back to most-recent month-end snapshot if no LKP file exists
@@ -2556,10 +2584,12 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
   const sign = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
   const alpha = (last.aiCum != null && last.niftyCum != null) ? last.aiCum - last.niftyCum : null;
 
+  const btnCls = (active) => `px-2.5 py-1 rounded-md transition ${active ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`;
   const viewToggle = `
     <div id="cohort-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
-      <button data-view="weekly" type="button" class="px-2.5 py-1 rounded-md transition ${view === "weekly" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Weekly</button>
-      <button data-view="monthly" type="button" class="px-2.5 py-1 rounded-md transition ${view === "monthly" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Monthly</button>
+      <button data-view="static" type="button" class="${btnCls(view === "static")}" title="AI top 7 frozen from prior month-end · held all month (SPIP model)">Static</button>
+      <button data-view="monthly" type="button" class="${btnCls(view === "monthly")}" title="AI top 7 frozen from client upload date">Monthly</button>
+      <button data-view="weekly" type="button" class="${btnCls(view === "weekly")}" title="AI re-locks every Monday">Weekly</button>
     </div>
   `;
 
@@ -2575,7 +2605,9 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
   `;
   const aiSub = view === "weekly"
     ? `${cohort.segments.length} week${cohort.segments.length === 1 ? "" : "s"} · re-locks each Mon`
-    : `Held since upload · ${days}d`;
+    : view === "static"
+      ? `Frozen at prior month-end · ${days}d`
+      : `Held since upload · ${days}d`;
   const stats = `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
       ${statBlock("AI Picks", fmtPct(last.aiCum), aiSub, sign(last.aiCum), COHORT_COLOR.ai)}
@@ -2674,12 +2706,17 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
     : `<div class="text-[11px] text-slate-400 text-center py-4 leading-relaxed">No client basket loaded.<br>Use the LKP picks card below to upload one.</div>`;
 
   const anchorLabel = `${fmtDateDMY(cohort.anchorDate)}${cohort.effectiveStart !== cohort.anchorDate ? ` · snapped to first trading day ${fmtDateDMY(cohort.effectiveStart)}` : ""}`;
+  const anchorSourceLabel = cohort.anchorMode === "static"
+    ? "frozen at prior month-end"
+    : cohort.anchorMode === "weekly"
+      ? "weekly re-lock since upload"
+      : "client upload date";
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
       <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div>
           <h2 class="font-display font-bold text-slate-900 text-base">Performance Tracker</h2>
-          <div class="text-[11px] text-slate-500 mt-0.5">AI Picks vs Manual Picks vs Nifty · clock starts on client upload (<span class="font-semibold">${anchorLabel}</span>) · ${days} trading day${days === 1 ? "" : "s"}</div>
+          <div class="text-[11px] text-slate-500 mt-0.5">AI Picks vs Manual Picks vs Nifty · ${anchorSourceLabel} (<span class="font-semibold">${anchorLabel}</span>) · ${days} trading day${days === 1 ? "" : "s"}</div>
         </div>
         ${viewToggle}
       </div>
