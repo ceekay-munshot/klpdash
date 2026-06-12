@@ -3788,24 +3788,28 @@ function renderHistoryEmpty(reason) {
 // ACTIVE BASKET — daily-rebalancing backtest
 // ============================================================
 // Walks the snapshot trail and simulates an equal-weight portfolio that
-// rebalances every day to hold exactly today's STRONG BUY set:
+// rebalances every snapshot day to hold exactly today's STRONG BUY set:
 //   - Day 1: open positions in every STRONG BUY at that day's close.
-//   - Day N: anything held but no longer STRONG BUY → sell at today's
-//            close. Anything STRONG BUY today but not held → buy at
-//            today's close using whatever cash freed up.
+//   - Day N: exit anything no longer STRONG BUY at today's close, then
+//            rebalance the entire remaining basket to NAV ÷ N — trim
+//            winners that drifted overweight, top up losers that
+//            drifted underweight, fund new entrants at the same weight.
 //
 // Buys and sells transact at the same close used for mark-to-market on
 // that day, so opening a position generates no synthetic gain/loss; the
 // equity curve reflects pure model behaviour.
 //
-// Rebalance model: on any basket change (entry or exit), continuing
-// positions are trimmed or topped up to the equal-weight target value
-// (NAV ÷ N). This is what frees cash for new entrants when the portfolio
-// is fully invested — without it, growing baskets would silently skip
-// the new names. Drift between basket-change events is allowed (no
-// pointless trades on quiet days). Internal weight adjustments don't
-// hit the trade log; only true basket adds/drops do. No transaction
-// costs assumed in the v1 backtest — "model truth" without friction.
+// Rebalance runs every day (not just basket-change days) to honour the
+// equal-weight invariant promised by the "Daily Rebalance" label —
+// otherwise winners drift overweight and losers shrink between events.
+// Top-ups update the position's entry price to a weighted average of
+// the lots bought, so realized-return stats (hit rate, avg winner /
+// loser) reflect the cash actually allocated rather than just the
+// first lot's price. Trims leave the basis unchanged (FIFO / weighted-
+// average equivalence when selling, not buying). Internal weight
+// adjustments stay invisible in the trade log; only real basket adds /
+// drops surface. No transaction costs in v1 — "model truth" without
+// friction.
 const ACTIVE_INITIAL_CAPITAL = 100000;
 
 function simulateActiveBasket(snapshots) {
@@ -3828,8 +3832,8 @@ function simulateActiveBasket(snapshots) {
       .filter((s) => s.rating === "STRONG BUY" && typeof s.close === "number" && !s.hardFailed && s.ticker);
     const targetByTicker = new Map(target.map((s) => [s.ticker, s]));
 
-    // 1. Exit positions not in today's target.
-    let exited = 0;
+    // 1. Exit positions not in today's target — book SELL with realized
+    //    return based on weighted-average entry price.
     for (const [ticker, pos] of [...holdings.entries()]) {
       if (targetByTicker.has(ticker)) continue;
       const exitPrice = closeByTicker.get(ticker);
@@ -3845,18 +3849,13 @@ function simulateActiveBasket(snapshots) {
         ret,
       });
       holdings.delete(ticker);
-      exited++;
     }
 
-    // 2. Identify new entrants.
+    // 2. Daily rebalance to equal weight across continuing + new
+    //    positions. Runs unconditionally so prices drifting between
+    //    snapshots doesn't quietly skew weights between basket events.
     const newEntries = target.filter((s) => !holdings.has(s.ticker));
-    const basketChanged = exited > 0 || newEntries.length > 0;
-
-    // 3. Rebalance to equal weight ONLY on basket change. Trim continuing
-    //    positions down to NAV/N (or top up if there's freed cash from
-    //    exits and N shrunk). This frees cash for new entrants when the
-    //    portfolio is fully invested — the case Codex flagged.
-    if (basketChanged && target.length > 0) {
+    if (target.length > 0) {
       let nav = cash;
       for (const [ticker, pos] of holdings.entries()) {
         const px = closeByTicker.get(ticker) ?? pos.entryPrice;
@@ -3864,15 +3863,27 @@ function simulateActiveBasket(snapshots) {
       }
       const targetValuePerStock = nav / target.length;
 
-      // Adjust continuing positions to target value. Skip those without
-      // a close today (can't rebalance without a price).
+      // Adjust continuing positions to target value. On top-ups, update
+      // entry price to weighted-average cost basis so closed-trade
+      // returns reflect the cash actually allocated. On trims, basis
+      // stays the same — the realized portion of any gain/loss is
+      // captured in the equity curve via the cash flow.
       for (const [ticker, pos] of holdings.entries()) {
         const px = closeByTicker.get(ticker);
         if (typeof px !== "number") continue;
         const currentValue = pos.units * px;
         const valueDelta = targetValuePerStock - currentValue;   // +ve = buy more, -ve = trim
         if (Math.abs(valueDelta) < 0.01) continue;
-        pos.units += valueDelta / px;
+        const unitDelta = valueDelta / px;
+        if (unitDelta > 0) {
+          // Top-up: weighted-average cost basis update.
+          const newUnits = pos.units + unitDelta;
+          pos.entryPrice = (pos.units * pos.entryPrice + unitDelta * px) / newUnits;
+          pos.units = newUnits;
+        } else {
+          // Trim: units down, basis unchanged.
+          pos.units += unitDelta;
+        }
         cash -= valueDelta;
       }
 
@@ -3895,7 +3906,7 @@ function simulateActiveBasket(snapshots) {
       }
     }
 
-    // 4. Mark-to-market today's portfolio value.
+    // 3. Mark-to-market today's portfolio value.
     let value = cash;
     for (const [ticker, pos] of holdings.entries()) {
       const px = closeByTicker.get(ticker) ?? pos.entryPrice;
@@ -4018,7 +4029,7 @@ function renderActiveBody(sim, stats, niftyOn) {
             </div>
             <div class="text-sm text-slate-600 mt-1">
               Simulates buying every STRONG BUY at today's close and selling when it drops out.
-              Starting capital ₹${ACTIVE_INITIAL_CAPITAL.toLocaleString("en-IN")}, equal-weight (rebalanced on basket changes), no transaction costs.
+              Starting capital ₹${ACTIVE_INITIAL_CAPITAL.toLocaleString("en-IN")}, equal-weight rebalanced daily, no transaction costs.
             </div>
             <div class="text-xs text-slate-500 mt-2">
               Period: ${fmtDateDMY(stats.startDate)} → ${fmtDateDMY(stats.endDate)} · ${stats.days} snapshot days
