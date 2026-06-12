@@ -1624,23 +1624,13 @@ async function renderHistory() {
       // it pulls picks from cohort segments, not from STRONG BUY history).
       const historyView = state.historyView;
       const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
-      const subViewSwitch = `
-        <div class="flex items-center justify-end mb-3">
-          <div id="history-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
-            <button data-history-view="history" type="button" class="px-2.5 py-1 rounded-md transition ${historyView === "history" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">History</button>
-            <button data-history-view="accuracy" type="button" class="px-2.5 py-1 rounded-md transition ${historyView === "accuracy" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Accuracy</button>
-          </div>
-        </div>
-      `;
+      const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
       const subBody = historyView === "accuracy"
         ? renderAccuracyView(accuracyData)
         : renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
       host.innerHTML = cohortTracker + prevMonthCard + subViewSwitch + subBody;
       wireCohortHandlers(cohortSeriesData);
-      $$("#history-content [data-history-view]").forEach((btn) => btn.addEventListener("click", () => {
-        const v = btn.dataset.historyView;
-        if (v && v !== state.historyView) { state.historyView = v; saveHistoryView(v); renderHistory(); }
-      }));
+      wireHistorySubViewSwitch();
     } else {
       host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
     }
@@ -1743,20 +1733,14 @@ async function renderHistory() {
   state.cache.history.lkpPicksByTicker = new Map(cohortLkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
   state.cache.history.cohortAnchor = cohortAnchor;
 
-  // Below the Performance Tracker, the analyst can flip between two
-  // sub-views: History (past STRONG BUYs + LKP manual basket) or
-  // Accuracy (target / stop-loss hit tracker per pick).
+  // Below the Performance Tracker, a prominent tabbed header lets the
+  // analyst flip between History (past STRONG BUYs + LKP card) and
+  // Accuracy (target / stop-loss hit tracker). Bell-icon dropdown on
+  // the right surfaces every recent hit with a badge for today's count.
   const historyView = state.historyView;
   const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
   const accuracyView = renderAccuracyView(accuracyData);
-  const subViewSwitch = `
-    <div class="flex items-center justify-end mb-3">
-      <div id="history-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
-        <button data-history-view="history" type="button" class="px-2.5 py-1 rounded-md transition ${historyView === "history" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">History</button>
-        <button data-history-view="accuracy" type="button" class="px-2.5 py-1 rounded-md transition ${historyView === "accuracy" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}">Accuracy</button>
-      </div>
-    </div>
-  `;
+  const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
   const historySubViewHtml = historyView === "accuracy"
     ? accuracyView
     : `
@@ -1784,11 +1768,7 @@ async function renderHistory() {
   $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
-  // History sub-view toggle (Accuracy ↔ History)
-  $$("#history-content [data-history-view]").forEach((btn) => btn.addEventListener("click", () => {
-    const v = btn.dataset.historyView;
-    if (v && v !== state.historyView) { state.historyView = v; saveHistoryView(v); renderHistory(); }
-  }));
+  wireHistorySubViewSwitch();
   // Performance Tracker controls (view toggle, week pills, hover)
   wireCohortHandlers(cohortSeriesData);
 
@@ -2689,6 +2669,94 @@ function avgFactorFromPerStock(perStock, entryCloses) {
 
 const COHORT_COLOR = { ai: "#6366f1", manual: "#f59e0b", nifty: "#64748b" };
 
+// Prominent header bar that toggles the History sub-view (History vs
+// Accuracy). Rendered as a real tab strip with an active underline +
+// a bell-icon dropdown on the right surfacing every recent hit. Badge
+// count = today's fresh hits.
+function renderHistoryViewSwitch(activeView, accuracyData) {
+  const allHits = accuracyData?.allHits || [];
+  const todayCount = accuracyData?.todayHits?.length || 0;
+  const tabBtn = (view, label, sub) => {
+    const active = activeView === view;
+    return `
+      <button data-history-view="${view}" type="button" class="relative px-4 py-2.5 text-sm font-semibold transition ${active ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"}">
+        ${label}
+        ${sub ? `<span class="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">${sub}</span>` : ""}
+        ${active ? `<span class="absolute left-3 right-3 -bottom-px h-0.5 bg-indigo-600 rounded-full"></span>` : ""}
+      </button>`;
+  };
+  const dropdown = allHits.length ? `
+    <div id="hits-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50 max-h-96 overflow-y-auto">
+      <div class="sticky top-0 px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+        <span>Recent hits · ${allHits.length} total</span>
+        ${todayCount > 0 ? `<span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider animate-pulse">${todayCount} today</span>` : ""}
+      </div>
+      <div class="py-1">
+        ${allHits.map((h) => `
+          <div class="px-3 py-1.5 hover:bg-slate-50 text-xs ${h.hitToday ? "bg-amber-50/40" : ""}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-900 truncate">${escapeHtml(h.name || h.ticker)}</span>
+              <span class="text-[10px] tabular-nums text-slate-400 whitespace-nowrap">${fmtDateDMY(h.hitDate)}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:${h.basket === "AI" ? COHORT_COLOR.ai : COHORT_COLOR.manual}"></span>
+                ${escapeHtml(h.basket)}
+              </span>
+              ·
+              <span class="${h.status === "TARGET_HIT" ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}">${h.status === "TARGET_HIT" ? "🎯 Target" : "⚠ SL"}</span>
+              at ₹${formatPrice(h.exitPrice)} · ${h.daysToHit}d
+              ${h.hitToday ? `<span class="ml-1 inline-flex items-center px-1 py-0 rounded bg-amber-500 text-white text-[8px] font-bold uppercase">just hit</span>` : ""}
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>` : `
+    <div id="hits-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50">
+      <div class="px-3 py-4 text-[11px] text-slate-500 text-center">No hits yet — once a stock crosses target or SL, it'll land here.</div>
+    </div>`;
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 mb-3 overflow-visible">
+      <div class="flex items-center justify-between border-b border-slate-100 px-2 sm:px-3">
+        <div id="history-view-toggle" class="flex items-center gap-1">
+          ${tabBtn("history", "History", "past picks")}
+          ${tabBtn("accuracy", "Accuracy", "target / sl")}
+        </div>
+        <div class="relative">
+          <button id="hits-alert-btn" type="button" class="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="hidden sm:inline">Alerts</span>
+            ${todayCount > 0
+              ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums">${todayCount}</span>`
+              : allHits.length ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold tabular-nums">${allHits.length}</span>` : ""}
+          </button>
+          ${dropdown}
+        </div>
+      </div>
+    </div>`;
+}
+
+// Wire up the History sub-view toggle + the bell-icon dropdown. Idempotent —
+// safe to call multiple times since renderHistory rebuilds the DOM.
+function wireHistorySubViewSwitch() {
+  $$("#history-content [data-history-view]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.historyView;
+    if (v && v !== state.historyView) { state.historyView = v; saveHistoryView(v); renderHistory(); }
+  }));
+  const alertBtn = $("#hits-alert-btn");
+  const dropdown = $("#hits-dropdown");
+  if (alertBtn && dropdown) {
+    alertBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+    document.addEventListener("click", (e) => {
+      if (!dropdown.classList.contains("hidden") && !dropdown.contains(e.target) && !alertBtn.contains(e.target)) {
+        dropdown.classList.add("hidden");
+      }
+    }, { once: true });
+  }
+}
+
 // ---------------- Accuracy view ----------------
 // Per-stock target / stop-loss tracker. AI picks use the framework
 // uniform +5% target / −20% SL (from the founder call). Manual picks
@@ -2741,20 +2809,44 @@ function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, 
 // Build the rows + summary for the Accuracy view.
 //   cohort      → the AI cohort currently active (Static/Monthly/Weekly).
 //                  Each segment's top 7 contributes 7 picks (5% TGT / 20% SL).
+//                  In Weekly mode that's one row per (week × stock), so the
+//                  table grows as more weeks accumulate (founder's ask).
 //   manualPicks → the LKP basket (in-universe rows have ticker + tgt1 + sl).
 //   snapshots   → full snapshot trail.
+//
+// Rows are scored by proximity to the target / stop-loss bands:
+//   proximityScore = (currentReturn% − slPct) / (targetPct − slPct)
+//     1.0 = at target · 0.5 = midpoint · 0.0 = at SL
+// Sort order: TARGET_HIT (top) → OPEN by proximityScore desc → SL_HIT
+// (bottom). Greens up high, reds down low.
 function buildAccuracyData(cohort, manualPicks, snapshots) {
   if (!snapshots.length) return null;
   const todayDate = snapshots[snapshots.length - 1].date;
 
-  const aiRows = [];
+  // Resolve a row's status, current-close return %, and proximity score
+  // — all needed for the sort + tint pass below.
+  function enrichRow(row) {
+    if (row.notCovered) return row;
+    const range = row.targetPct - row.slPct;                          // e.g. 5 − (−20) = 25
+    const curRet = row.currentClose != null && row.entryPrice
+      ? (row.currentClose / row.entryPrice - 1) * 100
+      : null;
+    let proximity = null;
+    if (row.status === "TARGET_HIT") proximity = 1.5;                 // pinned top
+    else if (row.status === "SL_HIT") proximity = -0.5;               // pinned bottom
+    else if (curRet != null && range > 0) proximity = (curRet - row.slPct) / range;
+    return { ...row, currentReturnPct: curRet, proximity };
+  }
+
+  // -- AI picks --
+  const aiRowsRaw = [];
   for (const seg of (cohort?.segments || [])) {
     for (const s of seg.top7) {
       if (!s.ticker || s.close == null) continue;
       const target = s.close * (1 + AI_TARGET_PCT);
       const sl = s.close * (1 - AI_SL_PCT);
       const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
-      aiRows.push({
+      aiRowsRaw.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
         entryDate: seg.startDate,
@@ -2768,10 +2860,11 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
     }
   }
 
-  const manualRows = [];
+  // -- Manual picks --
+  const manualRowsRaw = [];
   for (const p of (manualPicks || [])) {
     if (!p.in_universe || !p.ticker) {
-      manualRows.push({
+      manualRowsRaw.push({
         ticker: p.ticker,
         name: p.selection || p.ticker || "—",
         notCovered: true,
@@ -2779,9 +2872,6 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
       });
       continue;
     }
-    // Manual cost basis = the cohort entry day close (per founder's
-    // "assume client bought month-start" rule) to align with the
-    // Performance Tracker; fall back to LKP's entry midpoint.
     const cohortEntrySnap = cohort?.segments?.[0]?.entrySnap;
     const entryFromSnap = cohortEntrySnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
     const entryPrice = entryFromSnap ?? p.entry ?? null;
@@ -2789,7 +2879,7 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
     const target = p.tgt1 ?? null;
     const sl = p.sl ?? null;
     if (entryPrice == null || target == null || sl == null) {
-      manualRows.push({
+      manualRowsRaw.push({
         ticker: p.ticker, name: p.selection || p.ticker,
         entryDate, entryPrice, target, sl,
         targetPct: target != null && entryPrice ? (target / entryPrice - 1) * 100 : null,
@@ -2799,7 +2889,7 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
       continue;
     }
     const status = computeHitStatus(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate);
-    manualRows.push({
+    manualRowsRaw.push({
       ticker: p.ticker,
       name: p.selection || p.ticker,
       entryDate, entryPrice, target, sl,
@@ -2809,6 +2899,19 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
       ...status,
     });
   }
+
+  // Sort: pinned target-hit at top, OPEN by proximity desc, SL-hit at
+  // bottom. Not-Covered float to the very bottom so they don't break
+  // the visual flow.
+  const sortByProximity = (rows) => rows
+    .map(enrichRow)
+    .sort((a, b) => {
+      if (a.notCovered && !b.notCovered) return 1;
+      if (!a.notCovered && b.notCovered) return -1;
+      return (b.proximity ?? -99) - (a.proximity ?? -99);
+    });
+  const aiRows = sortByProximity(aiRowsRaw);
+  const manualRows = sortByProximity(manualRowsRaw);
 
   // Summaries — count target/SL/open per basket.
   const summarise = (rows) => {
@@ -2838,7 +2941,16 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
   // "Just hit today" picks across both baskets — surfaced as an alert.
   const todayHits = [...aiRows, ...manualRows].filter((r) => r.hitToday);
 
-  return { aiRows, manualRows, aiSummary, manualSummary, todayHits, todayDate };
+  // All-time hits ledger for the bell-icon dropdown — newest first,
+  // labelled with basket.
+  const allHits = [
+    ...aiRows.filter((r) => !r.notCovered && (r.status === "TARGET_HIT" || r.status === "SL_HIT"))
+      .map((r) => ({ ...r, basket: "AI" })),
+    ...manualRows.filter((r) => !r.notCovered && (r.status === "TARGET_HIT" || r.status === "SL_HIT"))
+      .map((r) => ({ ...r, basket: "Manual" })),
+  ].sort((a, b) => (b.hitDate || "").localeCompare(a.hitDate || ""));
+
+  return { aiRows, manualRows, aiSummary, manualSummary, todayHits, allHits, todayDate };
 }
 
 function renderAccuracyView(data) {
@@ -2913,11 +3025,22 @@ function renderAccuracyView(data) {
       : "";
     const exit = r.exitPrice != null ? `₹${formatPrice(r.exitPrice)} · ${fmtDateDMY(r.hitDate)} · ${r.daysToHit}d`
       : r.currentClose != null ? `now ₹${formatPrice(r.currentClose)}` : "—";
+    // Proximity tint — greens climb toward target, reds slide toward SL.
+    // Tints are subtle so the table reads at a glance without screaming.
+    let rowTint = "hover:bg-slate-50";
+    if (r.status === "TARGET_HIT") rowTint = "bg-emerald-50 ring-1 ring-emerald-200";
+    else if (r.status === "SL_HIT") rowTint = "bg-rose-50 ring-1 ring-rose-200";
+    else if (r.proximity != null && r.proximity >= 0.75) rowTint = "bg-emerald-50/40 hover:bg-emerald-50/70";
+    else if (r.proximity != null && r.proximity <= 0.25) rowTint = "bg-rose-50/40 hover:bg-rose-50/70";
+    if (r.hitToday) rowTint += " ring-2 ring-amber-300";
+    const currentReturnHtml = r.currentReturnPct != null
+      ? `<span class="text-[10px] tabular-nums font-semibold ${r.currentReturnPct >= 0 ? "text-emerald-700" : "text-rose-700"} ml-1">${fmtPct(r.currentReturnPct)}</span>`
+      : "";
     return `
-      <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50 ${r.hitToday ? "ring-1 ring-amber-300 bg-amber-50/30" : ""}">
+      <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${rowTint}">
         <div class="col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
-          <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
         </div>
         <div class="col-span-3 text-[10px] tabular-nums text-slate-600 text-right">
           <div>T: ₹${formatPrice(r.target)} <span class="text-emerald-600">${fmtPct(r.targetPct)}</span></div>
