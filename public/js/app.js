@@ -1557,8 +1557,13 @@ async function renderHistory() {
   // Manual basket source: prefer month-keyed picksByMonth (the documented
   // future shape so each month can lock its own client basket); fall back
   // to the single top-level picks array (legacy single-basket file).
-  const anchorMonthKey = cohortAnchor ? cohortAnchor.slice(0, 7) : null;
-  const manualPicks = (anchorMonthKey && lkp?.picksByMonth?.[anchorMonthKey])
+  //
+  // The lookup key is the HELD month, not the anchor month — in Static
+  // mode they differ (anchor = prior month-end, held = current month).
+  // Monthly/Weekly views have anchor inside the held month, so taking
+  // the latest snapshot's month works for all three.
+  const heldMonthKey = snapshots.length ? snapshots[snapshots.length - 1].date.slice(0, 7) : null;
+  const manualPicks = (heldMonthKey && lkp?.picksByMonth?.[heldMonthKey])
     || lkp?.picks
     || [];
   const cohortSeriesData = cohort ? buildCohortSeries(cohort, manualPicks, niftyOn) : null;
@@ -2262,9 +2267,15 @@ const COHORT_RATING_BG = {
 // e.g. 31-05-26 for the entire month of June. If only one month of
 // snapshots exists, falls back to the earliest available snapshot so
 // the tracker still renders something.
+//
+// "Today" is computed in IST (markets we track), not from the latest
+// snapshot date — so on the morning of a month rollover (e.g. July 1
+// before the first July snapshot is written) Static mode anchors at
+// June 30 instead of staying stale at May 31.
 function staticAnchorDate(snapshots) {
   if (!snapshots.length) return null;
-  const todayMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
+  const istMs = Date.now() + 5.5 * 3600 * 1000;
+  const todayMonth = new Date(istMs).toISOString().slice(0, 7);
   for (let i = snapshots.length - 1; i >= 0; i--) {
     if (snapshots[i].date.slice(0, 7) !== todayMonth) return snapshots[i].date;
   }
