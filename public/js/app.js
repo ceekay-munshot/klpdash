@@ -3798,10 +3798,14 @@ function renderHistoryEmpty(reason) {
 // that day, so opening a position generates no synthetic gain/loss; the
 // equity curve reflects pure model behaviour.
 //
-// Cash from exits is split equally across new entries on the same day;
-// if there are no new entries (rare), cash sits until the next entry
-// day. No transaction costs assumed in the v1 backtest — "model truth"
-// without friction. We can layer in brokerage / impact cost later.
+// Rebalance model: on any basket change (entry or exit), continuing
+// positions are trimmed or topped up to the equal-weight target value
+// (NAV ÷ N). This is what frees cash for new entrants when the portfolio
+// is fully invested — without it, growing baskets would silently skip
+// the new names. Drift between basket-change events is allowed (no
+// pointless trades on quiet days). Internal weight adjustments don't
+// hit the trade log; only true basket adds/drops do. No transaction
+// costs assumed in the v1 backtest — "model truth" without friction.
 const ACTIVE_INITIAL_CAPITAL = 100000;
 
 function simulateActiveBasket(snapshots) {
@@ -3810,11 +3814,13 @@ function simulateActiveBasket(snapshots) {
 
   let cash = ACTIVE_INITIAL_CAPITAL;
   const holdings = new Map();   // ticker → { units, entryDate, entryPrice, name, sector }
-  const trades = [];            // every BUY and every SELL, time-ordered
+  const trades = [];            // BUY (new entrant) / SELL (basket exit), time-ordered
   const equity = [];            // { date, value, holdingCount, cash }
 
   for (const snap of sorted) {
     const date = snap.date;
+    const closeByTicker = new Map();
+    for (const s of snap.stocks) if (typeof s.close === "number") closeByTicker.set(s.ticker, s.close);
 
     // Today's target = STRONG BUY rated stocks with a close. (Out-of-
     // coverage injects have rating: null so they're naturally excluded.)
@@ -3823,13 +3829,12 @@ function simulateActiveBasket(snapshots) {
     const targetByTicker = new Map(target.map((s) => [s.ticker, s]));
 
     // 1. Exit positions not in today's target.
+    let exited = 0;
     for (const [ticker, pos] of [...holdings.entries()]) {
       if (targetByTicker.has(ticker)) continue;
-      const todayStock = snap.stocks.find((s) => s.ticker === ticker);
-      const exitPrice = todayStock?.close;
+      const exitPrice = closeByTicker.get(ticker);
       if (typeof exitPrice !== "number") continue;   // carry to next day if missing close
-      const proceeds = pos.units * exitPrice;
-      cash += proceeds;
+      cash += pos.units * exitPrice;
       const ret = (exitPrice / pos.entryPrice - 1) * 100;
       trades.push({
         action: "SELL",
@@ -3840,14 +3845,43 @@ function simulateActiveBasket(snapshots) {
         ret,
       });
       holdings.delete(ticker);
+      exited++;
     }
 
-    // 2. Open positions newly in today's target.
+    // 2. Identify new entrants.
     const newEntries = target.filter((s) => !holdings.has(s.ticker));
-    if (newEntries.length > 0 && cash > 0.01) {
-      const cashPerEntry = cash / newEntries.length;
+    const basketChanged = exited > 0 || newEntries.length > 0;
+
+    // 3. Rebalance to equal weight ONLY on basket change. Trim continuing
+    //    positions down to NAV/N (or top up if there's freed cash from
+    //    exits and N shrunk). This frees cash for new entrants when the
+    //    portfolio is fully invested — the case Codex flagged.
+    if (basketChanged && target.length > 0) {
+      let nav = cash;
+      for (const [ticker, pos] of holdings.entries()) {
+        const px = closeByTicker.get(ticker) ?? pos.entryPrice;
+        nav += pos.units * px;
+      }
+      const targetValuePerStock = nav / target.length;
+
+      // Adjust continuing positions to target value. Skip those without
+      // a close today (can't rebalance without a price).
+      for (const [ticker, pos] of holdings.entries()) {
+        const px = closeByTicker.get(ticker);
+        if (typeof px !== "number") continue;
+        const currentValue = pos.units * px;
+        const valueDelta = targetValuePerStock - currentValue;   // +ve = buy more, -ve = trim
+        if (Math.abs(valueDelta) < 0.01) continue;
+        pos.units += valueDelta / px;
+        cash -= valueDelta;
+      }
+
+      // Open new entrants at the target weight. Cap by remaining cash
+      // so floating-point dust can't push cash negative.
       for (const e of newEntries) {
-        const units = cashPerEntry / e.close;
+        const buyValue = Math.min(targetValuePerStock, cash);
+        if (buyValue < 0.01) continue;
+        const units = buyValue / e.close;
         holdings.set(e.ticker, {
           units, entryDate: date, entryPrice: e.close,
           name: e.name || e.ticker, sector: e.sector || null,
@@ -3857,15 +3891,14 @@ function simulateActiveBasket(snapshots) {
           ticker: e.ticker, name: e.name || e.ticker, sector: e.sector || null,
           date, price: e.close,
         });
-        cash -= cashPerEntry;
+        cash -= buyValue;
       }
     }
 
-    // 3. Mark-to-market today's portfolio value.
+    // 4. Mark-to-market today's portfolio value.
     let value = cash;
     for (const [ticker, pos] of holdings.entries()) {
-      const todayStock = snap.stocks.find((s) => s.ticker === ticker);
-      const px = (todayStock?.close != null) ? todayStock.close : pos.entryPrice;
+      const px = closeByTicker.get(ticker) ?? pos.entryPrice;
       value += pos.units * px;
     }
     equity.push({ date, value, holdingCount: holdings.size, cash });
@@ -3985,7 +4018,7 @@ function renderActiveBody(sim, stats, niftyOn) {
             </div>
             <div class="text-sm text-slate-600 mt-1">
               Simulates buying every STRONG BUY at today's close and selling when it drops out.
-              Starting capital ₹${ACTIVE_INITIAL_CAPITAL.toLocaleString("en-IN")}, equal-weight, no transaction costs.
+              Starting capital ₹${ACTIVE_INITIAL_CAPITAL.toLocaleString("en-IN")}, equal-weight (rebalanced on basket changes), no transaction costs.
             </div>
             <div class="text-xs text-slate-500 mt-2">
               Period: ${fmtDateDMY(stats.startDate)} → ${fmtDateDMY(stats.endDate)} · ${stats.days} snapshot days
