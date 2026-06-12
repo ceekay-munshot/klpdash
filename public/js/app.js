@@ -1558,11 +1558,13 @@ async function renderHistory() {
   // future shape so each month can lock its own client basket); fall back
   // to the single top-level picks array (legacy single-basket file).
   //
-  // The lookup key is the HELD month, not the anchor month — in Static
-  // mode they differ (anchor = prior month-end, held = current month).
-  // Monthly/Weekly views have anchor inside the held month, so taking
-  // the latest snapshot's month works for all three.
-  const heldMonthKey = snapshots.length ? snapshots[snapshots.length - 1].date.slice(0, 7) : null;
+  // Held month = IST calendar today's month, NOT the latest snapshot's
+  // month — same source of truth as staticAnchorDate so a month
+  // rollover before the first new-month snapshot lands picks up the
+  // new month's basket immediately. In Static mode anchor = prior
+  // month-end while held = current month, so these intentionally
+  // differ.
+  const heldMonthKey = istTodayDate().slice(0, 7);
   const manualPicks = (heldMonthKey && lkp?.picksByMonth?.[heldMonthKey])
     || lkp?.picks
     || [];
@@ -2262,6 +2264,14 @@ const COHORT_RATING_BG = {
   "FILTERED":   "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
+// IST calendar today (YYYY-MM-DD). Used by Static mode + the manual
+// basket month lookup so both stay aligned through a month rollover
+// (e.g. July 1 morning before the first July snapshot is written).
+function istTodayDate() {
+  const istMs = Date.now() + 5.5 * 3600 * 1000;
+  return new Date(istMs).toISOString().slice(0, 10);
+}
+
 // Last snapshot of the calendar month immediately before today's date.
 // Used by the Static view ("month-end") so the AI top 7 is locked from
 // e.g. 31-05-26 for the entire month of June. If only one month of
@@ -2274,8 +2284,7 @@ const COHORT_RATING_BG = {
 // June 30 instead of staying stale at May 31.
 function staticAnchorDate(snapshots) {
   if (!snapshots.length) return null;
-  const istMs = Date.now() + 5.5 * 3600 * 1000;
-  const todayMonth = new Date(istMs).toISOString().slice(0, 7);
+  const todayMonth = istTodayDate().slice(0, 7);
   for (let i = snapshots.length - 1; i >= 0; i--) {
     if (snapshots[i].date.slice(0, 7) !== todayMonth) return snapshots[i].date;
   }
