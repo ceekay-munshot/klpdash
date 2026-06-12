@@ -2360,7 +2360,6 @@ function buildCohort(snapshots, anchorDate, mode, opts = {}) {
     const eS = entry.stocks.find((x) => x.ticker === s.ticker);
     return { ...s, close: eS?.close ?? s.close, _selectionDate: sel.date };
   });
-    .slice(0, 7);
 
   if (mode === "monthly") {
     const tracking = snapshots.filter((s) => s.date >= anchorSnap.date);
