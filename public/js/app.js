@@ -1628,7 +1628,7 @@ async function renderHistory() {
       const subBody = historyView === "accuracy"
         ? renderAccuracyView(accuracyData)
         : renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
-      host.innerHTML = cohortTracker + prevMonthCard + subViewSwitch + subBody;
+      host.innerHTML = subViewSwitch + cohortTracker + prevMonthCard + subBody;
       wireCohortHandlers(cohortSeriesData);
       wireHistorySubViewSwitch();
     } else {
@@ -1756,9 +1756,9 @@ async function renderHistory() {
     `;
 
   host.innerHTML = `
+    ${subViewSwitch}
     ${cohortTracker}
     ${prevMonthCard}
-    ${subViewSwitch}
     ${historySubViewHtml}
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
