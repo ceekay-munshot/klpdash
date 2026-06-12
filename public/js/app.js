@@ -285,6 +285,20 @@ function saveCohortView(v) {
   try { localStorage.setItem(COHORT_VIEW_KEY, v); } catch {}
 }
 
+// History tab sub-view ("history" | "accuracy"). Toggled by an inline
+// switch below the Performance Tracker; persisted in localStorage so
+// the analyst's last choice survives reloads.
+const HISTORY_VIEW_KEY = "klpdash-history-view-v1";
+function loadHistoryView() {
+  try {
+    const v = localStorage.getItem(HISTORY_VIEW_KEY);
+    return v === "accuracy" ? "accuracy" : "history";
+  } catch { return "history"; }
+}
+function saveHistoryView(v) {
+  try { localStorage.setItem(HISTORY_VIEW_KEY, v); } catch {}
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -312,8 +326,9 @@ const state = {
   pillarWeights: loadPillarWeights(),
   allocPerPick: loadAllocPerPick(),
   cohortMonth: null,            // legacy — kept for compat; unused after move to anchor-date model
-  cohortView: loadCohortView(), // "weekly" | "monthly"
+  cohortView: loadCohortView(), // "static" | "monthly" | "weekly"
   cohortSegmentIdx: null,       // which week pill is selected (null = latest)
+  historyView: loadHistoryView(), // "history" | "accuracy"
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -1604,8 +1619,18 @@ async function renderHistory() {
       state.cache.history.todayClose = todayClose;
       state.cache.history.lkpPicksByTicker = new Map(earlyLkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
       state.cache.history.cohortAnchor = cohortAnchor;
-      host.innerHTML = cohortTracker + prevMonthCard;
+      // No STRONG BUYs yet, but cohort exists — show cohort tracker
+      // + accuracy/history sub-switch (Accuracy still works because
+      // it pulls picks from cohort segments, not from STRONG BUY history).
+      const historyView = state.historyView;
+      const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
+      const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
+      const subBody = historyView === "accuracy"
+        ? renderAccuracyView(accuracyData)
+        : renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
+      host.innerHTML = subViewSwitch + cohortTracker + prevMonthCard + subBody;
       wireCohortHandlers(cohortSeriesData);
+      wireHistorySubViewSwitch();
     } else {
       host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
     }
@@ -1708,18 +1733,33 @@ async function renderHistory() {
   state.cache.history.lkpPicksByTicker = new Map(cohortLkpPicks.filter((p) => p.ticker).map((p) => [p.ticker, p]));
   state.cache.history.cohortAnchor = cohortAnchor;
 
+  // Below the Performance Tracker, a prominent tabbed header lets the
+  // analyst flip between History (past STRONG BUYs + LKP card) and
+  // Accuracy (target / stop-loss hit tracker). Bell-icon dropdown on
+  // the right surfaces every recent hit with a badge for today's count.
+  const historyView = state.historyView;
+  const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
+  const accuracyView = renderAccuracyView(accuracyData);
+  const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
+  const historySubViewHtml = historyView === "accuracy"
+    ? accuracyView
+    : `
+      ${heroHeader}
+      <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
+          <span class="text-[11px] text-slate-500 tabular-nums">Sorted by return · click any row to see the chart</span>
+        </div>
+        <div class="space-y-1.5">${rows}</div>
+      </div>
+      ${lkpCard}
+    `;
+
   host.innerHTML = `
+    ${subViewSwitch}
     ${cohortTracker}
     ${prevMonthCard}
-    ${heroHeader}
-    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
-        <span class="text-[11px] text-slate-500 tabular-nums">Sorted by return · click any row to see the chart</span>
-      </div>
-      <div class="space-y-1.5">${rows}</div>
-    </div>
-    ${lkpCard}
+    ${historySubViewHtml}
   `;
   $$("#history-content .hist-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(picks[Number(el.dataset.pick)])));
   $$("#history-content .lkp-row").forEach((el) => el.addEventListener("click", () => openHistoryDrill(lkpPicks[Number(el.dataset.lkp)])));
@@ -1728,6 +1768,7 @@ async function renderHistory() {
   $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
+  wireHistorySubViewSwitch();
   // Performance Tracker controls (view toggle, week pills, hover)
   wireCohortHandlers(cohortSeriesData);
 
@@ -2627,6 +2668,431 @@ function avgFactorFromPerStock(perStock, entryCloses) {
 }
 
 const COHORT_COLOR = { ai: "#6366f1", manual: "#f59e0b", nifty: "#64748b" };
+
+// Prominent header bar that toggles the History sub-view (History vs
+// Accuracy). Rendered as a real tab strip with an active underline +
+// a bell-icon dropdown on the right surfacing every recent hit. Badge
+// count = today's fresh hits.
+function renderHistoryViewSwitch(activeView, accuracyData) {
+  const allHits = accuracyData?.allHits || [];
+  const todayCount = accuracyData?.todayHits?.length || 0;
+  const tabBtn = (view, label, sub) => {
+    const active = activeView === view;
+    return `
+      <button data-history-view="${view}" type="button" class="relative px-4 py-2.5 text-sm font-semibold transition ${active ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"}">
+        ${label}
+        ${sub ? `<span class="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">${sub}</span>` : ""}
+        ${active ? `<span class="absolute left-3 right-3 -bottom-px h-0.5 bg-indigo-600 rounded-full"></span>` : ""}
+      </button>`;
+  };
+  const dropdown = allHits.length ? `
+    <div id="hits-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50 max-h-96 overflow-y-auto">
+      <div class="sticky top-0 px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+        <span>Recent hits · ${allHits.length} total</span>
+        ${todayCount > 0 ? `<span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider animate-pulse">${todayCount} today</span>` : ""}
+      </div>
+      <div class="py-1">
+        ${allHits.map((h) => `
+          <div class="px-3 py-1.5 hover:bg-slate-50 text-xs ${h.hitToday ? "bg-amber-50/40" : ""}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-900 truncate">${escapeHtml(h.name || h.ticker)}</span>
+              <span class="text-[10px] tabular-nums text-slate-400 whitespace-nowrap">${fmtDateDMY(h.hitDate)}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:${h.basket === "AI" ? COHORT_COLOR.ai : COHORT_COLOR.manual}"></span>
+                ${escapeHtml(h.basket)}
+              </span>
+              ·
+              <span class="${h.status === "TARGET_HIT" ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}">${h.status === "TARGET_HIT" ? "🎯 Target" : "⚠ SL"}</span>
+              at ₹${formatPrice(h.exitPrice)} · ${h.daysToHit}d
+              ${h.hitToday ? `<span class="ml-1 inline-flex items-center px-1 py-0 rounded bg-amber-500 text-white text-[8px] font-bold uppercase">just hit</span>` : ""}
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>` : `
+    <div id="hits-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50">
+      <div class="px-3 py-4 text-[11px] text-slate-500 text-center">No hits yet — once a stock crosses target or SL, it'll land here.</div>
+    </div>`;
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 mb-3 overflow-visible">
+      <div class="flex items-center justify-between border-b border-slate-100 px-2 sm:px-3">
+        <div id="history-view-toggle" class="flex items-center gap-1">
+          ${tabBtn("history", "History", "past picks")}
+          ${tabBtn("accuracy", "Accuracy", "target / sl")}
+        </div>
+        <div class="relative">
+          <button id="hits-alert-btn" type="button" class="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="hidden sm:inline">Alerts</span>
+            ${todayCount > 0
+              ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums">${todayCount}</span>`
+              : allHits.length ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold tabular-nums">${allHits.length}</span>` : ""}
+          </button>
+          ${dropdown}
+        </div>
+      </div>
+    </div>`;
+}
+
+// Wire up the History sub-view toggle + the bell-icon dropdown. Idempotent —
+// safe to call multiple times since renderHistory rebuilds the DOM.
+function wireHistorySubViewSwitch() {
+  $$("#history-content [data-history-view]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.historyView;
+    if (v && v !== state.historyView) { state.historyView = v; saveHistoryView(v); renderHistory(); }
+  }));
+  const alertBtn = $("#hits-alert-btn");
+  const dropdown = $("#hits-dropdown");
+  if (alertBtn && dropdown) {
+    alertBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+    document.addEventListener("click", (e) => {
+      if (!dropdown.classList.contains("hidden") && !dropdown.contains(e.target) && !alertBtn.contains(e.target)) {
+        dropdown.classList.add("hidden");
+      }
+    }, { once: true });
+  }
+}
+
+// ---------------- Accuracy view ----------------
+// Per-stock target / stop-loss tracker. AI picks use the framework
+// uniform +5% target / −20% SL (from the founder call). Manual picks
+// use TGT1 + SL columns from the LKP upload (per-stock).
+//
+// For each pick we scan forward through the snapshot trail from its
+// entry date and record the FIRST close that crossed target or SL.
+// Status: TARGET_HIT, SL_HIT, OPEN. Includes daysToHit and a flag
+// for "hit happened in today's snapshot" so the UI can highlight
+// fresh outcomes.
+const AI_TARGET_PCT = 0.05;      // +5%
+const AI_SL_PCT     = 0.20;      // −20%
+
+function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, todayDate) {
+  if (!ticker || entryPrice == null || target == null || sl == null) {
+    return { status: "OPEN", currentClose: null };
+  }
+  // Walk forward from entry day onwards looking for the first close
+  // that hits either side.
+  let lastClose = null;
+  let prevDateBeforeToday = null;
+  for (const snap of snapshots) {
+    if (snap.date < entryDate) continue;
+    const s = snap.stocks.find((x) => x.ticker === ticker);
+    if (!s || s.close == null) continue;
+    lastClose = s.close;
+    if (s.close >= target) {
+      return {
+        status: "TARGET_HIT",
+        hitDate: snap.date,
+        daysToHit: daysBetween(entryDate, snap.date),
+        exitPrice: s.close,
+        hitToday: snap.date === todayDate,
+      };
+    }
+    if (s.close <= sl) {
+      return {
+        status: "SL_HIT",
+        hitDate: snap.date,
+        daysToHit: daysBetween(entryDate, snap.date),
+        exitPrice: s.close,
+        hitToday: snap.date === todayDate,
+      };
+    }
+    if (snap.date < todayDate) prevDateBeforeToday = snap.date;
+  }
+  return { status: "OPEN", currentClose: lastClose };
+}
+
+// Build the rows + summary for the Accuracy view.
+//   cohort      → the AI cohort currently active (Static/Monthly/Weekly).
+//                  Each segment's top 7 contributes 7 picks (5% TGT / 20% SL).
+//                  In Weekly mode that's one row per (week × stock), so the
+//                  table grows as more weeks accumulate (founder's ask).
+//   manualPicks → the LKP basket (in-universe rows have ticker + tgt1 + sl).
+//   snapshots   → full snapshot trail.
+//
+// Rows are scored by proximity to the target / stop-loss bands:
+//   proximityScore = (currentReturn% − slPct) / (targetPct − slPct)
+//     1.0 = at target · 0.5 = midpoint · 0.0 = at SL
+// Sort order: TARGET_HIT (top) → OPEN by proximityScore desc → SL_HIT
+// (bottom). Greens up high, reds down low.
+function buildAccuracyData(cohort, manualPicks, snapshots) {
+  if (!snapshots.length) return null;
+  const todayDate = snapshots[snapshots.length - 1].date;
+
+  // Resolve a row's status, current-close return %, and proximity score
+  // — all needed for the sort + tint pass below.
+  function enrichRow(row) {
+    if (row.notCovered) return row;
+    const range = row.targetPct - row.slPct;                          // e.g. 5 − (−20) = 25
+    const curRet = row.currentClose != null && row.entryPrice
+      ? (row.currentClose / row.entryPrice - 1) * 100
+      : null;
+    let proximity = null;
+    if (row.status === "TARGET_HIT") proximity = 1.5;                 // pinned top
+    else if (row.status === "SL_HIT") proximity = -0.5;               // pinned bottom
+    else if (curRet != null && range > 0) proximity = (curRet - row.slPct) / range;
+    return { ...row, currentReturnPct: curRet, proximity };
+  }
+
+  // -- AI picks --
+  const aiRowsRaw = [];
+  for (const seg of (cohort?.segments || [])) {
+    for (const s of seg.top7) {
+      if (!s.ticker || s.close == null) continue;
+      const target = s.close * (1 + AI_TARGET_PCT);
+      const sl = s.close * (1 - AI_SL_PCT);
+      const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
+      aiRowsRaw.push({
+        ticker: s.ticker,
+        name: s.name || s.ticker,
+        entryDate: seg.startDate,
+        entryPrice: s.close,
+        target, sl,
+        targetPct: AI_TARGET_PCT * 100,
+        slPct: -AI_SL_PCT * 100,
+        cohortLabel: cohort?.segments?.length > 1 ? seg.label : null,
+        ...status,
+      });
+    }
+  }
+
+  // -- Manual picks --
+  const manualRowsRaw = [];
+  for (const p of (manualPicks || [])) {
+    if (!p.in_universe || !p.ticker) {
+      manualRowsRaw.push({
+        ticker: p.ticker,
+        name: p.selection || p.ticker || "—",
+        notCovered: true,
+        outReason: p.out_reason || "Below market-cap floor / not matched",
+      });
+      continue;
+    }
+    const cohortEntrySnap = cohort?.segments?.[0]?.entrySnap;
+    const entryFromSnap = cohortEntrySnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
+    const entryPrice = entryFromSnap ?? p.entry ?? null;
+    const entryDate = cohortEntrySnap?.date || cohort?.anchorDate || todayDate;
+    const target = p.tgt1 ?? null;
+    const sl = p.sl ?? null;
+    if (entryPrice == null || target == null || sl == null) {
+      manualRowsRaw.push({
+        ticker: p.ticker, name: p.selection || p.ticker,
+        entryDate, entryPrice, target, sl,
+        targetPct: target != null && entryPrice ? (target / entryPrice - 1) * 100 : null,
+        slPct: sl != null && entryPrice ? (sl / entryPrice - 1) * 100 : null,
+        status: "OPEN", currentClose: null,
+      });
+      continue;
+    }
+    const status = computeHitStatus(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate);
+    manualRowsRaw.push({
+      ticker: p.ticker,
+      name: p.selection || p.ticker,
+      entryDate, entryPrice, target, sl,
+      targetPct: (target / entryPrice - 1) * 100,
+      slPct: (sl / entryPrice - 1) * 100,
+      tgt2: p.tgt2 ?? null,
+      ...status,
+    });
+  }
+
+  // Sort: pinned target-hit at top, OPEN by proximity desc, SL-hit at
+  // bottom. Not-Covered float to the very bottom so they don't break
+  // the visual flow.
+  const sortByProximity = (rows) => rows
+    .map(enrichRow)
+    .sort((a, b) => {
+      if (a.notCovered && !b.notCovered) return 1;
+      if (!a.notCovered && b.notCovered) return -1;
+      return (b.proximity ?? -99) - (a.proximity ?? -99);
+    });
+  const aiRows = sortByProximity(aiRowsRaw);
+  const manualRows = sortByProximity(manualRowsRaw);
+
+  // Summaries — count target/SL/open per basket.
+  const summarise = (rows) => {
+    const eligible = rows.filter((r) => !r.notCovered && r.status);
+    const targetHits = eligible.filter((r) => r.status === "TARGET_HIT");
+    const slHits = eligible.filter((r) => r.status === "SL_HIT");
+    const open = eligible.filter((r) => r.status === "OPEN");
+    const avgDaysToTarget = targetHits.length
+      ? targetHits.reduce((a, b) => a + (b.daysToHit || 0), 0) / targetHits.length
+      : null;
+    const avgDaysToSL = slHits.length
+      ? slHits.reduce((a, b) => a + (b.daysToHit || 0), 0) / slHits.length
+      : null;
+    return {
+      total: eligible.length,
+      targetHits: targetHits.length,
+      slHits: slHits.length,
+      open: open.length,
+      targetHitRate: eligible.length ? (targetHits.length / eligible.length) * 100 : null,
+      slHitRate: eligible.length ? (slHits.length / eligible.length) * 100 : null,
+      avgDaysToTarget, avgDaysToSL,
+    };
+  };
+  const aiSummary = summarise(aiRows);
+  const manualSummary = summarise(manualRows);
+
+  // "Just hit today" picks across both baskets — surfaced as an alert.
+  const todayHits = [...aiRows, ...manualRows].filter((r) => r.hitToday);
+
+  // All-time hits ledger for the bell-icon dropdown — newest first,
+  // labelled with basket.
+  const allHits = [
+    ...aiRows.filter((r) => !r.notCovered && (r.status === "TARGET_HIT" || r.status === "SL_HIT"))
+      .map((r) => ({ ...r, basket: "AI" })),
+    ...manualRows.filter((r) => !r.notCovered && (r.status === "TARGET_HIT" || r.status === "SL_HIT"))
+      .map((r) => ({ ...r, basket: "Manual" })),
+  ].sort((a, b) => (b.hitDate || "").localeCompare(a.hitDate || ""));
+
+  return { aiRows, manualRows, aiSummary, manualSummary, todayHits, allHits, todayDate };
+}
+
+function renderAccuracyView(data) {
+  if (!data) return `<div class="bg-white rounded-2xl ring-1 ring-slate-100 p-6 text-center text-slate-500 text-sm">No accuracy data yet — snapshots not loaded.</div>`;
+
+  const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const fmtDays = (v) => v == null ? "—" : `${Math.round(v)}d`;
+
+  const summaryCard = (label, summary, accent) => `
+    <div class="rounded-xl bg-white ring-1 ring-slate-200 p-3">
+      <div class="flex items-center gap-1.5 mb-2">
+        <span class="inline-block w-2 h-2 rounded-full" style="background:${accent}"></span>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(label)}</div>
+        <span class="ml-auto text-[10px] text-slate-400 tabular-nums">${summary.total} pick${summary.total === 1 ? "" : "s"}</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <div class="text-base font-display font-extrabold tabular-nums text-emerald-700">${summary.targetHits}</div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Target hits</div>
+          <div class="text-[10px] text-slate-400 tabular-nums">${summary.targetHitRate != null ? summary.targetHitRate.toFixed(0) + "%" : "—"}</div>
+        </div>
+        <div>
+          <div class="text-base font-display font-extrabold tabular-nums text-rose-700">${summary.slHits}</div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">SL hits</div>
+          <div class="text-[10px] text-slate-400 tabular-nums">${summary.slHitRate != null ? summary.slHitRate.toFixed(0) + "%" : "—"}</div>
+        </div>
+        <div>
+          <div class="text-base font-display font-extrabold tabular-nums text-slate-700">${summary.open}</div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Open</div>
+          <div class="text-[10px] text-slate-400 tabular-nums">avg ${fmtDays(summary.avgDaysToTarget)}→T · ${fmtDays(summary.avgDaysToSL)}→SL</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const todayHitsBanner = data.todayHits.length ? `
+    <div class="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 ring-1 ring-amber-200 px-3 py-2 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-amber-600 text-base">🔔</span>
+        <span class="font-bold text-amber-900 text-sm">${data.todayHits.length} pick${data.todayHits.length === 1 ? "" : "s"} just hit ${data.todayHits.length === 1 ? "an outcome" : "outcomes"} on ${fmtDateDMY(data.todayDate)}</span>
+        <div class="ml-auto flex flex-wrap items-center gap-1.5">
+          ${data.todayHits.map((h) => `
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ring-1 text-[10px] font-bold ${h.status === "TARGET_HIT" ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-rose-100 text-rose-700 ring-rose-200"}">
+              ${h.status === "TARGET_HIT" ? "🎯" : "⚠"} ${escapeHtml(h.name || h.ticker)}
+            </span>
+          `).join("")}
+        </div>
+      </div>
+    </div>` : "";
+
+  function renderRow(r, basket) {
+    if (r.notCovered) {
+      return `
+        <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg bg-slate-50/40">
+          <div class="col-span-5 min-w-0">
+            <div class="font-semibold text-slate-500 text-xs truncate" title="${escapeHtml(r.outReason || "")}">${escapeHtml(r.name)}</div>
+            <div class="text-[10px] text-slate-400 truncate">${escapeHtml(r.outReason || "")}</div>
+          </div>
+          <div class="col-span-7 text-right">
+            <span class="inline-flex items-center px-1.5 py-0 rounded bg-slate-200 text-slate-600 ring-1 ring-slate-300 text-[9px] font-bold uppercase tracking-wider">Not Covered</span>
+          </div>
+        </div>`;
+    }
+    const statusCls = r.status === "TARGET_HIT" ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      : r.status === "SL_HIT" ? "bg-rose-100 text-rose-700 ring-rose-200"
+      : "bg-slate-100 text-slate-600 ring-slate-200";
+    const statusLabel = r.status === "TARGET_HIT" ? "🎯 Target Hit"
+      : r.status === "SL_HIT" ? "⚠ SL Hit"
+      : "Open";
+    const hitTodayBadge = r.hitToday
+      ? `<span class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider ml-1 animate-pulse">JUST HIT</span>`
+      : "";
+    const exit = r.exitPrice != null ? `₹${formatPrice(r.exitPrice)} · ${fmtDateDMY(r.hitDate)} · ${r.daysToHit}d`
+      : r.currentClose != null ? `now ₹${formatPrice(r.currentClose)}` : "—";
+    // Proximity tint — greens climb toward target, reds slide toward SL.
+    // Tints are subtle so the table reads at a glance without screaming.
+    let rowTint = "hover:bg-slate-50";
+    if (r.status === "TARGET_HIT") rowTint = "bg-emerald-50 ring-1 ring-emerald-200";
+    else if (r.status === "SL_HIT") rowTint = "bg-rose-50 ring-1 ring-rose-200";
+    else if (r.proximity != null && r.proximity >= 0.75) rowTint = "bg-emerald-50/40 hover:bg-emerald-50/70";
+    else if (r.proximity != null && r.proximity <= 0.25) rowTint = "bg-rose-50/40 hover:bg-rose-50/70";
+    if (r.hitToday) rowTint += " ring-2 ring-amber-300";
+    const currentReturnHtml = r.currentReturnPct != null
+      ? `<span class="text-[10px] tabular-nums font-semibold ${r.currentReturnPct >= 0 ? "text-emerald-700" : "text-rose-700"} ml-1">${fmtPct(r.currentReturnPct)}</span>`
+      : "";
+    return `
+      <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${rowTint}">
+        <div class="col-span-5 min-w-0">
+          <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
+        </div>
+        <div class="col-span-3 text-[10px] tabular-nums text-slate-600 text-right">
+          <div>T: ₹${formatPrice(r.target)} <span class="text-emerald-600">${fmtPct(r.targetPct)}</span></div>
+          <div>SL: ₹${formatPrice(r.sl)} <span class="text-rose-600">${fmtPct(r.slPct)}</span></div>
+        </div>
+        <div class="col-span-4 text-right">
+          <div class="flex items-center justify-end flex-wrap gap-1">
+            <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${statusCls}">${statusLabel}</span>
+            ${hitTodayBadge}
+          </div>
+          <div class="text-[10px] text-slate-500 mt-0.5 truncate">${exit}</div>
+        </div>
+      </div>`;
+  }
+
+  const aiRowsHtml = data.aiRows.length
+    ? data.aiRows.map((r) => renderRow(r, "ai")).join("")
+    : `<div class="text-[11px] text-slate-400 text-center py-3">No AI picks for this cohort.</div>`;
+  const manualRowsHtml = data.manualRows.length
+    ? data.manualRows.map((r) => renderRow(r, "manual")).join("")
+    : `<div class="text-[11px] text-slate-400 text-center py-3">No manual basket loaded.</div>`;
+
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 class="font-display font-bold text-slate-900 text-base">Target / Stop-loss tracker</h2>
+        <span class="text-[11px] text-slate-500">All-time hit record · AI uses +5% / −20%, Manual uses TGT1 / SL from upload</span>
+      </div>
+      ${todayHitsBanner}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        ${summaryCard("AI Picks · summary", data.aiSummary, COHORT_COLOR.ai)}
+        ${summaryCard("Manual Picks · summary", data.manualSummary, COHORT_COLOR.manual)}
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.ai}"></span>
+            AI Picks · per-pick status
+          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">${aiRowsHtml}</div>
+        </div>
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full" style="background:${COHORT_COLOR.manual}"></span>
+            Manual Picks · per-pick status
+          </div>
+          <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1">${manualRowsHtml}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
 function renderCohortTracker(cohort, series, view, selectedSegIdx) {
   if (!cohort || !series) return "";
