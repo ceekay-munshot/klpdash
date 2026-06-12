@@ -3962,40 +3962,61 @@ function computeActiveStats(sim, niftyOn) {
   };
 }
 
+// The full backtest (simulateActiveBasket + renderActiveBody + chart /
+// holdings / trades renderers below) is intentionally not wired right
+// now. The v1 strategy showed 1-day average holding period across the
+// 20-day window — we want to layer in tunable parameters (buffer band,
+// min hold period) before exposing the tab. Until then, render a
+// placeholder so the route still resolves but visitors don't see
+// half-finished numbers.
 async function renderActive() {
   const host = $("#active-content");
   if (!host) return;
-  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading active basket backtest…</div>`;
+  host.innerHTML = renderActiveComingSoon();
+}
 
-  try {
-    await ensureHistoryCache();
-  } catch (e) {
-    host.innerHTML = renderHistoryEmpty(e.message);
-    return;
-  }
-  const { snapshots, benchmark } = state.cache.history;
-  if (!snapshots.length) {
-    host.innerHTML = renderHistoryEmpty("No snapshots loaded.");
-    return;
-  }
+function renderActiveComingSoon() {
+  return `
+    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl shadow-sm ring-1 ring-indigo-100 p-8 sm:p-12">
+      <div class="max-w-2xl mx-auto text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-3xl mb-5 shadow-lg">🚧</div>
+        <h2 class="font-display font-bold text-2xl text-slate-900 mb-2">Active Basket — coming soon</h2>
+        <p class="text-sm text-slate-600 leading-relaxed mb-6">
+          The daily-rebalancing strategy is being tuned before it goes live.
+          The v1 backtest showed heavy churn (1-day average hold) on the current snapshot window — we're adding strategy controls so it can be evaluated honestly before clients see it.
+        </p>
 
-  const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
-  const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
-  function niftyOn(date) {
-    if (!niftyClosesByDate) return null;
-    if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
-    let last = null;
-    for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
-    return last;
-  }
+        <div class="text-left bg-white/70 ring-1 ring-slate-200 rounded-xl p-5">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700 mb-3">What's coming</div>
+          <ol class="space-y-3 text-sm text-slate-700">
+            <li class="flex items-start gap-3">
+              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">1</span>
+              <div>
+                <div class="font-semibold text-slate-900">Tunable strategy variants</div>
+                <div class="text-xs text-slate-600 mt-0.5">Buffer band (sell only when composite drops below 75−X) and min hold period (force conviction). Sliders that recompute the equity curve in real time.</div>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">2</span>
+              <div>
+                <div class="font-semibold text-slate-900">Side-by-side compare</div>
+                <div class="text-xs text-slate-600 mt-0.5">Active vs Static cohort vs Nifty 50 on one chart — answers whether daily rebalancing actually beats holding the month-end pick.</div>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">3</span>
+              <div>
+                <div class="font-semibold text-slate-900">Daily action items <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 ring-1 ring-slate-200 ml-1">if tuning works</span></div>
+                <div class="text-xs text-slate-600 mt-0.5">"Today's BUY / SELL" panel surfaced to clients once the tuned curve clearly beats Nifty.</div>
+              </div>
+            </li>
+          </ol>
+        </div>
 
-  const sim = simulateActiveBasket(snapshots);
-  const stats = computeActiveStats(sim, niftyOn);
-  if (!sim || !stats) {
-    host.innerHTML = renderHistoryEmpty("No STRONG BUY days in the snapshot trail yet.");
-    return;
-  }
-  host.innerHTML = renderActiveBody(sim, stats, niftyOn);
+        <div class="text-[11px] text-slate-500 mt-5">Snapshot trail still accumulating since 24-05-26 · numbers firm up with more data</div>
+      </div>
+    </div>
+  `;
 }
 
 function renderActiveBody(sim, stats, niftyOn) {
