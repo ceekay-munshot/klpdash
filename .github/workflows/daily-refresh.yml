@@ -83,6 +83,16 @@ jobs:
         continue-on-error: true
         run: node screener-test/scrape-benchmarks.mjs
 
+      # ---- 6b. Out-of-coverage OHLCV (LKP manual picks below our cap) ----
+      # When the client's LKP basket includes stocks below our ~Rs 12,500 Cr
+      # universe (e.g. ELECON), we still want them to contribute to the
+      # Manual average return + Accuracy hit tracking. This scraper hits
+      # Yahoo for each `in_universe: false` ticker in the LKP file and
+      # writes daily closes to out-of-coverage-history.json.
+      - name: Refresh out-of-coverage OHLCV
+        continue-on-error: true
+        run: node screener-test/scrape-out-of-coverage.mjs
+
       # ---- 7. Daily SPIP snapshot for the History tab ----
       # Replays the composite scorer against the freshly-refreshed inputs
       # and emits public/data/snapshots/YYYY-MM-DD.json — every company's
@@ -124,6 +134,7 @@ jobs:
           [ -f public/data/fii-dii-history.json ] && git add public/data/fii-dii-history.json || true
           [ -f public/data/governance-flags.json ] && git add public/data/governance-flags.json || true
           [ -f public/data/benchmark-history.json ] && git add public/data/benchmark-history.json || true
+          [ -f public/data/out-of-coverage-history.json ] && git add public/data/out-of-coverage-history.json || true
           # Today's snapshot (and any newly rebuilt manifest)
           [ -d public/data/snapshots ] && git add public/data/snapshots || true
           if git diff --cached --quiet; then

@@ -299,6 +299,56 @@ function saveHistoryView(v) {
   try { localStorage.setItem(HISTORY_VIEW_KEY, v); } catch {}
 }
 
+// "Recompute history with current pillar weights" opt-in. Snapshots are
+// stored with v1 framework weights — when the analyst changes weights
+// in the SPIP basket pillar editor, the History tab still shows the
+// v1 composites by default. Opting in here re-derives each snapshot's
+// composite + rating from the stored per-pillar pct × current weights.
+const RECOMPUTE_HISTORY_KEY = "klpdash-recompute-history-v1";
+function loadRecomputeHistory() {
+  try { return localStorage.getItem(RECOMPUTE_HISTORY_KEY) === "1"; } catch { return false; }
+}
+function saveRecomputeHistory(b) {
+  try {
+    if (b) localStorage.setItem(RECOMPUTE_HISTORY_KEY, "1");
+    else localStorage.removeItem(RECOMPUTE_HISTORY_KEY);
+  } catch {}
+}
+
+// Apply current weights to every cached snapshot, mutating composite +
+// rating in place. Cheap: snapshots store pillars.pct already, so the
+// new composite is just a weighted sum + a rating-band lookup. Doesn't
+// touch hardFailed (rule-based, not weight-based).
+function recomputeSnapshotsWithWeights(snapshots, weights) {
+  for (const snap of snapshots) {
+    for (const s of snap.stocks) {
+      const p = s.pillars;
+      if (!p) continue;
+      const fundPct = p.fundamentals?.pct;
+      const techPct = p.technicals?.pct;
+      const macroPct = p.macro?.pct;
+      const sentPct = p.sentiment?.pct;
+      const liqPct = p.liquidity?.pct;
+      if ([fundPct, techPct, macroPct, sentPct, liqPct].some((v) => v == null)) continue;
+      const newComposite = (
+        fundPct * weights.fundamentals +
+        techPct * weights.technicals +
+        macroPct * weights.macro +
+        sentPct * weights.sentiment +
+        liqPct * weights.liquidity
+      ) / 100;
+      s.composite = Number(newComposite.toFixed(2));
+      s.rating = composite.ratingFromComposite(s.composite, s.hardFailed);
+    }
+  }
+}
+
+function weightsMatchDefault(w) {
+  if (!w) return true;
+  const d = composite.PILLAR_WEIGHTS;
+  return ["fundamentals", "technicals", "macro", "sentiment", "liquidity"].every((k) => w[k] === d[k]);
+}
+
 const WATCHLIST_KEY = "klpdash-watchlist-v1";
 function loadWatchlist() {
   try { return new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")); }
@@ -329,6 +379,7 @@ const state = {
   cohortView: loadCohortView(), // "static" | "monthly" | "weekly"
   cohortSegmentIdx: null,       // which week pill is selected (null = latest)
   historyView: loadHistoryView(), // "history" | "accuracy"
+  recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
   compositeBySlug: new Map(),
@@ -1133,6 +1184,7 @@ function openPillarWeightsModal() {
     savePillarWeights(next);
     delete state.cache.composite;
     delete state.cache.topPicks;
+    delete state.cache.history;            // banner state + recomputed snapshots both depend on the active weights
     state.compositeBySlug.clear();
     closeModal();
     // Re-route to whichever rating tab the user is on (composite or topPicks).
@@ -1469,7 +1521,62 @@ async function renderHistory() {
       const lkp = await fetch("data/lkp-manual-picks.json")
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null);
-      state.cache.history = { idx, snapshots, benchmark, lkp };
+      // Out-of-coverage OHLCV (LKP picks below our ~Rs 12,500 Cr universe,
+      // e.g. ELECON). Lets them count in the Manual average / Accuracy
+      // tracking. Best-effort: missing file = falls back to today's
+      // "Not Covered" exclusion behaviour.
+      const ooc = await fetch("data/out-of-coverage-history.json")
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null);
+      // Inject synthetic stock entries into each snapshot for tickers we
+      // have OHLCV for but aren't in the regular universe. Once they
+      // look like ordinary snapshot stocks (just composite/rating null),
+      // every downstream lookup (Performance Tracker, Accuracy, drill)
+      // resolves them naturally — no special-casing needed below.
+      const oocTickers = ooc?.tickers || {};
+      if (Object.keys(oocTickers).length) {
+        for (const snap of snapshots) {
+          for (const [ticker, closes] of Object.entries(oocTickers)) {
+            const close = closes[snap.date];
+            if (close == null) continue;
+            if (snap.stocks.some((s) => s.ticker === ticker)) continue;
+            snap.stocks.push({
+              ticker, name: ticker, close,
+              composite: null, rating: null,
+              hardFailed: false, dataComplete: false,
+              _outOfCoverage: true,
+            });
+          }
+        }
+        // Promote LKP picks whose ticker now has OHLCV from Yahoo: they
+        // count as in-universe for tracker / accuracy purposes (just
+        // tagged viaOoc so the UI can hint "via Yahoo" later).
+        const promote = (arr) => {
+          for (const p of (arr || [])) {
+            if (p.in_universe) continue;
+            const t = (p.ticker || p.selection || "").toString().trim().toUpperCase();
+            if (t && oocTickers[t]) {
+              p.ticker = t;
+              p.in_universe = true;
+              p.viaOoc = true;
+            }
+          }
+        };
+        if (lkp) {
+          promote(lkp.picks);
+          for (const m of Object.values(lkp.picksByMonth || {})) promote(m);
+        }
+      }
+      state.cache.history = { idx, snapshots, benchmark, lkp, ooc };
+
+      // If the analyst has opted in to recomputing history with their
+      // current pillar weights, mutate the cached snapshots now (cheap —
+      // per-pillar pct × weights). Reverting clears the cache so the
+      // next render fetches fresh v1 snapshots from the network.
+      if (state.recomputeHistory && !weightsMatchDefault(state.pillarWeights)) {
+        recomputeSnapshotsWithWeights(snapshots, state.pillarWeights);
+        state.cache.history.recomputedWith = { ...state.pillarWeights };
+      }
     } catch (e) {
       host.innerHTML = renderHistoryEmpty(e.message);
       return;
@@ -1628,9 +1735,11 @@ async function renderHistory() {
       const subBody = historyView === "accuracy"
         ? renderAccuracyView(accuracyData)
         : renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
-      host.innerHTML = subViewSwitch + cohortTracker + prevMonthCard + subBody;
+      const weightsBanner = renderPillarWeightsBanner();
+      host.innerHTML = weightsBanner + subViewSwitch + cohortTracker + prevMonthCard + subBody;
       wireCohortHandlers(cohortSeriesData);
       wireHistorySubViewSwitch();
+      wirePillarWeightsBanner();
     } else {
       host.innerHTML = renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
     }
@@ -1741,6 +1850,7 @@ async function renderHistory() {
   const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
   const accuracyView = renderAccuracyView(accuracyData);
   const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
+  const weightsBanner = renderPillarWeightsBanner();
   const historySubViewHtml = historyView === "accuracy"
     ? accuracyView
     : `
@@ -1756,6 +1866,7 @@ async function renderHistory() {
     `;
 
   host.innerHTML = `
+    ${weightsBanner}
     ${subViewSwitch}
     ${cohortTracker}
     ${prevMonthCard}
@@ -1769,6 +1880,7 @@ async function renderHistory() {
   $("#lkp-download-btn")?.addEventListener("click", downloadLkpJson);
   $("#lkp-reset-btn")?.addEventListener("click", () => { clearLkpOverride(); renderHistory(); });
   wireHistorySubViewSwitch();
+  wirePillarWeightsBanner();
   // Performance Tracker controls (view toggle, week pills, hover)
   wireCohortHandlers(cohortSeriesData);
 
@@ -2669,6 +2781,39 @@ function avgFactorFromPerStock(perStock, entryCloses) {
 
 const COHORT_COLOR = { ai: "#6366f1", manual: "#f59e0b", nifty: "#64748b" };
 
+// Banner shown above the History tab when the analyst's current pillar
+// weights differ from v1 defaults. Lets them opt in to recomputing
+// history with their custom weights instead of seeing snapshot
+// composites scored at v1. Silently absent when weights match default.
+function renderPillarWeightsBanner() {
+  const w = state.pillarWeights;
+  const d = composite.PILLAR_WEIGHTS;
+  if (weightsMatchDefault(w)) return "";
+  const recomputed = !!state.recomputeHistory;
+  const curWeights = `${w.fundamentals}·${w.technicals}·${w.macro}·${w.sentiment}·${w.liquidity}`;
+  const defaultWeights = `${d.fundamentals}·${d.technicals}·${d.macro}·${d.sentiment}·${d.liquidity}`;
+  if (recomputed) {
+    return `
+      <div class="rounded-xl bg-indigo-50 ring-1 ring-indigo-200 px-3 py-2 mb-3 flex flex-wrap items-center gap-2">
+        <span class="text-indigo-700 text-base leading-none">⚙</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold text-indigo-900">History recomputed with your custom weights (${curWeights})</div>
+          <div class="text-[10px] text-indigo-700/80 mt-0.5">All composite scores + ratings below were re-derived from each snapshot's stored per-pillar percentages × your weights.</div>
+        </div>
+        <button id="pillar-weights-revert-btn" type="button" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white text-indigo-700 ring-1 ring-indigo-300 hover:bg-indigo-100">↺ Revert to v1 (${defaultWeights})</button>
+      </div>`;
+  }
+  return `
+    <div class="rounded-xl bg-amber-50 ring-1 ring-amber-200 px-3 py-2 mb-3 flex flex-wrap items-center gap-2">
+      <span class="text-amber-700 text-base leading-none">⚠</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-bold text-amber-900">History below is scored at v1 weights (${defaultWeights}), not your custom weights (${curWeights})</div>
+        <div class="text-[10px] text-amber-700/80 mt-0.5">Snapshots are stored with the framework defaults. Opt in to re-derive every composite + rating using your current weights.</div>
+      </div>
+      <button id="pillar-weights-recompute-btn" type="button" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white hover:bg-amber-700 shadow-sm">Recompute with my weights →</button>
+    </div>`;
+}
+
 // Prominent header bar that toggles the History sub-view (History vs
 // Accuracy). Rendered as a real tab strip with an active underline +
 // a bell-icon dropdown on the right surfacing every recent hit. Badge
@@ -2733,6 +2878,24 @@ function renderHistoryViewSwitch(activeView, accuracyData) {
         </div>
       </div>
     </div>`;
+}
+
+// Wire the pillar-weights banner buttons (Recompute / Revert). Both
+// clear the cached history snapshots so the next renderHistory pulls
+// fresh v1 data — the recompute path then re-mutates in place.
+function wirePillarWeightsBanner() {
+  $("#pillar-weights-recompute-btn")?.addEventListener("click", () => {
+    state.recomputeHistory = true;
+    saveRecomputeHistory(true);
+    delete state.cache.history;
+    renderHistory();
+  });
+  $("#pillar-weights-revert-btn")?.addEventListener("click", () => {
+    state.recomputeHistory = false;
+    saveRecomputeHistory(false);
+    delete state.cache.history;
+    renderHistory();
+  });
 }
 
 // Wire up the History sub-view toggle + the bell-icon dropdown. Idempotent —
