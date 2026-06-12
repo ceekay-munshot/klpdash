@@ -1731,7 +1731,7 @@ async function renderHistory() {
       // it pulls picks from cohort segments, not from STRONG BUY history).
       const historyView = state.historyView;
       const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
-      const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
+      const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData, view);
       const subBody = historyView === "accuracy"
         ? renderAccuracyView(accuracyData)
         : renderHistoryEmpty(`Snapshots loaded (${idx.dates.length} days) but no STRONG BUY picks have been recorded yet.`);
@@ -1849,7 +1849,7 @@ async function renderHistory() {
   const historyView = state.historyView;
   const accuracyData = buildAccuracyData(cohort, manualPicks, snapshots);
   const accuracyView = renderAccuracyView(accuracyData);
-  const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData);
+  const subViewSwitch = renderHistoryViewSwitch(historyView, accuracyData, view);
   const weightsBanner = renderPillarWeightsBanner();
   const historySubViewHtml = historyView === "accuracy"
     ? accuracyView
@@ -1886,18 +1886,11 @@ async function renderHistory() {
 
 }
 
-// Cohort tracker — view toggle (Weekly/Monthly), segment pills (which
-// week's AI basket to show in the table), and chart hover crosshair.
+// Cohort tracker — segment pills (which week's AI basket to show in the
+// table) + chart hover crosshair. View toggle (Static/Monthly/Weekly)
+// lives in the History/Accuracy header now and is wired by
+// wireHistorySubViewSwitch.
 function wireCohortHandlers(seriesData) {
-  $$("#cohort-view-toggle [data-view]").forEach((btn) => btn.addEventListener("click", () => {
-    const v = btn.dataset.view;
-    if (v && v !== state.cohortView) {
-      state.cohortView = v;
-      saveCohortView(v);
-      state.cohortSegmentIdx = null;   // reset segment selection on view change
-      renderHistory();
-    }
-  }));
   $$("#history-content [data-seg]").forEach((btn) => btn.addEventListener("click", () => {
     state.cohortSegmentIdx = Number(btn.dataset.seg);
     renderHistory();
@@ -2818,7 +2811,7 @@ function renderPillarWeightsBanner() {
 // Accuracy). Rendered as a real tab strip with an active underline +
 // a bell-icon dropdown on the right surfacing every recent hit. Badge
 // count = today's fresh hits.
-function renderHistoryViewSwitch(activeView, accuracyData) {
+function renderHistoryViewSwitch(activeView, accuracyData, cohortView) {
   const allHits = accuracyData?.allHits || [];
   const todayCount = accuracyData?.todayHits?.length || 0;
   const tabBtn = (view, label, sub) => {
@@ -2830,6 +2823,18 @@ function renderHistoryViewSwitch(activeView, accuracyData) {
         ${active ? `<span class="absolute left-3 right-3 -bottom-px h-0.5 bg-indigo-600 rounded-full"></span>` : ""}
       </button>`;
   };
+  // Cohort view pills (Static / Monthly / Weekly). Lifted from inside
+  // the Performance Tracker card up here so they sit with the main
+  // section controls — they drive what's shown below, so they belong
+  // in the header.
+  const cohortBtnCls = (active) => `px-2.5 py-1 rounded-md transition ${active ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`;
+  const cohortToggle = `
+    <div id="cohort-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
+      <button data-view="static" type="button" class="${cohortBtnCls(cohortView === "static")}" title="AI top 7 frozen from prior month-end · held all month (SPIP model)">Static</button>
+      <button data-view="monthly" type="button" class="${cohortBtnCls(cohortView === "monthly")}" title="AI top 7 frozen from client upload date">Monthly</button>
+      <button data-view="weekly" type="button" class="${cohortBtnCls(cohortView === "weekly")}" title="AI re-locks every Monday">Weekly</button>
+    </div>
+  `;
   const dropdown = allHits.length ? `
     <div id="hits-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50 max-h-96 overflow-y-auto">
       <div class="sticky top-0 px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
@@ -2861,20 +2866,23 @@ function renderHistoryViewSwitch(activeView, accuracyData) {
     </div>`;
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 mb-3 overflow-visible">
-      <div class="flex items-center justify-between border-b border-slate-100 px-2 sm:px-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-2 sm:px-3">
         <div id="history-view-toggle" class="flex items-center gap-1">
           ${tabBtn("history", "History", "past picks")}
           ${tabBtn("accuracy", "Accuracy", "target / sl")}
         </div>
-        <div class="relative">
-          <button id="hits-alert-btn" type="button" class="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span class="hidden sm:inline">Alerts</span>
-            ${todayCount > 0
-              ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums">${todayCount}</span>`
-              : allHits.length ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold tabular-nums">${allHits.length}</span>` : ""}
-          </button>
-          ${dropdown}
+        <div class="flex items-center gap-2 py-1.5">
+          ${cohortToggle}
+          <div class="relative">
+            <button id="hits-alert-btn" type="button" class="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span class="hidden sm:inline">Alerts</span>
+              ${todayCount > 0
+                ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums">${todayCount}</span>`
+                : allHits.length ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold tabular-nums">${allHits.length}</span>` : ""}
+            </button>
+            ${dropdown}
+          </div>
         </div>
       </div>
     </div>`;
@@ -2903,7 +2911,28 @@ function wirePillarWeightsBanner() {
 function wireHistorySubViewSwitch() {
   $$("#history-content [data-history-view]").forEach((btn) => btn.addEventListener("click", () => {
     const v = btn.dataset.historyView;
-    if (v && v !== state.historyView) { state.historyView = v; saveHistoryView(v); renderHistory(); }
+    if (!v || v === state.historyView) return;
+    state.historyView = v;
+    saveHistoryView(v);
+    renderHistory();
+    // After the render lands, scroll the Accuracy section into view so
+    // the analyst doesn't have to manually scroll past the Performance
+    // Tracker to find the target/SL tracker.
+    if (v === "accuracy") {
+      requestAnimationFrame(() => {
+        $("#accuracy-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }));
+  // Cohort view toggle (Static / Monthly / Weekly) now lives in the
+  // main tab strip alongside the History/Accuracy switch.
+  $$("#history-content #cohort-view-toggle [data-view]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.view;
+    if (!v || v === state.cohortView) return;
+    state.cohortView = v;
+    saveCohortView(v);
+    state.cohortSegmentIdx = null;
+    renderHistory();
   }));
   const alertBtn = $("#hits-alert-btn");
   const dropdown = $("#hits-dropdown");
@@ -3227,7 +3256,7 @@ function renderAccuracyView(data) {
     : `<div class="text-[11px] text-slate-400 text-center py-3">No manual basket loaded.</div>`;
 
   return `
-    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
+    <div id="accuracy-section" class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 scroll-mt-4">
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
         <h2 class="font-display font-bold text-slate-900 text-base">Target / Stop-loss tracker</h2>
         <span class="text-[11px] text-slate-500">All-time hit record · AI uses +5% / −20%, Manual uses TGT1 / SL from upload</span>
@@ -3264,15 +3293,6 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
   const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
   const sign = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
   const alpha = (last.aiCum != null && last.niftyCum != null) ? last.aiCum - last.niftyCum : null;
-
-  const btnCls = (active) => `px-2.5 py-1 rounded-md transition ${active ? "bg-white text-indigo-700 shadow-sm" : "text-slate-600 hover:text-slate-900"}`;
-  const viewToggle = `
-    <div id="cohort-view-toggle" class="inline-flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-semibold">
-      <button data-view="static" type="button" class="${btnCls(view === "static")}" title="AI top 7 frozen from prior month-end · held all month (SPIP model)">Static</button>
-      <button data-view="monthly" type="button" class="${btnCls(view === "monthly")}" title="AI top 7 frozen from client upload date">Monthly</button>
-      <button data-view="weekly" type="button" class="${btnCls(view === "weekly")}" title="AI re-locks every Monday">Weekly</button>
-    </div>
-  `;
 
   const statBlock = (label, value, sub, valueCls = "text-slate-900", dotColor = null) => `
     <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
@@ -3401,12 +3421,9 @@ function renderCohortTracker(cohort, series, view, selectedSegIdx) {
       : "client upload date";
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 mb-4">
-      <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
-        <div>
-          <h2 class="font-display font-bold text-slate-900 text-base">Performance Tracker</h2>
-          <div class="text-[11px] text-slate-500 mt-0.5">AI Picks vs Manual Picks vs Nifty · ${anchorSourceLabel} (<span class="font-semibold">${anchorLabel}</span>) · ${days} trading day${days === 1 ? "" : "s"}</div>
-        </div>
-        ${viewToggle}
+      <div class="mb-3">
+        <h2 class="font-display font-bold text-slate-900 text-base">Performance Tracker</h2>
+        <div class="text-[11px] text-slate-500 mt-0.5">AI Picks vs Manual Picks vs Nifty · ${anchorSourceLabel} (<span class="font-semibold">${anchorLabel}</span>) · ${days} trading day${days === 1 ? "" : "s"}</div>
       </div>
 
       ${stats}
