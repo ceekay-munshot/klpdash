@@ -1409,7 +1409,12 @@ function renderTopPicks() {
       </div>` : ""}
     ${legend}
   `;
-  $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openDrillDown(picks[Number(el.dataset.pickIdx)])));
+  // Top Picks lives outside any tab config — these are composite-scored
+  // results, not generic c.score outputs — so route clicks straight to
+  // the composite drill (openDrillDown would consult cfg() for the
+  // current tab, which has no name/rules for Top Picks and silently
+  // crashes).
+  $$("#top-picks-content .pick-card").forEach((el) => el.addEventListener("click", () => openCompositeDrill(picks[Number(el.dataset.pickIdx)])));
 }
 
 // ---------------- History (predictions performance) ----------------
