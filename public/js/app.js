@@ -203,6 +203,13 @@ const CONFIGS = {
     label: "History",
     history: true,
   },
+  // Active — daily-rebalancing backtest. Simulates buying every STRONG
+  // BUY each day and selling when it drops out. Pure derived view over
+  // the same snapshot trail History uses; no new data source.
+  active: {
+    label: "Active",
+    active: true,
+  },
 };
 
 // ---------------- State ----------------
@@ -536,14 +543,17 @@ async function switchTab(tabId) {
   // Section toggles per tab type:
   // - Hero    (Top Picks): only #top-picks-section visible
   // - History            : only #history-section visible
+  // - Active             : only #active-section visible
   // - Normal             : all other sections
   const c = CONFIGS[tabId];
   const hero = !!c?.hero;
   const history = !!c?.history;
-  const bespoke = hero || history;
+  const active = !!c?.active;
+  const bespoke = hero || history || active;
   document.querySelectorAll("main > section").forEach((sec) => {
     if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
     else if (sec.id === "history-section") sec.classList.toggle("hidden", !history);
+    else if (sec.id === "active-section") sec.classList.toggle("hidden", !active);
     else sec.classList.toggle("hidden", bespoke);
   });
   if (hero) {
@@ -554,6 +564,10 @@ async function switchTab(tabId) {
   }
   if (history) {
     await renderHistory();
+    return;
+  }
+  if (active) {
+    await renderActive();
     return;
   }
 
@@ -1494,93 +1508,89 @@ function renderTopPicks() {
 // timelines. For each ticker that was ever rated STRONG BUY, we anchor
 // at the FIRST such day and measure return to today's close — that's
 // the "we said STRONG BUY at ₹444 → today ₹555" story client wants.
+// Loads + caches the snapshot trail (manifest + per-day JSON), benchmark
+// closes, LKP manual picks, and the out-of-coverage OHLCV injection step.
+// Called by both renderHistory() and renderActive() so they share the
+// same cache. Throws on failure — caller decides how to render the
+// empty / error state.
+async function ensureHistoryCache() {
+  if (state.cache.history) return state.cache.history;
+  const idx = await fetch("data/snapshots/index.json").then((r) => {
+    if (!r.ok) throw new Error("manifest missing");
+    return r.json();
+  });
+  if (!idx.dates?.length) throw new Error("no snapshot dates");
+  const snapshots = await Promise.all(idx.dates.map((d) =>
+    fetch(`data/snapshots/${d}.json`).then((r) => r.json())
+  ));
+  const benchmark = await fetch("data/benchmark-history.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  const lkp = await fetch("data/lkp-manual-picks.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  const ooc = await fetch("data/out-of-coverage-history.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+
+  // Inject synthetic stock entries for out-of-coverage tickers (LKP picks
+  // below our ~Rs 12,500 Cr universe, e.g. ELECON). Once they look like
+  // ordinary snapshot stocks with rating: null, every downstream lookup
+  // resolves them naturally — and the active-basket sim filters them out
+  // via the rating === "STRONG BUY" check.
+  const oocTickers = ooc?.tickers || {};
+  if (Object.keys(oocTickers).length) {
+    for (const snap of snapshots) {
+      for (const [ticker, closes] of Object.entries(oocTickers)) {
+        const close = closes[snap.date];
+        if (close == null) continue;
+        if (snap.stocks.some((s) => s.ticker === ticker)) continue;
+        snap.stocks.push({
+          ticker, name: ticker, close,
+          composite: null, rating: null,
+          hardFailed: false, dataComplete: false,
+          _outOfCoverage: true,
+        });
+      }
+    }
+    const promote = (arr) => {
+      for (const p of (arr || [])) {
+        if (p.in_universe) continue;
+        const t = (p.ticker || p.selection || "").toString().trim().toUpperCase();
+        if (t && oocTickers[t]) {
+          p.ticker = t;
+          p.in_universe = true;
+          p.viaOoc = true;
+        }
+      }
+    };
+    if (lkp) {
+      promote(lkp.picks);
+      for (const m of Object.values(lkp.picksByMonth || {})) promote(m);
+    }
+  }
+  state.cache.history = { idx, snapshots, benchmark, lkp, ooc };
+
+  // If the analyst opted in to recomputing history with their custom
+  // pillar weights, mutate the cached snapshots now. Reverting clears the
+  // cache so the next render fetches fresh v1 snapshots.
+  if (state.recomputeHistory && !weightsMatchDefault(state.pillarWeights)) {
+    recomputeSnapshotsWithWeights(snapshots, state.pillarWeights);
+    state.cache.history.recomputedWith = { ...state.pillarWeights };
+  }
+  return state.cache.history;
+}
+
 async function renderHistory() {
   const host = $("#history-content");
   if (!host) return;
   host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading history…</div>`;
 
-  // Cache the loaded timeline so flipping tabs doesn't re-fetch.
-  if (!state.cache.history) {
-    try {
-      const idx = await fetch("data/snapshots/index.json").then((r) => {
-        if (!r.ok) throw new Error("manifest missing");
-        return r.json();
-      });
-      if (!idx.dates?.length) throw new Error("no snapshot dates");
-      const snapshots = await Promise.all(idx.dates.map((d) =>
-        fetch(`data/snapshots/${d}.json`).then((r) => r.json())
-      ));
-      // Benchmark history (Nifty 50 / Bank Nifty) is optional — when
-      // the daily workflow hasn't yet written benchmark-history.json,
-      // alpha columns fall back to "—" instead of breaking the view.
-      const benchmark = await fetch("data/benchmark-history.json")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      // LKP manual picks (client's hand-curated basket) — best-effort; the
-      // section simply hides if the file is missing.
-      const lkp = await fetch("data/lkp-manual-picks.json")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      // Out-of-coverage OHLCV (LKP picks below our ~Rs 12,500 Cr universe,
-      // e.g. ELECON). Lets them count in the Manual average / Accuracy
-      // tracking. Best-effort: missing file = falls back to today's
-      // "Not Covered" exclusion behaviour.
-      const ooc = await fetch("data/out-of-coverage-history.json")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      // Inject synthetic stock entries into each snapshot for tickers we
-      // have OHLCV for but aren't in the regular universe. Once they
-      // look like ordinary snapshot stocks (just composite/rating null),
-      // every downstream lookup (Performance Tracker, Accuracy, drill)
-      // resolves them naturally — no special-casing needed below.
-      const oocTickers = ooc?.tickers || {};
-      if (Object.keys(oocTickers).length) {
-        for (const snap of snapshots) {
-          for (const [ticker, closes] of Object.entries(oocTickers)) {
-            const close = closes[snap.date];
-            if (close == null) continue;
-            if (snap.stocks.some((s) => s.ticker === ticker)) continue;
-            snap.stocks.push({
-              ticker, name: ticker, close,
-              composite: null, rating: null,
-              hardFailed: false, dataComplete: false,
-              _outOfCoverage: true,
-            });
-          }
-        }
-        // Promote LKP picks whose ticker now has OHLCV from Yahoo: they
-        // count as in-universe for tracker / accuracy purposes (just
-        // tagged viaOoc so the UI can hint "via Yahoo" later).
-        const promote = (arr) => {
-          for (const p of (arr || [])) {
-            if (p.in_universe) continue;
-            const t = (p.ticker || p.selection || "").toString().trim().toUpperCase();
-            if (t && oocTickers[t]) {
-              p.ticker = t;
-              p.in_universe = true;
-              p.viaOoc = true;
-            }
-          }
-        };
-        if (lkp) {
-          promote(lkp.picks);
-          for (const m of Object.values(lkp.picksByMonth || {})) promote(m);
-        }
-      }
-      state.cache.history = { idx, snapshots, benchmark, lkp, ooc };
-
-      // If the analyst has opted in to recomputing history with their
-      // current pillar weights, mutate the cached snapshots now (cheap —
-      // per-pillar pct × weights). Reverting clears the cache so the
-      // next render fetches fresh v1 snapshots from the network.
-      if (state.recomputeHistory && !weightsMatchDefault(state.pillarWeights)) {
-        recomputeSnapshotsWithWeights(snapshots, state.pillarWeights);
-        state.cache.history.recomputedWith = { ...state.pillarWeights };
-      }
-    } catch (e) {
-      host.innerHTML = renderHistoryEmpty(e.message);
-      return;
-    }
+  try {
+    await ensureHistoryCache();
+  } catch (e) {
+    host.innerHTML = renderHistoryEmpty(e.message);
+    return;
   }
   const { idx, snapshots, benchmark } = state.cache.history;
   // Uploaded basket (localStorage) takes precedence over the committed file so
@@ -3770,6 +3780,484 @@ function renderHistoryEmpty(reason) {
       <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-2xl mb-4 shadow-lg">📈</div>
       <h2 class="text-xl font-bold font-display text-slate-900 mb-2">History is building up</h2>
       <p class="text-sm text-slate-600 max-w-lg mx-auto leading-relaxed">${escapeHtml(reason || "We need a few daily snapshots before this view becomes useful.")}<br><br>Each daily refresh appends a snapshot to <code class="text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">public/data/snapshots/</code>. As STRONG BUY picks accumulate, this tab will show realized return per pick + a chart with rating markers overlaid on the price line.</p>
+    </div>
+  `;
+}
+
+// ============================================================
+// ACTIVE BASKET — daily-rebalancing backtest
+// ============================================================
+// Walks the snapshot trail and simulates an equal-weight portfolio that
+// rebalances every snapshot day to hold exactly today's STRONG BUY set:
+//   - Day 1: open positions in every STRONG BUY at that day's close.
+//   - Day N: exit anything no longer STRONG BUY at today's close, then
+//            rebalance the entire remaining basket to NAV ÷ N — trim
+//            winners that drifted overweight, top up losers that
+//            drifted underweight, fund new entrants at the same weight.
+//
+// Buys and sells transact at the same close used for mark-to-market on
+// that day, so opening a position generates no synthetic gain/loss; the
+// equity curve reflects pure model behaviour.
+//
+// Rebalance runs every day (not just basket-change days) to honour the
+// equal-weight invariant promised by the "Daily Rebalance" label —
+// otherwise winners drift overweight and losers shrink between events.
+// Top-ups update the position's entry price to a weighted average of
+// the lots bought, so realized-return stats (hit rate, avg winner /
+// loser) reflect the cash actually allocated rather than just the
+// first lot's price. Trims leave the basis unchanged (FIFO / weighted-
+// average equivalence when selling, not buying). Internal weight
+// adjustments stay invisible in the trade log; only real basket adds /
+// drops surface. No transaction costs in v1 — "model truth" without
+// friction.
+const ACTIVE_INITIAL_CAPITAL = 100000;
+
+function simulateActiveBasket(snapshots) {
+  if (!snapshots?.length) return null;
+  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+
+  let cash = ACTIVE_INITIAL_CAPITAL;
+  const holdings = new Map();   // ticker → { units, entryDate, entryPrice, name, sector }
+  const trades = [];            // BUY (new entrant) / SELL (basket exit), time-ordered
+  const equity = [];            // { date, value, holdingCount, cash }
+
+  for (const snap of sorted) {
+    const date = snap.date;
+    const closeByTicker = new Map();
+    for (const s of snap.stocks) if (typeof s.close === "number") closeByTicker.set(s.ticker, s.close);
+
+    // Today's target = STRONG BUY rated stocks with a close. (Out-of-
+    // coverage injects have rating: null so they're naturally excluded.)
+    const target = snap.stocks
+      .filter((s) => s.rating === "STRONG BUY" && typeof s.close === "number" && !s.hardFailed && s.ticker);
+    const targetByTicker = new Map(target.map((s) => [s.ticker, s]));
+
+    // 1. Exit positions not in today's target — book SELL with realized
+    //    return based on weighted-average entry price.
+    for (const [ticker, pos] of [...holdings.entries()]) {
+      if (targetByTicker.has(ticker)) continue;
+      const exitPrice = closeByTicker.get(ticker);
+      if (typeof exitPrice !== "number") continue;   // carry to next day if missing close
+      cash += pos.units * exitPrice;
+      const ret = (exitPrice / pos.entryPrice - 1) * 100;
+      trades.push({
+        action: "SELL",
+        ticker, name: pos.name, sector: pos.sector,
+        date, price: exitPrice,
+        entryDate: pos.entryDate, entryPrice: pos.entryPrice,
+        days: daysBetween(pos.entryDate, date),
+        ret,
+      });
+      holdings.delete(ticker);
+    }
+
+    // 2. Daily rebalance to equal weight across continuing + new
+    //    positions. Runs unconditionally so prices drifting between
+    //    snapshots doesn't quietly skew weights between basket events.
+    const newEntries = target.filter((s) => !holdings.has(s.ticker));
+    if (target.length > 0) {
+      let nav = cash;
+      for (const [ticker, pos] of holdings.entries()) {
+        const px = closeByTicker.get(ticker) ?? pos.entryPrice;
+        nav += pos.units * px;
+      }
+      const targetValuePerStock = nav / target.length;
+
+      // Adjust continuing positions to target value. On top-ups, update
+      // entry price to weighted-average cost basis so closed-trade
+      // returns reflect the cash actually allocated. On trims, basis
+      // stays the same — the realized portion of any gain/loss is
+      // captured in the equity curve via the cash flow.
+      for (const [ticker, pos] of holdings.entries()) {
+        const px = closeByTicker.get(ticker);
+        if (typeof px !== "number") continue;
+        const currentValue = pos.units * px;
+        const valueDelta = targetValuePerStock - currentValue;   // +ve = buy more, -ve = trim
+        if (Math.abs(valueDelta) < 0.01) continue;
+        const unitDelta = valueDelta / px;
+        if (unitDelta > 0) {
+          // Top-up: weighted-average cost basis update.
+          const newUnits = pos.units + unitDelta;
+          pos.entryPrice = (pos.units * pos.entryPrice + unitDelta * px) / newUnits;
+          pos.units = newUnits;
+        } else {
+          // Trim: units down, basis unchanged.
+          pos.units += unitDelta;
+        }
+        cash -= valueDelta;
+      }
+
+      // Open new entrants at the target weight. Cap by remaining cash
+      // so floating-point dust can't push cash negative.
+      for (const e of newEntries) {
+        const buyValue = Math.min(targetValuePerStock, cash);
+        if (buyValue < 0.01) continue;
+        const units = buyValue / e.close;
+        holdings.set(e.ticker, {
+          units, entryDate: date, entryPrice: e.close,
+          name: e.name || e.ticker, sector: e.sector || null,
+        });
+        trades.push({
+          action: "BUY",
+          ticker: e.ticker, name: e.name || e.ticker, sector: e.sector || null,
+          date, price: e.close,
+        });
+        cash -= buyValue;
+      }
+    }
+
+    // 3. Mark-to-market today's portfolio value.
+    let value = cash;
+    for (const [ticker, pos] of holdings.entries()) {
+      const px = closeByTicker.get(ticker) ?? pos.entryPrice;
+      value += pos.units * px;
+    }
+    equity.push({ date, value, holdingCount: holdings.size, cash });
+  }
+
+  return { equity, trades, holdings, startCapital: ACTIVE_INITIAL_CAPITAL };
+}
+
+// Derived stats from a simulation result + Nifty 50 closes for alpha.
+function computeActiveStats(sim, niftyOn) {
+  if (!sim || !sim.equity.length) return null;
+  const start = sim.equity[0];
+  const end = sim.equity[sim.equity.length - 1];
+  const totalRet = (end.value / start.value - 1) * 100;
+
+  // Max drawdown — peak-to-trough on the equity curve.
+  let peak = start.value, maxDD = 0;
+  for (const e of sim.equity) {
+    if (e.value > peak) peak = e.value;
+    const dd = (e.value / peak - 1) * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+
+  // Closed-trade stats: every SELL has a realized return.
+  const sells = sim.trades.filter((t) => t.action === "SELL");
+  const winners = sells.filter((t) => t.ret > 0);
+  const hitRate = sells.length ? (winners.length / sells.length) * 100 : null;
+  const avgHoldDays = sells.length ? sells.reduce((a, t) => a + t.days, 0) / sells.length : null;
+  const avgWin = winners.length ? winners.reduce((a, t) => a + t.ret, 0) / winners.length : null;
+  const losers = sells.filter((t) => t.ret <= 0);
+  const avgLoss = losers.length ? losers.reduce((a, t) => a + t.ret, 0) / losers.length : null;
+
+  // Nifty over the same window — drives the alpha tile.
+  const nStart = niftyOn ? niftyOn(start.date) : null;
+  const nEnd = niftyOn ? niftyOn(end.date) : null;
+  const niftyRet = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
+  const alpha = niftyRet != null ? totalRet - niftyRet : null;
+
+  const buys = sim.trades.filter((t) => t.action === "BUY");
+  return {
+    totalRet, maxDD, hitRate, avgHoldDays, avgWin, avgLoss,
+    niftyRet, alpha,
+    days: sim.equity.length,
+    startDate: start.date, endDate: end.date,
+    tradeCount: sim.trades.length,
+    buyCount: buys.length,
+    sellCount: sells.length,
+    liveHoldings: sim.holdings.size,
+    finalValue: end.value,
+  };
+}
+
+async function renderActive() {
+  const host = $("#active-content");
+  if (!host) return;
+  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading active basket backtest…</div>`;
+
+  try {
+    await ensureHistoryCache();
+  } catch (e) {
+    host.innerHTML = renderHistoryEmpty(e.message);
+    return;
+  }
+  const { snapshots, benchmark } = state.cache.history;
+  if (!snapshots.length) {
+    host.innerHTML = renderHistoryEmpty("No snapshots loaded.");
+    return;
+  }
+
+  const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+  const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+  function niftyOn(date) {
+    if (!niftyClosesByDate) return null;
+    if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
+    let last = null;
+    for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
+    return last;
+  }
+
+  const sim = simulateActiveBasket(snapshots);
+  const stats = computeActiveStats(sim, niftyOn);
+  if (!sim || !stats) {
+    host.innerHTML = renderHistoryEmpty("No STRONG BUY days in the snapshot trail yet.");
+    return;
+  }
+  host.innerHTML = renderActiveBody(sim, stats, niftyOn);
+}
+
+function renderActiveBody(sim, stats, niftyOn) {
+  const retColor = stats.totalRet >= 0 ? "text-emerald-600" : "text-rose-600";
+  const retSign = stats.totalRet >= 0 ? "+" : "";
+  const alphaTile = stats.alpha != null
+    ? `<span class="${stats.alpha >= 0 ? "text-emerald-600" : "text-rose-600"} font-bold">${stats.alpha >= 0 ? "+" : ""}${stats.alpha.toFixed(2)}%</span> vs Nifty (${stats.niftyRet >= 0 ? "+" : ""}${stats.niftyRet.toFixed(2)}%)`
+    : `<span class="text-slate-400">benchmark missing</span>`;
+
+  const statTile = (label, value, sub) => `
+    <div class="bg-white rounded-xl ring-1 ring-slate-200 p-3">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${label}</div>
+      <div class="text-lg font-bold text-slate-900 mt-0.5">${value}</div>
+      ${sub ? `<div class="text-[11px] text-slate-500 mt-0.5">${sub}</div>` : ""}
+    </div>`;
+
+  const hitRateStr = stats.hitRate == null ? "—" : `${stats.hitRate.toFixed(0)}%`;
+  const avgHoldStr = stats.avgHoldDays == null ? "—" : `${stats.avgHoldDays.toFixed(1)}d`;
+  const avgWinStr = stats.avgWin == null ? "—" : `+${stats.avgWin.toFixed(2)}%`;
+  const avgLossStr = stats.avgLoss == null ? "—" : `${stats.avgLoss.toFixed(2)}%`;
+
+  return `
+    <div class="space-y-4">
+      <!-- Hero card -->
+      <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-display font-bold text-xl text-slate-900">Active Basket — Daily Rebalance</h2>
+              <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
+            </div>
+            <div class="text-sm text-slate-600 mt-1">
+              Simulates buying every STRONG BUY at today's close and selling when it drops out.
+              Starting capital ₹${ACTIVE_INITIAL_CAPITAL.toLocaleString("en-IN")}, equal-weight rebalanced daily, no transaction costs.
+            </div>
+            <div class="text-xs text-slate-500 mt-2">
+              Period: ${fmtDateDMY(stats.startDate)} → ${fmtDateDMY(stats.endDate)} · ${stats.days} snapshot days
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total return</div>
+            <div class="${retColor} text-4xl font-bold leading-tight">${retSign}${stats.totalRet.toFixed(2)}%</div>
+            <div class="text-sm mt-1">${alphaTile}</div>
+            <div class="text-[11px] text-slate-500 mt-1">Portfolio ₹${Math.round(stats.finalValue).toLocaleString("en-IN")}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equity curve chart -->
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-slate-900 text-sm">Cumulative return</h3>
+          <div class="flex items-center gap-3 text-[11px] text-slate-500">
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-indigo-600"></span>Active basket</span>
+            <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 border-t border-dashed border-slate-400"></span>Nifty 50</span>
+          </div>
+        </div>
+        ${renderActiveChart(sim, niftyOn)}
+      </div>
+
+      <!-- Stats grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        ${statTile("Trades", String(stats.tradeCount), `${stats.buyCount} BUY · ${stats.sellCount} SELL`)}
+        ${statTile("Hit rate", hitRateStr, `${stats.sellCount} closed`)}
+        ${statTile("Avg hold", avgHoldStr, "per closed trade")}
+        ${statTile("Avg winner", avgWinStr, "")}
+        ${statTile("Avg loser", avgLossStr, "")}
+        ${statTile("Max drawdown", `${stats.maxDD.toFixed(2)}%`, `Live ${stats.liveHoldings} stocks`)}
+      </div>
+
+      <!-- Current holdings + recent trades, side by side on lg -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        ${renderActiveHoldings(sim, niftyOn)}
+        ${renderActiveTrades(sim)}
+      </div>
+
+      <!-- Beta caveat -->
+      <div class="text-xs text-slate-500 bg-slate-50 ring-1 ring-slate-200 rounded-xl p-3 leading-relaxed">
+        <strong>Beta caveat</strong> — short backtest window (${stats.days} snapshot days starting ${fmtDateDMY(stats.startDate)}). Numbers will firm up as the snapshot trail grows.
+        Buys + sells transact at the same EOD close that marks the portfolio to market, so entry-day P&L is zero by construction. No brokerage, slippage, or STT modelled yet.
+      </div>
+    </div>
+  `;
+}
+
+function renderActiveChart(sim, niftyOn) {
+  const W = 800, H = 220;
+  const M = { left: 44, right: 16, top: 14, bottom: 30 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+
+  const pts = sim.equity.map((e, i) => {
+    const ret = (e.value / sim.startCapital - 1) * 100;
+    const nClose = niftyOn ? niftyOn(e.date) : null;
+    return { date: e.date, ret, nClose };
+  });
+  // Nifty cumulative anchored at first available close
+  const nFirst = pts.find((p) => p.nClose != null)?.nClose || null;
+  for (const p of pts) p.niftyRet = (nFirst != null && p.nClose != null) ? (p.nClose / nFirst - 1) * 100 : null;
+
+  const allVals = [];
+  for (const p of pts) { allVals.push(p.ret); if (p.niftyRet != null) allVals.push(p.niftyRet); }
+  const yMin = Math.min(0, ...allVals);
+  const yMax = Math.max(0, ...allVals);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
+  const xAt = (i) => M.left + (pts.length <= 1 ? 0 : (i / (pts.length - 1)) * innerW);
+  const yAt = (v) => M.top + (1 - (v - yLo) / (yHi - yLo)) * innerH;
+
+  const activePath = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${xAt(i).toFixed(2)} ${yAt(p.ret).toFixed(2)}`).join(" ");
+  const niftyPts = pts.map((p, i) => p.niftyRet == null ? null : [xAt(i), yAt(p.niftyRet)]).filter(Boolean);
+  const niftyPath = niftyPts.length >= 2 ? niftyPts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ") : "";
+
+  const first = [xAt(0), yAt(pts[0].ret)];
+  const last = [xAt(pts.length - 1), yAt(pts[pts.length - 1].ret)];
+  const baseY = yAt(0).toFixed(2);
+  const areaPath = `${activePath} L ${last[0].toFixed(2)} ${baseY} L ${first[0].toFixed(2)} ${baseY} Z`;
+
+  const yTicks = [0, 1, 2, 3, 4].map((step) => {
+    const v = yLo + (yHi - yLo) * (step / 4);
+    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
+    const isZero = Math.abs(v) < 0.05;
+    return `
+      <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" />
+      <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
+  }).join("");
+
+  const tickEvery = Math.max(1, Math.ceil(pts.length / 6));
+  const xTicks = pts.map((p, i) => (i % tickEvery !== 0 && i !== pts.length - 1)
+    ? ""
+    : `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(p.date)}</text>`
+  ).join("");
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:260px">
+      <defs>
+        <linearGradient id="activeArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      ${yTicks}
+      <path d="${areaPath}" fill="url(#activeArea)" />
+      ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
+      <path d="${activePath}" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+      ${xTicks}
+    </svg>
+  `;
+}
+
+function renderActiveHoldings(sim, niftyOn) {
+  if (!sim.equity.length) return "";
+  const today = sim.equity[sim.equity.length - 1].date;
+  const todaySnap = state.cache.history.snapshots.find((s) => s.date === today);
+  const closeByTicker = {};
+  if (todaySnap) for (const s of todaySnap.stocks) if (typeof s.close === "number") closeByTicker[s.ticker] = s.close;
+
+  if (sim.holdings.size === 0) {
+    return `
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+        <h3 class="font-semibold text-slate-900 text-sm mb-2">Live holdings</h3>
+        <div class="text-xs text-slate-500">No active positions today — basket sat in cash.</div>
+      </div>`;
+  }
+
+  const rows = [...sim.holdings.entries()]
+    .map(([ticker, pos]) => {
+      const px = closeByTicker[ticker] ?? pos.entryPrice;
+      const ret = (px / pos.entryPrice - 1) * 100;
+      const days = daysBetween(pos.entryDate, today);
+      return { ticker, name: pos.name, sector: pos.sector, entryDate: pos.entryDate, entryPrice: pos.entryPrice, px, ret, days };
+    })
+    .sort((a, b) => b.ret - a.ret);
+
+  const body = rows.map((r) => `
+    <tr class="border-b border-slate-100 last:border-0">
+      <td class="py-2 pr-3">
+        <div class="font-semibold text-slate-900 text-sm">${escapeHtml(r.ticker)}</div>
+        <div class="text-[11px] text-slate-500 truncate max-w-[180px]">${escapeHtml(r.name)}</div>
+      </td>
+      <td class="py-2 px-2 text-right text-xs text-slate-600 tabular-nums">${fmtDateDM(r.entryDate)}</td>
+      <td class="py-2 px-2 text-right text-xs text-slate-600 tabular-nums">₹${formatPrice(r.entryPrice)}</td>
+      <td class="py-2 px-2 text-right text-xs text-slate-700 tabular-nums">₹${formatPrice(r.px)}</td>
+      <td class="py-2 pl-2 text-right text-sm font-bold tabular-nums ${r.ret >= 0 ? "text-emerald-600" : "text-rose-600"}">${r.ret >= 0 ? "+" : ""}${r.ret.toFixed(2)}%<div class="text-[10px] text-slate-400 font-normal">${r.days}d</div></td>
+    </tr>`).join("");
+
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-900 text-sm">Live holdings</h3>
+        <span class="text-[11px] text-slate-500">${rows.length} positions</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <tr class="border-b border-slate-200">
+              <th class="py-2 pr-3 text-left">Stock</th>
+              <th class="py-2 px-2 text-right">Entry</th>
+              <th class="py-2 px-2 text-right">Buy ₹</th>
+              <th class="py-2 px-2 text-right">Now ₹</th>
+              <th class="py-2 pl-2 text-right">Return</th>
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderActiveTrades(sim) {
+  // Show last 20 trades, newest first. Closed trades (SELL) show realized
+  // return; opens (BUY) just show entry.
+  const recent = [...sim.trades].slice(-20).reverse();
+  if (!recent.length) {
+    return `
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+        <h3 class="font-semibold text-slate-900 text-sm mb-2">Recent trades</h3>
+        <div class="text-xs text-slate-500">No trades yet.</div>
+      </div>`;
+  }
+  const body = recent.map((t) => {
+    const isSell = t.action === "SELL";
+    const actionPill = isSell
+      ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${t.ret >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}">SELL</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">BUY</span>`;
+    const retCell = isSell
+      ? `<span class="font-bold tabular-nums ${t.ret >= 0 ? "text-emerald-600" : "text-rose-600"}">${t.ret >= 0 ? "+" : ""}${t.ret.toFixed(2)}%</span><div class="text-[10px] text-slate-400">${t.days}d held</div>`
+      : `<span class="text-slate-400 text-xs">opened</span>`;
+    return `
+      <tr class="border-b border-slate-100 last:border-0">
+        <td class="py-2 pr-2 text-xs text-slate-600 tabular-nums">${fmtDateDM(t.date)}</td>
+        <td class="py-2 px-2">${actionPill}</td>
+        <td class="py-2 px-2">
+          <div class="font-semibold text-slate-900 text-sm">${escapeHtml(t.ticker)}</div>
+          <div class="text-[11px] text-slate-500 truncate max-w-[150px]">${escapeHtml(t.name)}</div>
+        </td>
+        <td class="py-2 px-2 text-right text-xs text-slate-700 tabular-nums">₹${formatPrice(t.price)}</td>
+        <td class="py-2 pl-2 text-right">${retCell}</td>
+      </tr>`;
+  }).join("");
+
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-900 text-sm">Recent trades</h3>
+        <span class="text-[11px] text-slate-500">latest ${recent.length} of ${sim.trades.length}</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <tr class="border-b border-slate-200">
+              <th class="py-2 pr-2 text-left">Date</th>
+              <th class="py-2 px-2 text-left">Action</th>
+              <th class="py-2 px-2 text-left">Stock</th>
+              <th class="py-2 px-2 text-right">Price</th>
+              <th class="py-2 pl-2 text-right">Return</th>
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>
     </div>
   `;
 }
