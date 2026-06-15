@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-14T05:16:43.426Z",
+  "generated_at": "2026-06-15T05:36:10.357Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -7,29 +7,12 @@
     "label": "Muns Auditor Opinion agent"
   },
   "cache_max_age_days": 30,
-  "total_universe": 506,
-  "total_cached": 506,
-  "total_live_opinion": 506,
+  "total_universe": 503,
+  "total_cached": 503,
+  "total_live_opinion": 503,
   "total_not_disclosed": 0,
   "total_errors": 0,
   "companies": {
-    "504346": {
-      "name": "RRPSemiconductor",
-      "opinion": "Clean (Unmodified) with Emphasis of Matter",
-      "source": "BSE annual report — extracted by routine (confidence: Low)",
-      "conclusion_block": "Going concern material uncertainty: total liabilities exceed total assets; net losses; accounting software lacks audit trail (edit log) feature; opinion not modified in respect of going concern matter",
-      "error": null,
-      "http_status": 200,
-      "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.442Z",
-      "auditor_firm": "Firm of CA Adityanarayan Somani (FRN not confirmed)",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "Material uncertainty related to going concern: Company's total liabilities exceed total assets, net losses reported",
-      "auditor_key_concerns": "Going concern material uncertainty: total liabilities exceed total assets; net losses; accounting software lacks audit trail (edit log) feature; opinion not modified in respect of going concern matter",
-      "auditor_confidence": "Low",
-      "_origin": "routine"
-    },
     "543225": {
       "name": "Altius Telecom",
       "opinion": "Clean (Unmodified Opinion)",
@@ -4065,23 +4048,6 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-06-03T05:26:39.188Z"
-    },
-    "GSPL": {
-      "name": "Guj.St.Petronet",
-      "opinion": "Clean (Unmodified Opinion)",
-      "source": "BSE annual report — extracted by routine (confidence: Low)",
-      "conclusion_block": "Could not extract",
-      "error": null,
-      "http_status": 200,
-      "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.440Z",
-      "auditor_firm": "B P Bang & Co., Chartered Accountants (firm registration could not be confirmed for FY25)",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "Could not extract",
-      "auditor_key_concerns": "Could not extract",
-      "auditor_confidence": "Low",
-      "_origin": "routine"
     },
     "ATGL": {
       "name": "Adani Total Gas",
@@ -8151,16 +8117,6 @@
       "error_snippet": null,
       "fetched_at": "2026-06-08T05:13:03.411Z"
     },
-    "INDGN": {
-      "name": "Indegene",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis states “No successful information was gathered”; annual report not identified",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states “No successful information was gathered”; annual report not identified |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-06-08T05:13:02.882Z"
-    },
     "CONCORDBIO": {
       "name": "Concord Biotech",
       "opinion": "Disclaimer of Opinion",
@@ -8171,15 +8127,15 @@
       "error_snippet": null,
       "fetched_at": "2026-06-08T05:13:03.671Z"
     },
-    "AEQUS": {
-      "name": "Aequs",
+    "SHADOWFAX": {
+      "name": "Shadowfax Technologies",
       "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no company or annual report details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no company or annual report details |",
+      "source": "Analysis provided no annual report/company details",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-06-08T05:13:03.528Z"
+      "fetched_at": "2026-06-15T05:36:10.356Z"
     }
   }
 }
