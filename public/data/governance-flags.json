@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-15T05:35:38.387Z",
+  "generated_at": "2026-06-16T05:44:25.048Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 21,
+  "total_entities_seen": 15,
   "flagged_companies": {
     "ADANIPOWER": {
       "primary_name": "Adani Group",
       "order_type": "sebi-investigation",
-      "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today",
+      "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports.",
       "source_url": "https://www.livemint.com/topic/sebi",
       "source_label": "Mint — SEBI topic (news)",
       "origins": [
@@ -19,7 +19,7 @@
           "source": "Mint — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-investigation",
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports."
         },
         {
           "source": "SEBI status report to Supreme Court (2024-25)",
@@ -28,7 +28,32 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
+    },
+    "ANGELONE": {
+      "primary_name": "Angel One",
+      "order_type": "settlement",
+      "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation",
+      "source_url": "https://www.business-standard.com/topic/sebi",
+      "source_label": "Business Standard — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Business Standard — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
+        }
+      ],
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "RELIANCE": {
       "primary_name": "Reliance Power",
@@ -45,34 +70,9 @@
           "origin": "scraper",
           "order_type": "other",
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
-        },
-        {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
-    },
-    "NUVAMA": {
-      "primary_name": "Nuvama",
-      "order_type": "other",
-      "snippet": "Nuvama gets Sebi's green light to commence its mutual fund business",
-      "source_url": "https://www.business-standard.com/topic/sebi",
-      "source_label": "Business Standard — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Nuvama gets Sebi's green light to commence its mutual fund business"
-        }
-      ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "SUZLON": {
       "primary_name": "Suzlon Energy",
@@ -91,7 +91,7 @@
           "snippet": "Suzlon Energy shares crack 5% after Rs 29 crore Sebi fine for misleading financials; company clarifies"
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -110,7 +110,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -129,7 +129,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -148,7 +148,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -167,73 +167,37 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-15T05:35:38.386Z"
+      "first_seen_at": "2026-06-16T05:44:25.047Z"
     }
   },
   "unmatched_sample": [
     {
-      "name": "Sahara",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-adjudication",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
+      "name": "Rajesh Exports Ltd",
       "type": "sebi-investigation",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-fine",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-investigation",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-ban",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-action",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "sebi-settlement",
-      "source": "Economic Times — SEBI topic (news)",
+      "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Sahara India Commercial Corporation Ltd",
-      "type": "sebi-action",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -243,35 +207,47 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-15T05:34:43.931Z",
+      "at": "2026-06-16T05:43:42.044Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Scandal-hit Rajesh Exports shares hit 5% lower circuit for fifth straight session. Do you own?"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports may be removed from PLI scheme by Heavy Industries Ministry"
+          "snippet": "Scandal-hit Rajesh Exports shares hit 5% lower circuit for fifth straight session."
         },
         {
           "name": "Adani Group",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports."
+        },
+        {
+          "name": "HCL Technologies",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "HCL Technologies share emerges top gainer on Nifty 50 and Sensex after Sarvam AI investment move."
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi revamps ETF trading framework, introduces dynamic price bands."
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi board to speed up AIF launches, bring back open-market buybacks at 19 June meet."
         }
       ],
       "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 0,
+        "not_listed": 2,
         "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -280,7 +256,7 @@
         {
           "name": "Adani Group",
           "order_type": "sebi-investigation",
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports."
         }
       ]
     },
@@ -288,18 +264,18 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-15T05:34:51.489Z",
+      "at": "2026-06-16T05:43:56.213Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 3,
+      "total_extracted": 3,
       "prefilter_sample": [
         {
-          "name": "Sahara",
-          "order_type": "other",
+          "name": "Angel One",
+          "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Sebi challenges SAT relief to Sahara managers in ₹14,106 crore OFCD case"
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
         },
         {
           "name": "Reliance Power",
@@ -308,28 +284,83 @@
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
         },
         {
-          "name": "Reliance Infra",
-          "order_type": "other",
+          "name": "Rajesh Exports Ltd",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
+          "snippet": "Rajesh Exports says will cooperate with audit, won't challenge Sebi's order"
+        }
+      ],
+      "after_filter_count": 3,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Angel One",
+          "order_type": "settlement",
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
+        },
+        {
+          "name": "Reliance Power",
+          "order_type": "other",
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
+          "name": "Rajesh Exports Ltd",
+          "order_type": "sebi-investigation",
           "snippet": "Rajesh Exports says will cooperate with audit, won't challenge Sebi's order"
+        }
+      ]
+    },
+    {
+      "url": "https://economictimes.indiatimes.com/topic/sebi",
+      "label": "Economic Times — SEBI topic (news)",
+      "mode": "news",
+      "at": "2026-06-16T05:44:03.877Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
+      "prefilter_sample": [
+        {
+          "name": "Angel One",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
         },
         {
-          "name": "Nuvama",
-          "order_type": "other",
+          "name": "Sahara India Commercial Corporation Ltd",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Nuvama gets Sebi's green light to commence its mutual fund business"
+          "snippet": "OFCD case: SEBI moves SC against SAT relief to SICCL managers, company secretary"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi mistook Valcambi's Editda as revenue; all records submitted: REL"
+          "snippet": "Will cooperate fully with fresh forensic audit, won't challenge Sebi interim order: Rajesh Exports"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Rajesh Exports shares jump 5% after 30% crash in 7 days. How the alleged Rs 15.15 lakh cr fraud saga unfolded"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi finds 97-99% revenue inflation, bars promoter from trading"
+        },
+        {
+          "name": "Suzlon Energy",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Suzlon Energy shares crack 5% after Rs 29 crore Sebi fine for misleading financials; company clarifies"
         }
       ],
       "after_filter_count": 6,
@@ -341,156 +372,29 @@
       },
       "sample": [
         {
-          "name": "Sahara",
-          "order_type": "other",
-          "snippet": "Sebi challenges SAT relief to Sahara managers in ₹14,106 crore OFCD case"
+          "name": "Angel One",
+          "order_type": "settlement",
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
         },
         {
-          "name": "Reliance Power",
-          "order_type": "other",
-          "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
-        },
-        {
-          "name": "Reliance Infra",
-          "order_type": "other",
-          "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
+          "name": "Sahara India Commercial Corporation Ltd",
+          "order_type": "sebi-investigation",
+          "snippet": "OFCD case: SEBI moves SC against SAT relief to SICCL managers, company secretary"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
-          "snippet": "Rajesh Exports says will cooperate with audit, won't challenge Sebi's order"
-        },
-        {
-          "name": "Nuvama",
-          "order_type": "other",
-          "snippet": "Nuvama gets Sebi's green light to commence its mutual fund business"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "snippet": "Sebi mistook Valcambi's Editda as revenue; all records submitted: REL"
-        }
-      ]
-    },
-    {
-      "url": "https://economictimes.indiatimes.com/topic/sebi",
-      "label": "Economic Times — SEBI topic (news)",
-      "mode": "news",
-      "at": "2026-06-15T05:35:04.206Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 10,
-      "total_extracted": 10,
-      "prefilter_sample": [
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-adjudication",
-          "is_listed_entity": true,
+          "order_type": "sebi-investigation",
           "snippet": "Will cooperate fully with fresh forensic audit, won't challenge Sebi interim order: Rajesh Exports"
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports shares hit 5% lower circuit for third session on alleged Rs 15.15 lakh crore fraud"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
+          "snippet": "Rajesh Exports shares jump 5% after 30% crash in 7 days. How the alleged Rs 15.15 lakh cr fraud saga unfolded"
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
-          "is_listed_entity": true,
-          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-action",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports founder denies fund diversion in ACC Energy, says SEBI misread accounting entries"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-settlement",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports denies wrongdoing, says SEBI order stems from 'confusion' over Valcambi revenues"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "An Indian gold firm allegedly inflated revenue by $159 billion using its Swiss unit"
-        },
-        {
-          "name": "Sahara India Commercial Corporation Ltd",
-          "order_type": "sebi-action",
-          "is_listed_entity": true,
-          "snippet": "OFCD case: SEBI moves SC against SAT relief to SICCL managers, company secretary"
-        },
-        {
-          "name": "Suzlon Energy",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Suzlon Energy shares crack 5% after Rs 29 crore Sebi fine for misleading financials; company clarifies"
-        }
-      ],
-      "after_filter_count": 9,
-      "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
-        "resolved_in_favour": 0,
-        "no_name": 0
-      },
-      "sample": [
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-adjudication",
-          "snippet": "Will cooperate fully with fresh forensic audit, won't challenge Sebi interim order: Rajesh Exports"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "Rajesh Exports shares hit 5% lower circuit for third session on alleged Rs 15.15 lakh crore fraud"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi fines Suzlon Energy Rs 29 crore for misleading financial statements; promoters, executives also penalised"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
-          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-action",
-          "snippet": "Rajesh Exports founder denies fund diversion in ACC Energy, says SEBI misread accounting entries"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-settlement",
-          "snippet": "Rajesh Exports denies wrongdoing, says SEBI order stems from 'confusion' over Valcambi revenues"
-        },
-        {
-          "name": "Sahara India Commercial Corporation Ltd",
-          "order_type": "sebi-action",
-          "snippet": "OFCD case: SEBI moves SC against SAT relief to SICCL managers, company secretary"
+          "snippet": "Sebi finds 97-99% revenue inflation, bars promoter from trading"
         },
         {
           "name": "Suzlon Energy",
@@ -503,7 +407,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-15T05:35:31.507Z",
+      "at": "2026-06-16T05:44:14.257Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
