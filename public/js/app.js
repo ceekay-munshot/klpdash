@@ -1942,11 +1942,27 @@ function buildCohortClickPick(ticker, side, segAnchor) {
   const tk = byTicker?.get(ticker);
   if (!tk || !Array.isArray(tk.points) || tk.points.length < 2) return null;
 
-  const firstSB = tk.points.find((p) => p.rating === "STRONG BUY" && typeof p.close === "number");
-  const anchorDate = segAnchor || cache.cohortAnchor;
-  const anchorPoint = firstSB
-    || (anchorDate && tk.points.find((p) => p.date >= anchorDate && typeof p.close === "number"))
-    || tk.points.find((p) => typeof p.close === "number");
+  // When a segment anchor is supplied (Accuracy / Performance row click),
+  // the row's target / SL / return were all computed from the close at
+  // that exact date — use the same close as the drill modal's anchor so
+  // the chart overlay matches the row's numbers. Without an anchor we
+  // fall back to the first STRONG BUY across the trail (used by hist-row
+  // clicks where the row IS that first STRONG BUY pick).
+  let anchorPoint = null;
+  let isCohortLookup = false;
+  if (segAnchor) {
+    anchorPoint = tk.points.find((p) => p.date === segAnchor && typeof p.close === "number")
+      || tk.points.find((p) => p.date >= segAnchor && typeof p.close === "number");
+    isCohortLookup = !anchorPoint || anchorPoint.rating !== "STRONG BUY";
+  }
+  if (!anchorPoint) {
+    const firstSB = tk.points.find((p) => p.rating === "STRONG BUY" && typeof p.close === "number");
+    const cohortAnchor = cache.cohortAnchor;
+    anchorPoint = firstSB
+      || (cohortAnchor && tk.points.find((p) => p.date >= cohortAnchor && typeof p.close === "number"))
+      || tk.points.find((p) => typeof p.close === "number");
+    isCohortLookup = !firstSB;
+  }
   if (!anchorPoint) return null;
 
   let todayPoint = null;
@@ -1971,7 +1987,7 @@ function buildCohortClickPick(ticker, side, segAnchor) {
     ret: (anchorPoint.close && todayPoint.close) ? (todayPoint.close / anchorPoint.close - 1) * 100 : null,
     days: daysBetween(anchorPoint.date, todayPoint.date),
     points: tk.points,
-    isCohortLookup: !firstSB,
+    isCohortLookup,
   };
 }
 
