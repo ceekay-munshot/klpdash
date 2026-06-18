@@ -292,6 +292,21 @@ function saveCohortView(v) {
   try { localStorage.setItem(COHORT_VIEW_KEY, v); } catch {}
 }
 
+// Active tab cadence ("daily" | "weekly" | "monthly"). Drives the
+// rebalance frequency / segment length of the Active strategy view.
+// All three anchor at the client upload date (lkp.generated_at).
+const ACTIVE_CADENCE_KEY = "klpdash-active-cadence-v1";
+const ACTIVE_CADENCES = ["daily", "weekly", "monthly"];
+function loadActiveCadence() {
+  try {
+    const v = localStorage.getItem(ACTIVE_CADENCE_KEY);
+    return ACTIVE_CADENCES.includes(v) ? v : "daily";
+  } catch { return "daily"; }
+}
+function saveActiveCadence(v) {
+  try { localStorage.setItem(ACTIVE_CADENCE_KEY, v); } catch {}
+}
+
 // History tab sub-view ("history" | "accuracy"). Toggled by an inline
 // switch below the Performance Tracker; persisted in localStorage so
 // the analyst's last choice survives reloads.
@@ -386,6 +401,7 @@ const state = {
   cohortView: loadCohortView(), // "static" | "monthly" | "weekly"
   cohortSegmentIdx: null,       // which week pill is selected (null = latest)
   historyView: loadHistoryView(), // "history" | "accuracy"
+  activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly"
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
@@ -3844,9 +3860,14 @@ function renderHistoryEmpty(reason) {
 // friction.
 const ACTIVE_INITIAL_CAPITAL = 100000;
 
-function simulateActiveBasket(snapshots) {
+function simulateActiveBasket(snapshots, anchorDate) {
   if (!snapshots?.length) return null;
-  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  // Anchor at the client upload date when supplied (the founder's
+  // "everything starts from upload" rule). Filter to snapshots ON or
+  // AFTER the anchor so the first BUY event is at the upload close.
+  let sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  if (anchorDate) sorted = sorted.filter((s) => s.date >= anchorDate);
+  if (!sorted.length) return null;
 
   let cash = ACTIVE_INITIAL_CAPITAL;
   const holdings = new Map();   // ticker → { units, entryDate, entryPrice, name, sector }
@@ -3994,61 +4015,550 @@ function computeActiveStats(sim, niftyOn) {
   };
 }
 
-// The full backtest (simulateActiveBasket + renderActiveBody + chart /
-// holdings / trades renderers below) is intentionally not wired right
-// now. The v1 strategy showed 1-day average holding period across the
-// 20-day window — we want to layer in tunable parameters (buffer band,
-// min hold period) before exposing the tab. Until then, render a
-// placeholder so the route still resolves but visitors don't see
-// half-finished numbers.
+// Active tab renderer. Three cadences (Daily / Weekly / Monthly) share
+// a common shell:
+//   - sub-pill toggle in the header
+//   - hero card with total return + alpha vs Nifty
+//   - cumulative return chart (active basket vs Nifty)
+//   - overall hit summary (founder ask — daily basket churns so per-pick
+//     hits across the full history are the headline number)
+//   - per-pick accuracy rows (every entry = one tracked pick)
+//
+// All three anchor at lkp.generated_at (client upload date). The Daily
+// cell reuses the equal-weight NAV-tracking simulator (simulateActiveBasket).
+// Weekly and Monthly cells re-use buildCohort with weekly mode + a new
+// 30-day chain extension so segments re-lock at the named cadence and
+// hold frozen during each segment.
 async function renderActive() {
   const host = $("#active-content");
   if (!host) return;
-  host.innerHTML = renderActiveComingSoon();
+  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading active strategy…</div>`;
+
+  try {
+    await ensureHistoryCache();
+  } catch (e) {
+    host.innerHTML = renderHistoryEmpty(e.message);
+    return;
+  }
+  const { snapshots, benchmark, lkp } = state.cache.history;
+  if (!snapshots.length) {
+    host.innerHTML = renderHistoryEmpty("No snapshots loaded.");
+    return;
+  }
+
+  const anchorDate = lkpAnchorDate(lkp, snapshots);
+  const todayDate = snapshots[snapshots.length - 1].date;
+
+  const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+  const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+  function niftyOn(date) {
+    if (!niftyClosesByDate) return null;
+    if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
+    let last = null;
+    for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
+    return last;
+  }
+
+  const cadence = state.activeCadence;
+  const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn);
+  host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate);
+  wireActiveCadenceToggle();
+  // Cohort-style row clicks open the same drill modal everywhere else uses.
+  $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
+    const ticker = el.dataset.ticker;
+    const side = el.dataset.cohortSide || "ai";
+    const segAnchor = el.dataset.segAnchor || null;
+    if (!ticker) return;
+    const pick = buildCohortClickPick(ticker, side, segAnchor);
+    if (pick) openHistoryDrill(pick);
+  }));
 }
 
-function renderActiveComingSoon() {
+// Build everything the Active shell needs for a given cadence. Returns
+// { kind, sim?, segments?, picks, hitSummary, equityCurve, niftyCurve,
+//   periodLabel, finalReturn, alpha, startDate, endDate }.
+function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn) {
+  if (cadence === "daily") {
+    const sim = simulateActiveBasket(snapshots, anchorDate);
+    if (!sim || !sim.equity.length) return null;
+    const picks = buildActiveDailyPicks(sim, snapshots, todayDate);
+    const hitSummary = computeOverallHitSummary(picks);
+    const start = sim.equity[0];
+    const end = sim.equity[sim.equity.length - 1];
+    const finalReturn = (end.value / start.value - 1) * 100;
+    const nStart = niftyOn(start.date), nEnd = niftyOn(end.date);
+    const niftyRet = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
+    const equityCurve = sim.equity.map((e) => ({ date: e.date, retPct: (e.value / sim.startCapital - 1) * 100 }));
+    const niftyCurve = buildNiftyCurve(equityCurve.map((e) => e.date), niftyOn);
+    return {
+      kind: "daily",
+      sim, picks, hitSummary,
+      equityCurve, niftyCurve,
+      periodLabel: `Daily rebalance from ${fmtDateDMY(anchorDate)}`,
+      finalReturn, niftyRet,
+      alpha: niftyRet != null ? finalReturn - niftyRet : null,
+      startDate: start.date, endDate: end.date,
+      finalValue: end.value, startCapital: sim.startCapital,
+      tradeCount: sim.trades.length,
+      liveHoldings: sim.holdings.size,
+    };
+  }
+
+  // Weekly / Monthly — segmented chain. Re-pick top 7 every periodDays
+  // from anchor, frozen during each segment. Returns segments + a
+  // synthetic equity curve (each segment's return composed multiplicatively).
+  const periodDays = cadence === "weekly" ? 7 : 30;
+  const segments = buildActiveSegmentChain(snapshots, anchorDate, periodDays);
+  if (!segments.length) return null;
+  const picks = buildActiveSegmentedPicks(segments, snapshots, todayDate);
+  const hitSummary = computeOverallHitSummary(picks);
+  const equityCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate);
+  const niftyCurve = buildNiftyCurve(equityCurve.map((e) => e.date), niftyOn);
+  const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
+  const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
+  return {
+    kind: cadence,
+    segments, picks, hitSummary,
+    equityCurve, niftyCurve,
+    periodLabel: `${cadence === "weekly" ? "Weekly" : "Monthly"} re-lock from ${fmtDateDMY(anchorDate)} · ${segments.length} segment${segments.length === 1 ? "" : "s"}`,
+    finalReturn, niftyRet,
+    alpha: niftyRet != null ? finalReturn - niftyRet : null,
+    startDate: equityCurve.length ? equityCurve[0].date : anchorDate,
+    endDate: equityCurve.length ? equityCurve[equityCurve.length - 1].date : todayDate,
+  };
+}
+
+// Re-pick top 7 every periodDays from anchorDate. Each segment locks at
+// its start snapshot and tracks closes through the segment window.
+// Returns [{ index, label, startDate, endDate, entrySnap, top7, tracking }].
+function buildActiveSegmentChain(snapshots, anchorDate, periodDays) {
+  if (!snapshots.length || !anchorDate) return [];
+  const today = snapshots[snapshots.length - 1].date;
+  const dateToMs = (d) => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
+  const fmt = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const pickTop7 = (snap) => snap.stocks
+    .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
+    .sort((a, b) => b.composite - a.composite)
+    .slice(0, 7);
+
+  let cursorMs = dateToMs(anchorDate);
+  const todayMs = dateToMs(today);
+  const segments = [];
+  while (cursorMs <= todayMs) {
+    const winStart = fmt(cursorMs);
+    const winEnd = fmt(cursorMs + (periodDays - 1) * 86400000);
+    const entry = snapshots.find((s) => s.date >= winStart && s.date <= winEnd);
+    if (!entry) { cursorMs += periodDays * 86400000; continue; }
+    const tracking = snapshots.filter((s) => s.date >= entry.date && s.date <= winEnd);
+    segments.push({
+      index: segments.length,
+      label: periodDays === 7 ? `Week ${segments.length + 1}` : `Month ${segments.length + 1}`,
+      startDate: entry.date,
+      endDate: tracking[tracking.length - 1].date,
+      entrySnap: entry,
+      top7: pickTop7(entry),
+      tracking,
+    });
+    cursorMs += periodDays * 86400000;
+  }
+  return segments;
+}
+
+// Composite per-day equity curve across all segments. Each segment's
+// average basket return is multiplicatively chained to the previous
+// segment's end-factor (so a +5% week followed by +3% week = +8.15%).
+function buildSegmentedEquityCurve(segments, snapshots, anchorDate) {
+  if (!segments.length) return [];
+  const curve = [];
+  let prevFactor = 1.0;
+  curve.push({ date: anchorDate, retPct: 0 });
+  for (const seg of segments) {
+    const entryCloses = {};
+    for (const s of seg.top7) entryCloses[s.ticker] = s.close;
+    let lastFactor = 1.0;
+    for (const day of seg.tracking) {
+      if (day.date === anchorDate) continue;
+      let sum = 0, n = 0;
+      for (const ticker of Object.keys(entryCloses)) {
+        const s = day.stocks.find((x) => x.ticker === ticker);
+        if (!s || s.close == null) continue;
+        sum += s.close / entryCloses[ticker];
+        n++;
+      }
+      if (n === 0) continue;
+      const factor = sum / n;
+      lastFactor = factor;
+      const cum = (prevFactor * factor - 1) * 100;
+      // Replace if the day already exists (segment boundaries).
+      const existing = curve.findIndex((p) => p.date === day.date);
+      if (existing >= 0) curve[existing] = { date: day.date, retPct: cum };
+      else curve.push({ date: day.date, retPct: cum });
+    }
+    prevFactor *= lastFactor;
+  }
+  return curve;
+}
+
+function buildNiftyCurve(dates, niftyOn) {
+  if (!dates.length) return [];
+  const startClose = niftyOn(dates[0]);
+  if (startClose == null) return [];
+  return dates.map((date) => {
+    const close = niftyOn(date);
+    return { date, retPct: close != null ? (close / startClose - 1) * 100 : null };
+  });
+}
+
+// Daily picks: every BUY event in the simulator's trade log becomes a
+// fresh accuracy-tracked pick. If the same stock re-enters multiple
+// times, each entry is tracked separately (per founder confirmation —
+// every entry is a fresh prediction with its own entry close).
+// Targets follow the framework's uniform +5% / −20% bands.
+function buildActiveDailyPicks(sim, snapshots, todayDate) {
+  const picks = [];
+  for (const t of sim.trades) {
+    if (t.action !== "BUY") continue;
+    const entryPrice = t.price;
+    const target = entryPrice * (1 + AI_TARGET_PCT);
+    const sl = entryPrice * (1 - AI_SL_PCT);
+    const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate);
+    picks.push({
+      ticker: t.ticker,
+      name: t.name || t.ticker,
+      entryDate: t.date,
+      entryPrice, target, sl,
+      targetPct: AI_TARGET_PCT * 100,
+      slPct: -AI_SL_PCT * 100,
+      ...status,
+    });
+  }
+  return enrichAndSortPicks(picks);
+}
+
+// Weekly / Monthly picks: each segment's top 7 contribute 7 picks
+// anchored at the segment's start date and close. Different segments
+// can repeat the same ticker — each is a fresh pick.
+function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
+  const picks = [];
+  for (const seg of segments) {
+    for (const s of seg.top7) {
+      if (!s.ticker || s.close == null) continue;
+      const target = s.close * (1 + AI_TARGET_PCT);
+      const sl = s.close * (1 - AI_SL_PCT);
+      const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
+      picks.push({
+        ticker: s.ticker,
+        name: s.name || s.ticker,
+        entryDate: seg.startDate,
+        entryPrice: s.close,
+        target, sl,
+        targetPct: AI_TARGET_PCT * 100,
+        slPct: -AI_SL_PCT * 100,
+        cohortLabel: segments.length > 1 ? seg.label : null,
+        ...status,
+      });
+    }
+  }
+  return enrichAndSortPicks(picks);
+}
+
+function enrichAndSortPicks(picks) {
+  // Compute current return % + proximity score (1.0 = at target, 0 = at SL)
+  // and sort: TARGET_HIT pinned top → OPEN by proximity desc → SL_HIT bottom.
+  const enriched = picks.map((p) => {
+    const range = p.targetPct - p.slPct;
+    const curRet = p.currentClose != null && p.entryPrice
+      ? (p.currentClose / p.entryPrice - 1) * 100
+      : (p.exitPrice != null && p.entryPrice ? (p.exitPrice / p.entryPrice - 1) * 100 : null);
+    let proximity = null;
+    if (p.status === "TARGET_HIT") proximity = 1.5;
+    else if (p.status === "SL_HIT") proximity = -0.5;
+    else if (curRet != null && range > 0) proximity = (curRet - p.slPct) / range;
+    return { ...p, currentReturnPct: curRet, proximity };
+  });
+  enriched.sort((a, b) => (b.proximity ?? -2) - (a.proximity ?? -2));
+  return enriched;
+}
+
+function computeOverallHitSummary(picks) {
+  const total = picks.length;
+  const targetHits = picks.filter((p) => p.status === "TARGET_HIT").length;
+  const slHits = picks.filter((p) => p.status === "SL_HIT").length;
+  const open = total - targetHits - slHits;
+  const closed = targetHits + slHits;
+  const hitRate = closed > 0 ? (targetHits / closed) * 100 : null;
+  const targetHitDays = picks.filter((p) => p.status === "TARGET_HIT" && p.daysToHit != null);
+  const slHitDays = picks.filter((p) => p.status === "SL_HIT" && p.daysToHit != null);
+  const avgDaysToTarget = targetHitDays.length
+    ? targetHitDays.reduce((a, p) => a + p.daysToHit, 0) / targetHitDays.length : null;
+  const avgDaysToSL = slHitDays.length
+    ? slHitDays.reduce((a, p) => a + p.daysToHit, 0) / slHitDays.length : null;
+  return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
+}
+
+function renderActiveShell(view, cadence, anchorDate, todayDate) {
+  if (!view) {
+    return `
+      <div class="space-y-4">
+        ${renderActiveCadencePills(cadence)}
+        ${renderHistoryEmpty("No active picks yet — snapshot trail too short for this cadence.")}
+      </div>
+    `;
+  }
   return `
-    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl shadow-sm ring-1 ring-indigo-100 p-8 sm:p-12">
-      <div class="max-w-2xl mx-auto text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-3xl mb-5 shadow-lg">🚧</div>
-        <h2 class="font-display font-bold text-2xl text-slate-900 mb-2">Active Basket — coming soon</h2>
-        <p class="text-sm text-slate-600 leading-relaxed mb-6">
-          The daily-rebalancing strategy is being tuned before it goes live.
-          The v1 backtest showed heavy churn (1-day average hold) on the current snapshot window — we're adding strategy controls so it can be evaluated honestly before clients see it.
-        </p>
+    <div id="active-strategy" class="space-y-4">
+      ${renderActiveCadencePills(cadence)}
+      ${renderActiveHero(view, cadence)}
+      ${renderActiveCumulativeChart(view)}
+      ${renderActiveOverallHits(view.hitSummary, view.picks.length)}
+      ${renderActivePickRows(view.picks)}
+      ${renderActiveBetaCaveat(view, anchorDate)}
+    </div>
+  `;
+}
 
-        <div class="text-left bg-white/70 ring-1 ring-slate-200 rounded-xl p-5">
-          <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700 mb-3">What's coming</div>
-          <ol class="space-y-3 text-sm text-slate-700">
-            <li class="flex items-start gap-3">
-              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">1</span>
-              <div>
-                <div class="font-semibold text-slate-900">Tunable strategy variants</div>
-                <div class="text-xs text-slate-600 mt-0.5">Buffer band (sell only when composite drops below 75−X) and min hold period (force conviction). Sliders that recompute the equity curve in real time.</div>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">2</span>
-              <div>
-                <div class="font-semibold text-slate-900">Side-by-side compare</div>
-                <div class="text-xs text-slate-600 mt-0.5">Active vs Static cohort vs Nifty 50 on one chart — answers whether daily rebalancing actually beats holding the month-end pick.</div>
-              </div>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center">3</span>
-              <div>
-                <div class="font-semibold text-slate-900">Daily action items <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 ring-1 ring-slate-200 ml-1">if tuning works</span></div>
-                <div class="text-xs text-slate-600 mt-0.5">"Today's BUY / SELL" panel surfaced to clients once the tuned curve clearly beats Nifty.</div>
-              </div>
-            </li>
-          </ol>
+function renderActiveCadencePills(cadence) {
+  const pill = (k, label, sub) => {
+    const active = cadence === k;
+    return `
+      <button type="button" data-cadence="${k}" class="relative px-4 py-2.5 text-sm font-semibold transition ${active ? "text-indigo-700" : "text-slate-500 hover:text-slate-900"}">
+        <span>${label}</span>
+        <span class="block text-[10px] font-normal text-slate-400 mt-0.5">${sub}</span>
+        ${active ? `<span class="absolute bottom-0 left-2 right-2 h-0.5 bg-indigo-600 rounded-full"></span>` : ""}
+      </button>`;
+  };
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 px-2 sm:px-4 py-1 flex flex-wrap items-baseline gap-1 justify-between">
+      <div class="flex items-baseline gap-0">
+        ${pill("daily", "Daily", "rebalance every day")}
+        ${pill("weekly", "Weekly", "re-lock every 7 days")}
+        ${pill("monthly", "Monthly", "re-lock every 30 days")}
+      </div>
+      <div class="text-[11px] text-slate-500 pr-2">All anchored at client upload date</div>
+    </div>
+  `;
+}
+
+function renderActiveHero(view, cadence) {
+  const retCls = view.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
+  const retSign = view.finalReturn >= 0 ? "+" : "";
+  const alphaTile = view.alpha != null
+    ? `<span class="${view.alpha >= 0 ? "text-emerald-600" : "text-rose-600"} font-bold">${view.alpha >= 0 ? "+" : ""}${view.alpha.toFixed(2)}%</span> vs Nifty (${view.niftyRet != null ? (view.niftyRet >= 0 ? "+" : "") + view.niftyRet.toFixed(2) + "%" : "—"})`
+    : `<span class="text-slate-400">benchmark missing</span>`;
+  const subtitle = cadence === "daily"
+    ? `Equal-weight, rebalanced every day. Each BUY at today's close, each SELL when the stock drops out of STRONG BUY.`
+    : cadence === "weekly"
+      ? `Top 7 picked every 7 days from upload; basket frozen for the week.`
+      : `Top 7 picked every 30 days from upload; basket frozen for the month.`;
+  const sizeStr = cadence === "daily" && view.finalValue != null
+    ? `Portfolio ₹${Math.round(view.finalValue).toLocaleString("en-IN")} from ₹${(view.startCapital).toLocaleString("en-IN")}`
+    : `${view.equityCurve.length} day${view.equityCurve.length === 1 ? "" : "s"} tracked`;
+  return `
+    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="font-display font-bold text-xl text-slate-900">Active Strategy</h2>
+            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
+            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">${cadence}</span>
+          </div>
+          <div class="text-sm text-slate-600 mt-1">${escapeHtml(subtitle)}</div>
+          <div class="text-xs text-slate-500 mt-2">${escapeHtml(view.periodLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)}</div>
         </div>
-
-        <div class="text-[11px] text-slate-500 mt-5">Snapshot trail still accumulating since 24-05-26 · numbers firm up with more data</div>
+        <div class="text-right">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total return</div>
+          <div class="${retCls} text-4xl font-bold leading-tight tabular-nums">${retSign}${view.finalReturn.toFixed(2)}%</div>
+          <div class="text-sm mt-1">${alphaTile}</div>
+          <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(sizeStr)}</div>
+        </div>
       </div>
     </div>
   `;
+}
+
+function renderActiveCumulativeChart(view) {
+  const W = 800, H = 220;
+  const M = { left: 44, right: 16, top: 14, bottom: 30 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const pts = view.equityCurve;
+  if (pts.length < 2) {
+    return `
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+        <h3 class="font-semibold text-slate-900 text-sm mb-2">Cumulative return</h3>
+        <div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot yet.</div>
+      </div>`;
+  }
+  const niftyByDate = new Map((view.niftyCurve || []).map((p) => [p.date, p.retPct]));
+  const allVals = [];
+  for (const p of pts) { allVals.push(p.retPct); const n = niftyByDate.get(p.date); if (n != null) allVals.push(n); }
+  const yMin = Math.min(0, ...allVals);
+  const yMax = Math.max(0, ...allVals);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
+  const xAt = (i) => M.left + (pts.length <= 1 ? 0 : (i / (pts.length - 1)) * innerW);
+  const yAt = (v) => M.top + (1 - (v - yLo) / (yHi - yLo)) * innerH;
+  const activePath = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${xAt(i).toFixed(2)} ${yAt(p.retPct).toFixed(2)}`).join(" ");
+  const niftyPts = pts.map((p, i) => {
+    const n = niftyByDate.get(p.date);
+    return n == null ? null : [xAt(i), yAt(n)];
+  }).filter(Boolean);
+  const niftyPath = niftyPts.length >= 2 ? niftyPts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ") : "";
+
+  const first = [xAt(0), yAt(pts[0].retPct)];
+  const last = [xAt(pts.length - 1), yAt(pts[pts.length - 1].retPct)];
+  const baseY = yAt(0).toFixed(2);
+  const areaPath = `${activePath} L ${last[0].toFixed(2)} ${baseY} L ${first[0].toFixed(2)} ${baseY} Z`;
+  const yTicks = [0, 1, 2, 3, 4].map((step) => {
+    const v = yLo + (yHi - yLo) * (step / 4);
+    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
+    const isZero = Math.abs(v) < 0.05;
+    return `
+      <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" />
+      <text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
+  }).join("");
+  const tickEvery = Math.max(1, Math.ceil(pts.length / 6));
+  const xTicks = pts.map((p, i) => (i % tickEvery !== 0 && i !== pts.length - 1)
+    ? ""
+    : `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(p.date)}</text>`
+  ).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-slate-900 text-sm">Cumulative return</h3>
+        <div class="flex items-center gap-3 text-[11px] text-slate-500">
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-indigo-600"></span>Active basket</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 border-t border-dashed border-slate-400"></span>Nifty 50</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:260px">
+        <defs>
+          <linearGradient id="activeStrategyArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        ${yTicks}
+        <path d="${areaPath}" fill="url(#activeStrategyArea)" />
+        ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
+        <path d="${activePath}" fill="none" stroke="#6366f1" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
+        ${xTicks}
+      </svg>
+    </div>
+  `;
+}
+
+function renderActiveOverallHits(summary, totalPicks) {
+  const hitRateStr = summary.hitRate == null ? "—" : `${summary.hitRate.toFixed(0)}%`;
+  const avgT = summary.avgDaysToTarget == null ? "—" : `${summary.avgDaysToTarget.toFixed(1)}d`;
+  const avgS = summary.avgDaysToSL == null ? "—" : `${summary.avgDaysToSL.toFixed(1)}d`;
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+      <div class="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-display font-bold text-slate-900 text-base">Overall accuracy</h3>
+        <span class="text-[11px] text-slate-500">${summary.total} pick${summary.total === 1 ? "" : "s"} across the period · target +5% · SL −20%</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total picks</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums text-slate-900 mt-0.5">${summary.total}</div>
+        </div>
+        <div class="rounded-xl bg-emerald-50 ring-1 ring-emerald-100 px-3 py-2">
+          <div class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700"><span>🎯</span> Target hits</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums text-emerald-700 mt-0.5">${summary.targetHits}</div>
+          <div class="text-[10px] text-emerald-700/70 tabular-nums">avg ${avgT} to hit</div>
+        </div>
+        <div class="rounded-xl bg-rose-50 ring-1 ring-rose-100 px-3 py-2">
+          <div class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-rose-700"><span>⚠</span> SL hits</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums text-rose-700 mt-0.5">${summary.slHits}</div>
+          <div class="text-[10px] text-rose-700/70 tabular-nums">avg ${avgS} to hit</div>
+        </div>
+        <div class="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Open</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums text-slate-900 mt-0.5">${summary.open}</div>
+          <div class="text-[10px] text-slate-500/70">still tracking</div>
+        </div>
+        <div class="rounded-xl bg-indigo-50 ring-1 ring-indigo-100 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-indigo-700">Hit rate</div>
+          <div class="text-2xl font-display font-extrabold tabular-nums text-indigo-700 mt-0.5">${hitRateStr}</div>
+          <div class="text-[10px] text-indigo-700/70 tabular-nums">${summary.closed} closed</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderActivePickRows(picks) {
+  if (!picks.length) {
+    return `
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+        <h3 class="font-semibold text-slate-900 text-sm mb-1">Per-pick status</h3>
+        <div class="text-xs text-slate-500">No picks yet for this cadence.</div>
+      </div>`;
+  }
+  const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const rows = picks.map((r) => {
+    const statusCls = r.status === "TARGET_HIT" ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      : r.status === "SL_HIT" ? "bg-rose-100 text-rose-700 ring-rose-200"
+      : "bg-slate-100 text-slate-600 ring-slate-200";
+    const statusLabel = r.status === "TARGET_HIT" ? "🎯 Target Hit"
+      : r.status === "SL_HIT" ? "⚠ SL Hit"
+      : "Open";
+    const exit = r.exitPrice != null ? `₹${formatPrice(r.exitPrice)} · ${fmtDateDMY(r.hitDate)} · ${r.daysToHit}d`
+      : r.currentClose != null ? `now ₹${formatPrice(r.currentClose)}` : "—";
+    let rowTint = "hover:bg-slate-50";
+    if (r.status === "TARGET_HIT") rowTint = "bg-emerald-50 ring-1 ring-emerald-200";
+    else if (r.status === "SL_HIT") rowTint = "bg-rose-50 ring-1 ring-rose-200";
+    else if (r.proximity != null && r.proximity >= 0.75) rowTint = "bg-emerald-50/40 hover:bg-emerald-50/70";
+    else if (r.proximity != null && r.proximity <= 0.25) rowTint = "bg-rose-50/40 hover:bg-rose-50/70";
+    const currentReturnHtml = r.currentReturnPct != null
+      ? `<span class="text-[10px] tabular-nums font-semibold ${r.currentReturnPct >= 0 ? "text-emerald-700" : "text-rose-700"} ml-1">${fmtPct(r.currentReturnPct)}</span>`
+      : "";
+    return `
+      <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint} hover:ring-1 hover:ring-indigo-200">
+        <div class="col-span-5 min-w-0">
+          <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
+        </div>
+        <div class="col-span-3 text-[10px] tabular-nums text-slate-600 text-right">
+          <div>T: ₹${formatPrice(r.target)} <span class="text-emerald-600">${fmtPct(r.targetPct)}</span></div>
+          <div>SL: ₹${formatPrice(r.sl)} <span class="text-rose-600">${fmtPct(r.slPct)}</span></div>
+        </div>
+        <div class="col-span-4 text-right">
+          <div class="flex items-center justify-end flex-wrap gap-1">
+            <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${statusCls}">${statusLabel}</span>
+          </div>
+          <div class="text-[10px] text-slate-500 mt-0.5 truncate">${exit}</div>
+        </div>
+      </button>`;
+  }).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h3 class="font-display font-bold text-slate-900 text-base">Per-pick status</h3>
+        <span class="text-[11px] text-slate-500">Every entry = one fresh prediction · click any row for the drill chart</span>
+      </div>
+      <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1 space-y-0.5">${rows}</div>
+    </div>
+  `;
+}
+
+function renderActiveBetaCaveat(view, anchorDate) {
+  return `
+    <div class="text-xs text-slate-500 bg-slate-50 ring-1 ring-slate-200 rounded-xl p-3 leading-relaxed">
+      <strong>Beta caveat</strong> — strategy backtested from client upload date (${fmtDateDMY(anchorDate)}). Buys + sells transact at the same EOD close that marks the portfolio to market, so entry-day P&amp;L is zero by construction. No brokerage, slippage, or STT modelled yet (we'll revisit before promoting beyond Beta).
+    </div>
+  `;
+}
+
+function wireActiveCadenceToggle() {
+  $$("#active-content [data-cadence]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.cadence;
+    if (!ACTIVE_CADENCES.includes(v) || v === state.activeCadence) return;
+    state.activeCadence = v;
+    saveActiveCadence(v);
+    renderActive();
+  }));
 }
 
 function renderActiveBody(sim, stats, niftyOn) {
