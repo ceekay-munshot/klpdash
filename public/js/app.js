@@ -4348,8 +4348,28 @@ function openHistoryDrill(pick) {
   const TAPE_Y = M.top + innerH + TAPE_GAP;
   const X_LABEL_Y = TAPE_Y + TAPE_H + 18;
 
+  // Target / Stop-loss levels for the overlay. LKP picks carry explicit
+  // tgt1 + sl from the client upload; AI / cohort picks use the framework's
+  // uniform +5% / −20% bands around the entry close. Either side can be
+  // missing (e.g. cohort pick built from snapshot trail with no entry
+  // close) — we render whichever line we can.
+  let targetPrice = null, slPrice = null, levelAnchor = null;
+  if (pick.isLkp) {
+    targetPrice = typeof pick.tgt1 === "number" ? pick.tgt1 : null;
+    slPrice = typeof pick.sl === "number" ? pick.sl : null;
+    levelAnchor = typeof pick.entry === "number" ? pick.entry : null;
+  } else if (typeof pick.firstSBClose === "number") {
+    targetPrice = pick.firstSBClose * (1 + AI_TARGET_PCT);
+    slPrice = pick.firstSBClose * (1 - AI_SL_PCT);
+    levelAnchor = pick.firstSBClose;
+  }
+
   const closes = points.map((p) => p.close);
-  const yMin = Math.min(...closes), yMax = Math.max(...closes);
+  let yMin = Math.min(...closes), yMax = Math.max(...closes);
+  // Expand the range so the levels stay visible even when they fall
+  // outside the realized price band.
+  if (targetPrice != null) yMax = Math.max(yMax, targetPrice);
+  if (slPrice != null) yMin = Math.min(yMin, slPrice);
   const ySpan = Math.max(yMax - yMin, 1);
   const yPad = ySpan * 0.1;
   const yLo = yMin - yPad, yHi = yMax + yPad;
@@ -4370,6 +4390,24 @@ function openHistoryDrill(pick) {
       <text x="${(M.left - 10).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10.5" font-weight="500" fill="#94a3b8">₹${formatPrice(price)}</text>
     `;
   }).join("");
+
+  // Horizontal level lines for target / stop-loss. Sit between the
+  // chart line and the rating markers — visible without covering the
+  // rating-change halos. Labels right-aligned at the chart edge with
+  // the % return relative to entry (computed from levelAnchor when
+  // available; otherwise the price alone).
+  function levelOverlay(price, color, sign, label, labelOffsetY) {
+    if (price == null) return "";
+    const y = yAt(price);
+    const retTxt = levelAnchor ? ` · ${sign}${Math.abs((price / levelAnchor - 1) * 100).toFixed(1)}%` : "";
+    const fullLabel = `${label} ₹${formatPrice(price)}${retTxt}`;
+    return `
+      <line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${y.toFixed(2)}" y2="${y.toFixed(2)}" stroke="${color}" stroke-width="1.2" stroke-dasharray="6 4" opacity="0.85" />
+      <rect x="${(W - M.right - 110).toFixed(2)}" y="${(y + labelOffsetY - 11).toFixed(2)}" width="106" height="14" rx="3" fill="#fff" fill-opacity="0.92" />
+      <text x="${(W - M.right - 6).toFixed(2)}" y="${(y + labelOffsetY).toFixed(2)}" text-anchor="end" font-size="10" font-weight="700" fill="${color}">${fullLabel}</text>`;
+  }
+  const targetLine = levelOverlay(targetPrice, "#059669", "+", "Target", -4);
+  const slLine = levelOverlay(slPrice, "#e11d48", "−", "SL", 12);
 
   // Markers — rating-change points get a halo + ring, same-rating days
   // get a tiny dot. Visual hierarchy makes the explainer footer redundant.
@@ -4522,6 +4560,8 @@ function openHistoryDrill(pick) {
             </defs>
             ${yTicks}
             <path d="${areaD}" fill="url(#histArea)"/>
+            ${targetLine}
+            ${slLine}
             <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
             ${markers}
             ${tapeCells}
