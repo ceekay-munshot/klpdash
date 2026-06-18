@@ -3238,8 +3238,15 @@ function renderAccuracyView(data) {
     const currentReturnHtml = r.currentReturnPct != null
       ? `<span class="text-[10px] tabular-nums font-semibold ${r.currentReturnPct >= 0 ? "text-emerald-700" : "text-rose-700"} ml-1">${fmtPct(r.currentReturnPct)}</span>`
       : "";
-    return `
-      <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${rowTint}">
+    // Rows with a ticker are clickable — `data-cohort-row` is the
+    // existing hook the History tab uses to open the drill modal
+    // (price chart + rating timeline + forensics) via wireCohortHandlers.
+    // Same plumbing as the Performance Tracker tables; tying into it
+    // means hover affordance, modal layout, and forensic data all
+    // come for free.
+    const clickable = !!r.ticker;
+    const baseCls = `grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg ${rowTint}`;
+    const cellsHtml = `
         <div class="col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
@@ -3254,7 +3261,16 @@ function renderAccuracyView(data) {
             ${hitTodayBadge}
           </div>
           <div class="text-[10px] text-slate-500 mt-0.5 truncate">${exit}</div>
-        </div>
+        </div>`;
+    if (clickable) {
+      return `
+      <button type="button" data-cohort-row data-cohort-side="${basket}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left ${baseCls} cursor-pointer transition hover:ring-1 hover:ring-indigo-200">
+        ${cellsHtml}
+      </button>`;
+    }
+    return `
+      <div class="${baseCls}">
+        ${cellsHtml}
       </div>`;
   }
 
