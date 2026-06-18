@@ -4373,7 +4373,17 @@ function openHistoryDrill(pick) {
   if (pick.isLkp) {
     targetPrice = typeof pick.tgt1 === "number" ? pick.tgt1 : null;
     slPrice = typeof pick.sl === "number" ? pick.sl : null;
-    levelAnchor = typeof pick.entry === "number" ? pick.entry : null;
+    // Match the Accuracy row's entry reference: snapshot close at the
+    // cohort anchor date (the same close buildAccuracyData uses for
+    // computing targetPct / slPct). Falls back to the LKP entry midpoint
+    // when the cohort anchor isn't in this ticker's snapshot trail.
+    const cohortAnchor = state.cache.history?.cohortAnchor;
+    if (cohortAnchor && Array.isArray(pick.points)) {
+      const anchorPt = pick.points.find((p) => p.date === cohortAnchor && typeof p.close === "number")
+        || pick.points.find((p) => p.date >= cohortAnchor && typeof p.close === "number");
+      if (anchorPt) levelAnchor = anchorPt.close;
+    }
+    if (levelAnchor == null && typeof pick.entry === "number") levelAnchor = pick.entry;
   } else if (typeof pick.firstSBClose === "number") {
     targetPrice = pick.firstSBClose * (1 + AI_TARGET_PCT);
     slPrice = pick.firstSBClose * (1 - AI_SL_PCT);
