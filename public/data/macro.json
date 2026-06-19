@@ -1,25 +1,25 @@
 {
-  "generated_at": "2026-06-18T05:13:21.432Z",
+  "generated_at": "2026-06-19T05:33:42.440Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 77.82,
+      "latest": 79.76,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -30.07,
+      "pct_change_30d": -24.05,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 94.48,
+      "latest": 94.44,
       "latest_unit": "₹/$",
       "pct_change_30d": -2.16,
       "trend": "falling",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 12.95,
+      "latest": 13.37,
       "latest_unit": "",
-      "pct_change_30d": -30.67,
+      "pct_change_30d": -27.49,
       "trend": "falling",
       "history_bars": 25
     }
@@ -45,13 +45,13 @@
   "sentiment": {
     "_note": "Market-wide sentiment signals. FII/DII flow + market breadth are auto-computed by scrape-macro.mjs; these seed values are deliberately neutral so the dashboard never shows an asserted signal before live data is computed.",
     "fii_net_positive_last_20d": "no",
-    "fii_signal_note": "FII net positive in 3 of last 17 reported trading days (auto-computed from rolling daily snapshots).",
+    "fii_signal_note": "FII net positive in 3 of last 18 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": 0.96,
     "put_call_ratio_note": "Latest NSE option-chain PCR (refreshed weekly by routine). Source: NSE Nifty 50 option chain aggregate (total put OI / total call OI) via NiftyInvest and NiftyTrader, as of June 4, 2026. Call OI 13.73 Cr, Put OI 13.14 Cr; PCR ≈ 0.957., as of 2026-06-04.",
-    "market_breadth_ad_ratio": 1.15,
-    "market_breadth_note": "264 advances vs 230 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 0.88,
+    "market_breadth_note": "231 advances vs 262 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 3,
-    "fii_total_days": 17
+    "fii_total_days": 18
   },
   "sector_themes": {
     "infra_push": [
