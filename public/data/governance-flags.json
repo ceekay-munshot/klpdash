@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-19T05:34:45.719Z",
+  "generated_at": "2026-06-20T04:49:58.490Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 16,
+  "total_entities_seen": 21,
   "flagged_companies": {
     "ADANIPOWER": {
-      "primary_name": "Adani",
+      "primary_name": "Adani Group",
       "order_type": "sebi-investigation",
-      "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today",
+      "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT.",
       "source_url": "https://www.livemint.com/topic/sebi",
       "source_label": "Mint — SEBI topic (news)",
       "origins": [
@@ -19,7 +19,7 @@
           "source": "Mint — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-investigation",
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT."
         },
         {
           "source": "SEBI status report to Supreme Court (2024-25)",
@@ -28,51 +28,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
-    },
-    "CUPID": {
-      "primary_name": "Cupid Ltd",
-      "order_type": "settlement",
-      "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi over alleged violations of insider trading rules in the shares of Cupid Ltd",
-      "source_url": "https://www.business-standard.com/topic/sebi",
-      "source_label": "Business Standard — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi over alleged violations of insider trading rules in the shares of Cupid Ltd"
-        }
-      ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
-    },
-    "ANGELONE": {
-      "primary_name": "Angel One",
-      "order_type": "settlement",
-      "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation",
-      "source_url": "https://www.business-standard.com/topic/sebi",
-      "source_label": "Business Standard — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "Angel One settles Sebi's adjudication and enquiry proceedings by paying Rs 4.28 crore."
-        }
-      ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
     "RELIANCE": {
       "primary_name": "Reliance Power",
@@ -97,31 +53,37 @@
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
-    "OLAELEC": {
-      "primary_name": "Ola Electric",
-      "order_type": "sebi-investigation",
-      "snippet": "Ola Electric and its founder Bhavish Aggarwal have approached Sebi to settle allegations of disseminating false information.",
-      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
-      "source_label": "Economic Times — SEBI topic (news)",
+    "ANGELONE": {
+      "primary_name": "Angel One",
+      "order_type": "settlement",
+      "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation",
+      "source_url": "https://www.business-standard.com/topic/sebi",
+      "source_label": "Business Standard — SEBI topic (news)",
       "origins": [
         "scraper"
       ],
       "mentions": [
         {
+          "source": "Business Standard — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
+        },
+        {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "sebi-investigation",
-          "snippet": "Ola Electric and its founder Bhavish Aggarwal have approached Sebi to settle allegations of disseminating false information."
+          "order_type": "settlement",
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
-    "PFOCUS": {
-      "primary_name": "Prime Focus",
+    "OLAELEC": {
+      "primary_name": "Ola Electric",
       "order_type": "settlement",
-      "snippet": "Sebi has closed adjudication proceedings against Prime Focus and its directors, ruling that the company correctly accounted for business transfers.",
+      "snippet": "Ola Electric files application to settle Sebi probe over false information allegations.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -132,10 +94,35 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "settlement",
-          "snippet": "Sebi has closed adjudication proceedings against Prime Focus and its directors, ruling that the company correctly accounted for business transfers."
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Ola Electric files application to settle Sebi probe...on service network expansion."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
+    },
+    "PFOCUS": {
+      "primary_name": "Prime Focus",
+      "order_type": "adjudication",
+      "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "adjudication",
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case."
+        }
+      ],
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -154,7 +141,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -173,7 +160,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -192,7 +179,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -211,10 +198,16 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-19T05:34:45.718Z"
+      "first_seen_at": "2026-06-20T04:49:58.489Z"
     }
   },
   "unmatched_sample": [
+    {
+      "name": "Unistone Capital",
+      "type": "settlement",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
     {
       "name": "NSE",
       "type": "sebi-fine",
@@ -223,6 +216,12 @@
     },
     {
       "name": "Sahara India Commercial Corporation Ltd",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
       "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -232,6 +231,24 @@
       "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Razorpay",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "InCred Money",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
     }
   ],
   "sources": [
@@ -239,19 +256,13 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-19T05:33:42.502Z",
+      "at": "2026-06-20T04:49:30.463Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 10,
-      "total_extracted": 10,
+      "total_extracted_raw": 8,
+      "total_extracted": 8,
       "prefilter_sample": [
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi eyes margin trading overhaul, tighter broker capital rules"
-        },
         {
           "name": "NSE",
           "order_type": "sebi-investigation",
@@ -266,59 +277,53 @@
         },
         {
           "name": "Sebi",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": false,
           "snippet": "Sebi's new ETF framework: How will it impact investors? Experts answer"
         },
         {
           "name": "Sebi",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": false,
           "snippet": "AIFs seek reversal of Sebi’s pro-rata rules citing implementation hurdles"
         },
         {
           "name": "Sebi",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": false,
           "snippet": "SEBI's new AIF rules decoded: 10 major changes investors and fund managers should know"
         },
         {
           "name": "Sebi",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": false,
           "snippet": "Sebi revamps ETF trading framework, introduces dynamic price bands"
         },
         {
           "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi board to speed up AIF launches, bring back open-market buybacks at 19 June meet"
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": false,
           "snippet": "Mutual fund distributors seek tax relief after Sebi’s expense ratio overhaul"
         },
         {
-          "name": "Adani",
+          "name": "Adani Group",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT."
         }
       ],
       "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 7,
+        "not_listed": 5,
         "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
-          "name": "Adani",
+          "name": "Adani Group",
           "order_type": "sebi-investigation",
-          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT, say reports; hearing today"
+          "snippet": "New twist in Adani-Hindenburg saga: Five offshore funds take SEBI to SAT."
         }
       ]
     },
@@ -326,7 +331,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-19T05:34:00.825Z",
+      "at": "2026-06-20T04:49:36.949Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -334,22 +339,16 @@
       "total_extracted": 5,
       "prefilter_sample": [
         {
-          "name": "Cupid Ltd",
+          "name": "Unistone Capital",
           "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi over alleged violations of insider trading rules in the shares of Cupid Ltd"
+          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi"
         },
         {
           "name": "NSE",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Sebi imposes ₹6.04 crore penalty on NSE over April 2024 technical glitch"
-        },
-        {
-          "name": "Angel One",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
         },
         {
           "name": "Reliance Power",
@@ -362,6 +361,12 @@
           "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
+        },
+        {
+          "name": "Angel One",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
         }
       ],
       "after_filter_count": 5,
@@ -373,19 +378,14 @@
       },
       "sample": [
         {
-          "name": "Cupid Ltd",
+          "name": "Unistone Capital",
           "order_type": "settlement",
-          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi over alleged violations of insider trading rules"
+          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi"
         },
         {
           "name": "NSE",
           "order_type": "sebi-fine",
           "snippet": "Sebi imposes ₹6.04 crore penalty on NSE over April 2024 technical glitch"
-        },
-        {
-          "name": "Angel One",
-          "order_type": "settlement",
-          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
         },
         {
           "name": "Reliance Power",
@@ -396,6 +396,11 @@
           "name": "Reliance Infra",
           "order_type": "other",
           "snippet": "Reliance Power, Reliance Infra appeal Sebi order blocking fundraising plans"
+        },
+        {
+          "name": "Angel One",
+          "order_type": "settlement",
+          "snippet": "Angel One pays ₹4.28 cr to settle case on stock brokers' norms' violation"
         }
       ]
     },
@@ -403,45 +408,75 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-19T05:34:11.261Z",
+      "at": "2026-06-20T04:49:43.475Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 5,
-      "total_extracted": 5,
+      "total_extracted_raw": 10,
+      "total_extracted": 10,
       "prefilter_sample": [
         {
           "name": "Sahara India Commercial Corporation Ltd",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "The Supreme Court will hear a plea from SEBI. SEBI challenges a Securities Appellate Tribunal order."
+          "snippet": "SEBI challenges a Securities Appellate Tribunal order...against Sahara India Commercial Corporation Ltd."
         },
         {
           "name": "Angel One",
           "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Angel One settles Sebi's adjudication and enquiry proceedings by paying Rs 4.28 crore."
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         },
         {
           "name": "Ola Electric",
-          "order_type": "sebi-investigation",
+          "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Ola Electric and its founder Bhavish Aggarwal have approached Sebi to settle allegations of disseminating false information."
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        },
+        {
+          "name": "Ola Electric",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Ola Electric files application to settle Sebi probe...on service network expansion."
         },
         {
           "name": "Prime Focus",
-          "order_type": "settlement",
+          "order_type": "adjudication",
           "is_listed_entity": true,
-          "snippet": "Sebi has closed adjudication proceedings against Prime Focus and its directors, ruling that the company correctly accounted for business transfers."
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case."
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi has issued an interim order against Rajesh Exports and promoter Rajesh Mehta, alleging extensive financial irregularities."
+          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading."
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares."
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Explained: Inside Sebi's Rs 15.15 lakh crore revenue inflation allegations against Rajesh Exports."
+        },
+        {
+          "name": "Razorpay",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Razorpay confidentially files IPO papers with Sebi."
+        },
+        {
+          "name": "InCred Money",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "InCred Money gets Sebi in-principle nod for mutual fund licence."
         }
       ],
-      "after_filter_count": 5,
+      "after_filter_count": 10,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -451,28 +486,53 @@
       "sample": [
         {
           "name": "Sahara India Commercial Corporation Ltd",
-          "order_type": "sebi-investigation",
-          "snippet": "The Supreme Court will hear a plea from SEBI. SEBI challenges a Securities Appellate Tribunal order."
+          "order_type": "other",
+          "snippet": "SEBI challenges a Securities Appellate Tribunal order...against Sahara India Commercial Corporation Ltd."
         },
         {
           "name": "Angel One",
           "order_type": "settlement",
-          "snippet": "Angel One settles Sebi's adjudication and enquiry proceedings by paying Rs 4.28 crore."
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         },
         {
           "name": "Ola Electric",
-          "order_type": "sebi-investigation",
-          "snippet": "Ola Electric and its founder Bhavish Aggarwal have approached Sebi to settle allegations of disseminating false informat"
+          "order_type": "settlement",
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        },
+        {
+          "name": "Ola Electric",
+          "order_type": "settlement",
+          "snippet": "Ola Electric files application to settle Sebi probe...on service network expansion."
         },
         {
           "name": "Prime Focus",
-          "order_type": "settlement",
-          "snippet": "Sebi has closed adjudication proceedings against Prime Focus and its directors, ruling that the company correctly accoun"
+          "order_type": "adjudication",
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case."
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
-          "snippet": "Sebi has issued an interim order against Rajesh Exports and promoter Rajesh Mehta, alleging extensive financial irregula"
+          "snippet": "Rajesh Exports: Sebi finds 97-99% revenue inflation, bars promoter from trading."
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi bars Chairman Mehta from trading in Rajesh Exports shares."
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Explained: Inside Sebi's Rs 15.15 lakh crore revenue inflation allegations against Rajesh Exports."
+        },
+        {
+          "name": "Razorpay",
+          "order_type": "other",
+          "snippet": "Razorpay confidentially files IPO papers with Sebi."
+        },
+        {
+          "name": "InCred Money",
+          "order_type": "other",
+          "snippet": "InCred Money gets Sebi in-principle nod for mutual fund licence."
         }
       ]
     },
@@ -480,7 +540,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-19T05:34:31.498Z",
+      "at": "2026-06-20T04:49:55.923Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,

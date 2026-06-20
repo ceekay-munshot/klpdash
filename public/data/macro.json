@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-06-19T05:33:42.440Z",
+  "generated_at": "2026-06-20T04:49:30.396Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 79.76,
+      "latest": 80.59,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -24.05,
+      "pct_change_30d": -23.26,
       "trend": "falling",
-      "history_bars": 25
+      "history_bars": 24
     },
     "usdinr": {
-      "latest": 94.44,
+      "latest": 94.31,
       "latest_unit": "₹/$",
-      "pct_change_30d": -2.16,
-      "trend": "falling",
+      "pct_change_30d": -1.94,
+      "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 13.37,
+      "latest": 12.97,
       "latest_unit": "",
-      "pct_change_30d": -27.49,
+      "pct_change_30d": -29.66,
       "trend": "falling",
-      "history_bars": 25
+      "history_bars": 24
     }
   },
   "economic": {
@@ -45,13 +45,13 @@
   "sentiment": {
     "_note": "Market-wide sentiment signals. FII/DII flow + market breadth are auto-computed by scrape-macro.mjs; these seed values are deliberately neutral so the dashboard never shows an asserted signal before live data is computed.",
     "fii_net_positive_last_20d": "no",
-    "fii_signal_note": "FII net positive in 3 of last 18 reported trading days (auto-computed from rolling daily snapshots).",
+    "fii_signal_note": "FII net positive in 4 of last 19 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": 0.96,
     "put_call_ratio_note": "Latest NSE option-chain PCR (refreshed weekly by routine). Source: NSE Nifty 50 option chain aggregate (total put OI / total call OI) via NiftyInvest and NiftyTrader, as of June 4, 2026. Call OI 13.73 Cr, Put OI 13.14 Cr; PCR ≈ 0.957., as of 2026-06-04.",
-    "market_breadth_ad_ratio": 0.88,
-    "market_breadth_note": "231 advances vs 262 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
-    "fii_positive_days": 3,
-    "fii_total_days": 18
+    "market_breadth_ad_ratio": 1.12,
+    "market_breadth_note": "262 advances vs 234 declines across 496 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "fii_positive_days": 4,
+    "fii_total_days": 19
   },
   "sector_themes": {
     "infra_push": [
