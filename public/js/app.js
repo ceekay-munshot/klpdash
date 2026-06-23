@@ -416,6 +416,7 @@ const state = {
   historyView: loadHistoryView(), // "history" | "accuracy"
   strategyMode: loadStrategyMode(),  // "active" | "passive"
   activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
+  strategySegmentIdx: null,           // which segment pill is selected (null = latest)
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
@@ -4121,6 +4122,7 @@ async function renderActive() {
   host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode);
   wireStrategyModeToggle();
   wireActiveCadenceToggle();
+  wireStrategySegmentPills();
   // Cohort-style row clicks open the same drill modal everywhere else uses.
   $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
     const ticker = el.dataset.ticker;
@@ -4153,9 +4155,13 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     const niftyCurve = buildNiftyCurve(dates, niftyOn);
     const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
     const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+    // Per-day segment chain so the basket roster panel can show each
+    // day's top 7 (founder ask — same affordance the History tab used
+    // to give for weekly baskets, just at 1-day granularity here).
+    const segments = buildActiveSegmentChain(snapshots, anchorDate, 1);
     return {
       kind: "daily",
-      sim, picks, hitSummary,
+      sim, picks, hitSummary, segments,
       equityCurve, niftyCurve, manualCurve,
       manualPicks: manualRows, manualSummary,
       periodLabel: `Daily rebalance from ${fmtDateDMY(anchorDate)}`,
@@ -4314,7 +4320,11 @@ function buildActiveSegmentChain(snapshots, anchorDate, periodDays) {
     const tracking = snapshots.filter((s) => s.date >= entry.date && s.date <= winEnd);
     segments.push({
       index: segments.length,
-      label: periodDays === 7 ? `Week ${segments.length + 1}` : `Month ${segments.length + 1}`,
+      label: periodDays === 1
+        ? `Day ${segments.length + 1}`
+        : periodDays === 7
+          ? `Week ${segments.length + 1}`
+          : `Month ${segments.length + 1}`,
       startDate: entry.date,
       endDate: tracking[tracking.length - 1].date,
       entrySnap: entry,
@@ -4477,7 +4487,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${renderActiveHero(view, cadence, mode)}
       ${renderActiveCumulativeChart(view)}
       ${renderActiveOverallHitsSplit(view)}
-      ${renderActivePickRowsSplit(view)}
+      ${renderActiveSegmentedBaskets(view, mode)}
       ${renderActiveBetaCaveat(view, anchorDate)}
     </div>
   `;
@@ -4834,11 +4844,173 @@ function renderActiveSummaryCard(label, palette, summary) {
 
 // AI + Manual pick-row tables, side by side. Mirrors the History tab's
 // Accuracy view layout so the analyst can compare per-pick outcomes.
-function renderActivePickRowsSplit(view) {
+// Per-segment basket roster (founder ask — match the old History tab
+// affordance from SS2/SS3). For multi-segment cadences (Active Daily /
+// Weekly / Monthly with 2+ segments) renders segment pills + the
+// selected segment's AI top 7 alongside the Manual basket. For Passive
+// or a single-segment chain, no pills — just the basket.
+function renderActiveSegmentedBaskets(view, mode) {
+  if (!view?.segments?.length) return "";
+  const segCount = view.segments.length;
+  const selectedIdx = clampStrategySegmentIdx(segCount);
+  const selected = view.segments[selectedIdx];
+
+  const headerLabel = mode === "passive"
+    ? "Held basket"
+    : view.kind === "daily"   ? "AI basket per day"
+    : view.kind === "weekly"  ? "AI basket per week"
+    : view.kind === "monthly" ? "AI basket per month"
+    : "AI basket";
+  const pillsHtml = segCount > 1 ? renderActiveSegmentPills(view.segments, selectedIdx, view.kind) : "";
+
   return `
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      ${renderActivePickColumn("AI Picks · per-pick status", "indigo", view.picks, "ai")}
-      ${renderActivePickColumn("Manual Picks · per-pick status", "amber", view.manualPicks, "manual")}
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      ${segCount > 1 ? `
+        <div class="flex items-baseline gap-3 mb-3 flex-wrap">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">${escapeHtml(headerLabel)}</div>
+          ${pillsHtml}
+        </div>` : ""}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        ${renderAiBasketTable(selected, view, mode)}
+        ${renderManualBasketTable(view.manualPicks)}
+      </div>
+    </div>
+  `;
+}
+
+function clampStrategySegmentIdx(segCount) {
+  if (state.strategySegmentIdx == null) return segCount - 1;
+  return Math.max(0, Math.min(segCount - 1, state.strategySegmentIdx));
+}
+
+function renderActiveSegmentPills(segments, selectedIdx, kind) {
+  const pillLabel = (seg) => {
+    if (kind === "daily") return fmtDateDM(seg.startDate);
+    return `${seg.label} · ${fmtDateDM(seg.startDate)}–${fmtDateDM(seg.endDate)}`;
+  };
+  return `
+    <div class="flex items-center gap-1 overflow-x-auto -my-1 py-1 max-w-full">
+      ${segments.map((seg, i) => `
+        <button type="button" data-strategy-seg="${i}" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition flex-shrink-0 ${i === selectedIdx ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-indigo-300 hover:text-indigo-700"}">
+          ${escapeHtml(pillLabel(seg))}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+// AI top 7 for the selected segment — name, entry → today, return %,
+// current rating chip. Row click opens the drill modal anchored at
+// the segment's start date so the drill chart's overlay levels match
+// the row's entry close.
+function renderAiBasketTable(segment, view, mode) {
+  if (!segment) {
+    return `<div><div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">AI picks</div><div class="text-xs text-slate-500">No AI basket for this segment.</div></div>`;
+  }
+  const cache = state.cache.history || {};
+  const todayClose = cache.todayClose || {};
+  const byTicker = cache.byTicker || new Map();
+
+  const subLabel = mode === "passive"
+    ? `Held since ${fmtDateDMY(segment.startDate)}`
+    : view.kind === "daily"   ? `Day · ${fmtDateDMY(segment.startDate)}`
+    : view.kind === "weekly"  ? `${segment.label} · ${fmtDateDM(segment.startDate)} → ${fmtDateDM(segment.endDate)}`
+    : view.kind === "monthly" ? `${segment.label} · ${fmtDateDM(segment.startDate)} → ${fmtDateDM(segment.endDate)}`
+    : `Held since ${fmtDateDMY(segment.startDate)}`;
+
+  const rows = segment.top7.map((s) => {
+    const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
+    const ret = ((today / s.close) - 1) * 100;
+    const tk = byTicker.get(s.ticker);
+    let currentRating = null;
+    if (tk?.points?.length) {
+      for (let i = tk.points.length - 1; i >= 0; i--) {
+        if (tk.points[i].rating) { currentRating = tk.points[i].rating; break; }
+      }
+    }
+    const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const ratingChip = currentRating
+      ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
+    return `
+      <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(segment.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200">
+        <div class="col-span-6 sm:col-span-5 min-w-0">
+          <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(today)}</div>
+        </div>
+        <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-sm font-bold ${retCls}">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
+        <div class="col-span-3 sm:col-span-4 text-right">${ratingChip}</div>
+      </button>`;
+  }).join("");
+
+  return `
+    <div>
+      <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+        <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-700">AI picks</div>
+        <span class="text-[10px] text-slate-400 truncate">· ${escapeHtml(subLabel)} · ${segment.top7.length} stocks</span>
+      </div>
+      <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
+    </div>
+  `;
+}
+
+// Manual basket roster — same shape as the AI table. Out-of-coverage
+// picks render greyed with a "Not Covered" badge. The basket is
+// always anchored at upload regardless of which segment is selected.
+function renderManualBasketTable(manualPicks) {
+  if (!manualPicks?.length) {
+    return `<div><div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Manual picks</div><div class="text-xs text-slate-500">No manual basket uploaded.</div></div>`;
+  }
+  const todayClose = state.cache.history?.todayClose || {};
+  const byTicker = state.cache.history?.byTicker || new Map();
+  const inCoverage = manualPicks.filter((p) => !p.notCovered).length;
+
+  const rows = manualPicks.map((r) => {
+    if (r.notCovered) {
+      return `
+        <div class="grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg bg-slate-50/40">
+          <div class="col-span-8 min-w-0">
+            <div class="font-semibold text-slate-500 text-sm truncate" title="${escapeHtml(r.outReason || "")}">${escapeHtml(r.name)}</div>
+            <div class="text-[10px] text-slate-400 truncate">${escapeHtml(r.outReason || "")}</div>
+          </div>
+          <div class="col-span-4 text-right">
+            <span class="inline-flex items-center px-1.5 py-0 rounded bg-slate-200 text-slate-600 ring-1 ring-slate-300 text-[9px] font-bold uppercase tracking-wider">Not Covered</span>
+          </div>
+        </div>`;
+    }
+    const today = (typeof todayClose[r.ticker] === "number") ? todayClose[r.ticker] : r.entryPrice;
+    const ret = r.entryPrice ? ((today / r.entryPrice) - 1) * 100 : null;
+    const tk = byTicker.get(r.ticker);
+    let currentRating = null;
+    if (tk?.points?.length) {
+      for (let i = tk.points.length - 1; i >= 0; i--) {
+        if (tk.points[i].rating) { currentRating = tk.points[i].rating; break; }
+      }
+    }
+    const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const ratingChip = currentRating
+      ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
+    return `
+      <button type="button" data-cohort-row data-cohort-side="manual" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-amber-50/40 hover:ring-1 hover:ring-amber-200">
+        <div class="col-span-6 sm:col-span-5 min-w-0">
+          <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(today)}</div>
+        </div>
+        <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-sm font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+        <div class="col-span-3 sm:col-span-4 text-right">${ratingChip}</div>
+      </button>`;
+  }).join("");
+
+  return `
+    <div>
+      <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+        <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Manual picks</div>
+        <span class="text-[10px] text-slate-400 truncate">· ${manualPicks.length} stocks · ${inCoverage} in coverage</span>
+      </div>
+      <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
     </div>
   `;
 }
@@ -4932,6 +5104,7 @@ function wireActiveCadenceToggle() {
     const v = btn.dataset.cadence;
     if (!ACTIVE_CADENCES.includes(v) || v === state.activeCadence) return;
     state.activeCadence = v;
+    state.strategySegmentIdx = null;   // reset to latest segment on cadence change
     saveActiveCadence(v);
     renderActive();
   }));
@@ -4942,7 +5115,17 @@ function wireStrategyModeToggle() {
     const v = btn.dataset.strategyMode;
     if (!STRATEGY_MODES.includes(v) || v === state.strategyMode) return;
     state.strategyMode = v;
+    state.strategySegmentIdx = null;   // reset to latest segment on mode change
     saveStrategyMode(v);
+    renderActive();
+  }));
+}
+
+function wireStrategySegmentPills() {
+  $$("#active-content [data-strategy-seg]").forEach((btn) => btn.addEventListener("click", () => {
+    const idx = Number(btn.dataset.strategySeg);
+    if (!Number.isFinite(idx) || idx === state.strategySegmentIdx) return;
+    state.strategySegmentIdx = idx;
     renderActive();
   }));
 }
