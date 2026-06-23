@@ -4123,6 +4123,7 @@ async function renderActive() {
   wireStrategyModeToggle();
   wireActiveCadenceToggle();
   wireStrategySegmentPills();
+  wireStrategyAlertsDropdown();
   // Cohort-style row clicks open the same drill modal everywhere else uses.
   $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
     const ticker = el.dataset.ticker;
@@ -4474,28 +4475,67 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
   if (!view) {
     return `
       <div class="space-y-4">
-        ${renderStrategyModeToggle(mode)}
+        ${renderStrategyModeToggle(mode, null)}
         ${cadenceBar}
         ${renderHistoryEmpty(isPassive ? "No passive picks yet — upload a client basket and wait for a snapshot." : "No active picks yet — snapshot trail too short for this cadence.")}
       </div>
     `;
   }
+  const hits = collectStrategyHits(view, todayDate);
   return `
     <div id="active-strategy" class="space-y-4">
-      ${renderStrategyModeToggle(mode)}
+      ${renderStrategyModeToggle(mode, hits)}
       ${cadenceBar}
+      ${renderTodayHitsBanner(hits, todayDate)}
       ${renderActiveHero(view, cadence, mode)}
       ${renderActiveCumulativeChart(view)}
       ${renderActiveOverallHitsSplit(view)}
       ${renderActiveSegmentedBaskets(view, mode)}
+      ${renderActivePickRowsSplit(view)}
       ${renderActiveBetaCaveat(view, anchorDate)}
+    </div>
+  `;
+}
+
+// Collects target/SL hits across AI + Manual baskets so the alerts bell
+// and the optional banner can surface them at the top of the page.
+// todayHits = hit happened on the latest snapshot date (gets the pulse).
+function collectStrategyHits(view, todayDate) {
+  const aiHits = (view.picks || [])
+    .filter((p) => (p.status === "TARGET_HIT" || p.status === "SL_HIT") && p.hitDate)
+    .map((p) => ({ ...p, basket: "AI" }));
+  const manualHits = (view.manualPicks || [])
+    .filter((p) => !p.notCovered && (p.status === "TARGET_HIT" || p.status === "SL_HIT") && p.hitDate)
+    .map((p) => ({ ...p, basket: "Manual" }));
+  const allHits = [...aiHits, ...manualHits].sort((a, b) => (b.hitDate || "").localeCompare(a.hitDate || ""));
+  const todayHits = allHits.filter((h) => h.hitDate === todayDate);
+  return { allHits, todayHits };
+}
+
+function renderTodayHitsBanner(hits, todayDate) {
+  if (!hits.todayHits.length) return "";
+  return `
+    <div class="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 ring-1 ring-amber-200 px-3 py-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-amber-600 text-base">🔔</span>
+        <span class="font-bold text-amber-900 text-sm">${hits.todayHits.length} pick${hits.todayHits.length === 1 ? "" : "s"} just hit ${hits.todayHits.length === 1 ? "an outcome" : "outcomes"} on ${fmtDateDMY(todayDate)}</span>
+        <div class="ml-auto flex flex-wrap items-center gap-1.5">
+          ${hits.todayHits.map((h) => `
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ring-1 text-[10px] font-bold ${h.status === "TARGET_HIT" ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-rose-100 text-rose-700 ring-rose-200"}">
+              ${h.status === "TARGET_HIT" ? "🎯" : "⚠"} ${escapeHtml(h.name || h.ticker)}
+            </span>`).join("")}
+        </div>
+      </div>
     </div>
   `;
 }
 
 // Top-level Active vs Passive toggle. Sits above the cadence pills.
 // Active = AI re-locks at chosen cadence; Passive = AI frozen at upload.
-function renderStrategyModeToggle(mode) {
+// Also hosts the alerts bell + dropdown — surfaces target/SL hits
+// across both AI and Manual baskets without the analyst having to
+// scroll through every per-pick row.
+function renderStrategyModeToggle(mode, hits) {
   const pill = (k, label, sub) => {
     const isActive = mode === k;
     return `
@@ -4510,7 +4550,56 @@ function renderStrategyModeToggle(mode) {
         ${pill("active", "Active strategy", "AI re-locks at cadence")}
         ${pill("passive", "Passive strategy", "AI frozen at upload")}
       </div>
-      <div class="text-[11px] text-slate-500 pr-1 sm:pr-3">Both anchor at the client upload date</div>
+      <div class="flex items-center gap-2 pr-1 sm:pr-2">
+        <div class="text-[11px] text-slate-500 hidden sm:block">Anchored at upload date</div>
+        ${hits ? renderStrategyAlertsBell(hits) : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderStrategyAlertsBell(hits) {
+  const todayCount = hits.todayHits.length;
+  const totalCount = hits.allHits.length;
+  const dropdownBody = totalCount === 0
+    ? `<div class="px-3 py-4 text-[11px] text-slate-500 text-center">No hits yet — once a pick crosses target or SL, it'll land here.</div>`
+    : `
+      <div class="sticky top-0 px-3 py-2 bg-slate-50 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+        <span>Recent hits · ${totalCount} total</span>
+        ${todayCount > 0 ? `<span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-500 text-white text-[9px] font-bold uppercase tracking-wider animate-pulse">${todayCount} today</span>` : ""}
+      </div>
+      <div class="py-1">
+        ${hits.allHits.map((h) => `
+          <div class="px-3 py-1.5 hover:bg-slate-50 text-xs ${h.hitDate === hits.allHits[0]?.hitDate && hits.todayHits.length ? "" : ""}${(hits.todayHits.find((t) => t.ticker === h.ticker && t.hitDate === h.hitDate) ? "bg-amber-50/40" : "")}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold text-slate-900 truncate">${escapeHtml(h.name || h.ticker)}</span>
+              <span class="text-[10px] tabular-nums text-slate-400 whitespace-nowrap">${fmtDateDMY(h.hitDate)}</span>
+            </div>
+            <div class="text-[10px] text-slate-500 mt-0.5">
+              <span class="inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:${h.basket === "AI" ? "#6366f1" : "#f59e0b"}"></span>
+                ${escapeHtml(h.basket)}
+              </span>
+              ·
+              <span class="${h.status === "TARGET_HIT" ? "text-emerald-700 font-bold" : "text-rose-700 font-bold"}">${h.status === "TARGET_HIT" ? "🎯 Target" : "⚠ SL"}</span>
+              at ₹${formatPrice(h.exitPrice)} · ${h.daysToHit}d
+              ${hits.todayHits.find((t) => t.ticker === h.ticker && t.hitDate === h.hitDate) ? `<span class="ml-1 inline-flex items-center px-1 py-0 rounded bg-amber-500 text-white text-[8px] font-bold uppercase">just hit</span>` : ""}
+            </div>
+          </div>`).join("")}
+      </div>`;
+  const badge = todayCount > 0
+    ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold tabular-nums">${todayCount}</span>`
+    : totalCount > 0 ? `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold tabular-nums">${totalCount}</span>` : "";
+  return `
+    <div class="relative">
+      <button id="strategy-alerts-btn" type="button" class="relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="hidden sm:inline">Alerts</span>
+        ${badge}
+      </button>
+      <div id="strategy-alerts-dropdown" class="hidden absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl ring-1 ring-slate-200 shadow-2xl z-50 max-h-96 overflow-y-auto">
+        ${dropdownBody}
+      </div>
     </div>
   `;
 }
@@ -5128,6 +5217,21 @@ function wireStrategySegmentPills() {
     state.strategySegmentIdx = idx;
     renderActive();
   }));
+}
+
+function wireStrategyAlertsDropdown() {
+  const btn = $("#strategy-alerts-btn");
+  const dropdown = $("#strategy-alerts-dropdown");
+  if (!btn || !dropdown) return;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    if (!dropdown.classList.contains("hidden") && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+      dropdown.classList.add("hidden");
+    }
+  }, { once: true });
 }
 
 function renderActiveBody(sim, stats, niftyOn) {
