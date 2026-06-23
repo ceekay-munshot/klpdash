@@ -196,18 +196,14 @@ const CONFIGS = {
     label: "Top Picks",
     hero: true,
   },
-  // History — shows realized return on every past STRONG BUY pick.
-  // Data comes from public/data/snapshots/* (daily JSON files written by
-  // screener-test/write-snapshot.mjs). Lazy-loaded on tab activation.
-  history: {
-    label: "History",
-    history: true,
-  },
-  // Active — daily-rebalancing backtest. Simulates buying every STRONG
-  // BUY each day and selling when it drops out. Pure derived view over
-  // the same snapshot trail History uses; no new data source.
+  // Strategy — merged History + Active. Top-level toggle picks Active
+  // (re-locking basket at Daily / Weekly / Monthly cadence) vs Passive
+  // (basket frozen at upload). Both anchor at lkp.generated_at and
+  // share the Manual basket + Nifty comparison + per-pick accuracy.
+  // The "active: true" flag is the legacy switchTab marker — the route
+  // stays data-tab="active" so persisted tab state survives.
   active: {
-    label: "Active",
+    label: "Strategy",
     active: true,
   },
 };
@@ -292,8 +288,25 @@ function saveCohortView(v) {
   try { localStorage.setItem(COHORT_VIEW_KEY, v); } catch {}
 }
 
-// Active tab cadence ("daily" | "weekly" | "monthly"). Drives the
-// rebalance frequency / segment length of the Active strategy view.
+// Strategy tab top-level mode ("active" | "passive"). Active = AI
+// basket rebalances at the chosen cadence (Daily / Weekly / Monthly);
+// Passive = AI top 7 picked once at upload and frozen forever (single
+// segment). Both share the Manual basket comparison + Nifty benchmark
+// + per-pick accuracy.
+const STRATEGY_MODE_KEY = "klpdash-strategy-mode-v1";
+const STRATEGY_MODES = ["active", "passive"];
+function loadStrategyMode() {
+  try {
+    const v = localStorage.getItem(STRATEGY_MODE_KEY);
+    return STRATEGY_MODES.includes(v) ? v : "active";
+  } catch { return "active"; }
+}
+function saveStrategyMode(v) {
+  try { localStorage.setItem(STRATEGY_MODE_KEY, v); } catch {}
+}
+
+// Active sub-cadence ("daily" | "weekly" | "monthly"). Drives the
+// rebalance frequency / segment length when strategyMode === "active".
 // All three anchor at the client upload date (lkp.generated_at).
 const ACTIVE_CADENCE_KEY = "klpdash-active-cadence-v1";
 const ACTIVE_CADENCES = ["daily", "weekly", "monthly"];
@@ -401,7 +414,8 @@ const state = {
   cohortView: loadCohortView(), // "static" | "monthly" | "weekly"
   cohortSegmentIdx: null,       // which week pill is selected (null = latest)
   historyView: loadHistoryView(), // "history" | "accuracy"
-  activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly"
+  strategyMode: loadStrategyMode(),  // "active" | "passive"
+  activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
   // tab loads. Maps slug → composite result { pillars, composite, rating, ... }.
@@ -4088,7 +4102,12 @@ async function renderActive() {
     return last;
   }
 
-  const cadence = state.activeCadence;
+  // Strategy mode (top-level: active vs passive) decides the buildView
+  // contract. Active mode passes the user-chosen cadence; Passive mode
+  // passes "passive" so the view builder produces a single-segment chain
+  // anchored at upload (no re-locking — AI basket fixed forever).
+  const mode = state.strategyMode;
+  const cadence = mode === "passive" ? "passive" : state.activeCadence;
   // Manual basket — fixed at upload, same across all 3 cadences. Resolved
   // via the same picksByMonth / picks fallback the History tab uses.
   const lkpResolved = lkpOverride() || lkp;
@@ -4099,7 +4118,8 @@ async function renderActive() {
     : [];
 
   const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks);
-  host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate);
+  host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode);
+  wireStrategyModeToggle();
   wireActiveCadenceToggle();
   // Cohort-style row clicks open the same drill modal everywhere else uses.
   $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
@@ -4149,10 +4169,12 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     };
   }
 
-  // Weekly / Monthly — segmented chain. Re-pick top 7 every periodDays
-  // from anchor, frozen during each segment. Returns segments + a
-  // synthetic equity curve (each segment's return composed multiplicatively).
-  const periodDays = cadence === "weekly" ? 7 : 30;
+  // Weekly / Monthly / Passive — all segmented chains. Weekly + Monthly
+  // re-pick top 7 every 7 / 30 days from anchor. Passive uses a single
+  // segment that runs upload → today (no re-locking — basket frozen).
+  // Returns the same { segments, equityCurve, picks, ... } contract so
+  // the chart / accuracy / per-pick rows render uniformly.
+  const periodDays = cadence === "weekly" ? 7 : cadence === "monthly" ? 30 : 99999;
   const segments = buildActiveSegmentChain(snapshots, anchorDate, periodDays);
   if (!segments.length) return null;
   const picks = buildActiveSegmentedPicks(segments, snapshots, todayDate);
@@ -4164,12 +4186,13 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
   const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
+  const cadenceLabel = cadence === "weekly" ? "Weekly re-lock" : cadence === "monthly" ? "Monthly re-lock" : "Passive (basket frozen)";
   return {
     kind: cadence,
     segments, picks, hitSummary,
     equityCurve, niftyCurve, manualCurve,
     manualPicks: manualRows, manualSummary,
-    periodLabel: `${cadence === "weekly" ? "Weekly" : "Monthly"} re-lock from ${fmtDateDMY(anchorDate)} · ${segments.length} segment${segments.length === 1 ? "" : "s"}`,
+    periodLabel: `${cadenceLabel} from ${fmtDateDMY(anchorDate)}${cadence === "passive" ? "" : ` · ${segments.length} segment${segments.length === 1 ? "" : "s"}`}`,
     finalReturn, niftyRet,
     alpha: niftyRet != null ? finalReturn - niftyRet : null,
     manualFinalReturn: manualCurve.length ? (manualCurve[manualCurve.length - 1].retPct ?? null) : null,
@@ -4435,23 +4458,49 @@ function computeOverallHitSummary(picks) {
   return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
 }
 
-function renderActiveShell(view, cadence, anchorDate, todayDate) {
+function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
+  const isPassive = mode === "passive";
+  const cadenceBar = isPassive ? "" : renderActiveCadencePills(cadence);
   if (!view) {
     return `
       <div class="space-y-4">
-        ${renderActiveCadencePills(cadence)}
-        ${renderHistoryEmpty("No active picks yet — snapshot trail too short for this cadence.")}
+        ${renderStrategyModeToggle(mode)}
+        ${cadenceBar}
+        ${renderHistoryEmpty(isPassive ? "No passive picks yet — upload a client basket and wait for a snapshot." : "No active picks yet — snapshot trail too short for this cadence.")}
       </div>
     `;
   }
   return `
     <div id="active-strategy" class="space-y-4">
-      ${renderActiveCadencePills(cadence)}
-      ${renderActiveHero(view, cadence)}
+      ${renderStrategyModeToggle(mode)}
+      ${cadenceBar}
+      ${renderActiveHero(view, cadence, mode)}
       ${renderActiveCumulativeChart(view)}
       ${renderActiveOverallHitsSplit(view)}
       ${renderActivePickRowsSplit(view)}
       ${renderActiveBetaCaveat(view, anchorDate)}
+    </div>
+  `;
+}
+
+// Top-level Active vs Passive toggle. Sits above the cadence pills.
+// Active = AI re-locks at chosen cadence; Passive = AI frozen at upload.
+function renderStrategyModeToggle(mode) {
+  const pill = (k, label, sub) => {
+    const isActive = mode === k;
+    return `
+      <button type="button" data-strategy-mode="${k}" class="flex-1 sm:flex-initial relative px-5 py-3 text-sm font-semibold transition rounded-xl ${isActive ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}">
+        <span class="block">${label}</span>
+        <span class="block text-[10px] font-normal mt-0.5 ${isActive ? "text-indigo-100" : "text-slate-400"}">${sub}</span>
+      </button>`;
+  };
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex gap-1 flex-1 sm:flex-initial">
+        ${pill("active", "Active strategy", "AI re-locks at cadence")}
+        ${pill("passive", "Passive strategy", "AI frozen at upload")}
+      </div>
+      <div class="text-[11px] text-slate-500 pr-1 sm:pr-3">Both anchor at the client upload date</div>
     </div>
   `;
 }
@@ -4473,25 +4522,33 @@ function renderActiveCadencePills(cadence) {
         ${pill("weekly", "Weekly", "re-lock every 7 days")}
         ${pill("monthly", "Monthly", "re-lock every 30 days")}
       </div>
-      <div class="text-[11px] text-slate-500 pr-2">All anchored at client upload date</div>
+      <div class="text-[11px] text-slate-500 pr-2">All cadences anchor at upload date</div>
     </div>
   `;
 }
 
-function renderActiveHero(view, cadence) {
+function renderActiveHero(view, cadence, mode) {
+  const isPassive = mode === "passive";
   const retCls = view.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
   const retSign = view.finalReturn >= 0 ? "+" : "";
   const alphaTile = view.alpha != null
     ? `<span class="${view.alpha >= 0 ? "text-emerald-600" : "text-rose-600"} font-bold">${view.alpha >= 0 ? "+" : ""}${view.alpha.toFixed(2)}%</span> vs Nifty (${view.niftyRet != null ? (view.niftyRet >= 0 ? "+" : "") + view.niftyRet.toFixed(2) + "%" : "—"})`
     : `<span class="text-slate-400">benchmark missing</span>`;
-  const subtitle = cadence === "daily"
-    ? `Equal-weight, rebalanced every day. Each BUY at today's close, each SELL when the stock drops out of STRONG BUY.`
-    : cadence === "weekly"
-      ? `Top 7 picked every 7 days from upload; basket frozen for the week.`
-      : `Top 7 picked every 30 days from upload; basket frozen for the month.`;
+  const subtitle = isPassive
+    ? `Top 7 picked once at upload and held forever — no re-locking, no rebalance. Nifty + Manual basket plotted for comparison.`
+    : cadence === "daily"
+      ? `Equal-weight, rebalanced every day. Each BUY at today's close, each SELL when the stock drops out of STRONG BUY.`
+      : cadence === "weekly"
+        ? `Top 7 picked every 7 days from upload; basket frozen for the week.`
+        : `Top 7 picked every 30 days from upload; basket frozen for the month.`;
   const sizeStr = cadence === "daily" && view.finalValue != null
     ? `Portfolio ₹${Math.round(view.finalValue).toLocaleString("en-IN")} from ₹${(view.startCapital).toLocaleString("en-IN")}`
     : `${view.equityCurve.length} day${view.equityCurve.length === 1 ? "" : "s"} tracked`;
+  const titleText = isPassive ? "Passive Strategy" : "Active Strategy";
+  const modeChip = isPassive
+    ? `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 ring-1 ring-slate-300">passive</span>`
+    : `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">${cadence}</span>`;
+  const aiLabel = isPassive ? "AI passive" : "AI active";
   const manualReturnHtml = view.manualFinalReturn != null
     ? `<div class="text-right pl-4 border-l border-indigo-100 ml-2">
          <div class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Manual basket</div>
@@ -4504,16 +4561,16 @@ function renderActiveHero(view, cadence) {
       <div class="flex items-start justify-between gap-4 flex-wrap">
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="font-display font-bold text-xl text-slate-900">Active Strategy</h2>
+            <h2 class="font-display font-bold text-xl text-slate-900">${titleText}</h2>
             <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
-            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">${cadence}</span>
+            ${modeChip}
           </div>
           <div class="text-sm text-slate-600 mt-1">${escapeHtml(subtitle)}</div>
           <div class="text-xs text-slate-500 mt-2">${escapeHtml(view.periodLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)}</div>
         </div>
         <div class="flex items-start gap-2">
           <div class="text-right">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">AI active</div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">${aiLabel}</div>
             <div class="${retCls} text-4xl font-bold leading-tight tabular-nums">${retSign}${view.finalReturn.toFixed(2)}%</div>
             <div class="text-sm mt-1">${alphaTile}</div>
             <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(sizeStr)}</div>
@@ -4876,6 +4933,16 @@ function wireActiveCadenceToggle() {
     if (!ACTIVE_CADENCES.includes(v) || v === state.activeCadence) return;
     state.activeCadence = v;
     saveActiveCadence(v);
+    renderActive();
+  }));
+}
+
+function wireStrategyModeToggle() {
+  $$("#active-content [data-strategy-mode]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.strategyMode;
+    if (!STRATEGY_MODES.includes(v) || v === state.strategyMode) return;
+    state.strategyMode = v;
+    saveStrategyMode(v);
     renderActive();
   }));
 }
