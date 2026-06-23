@@ -5125,6 +5125,19 @@ function renderManualBasketTable(manualPicks) {
   `;
 }
 
+// Two-column per-pick accuracy view (AI + Manual). Restored after the
+// segment-basket refactor — used below the basket roster to surface
+// target / SL / status / Just Hit / proximity tint per pick (founder
+// said this is the main affordance).
+function renderActivePickRowsSplit(view) {
+  return `
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      ${renderActivePickColumn("AI Picks · per-pick status", "indigo", view.picks, "ai")}
+      ${renderActivePickColumn("Manual Picks · per-pick status", "amber", view.manualPicks, "manual")}
+    </div>
+  `;
+}
+
 function renderActivePickColumn(title, palette, picks, side) {
   const dot = palette === "indigo" ? "bg-indigo-500" : "bg-amber-500";
   if (!picks || !picks.length) {
