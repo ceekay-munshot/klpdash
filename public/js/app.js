@@ -4078,63 +4078,84 @@ async function renderActive() {
   if (!host) return;
   host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading active strategy…</div>`;
 
+  // Outer try/catch around the WHOLE render — without it, an exception
+  // in any of the post-await helpers (buildActiveView, render*, etc.)
+  // is swallowed silently by the async function's rejected promise and
+  // the user is left staring at "Loading…" forever. Show the error +
+  // log to console so we can see what's wrong.
   try {
-    await ensureHistoryCache();
+    try {
+      await ensureHistoryCache();
+    } catch (e) {
+      host.innerHTML = renderHistoryEmpty(e.message);
+      return;
+    }
+    const { snapshots, benchmark, lkp } = state.cache.history;
+    if (!snapshots.length) {
+      host.innerHTML = renderHistoryEmpty("No snapshots loaded.");
+      return;
+    }
+
+    const anchorDate = lkpAnchorDate(lkp, snapshots);
+    const todayDate = snapshots[snapshots.length - 1].date;
+
+    const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+    const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+    function niftyOn(date) {
+      if (!niftyClosesByDate) return null;
+      if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
+      let last = null;
+      for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
+      return last;
+    }
+
+    // Strategy mode (top-level: active vs passive) decides the buildView
+    // contract. Active mode passes the user-chosen cadence; Passive mode
+    // passes "passive" so the view builder produces a single-segment chain
+    // anchored at upload (no re-locking — AI basket fixed forever).
+    const mode = state.strategyMode;
+    const cadence = mode === "passive" ? "passive" : state.activeCadence;
+    // Manual basket — fixed at upload, same across all 3 cadences. Resolved
+    // via the same picksByMonth / picks fallback the History tab uses.
+    const lkpResolved = lkpOverride() || lkp;
+    const anchorMonth = anchorDate?.slice(0, 7) || null;
+    const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
+    const manualPicks = lkpResolved
+      ? lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []
+      : [];
+
+    const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks);
+    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode);
+    wireStrategyModeToggle();
+    wireActiveCadenceToggle();
+    wireStrategySegmentPills();
+    wireStrategyAlertsDropdown();
+    // Cohort-style row clicks open the same drill modal everywhere else uses.
+    $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
+      const ticker = el.dataset.ticker;
+      const side = el.dataset.cohortSide || "ai";
+      const segAnchor = el.dataset.segAnchor || null;
+      if (!ticker) return;
+      const pick = buildCohortClickPick(ticker, side, segAnchor);
+      if (pick) openHistoryDrill(pick);
+    }));
+    // Chart hover crosshair + tooltip
+    setupActiveChartHover(view);
   } catch (e) {
-    host.innerHTML = renderHistoryEmpty(e.message);
-    return;
+    console.error("renderActive failed:", e);
+    host.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-rose-200 p-6">
+        <div class="flex items-start gap-3">
+          <div class="text-rose-500 text-2xl">⚠</div>
+          <div class="flex-1">
+            <h2 class="font-bold text-slate-900 text-base">Strategy tab failed to render</h2>
+            <p class="text-sm text-slate-600 mt-1">${escapeHtml(e?.message || String(e))}</p>
+            <pre class="text-[10px] text-slate-500 mt-2 whitespace-pre-wrap overflow-x-auto bg-slate-50 rounded p-2 max-h-48">${escapeHtml(e?.stack || "")}</pre>
+            <p class="text-xs text-slate-500 mt-2">Check browser DevTools console for full trace.</p>
+          </div>
+        </div>
+      </div>`;
   }
-  const { snapshots, benchmark, lkp } = state.cache.history;
-  if (!snapshots.length) {
-    host.innerHTML = renderHistoryEmpty("No snapshots loaded.");
-    return;
-  }
-
-  const anchorDate = lkpAnchorDate(lkp, snapshots);
-  const todayDate = snapshots[snapshots.length - 1].date;
-
-  const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
-  const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
-  function niftyOn(date) {
-    if (!niftyClosesByDate) return null;
-    if (niftyClosesByDate[date] != null) return niftyClosesByDate[date];
-    let last = null;
-    for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
-    return last;
-  }
-
-  // Strategy mode (top-level: active vs passive) decides the buildView
-  // contract. Active mode passes the user-chosen cadence; Passive mode
-  // passes "passive" so the view builder produces a single-segment chain
-  // anchored at upload (no re-locking — AI basket fixed forever).
-  const mode = state.strategyMode;
-  const cadence = mode === "passive" ? "passive" : state.activeCadence;
-  // Manual basket — fixed at upload, same across all 3 cadences. Resolved
-  // via the same picksByMonth / picks fallback the History tab uses.
-  const lkpResolved = lkpOverride() || lkp;
-  const anchorMonth = anchorDate?.slice(0, 7) || null;
-  const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
-  const manualPicks = lkpResolved
-    ? lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []
-    : [];
-
-  const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks);
-  host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode);
-  wireStrategyModeToggle();
-  wireActiveCadenceToggle();
-  wireStrategySegmentPills();
-  wireStrategyAlertsDropdown();
-  // Cohort-style row clicks open the same drill modal everywhere else uses.
-  $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
-    const ticker = el.dataset.ticker;
-    const side = el.dataset.cohortSide || "ai";
-    const segAnchor = el.dataset.segAnchor || null;
-    if (!ticker) return;
-    const pick = buildCohortClickPick(ticker, side, segAnchor);
-    if (pick) openHistoryDrill(pick);
-  }));
-  // Chart hover crosshair + tooltip
-  setupActiveChartHover(view);
 }
 
 // Build everything the Active shell needs for a given cadence. Returns
