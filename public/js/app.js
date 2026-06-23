@@ -4512,7 +4512,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${renderActiveCumulativeChart(view)}
       ${renderActiveOverallHitsSplit(view)}
       ${renderActiveSegmentedBaskets(view, mode)}
-      ${renderActivePickRowsSplit(view)}
+      ${renderActivePickRowsSplit(view, mode)}
       ${renderActiveBetaCaveat(view, anchorDate)}
     </div>
   `;
@@ -5129,10 +5129,28 @@ function renderManualBasketTable(manualPicks) {
 // segment-basket refactor — used below the basket roster to surface
 // target / SL / status / Just Hit / proximity tint per pick (founder
 // said this is the main affordance).
-function renderActivePickRowsSplit(view) {
+//
+// AI picks are filtered to the SELECTED segment so the accuracy table
+// tracks whichever Day / Week / Month pill the analyst clicked above.
+// Manual basket has no segment concept — it's the same basket
+// regardless of selection, so we show all manual rows.
+function renderActivePickRowsSplit(view, mode) {
+  const isPassive = mode === "passive";
+  const segments = view.segments || [];
+  const selectedIdx = clampStrategySegmentIdx(segments.length || 1);
+  const selected = segments[selectedIdx];
+  // Filter picks by segment start date — both Daily (BUY-event picks)
+  // and Weekly/Monthly/Passive (segment-anchor picks) carry the
+  // entryDate field that matches segment.startDate exactly.
+  const aiPicks = selected && segments.length > 1
+    ? (view.picks || []).filter((p) => p.entryDate === selected.startDate)
+    : (view.picks || []);
+  const aiHeader = segments.length > 1
+    ? `AI Picks · ${selected.label} · per-pick status`
+    : isPassive ? "AI Picks · held basket" : "AI Picks · per-pick status";
   return `
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      ${renderActivePickColumn("AI Picks · per-pick status", "indigo", view.picks, "ai")}
+      ${renderActivePickColumn(aiHeader, "indigo", aiPicks, "ai")}
       ${renderActivePickColumn("Manual Picks · per-pick status", "amber", view.manualPicks, "manual")}
     </div>
   `;
