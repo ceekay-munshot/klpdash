@@ -4718,17 +4718,20 @@ function curveMaxUpside(curve) {
   return max === -Infinity ? null : max;
 }
 
-// Max-drawdown = worst peak-to-trough decline in retPct points.
-// Walk the curve tracking the running peak; the most negative
-// (current - peak) is the drawdown number we report (signed negative).
-// 0 if the curve only ever climbed.
+// Max-drawdown = worst peak-to-trough decline as an equity-factor
+// ratio (current_factor / peak_factor − 1), expressed as a percentage.
+// Subtracting cumulative retPct values directly would give percentage
+// points, not the drawdown the analyst expects: peak +100% → trough
+// +50% must report −25%, not −50%, since the portfolio went from 2× to
+// 1.5× its starting value. 0 if the curve only ever climbed.
 function curveMaxDrawdown(curve) {
   if (!curve?.length) return null;
-  let peak = -Infinity, maxDD = 0;
+  let peakFactor = -Infinity, maxDD = 0;
   for (const p of curve) {
     if (p?.retPct == null) continue;
-    if (p.retPct > peak) peak = p.retPct;
-    const dd = p.retPct - peak;
+    const factor = 1 + p.retPct / 100;
+    if (factor > peakFactor) peakFactor = factor;
+    const dd = (factor / peakFactor - 1) * 100;
     if (dd < maxDD) maxDD = dd;
   }
   return maxDD;
