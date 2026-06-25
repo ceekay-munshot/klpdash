@@ -4510,6 +4510,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${renderTodayHitsBanner(hits, todayDate)}
       ${renderActiveHero(view, cadence, mode)}
       ${renderActiveCumulativeChart(view)}
+      ${renderStrategyKpis(view)}
       ${renderActiveOverallHitsSplit(view)}
       ${renderActiveSegmentedBaskets(view, mode)}
       ${renderActivePickRowsSplit(view)}
@@ -4651,9 +4652,6 @@ function renderActiveHero(view, cadence, mode) {
   const isPassive = mode === "passive";
   const retCls = view.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
   const retSign = view.finalReturn >= 0 ? "+" : "";
-  const alphaTile = view.alpha != null
-    ? `<span class="${view.alpha >= 0 ? "text-emerald-600" : "text-rose-600"} font-bold">${view.alpha >= 0 ? "+" : ""}${view.alpha.toFixed(2)}%</span> vs Nifty (${view.niftyRet != null ? (view.niftyRet >= 0 ? "+" : "") + view.niftyRet.toFixed(2) + "%" : "—"})`
-    : `<span class="text-slate-400">benchmark missing</span>`;
   const subtitle = isPassive
     ? `Top 7 picked once at upload and held forever — no re-locking, no rebalance. Nifty + Manual basket plotted for comparison.`
     : cadence === "daily"
@@ -4692,7 +4690,6 @@ function renderActiveHero(view, cadence, mode) {
           <div class="text-right">
             <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">${aiLabel}</div>
             <div class="${retCls} text-4xl font-bold leading-tight tabular-nums">${retSign}${view.finalReturn.toFixed(2)}%</div>
-            <div class="text-sm mt-1">${alphaTile}</div>
             <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(sizeStr)}</div>
           </div>
           ${manualReturnHtml}
@@ -4710,6 +4707,127 @@ const ACTIVE_CHART = {
   M: { left: 50, right: 18, top: 16, bottom: 32 },
   color: { ai: "#6366f1", manual: "#f59e0b", nifty: "#94a3b8" },
 };
+
+// Max-upside on a cumulative-return curve = the highest retPct point
+// ever reached during the window. Tells the analyst "how far did this
+// strategy run up at its peak". Null when the curve has no data.
+function curveMaxUpside(curve) {
+  if (!curve?.length) return null;
+  let max = -Infinity;
+  for (const p of curve) if (p?.retPct != null && p.retPct > max) max = p.retPct;
+  return max === -Infinity ? null : max;
+}
+
+// Max-drawdown = worst peak-to-trough decline as an equity-factor
+// ratio (current_factor / peak_factor − 1), expressed as a percentage.
+// Subtracting cumulative retPct values directly would give percentage
+// points, not the drawdown the analyst expects: peak +100% → trough
+// +50% must report −25%, not −50%, since the portfolio went from 2× to
+// 1.5× its starting value. 0 if the curve only ever climbed.
+function curveMaxDrawdown(curve) {
+  if (!curve?.length) return null;
+  let peakFactor = -Infinity, maxDD = 0;
+  for (const p of curve) {
+    if (p?.retPct == null) continue;
+    const factor = 1 + p.retPct / 100;
+    if (factor > peakFactor) peakFactor = factor;
+    const dd = (factor / peakFactor - 1) * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  return maxDD;
+}
+
+// KPI grid surfaced below the cumulative-return chart. Three cards:
+//   1. Max upside   — peak return % for Manual / AI / Nifty
+//   2. Max drawdown — worst peak-to-trough for the same three
+//   3. Alpha matrix — pairwise outperformance (Manual−AI, AI−Nifty, Manual−Nifty)
+// The "AI vs Nifty" alpha used to live in the hero card; moved here so
+// every relative comparison is in one place.
+function renderStrategyKpis(view) {
+  const aiCurve = view.equityCurve || [];
+  const manualCurve = view.manualCurve || [];
+  const niftyCurve = view.niftyCurve || [];
+  const aiUp = curveMaxUpside(aiCurve);
+  const manualUp = curveMaxUpside(manualCurve);
+  const niftyUp = curveMaxUpside(niftyCurve);
+  const aiDD = curveMaxDrawdown(aiCurve);
+  const manualDD = curveMaxDrawdown(manualCurve);
+  const niftyDD = curveMaxDrawdown(niftyCurve);
+  const aiFinal = view.finalReturn;
+  const manualFinal = view.manualFinalReturn;
+  const niftyFinal = view.niftyRet;
+  const manualVsAi = (manualFinal != null && aiFinal != null) ? manualFinal - aiFinal : null;
+  const aiVsNifty = (aiFinal != null && niftyFinal != null) ? aiFinal - niftyFinal : null;
+  const manualVsNifty = (manualFinal != null && niftyFinal != null) ? manualFinal - niftyFinal : null;
+
+  const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const cls = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
+  const row = (dotCls, label, value) => `
+    <div class="flex items-center gap-2 text-sm">
+      <span class="inline-block w-2 h-2 rounded-full ${dotCls}"></span>
+      <span class="text-slate-600">${label}</span>
+      <span class="ml-auto font-bold tabular-nums ${cls(value)}">${fmtPct(value)}</span>
+    </div>`;
+
+  const cardUpside = `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Max upside</div>
+        <div class="text-emerald-500 text-base">▲</div>
+      </div>
+      <div class="space-y-1.5">
+        ${row("bg-amber-500", "Manual", manualUp)}
+        ${row("bg-indigo-500", "AI", aiUp)}
+        ${row("bg-slate-400", "Nifty", niftyUp)}
+      </div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Highest cumulative return reached during the window</div>
+    </div>`;
+
+  const cardDrawdown = `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Max drawdown</div>
+        <div class="text-rose-500 text-base">▼</div>
+      </div>
+      <div class="space-y-1.5">
+        ${row("bg-amber-500", "Manual", manualDD)}
+        ${row("bg-indigo-500", "AI", aiDD)}
+        ${row("bg-slate-400", "Nifty", niftyDD)}
+      </div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Worst peak-to-trough decline in the window</div>
+    </div>`;
+
+  const alphaRow = (dotCls, label, value) => `
+    <div class="flex items-center gap-2 text-sm">
+      <span class="inline-flex items-center gap-1.5 text-slate-600">
+        <span class="inline-block w-2 h-2 rounded-full ${dotCls}"></span>
+        ${label}
+      </span>
+      <span class="ml-auto font-bold tabular-nums ${cls(value)}">${fmtPct(value)}</span>
+    </div>`;
+
+  const cardAlpha = `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Relative alpha</div>
+        <div class="text-indigo-500 text-base">⇆</div>
+      </div>
+      <div class="space-y-1.5">
+        ${alphaRow("bg-amber-500", "Manual − AI", manualVsAi)}
+        ${alphaRow("bg-indigo-500", "AI − Nifty", aiVsNifty)}
+        ${alphaRow("bg-amber-500", "Manual − Nifty", manualVsNifty)}
+      </div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">End-of-period outperformance (in percentage points)</div>
+    </div>`;
+
+  return `
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      ${cardUpside}
+      ${cardDrawdown}
+      ${cardAlpha}
+    </div>
+  `;
+}
 
 function renderActiveCumulativeChart(view) {
   const { W, H, M, color } = ACTIVE_CHART;
