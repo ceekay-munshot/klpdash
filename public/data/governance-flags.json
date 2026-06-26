@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-06-25T04:42:18.250Z",
+  "generated_at": "2026-06-26T04:50:02.303Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 12,
+  "total_entities_seen": 9,
   "flagged_companies": {
     "OLAELEC": {
       "primary_name": "Ola Electric",
-      "order_type": "sebi-probe",
+      "order_type": "other",
       "snippet": "Ola Electric files application to settle Sebi probe over false information allegations",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
@@ -17,17 +17,11 @@
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "sebi-probe",
+          "order_type": "other",
           "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe"
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.249Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ANGELONE": {
       "primary_name": "Angel One",
@@ -46,7 +40,26 @@
           "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
+    },
+    "PFOCUS": {
+      "primary_name": "Prime Focus",
+      "order_type": "sebi-investigation",
+      "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case"
+        }
+      ],
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -65,7 +78,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -84,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -103,7 +116,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -122,7 +135,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -141,31 +154,13 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-25T04:42:18.250Z"
+      "first_seen_at": "2026-06-26T04:50:02.302Z"
     }
   },
   "unmatched_sample": [
     {
-      "name": "Rajesh Exports",
-      "type": "sebi-fraud",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "AGS Health",
-      "type": "sebi-ipo",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "SBI Funds Management",
-      "type": "sebi-ipo",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "SBI Mutual Fund",
-      "type": "sebi-ipo",
+      "name": "Jio Platforms",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -175,72 +170,24 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-25T04:41:24.155Z",
+      "at": "2026-06-26T04:49:06.763Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 9,
-      "total_extracted": 9,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
           "order_type": "other",
           "is_listed_entity": true,
           "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi’s investor tools multiply, but awareness lags behind."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi’s municipal bond push may not bring retail rush, experts warn of credit risks."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Retail traders may have lost over ₹1 trillion in F&O again in FY26."
-        },
-        {
-          "name": "Jindal Poly",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Minority shareholders ask Supreme Court to revive Jindal Poly class action lawsuit."
-        },
-        {
-          "name": "Jio Platforms",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Silicon Valley, sovereign funds and Ambani sit tight on their Jio stake in potential ₹35,000 crore offer."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi to release fresh study on retail derivatives losses in July."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi reinstates open market buybacks, clears AIF and municipal bond reforms."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi eyes margin trading overhaul, tighter broker capital rules."
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 6,
-        "no_sebi_signal_in_snippet": 3,
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -250,30 +197,72 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-25T04:41:32.156Z",
+      "at": "2026-06-26T04:49:22.727Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
+      "total_extracted_raw": 9,
+      "total_extracted": 9,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "ED alleged that gold refining and jewellery manufacturing company Rajesh Exports' key business indicators showed \"significant\" departures from normal "
+          "snippet": "Rajesh Exports failed to produce foreign transaction records: ED"
         },
         {
-          "name": "Unistone Capital",
-          "order_type": "settlement",
+          "name": "Sebi",
+          "order_type": "other",
           "is_listed_entity": false,
-          "snippet": "Unistone Capital pays ₹67 lakh to settle insider trading case with Sebi."
+          "snippet": "Sebi eases certification needs for non-core staff of investment advisors"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi introduces lighter certification framework for non-core staff"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi weighs allowing celebrity endorsements for regulated entities"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi proposes to allow direct market access route to all investors"
+        },
+        {
+          "name": "NSE",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "NSE, Bharat Metal Exchange join hands for non-ferrous metal derivatives"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi mulls consolidating tech, cybersecurity norms across mkt institutions"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi mulls easing deep disclosures for foreign portfolio investors"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi warns investors against trading unlisted stocks on unauthorised sites"
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 1,
-        "no_sebi_signal_in_snippet": 1,
+        "not_listed": 7,
+        "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -283,42 +272,30 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-25T04:41:39.405Z",
+      "at": "2026-06-26T04:49:29.969Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 10,
-      "total_extracted": 10,
+      "total_extracted_raw": 7,
+      "total_extracted": 7,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Rajesh Exports' troubles deepen with ED searches amid Rs 15 lakh crore revenue row"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-fraud",
-          "is_listed_entity": true,
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
-        },
-        {
-          "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Rajesh Exports under ED lens after probe finds missing records and Rs 3000 crore opaque transactions"
+          "snippet": "Rajesh Exports under ED lens after probe finds missing records and Rs 3,000 crore opaque transactions"
         },
         {
           "name": "Ola Electric",
-          "order_type": "sebi-probe",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
-        },
-        {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
-          "is_listed_entity": true,
-          "snippet": "Ola Electric files application to settle Sebi probe"
         },
         {
           "name": "Angel One",
@@ -327,31 +304,25 @@
           "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
         },
         {
-          "name": "AGS Health",
-          "order_type": "sebi-ipo",
+          "name": "Prime Focus",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "AGS Health, PGP Glass, 2 others get Sebi nod to float IPOs"
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case"
         },
         {
-          "name": "SBI Funds Management",
-          "order_type": "sebi-ipo",
+          "name": "Jio Platforms",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "SBI Funds Management gets Sebi nod for IPO"
+          "snippet": "Sebi seeks clarification from Jio Platforms on IPO filing"
         },
         {
           "name": "Bajaj Auto",
-          "order_type": "sebi-buyback",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Bajaj Auto buyback alert! Last day to buy shares to participate in firm's biggest-ever buyback worth Rs 5,633 crore"
-        },
-        {
-          "name": "SBI Mutual Fund",
-          "order_type": "sebi-ipo",
-          "is_listed_entity": true,
-          "snippet": "SBI Mutual Fund is preparing to launch its IPO in early July after receiving Sebi approval."
         }
       ],
-      "after_filter_count": 7,
+      "after_filter_count": 4,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 3,
@@ -360,19 +331,9 @@
       },
       "sample": [
         {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-fraud",
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
-        },
-        {
           "name": "Ola Electric",
-          "order_type": "sebi-probe",
+          "order_type": "other",
           "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
-        },
-        {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe"
         },
         {
           "name": "Angel One",
@@ -380,19 +341,14 @@
           "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
         },
         {
-          "name": "AGS Health",
-          "order_type": "sebi-ipo",
-          "snippet": "AGS Health, PGP Glass, 2 others get Sebi nod to float IPOs"
+          "name": "Prime Focus",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi drops proceedings against Prime Focus in misleading financials case"
         },
         {
-          "name": "SBI Funds Management",
-          "order_type": "sebi-ipo",
-          "snippet": "SBI Funds Management gets Sebi nod for IPO"
-        },
-        {
-          "name": "SBI Mutual Fund",
-          "order_type": "sebi-ipo",
-          "snippet": "SBI Mutual Fund is preparing to launch its IPO in early July after receiving Sebi approval."
+          "name": "Jio Platforms",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi seeks clarification from Jio Platforms on IPO filing"
         }
       ]
     },
@@ -400,7 +356,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-25T04:41:58.634Z",
+      "at": "2026-06-26T04:49:52.885Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
