@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-06-28T05:00:52.170Z",
+  "generated_at": "2026-06-29T05:09:52.364Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 14,
+  "total_entities_seen": 11,
   "flagged_companies": {
     "RELIANCE": {
       "primary_name": "Reliance Infrastructure",
-      "order_type": "settlement",
+      "order_type": "show-cause",
       "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure",
       "source_url": "https://www.business-standard.com/topic/sebi",
       "source_label": "Business Standard — SEBI topic (news)",
@@ -17,47 +17,22 @@
         {
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "settlement",
+          "order_type": "show-cause",
           "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure"
         },
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "sebi-investigation",
-          "snippet": "Reliance Jio IPO: DRHP filed with Sebi to raise around $3 billion"
+          "order_type": "settlement",
+          "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
-    },
-    "OLAELEC": {
-      "primary_name": "Ola Electric",
-      "order_type": "sebi-settlement",
-      "snippet": "Ola Electric files application to settle Sebi probe",
-      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
-      "source_label": "Economic Times — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
-        }
-      ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ANGELONE": {
       "primary_name": "Angel One",
       "order_type": "sebi-settlement",
-      "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore",
+      "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -68,10 +43,29 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-settlement",
-          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
+    },
+    "OLAELEC": {
+      "primary_name": "Ola Electric",
+      "order_type": "sebi-settlement",
+      "snippet": "Ola Electric files application to settle Sebi probe over false information allegations.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-settlement",
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        }
+      ],
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -90,7 +84,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -109,7 +103,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -128,7 +122,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -147,7 +141,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -166,30 +160,18 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-06-28T05:00:52.170Z"
+      "first_seen_at": "2026-06-29T05:09:52.364Z"
     }
   },
   "unmatched_sample": [
     {
       "name": "Sathya Agencies",
-      "type": "sebi-investigation",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Jio",
-      "type": "sebi-investigation",
+      "type": "enforcement-order",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-fraud",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "SBI Mutual Fund",
       "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -200,48 +182,54 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-28T04:59:34.687Z",
+      "at": "2026-06-29T05:09:19.192Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 5,
-      "total_extracted": 5,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "enforcement-order",
           "is_listed_entity": true,
-          "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch"
+          "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch."
         },
         {
-          "name": "Zerodha",
+          "name": "Jindal Poly",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Zerodha launches India's first life cycle funds: Know how the 2 new schemes work, minimum investment, and suitability"
+          "snippet": "Minority shareholders ask Supreme Court to revive Jindal Poly class action lawsuit."
         },
         {
-          "name": "InCred",
+          "name": "Persistent Systems",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PE-backed firms ride NSE, Jio tailwind to launch IPO roadshows"
+          "snippet": "Persistent Systems shares crash 9% to hit a 52-week low; is it a stock to buy?"
         },
         {
-          "name": "Dhoot Transmission",
+          "name": "IOC",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PE-backed firms ride NSE, Jio tailwind to launch IPO roadshows"
+          "snippet": "IOC, HPCL to BPCL: OMC stocks dip on rising crude oil prices."
         },
         {
-          "name": "Integris Medtech",
+          "name": "Turtlemint Fintech Solutions",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PE-backed firms ride NSE, Jio tailwind to launch IPO roadshows"
+          "snippet": "Turtlemint Fintech Solutions share price makes weak debut, lists at 11% discount."
+        },
+        {
+          "name": "Transrail Lighting",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Transrail Lighting shares jump 4% after winning overseas orders worth ₹459 cr."
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 5,
+        "no_sebi_signal_in_snippet": 6,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -251,39 +239,33 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-28T04:59:57.388Z",
+      "at": "2026-06-29T05:09:26.511Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 3,
+      "total_extracted": 3,
       "prefilter_sample": [
         {
           "name": "Reliance Infrastructure",
-          "order_type": "settlement",
+          "order_type": "show-cause",
           "is_listed_entity": true,
           "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "investigation",
+          "order_type": "enforcement-order",
           "is_listed_entity": true,
           "snippet": "Rajesh Exports failed to produce foreign transaction records: ED"
         },
         {
           "name": "Sathya Agencies",
-          "order_type": "sebi-investigation",
+          "order_type": "enforcement-order",
           "is_listed_entity": true,
           "snippet": "Consumer durables retailer Sathya Agencies gets Sebi nod for ₹600-cr IPO"
-        },
-        {
-          "name": "Jio",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "RIL AGM: Reliance board approves Jio IPO; DRHP to be filed today with Sebi"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 2,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 1,
@@ -293,18 +275,13 @@
       "sample": [
         {
           "name": "Reliance Infrastructure",
-          "order_type": "settlement",
+          "order_type": "show-cause",
           "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure"
         },
         {
           "name": "Sathya Agencies",
-          "order_type": "sebi-investigation",
+          "order_type": "enforcement-order",
           "snippet": "Consumer durables retailer Sathya Agencies gets Sebi nod for ₹600-cr IPO"
-        },
-        {
-          "name": "Jio",
-          "order_type": "sebi-investigation",
-          "snippet": "RIL AGM: Reliance board approves Jio IPO; DRHP to be filed today with Sebi"
         }
       ]
     },
@@ -312,63 +289,51 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-06-28T05:00:03.463Z",
+      "at": "2026-06-29T05:09:30.923Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 8,
-      "total_extracted": 8,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
         {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
+          "name": "Reliance Infrastructure",
+          "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Rajesh Exports' troubles deepen with ED searches amid Rs 15 lakh crore revenue row"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-fraud",
-          "is_listed_entity": true,
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
+          "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure."
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "ED carries out searches at locations linked to Rajesh Exports"
+          "snippet": "Rajesh Exports' troubles deepen with ED searches amid Rs 15 lakh crore revenue row."
         },
         {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Ola Electric files application to settle Sebi probe"
-        },
-        {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
-          "is_listed_entity": true,
-          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
+          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations."
         },
         {
           "name": "Angel One",
           "order_type": "sebi-settlement",
           "is_listed_entity": true,
-          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         },
         {
-          "name": "SBI Mutual Fund",
-          "order_type": "sebi-investigation",
+          "name": "Ola Electric",
+          "order_type": "sebi-settlement",
           "is_listed_entity": true,
-          "snippet": "SBI Mutual Fund is preparing to launch its IPO in early July after receiving Sebi approval."
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
         },
         {
-          "name": "Reliance Jio",
-          "order_type": "sebi-investigation",
+          "name": "NSE",
+          "order_type": "sebi-approval",
           "is_listed_entity": true,
-          "snippet": "Reliance Jio IPO: DRHP filed with Sebi to raise around $3 billion"
+          "snippet": "NSE files DRHP for mega $3 billion IPO, SBI among 10 investors to sell stake."
         }
       ],
-      "after_filter_count": 6,
+      "after_filter_count": 4,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 2,
@@ -377,34 +342,24 @@
       },
       "sample": [
         {
+          "name": "Reliance Infrastructure",
+          "order_type": "settlement",
+          "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure."
+        },
+        {
           "name": "Rajesh Exports",
-          "order_type": "sebi-fraud",
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
-        },
-        {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe"
-        },
-        {
-          "name": "Ola Electric",
-          "order_type": "sebi-settlement",
-          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations"
+          "order_type": "sebi-investigation",
+          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations."
         },
         {
           "name": "Angel One",
           "order_type": "sebi-settlement",
-          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore"
+          "snippet": "Angel One settles Sebi proceedings over lapses in monitoring authorised persons, pays Rs 4.28 crore."
         },
         {
-          "name": "SBI Mutual Fund",
-          "order_type": "sebi-investigation",
-          "snippet": "SBI Mutual Fund is preparing to launch its IPO in early July after receiving Sebi approval."
-        },
-        {
-          "name": "Reliance Jio",
-          "order_type": "sebi-investigation",
-          "snippet": "Reliance Jio IPO: DRHP filed with Sebi to raise around $3 billion"
+          "name": "Ola Electric",
+          "order_type": "sebi-settlement",
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
         }
       ]
     },
@@ -412,24 +367,17 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-06-28T05:00:47.679Z",
+      "at": "2026-06-29T05:09:50.728Z",
       "fc_status": 200,
       "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 1,
-      "total_extracted": 1,
-      "prefilter_sample": [
-        {
-          "name": "CITRUS CHECK INNS LIMITED",
-          "order_type": "public-notice",
-          "is_listed_entity": true,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
-        }
-      ],
+      "upstream_status": null,
+      "total_extracted_raw": 0,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
+        "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
