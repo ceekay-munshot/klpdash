@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-28T05:01:09.734Z",
+  "generated_at": "2026-06-29T05:16:07.338Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -7,12 +7,22 @@
     "label": "Muns Auditor Opinion agent"
   },
   "cache_max_age_days": 30,
-  "total_universe": 503,
-  "total_cached": 503,
-  "total_live_opinion": 503,
+  "total_universe": 511,
+  "total_cached": 511,
+  "total_live_opinion": 501,
   "total_not_disclosed": 0,
-  "total_errors": 0,
+  "total_errors": 10,
   "companies": {
+    "504375": {
+      "name": "IDream Film",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:25.168Z"
+    },
     "543225": {
       "name": "Altius Telecom",
       "opinion": "Clean (Unmodified Opinion)",
@@ -6769,23 +6779,6 @@
       "auditor_confidence": "Medium",
       "_origin": "routine"
     },
-    "JPPOWER": {
-      "name": "JP Power Ven.",
-      "opinion": "Clean (Unmodified Opinion)",
-      "source": "BSE annual report — extracted by routine (confidence: Low)",
-      "conclusion_block": "None",
-      "error": null,
-      "http_status": 200,
-      "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.441Z",
-      "auditor_firm": "Lodha & Co., Chartered Accountants (Firm Registration No. could not confirm)",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "None",
-      "auditor_key_concerns": "None",
-      "auditor_confidence": "Low",
-      "_origin": "routine"
-    },
     "KOTAKBANK": {
       "name": "Kotak Mah. Bank",
       "opinion": "Clean (Unmodified Opinion)",
@@ -7574,23 +7567,6 @@
       "auditor_confidence": "Medium",
       "_origin": "routine"
     },
-    "GRAPHITE": {
-      "name": "Graphite India",
-      "opinion": "Clean (Unmodified Opinion)",
-      "source": "BSE annual report — extracted by routine (confidence: Medium)",
-      "conclusion_block": "None",
-      "error": null,
-      "http_status": 200,
-      "error_snippet": null,
-      "fetched_at": "2026-06-02T10:23:16.442Z",
-      "auditor_firm": "Price Waterhouse Chartered Accountants LLP (FRN: 012754N/N500016)",
-      "auditor_opinion_date": "Could not extract",
-      "auditor_report_year": "FY2024-25",
-      "auditor_emphasis_of_matter": "None",
-      "auditor_key_concerns": "None",
-      "auditor_confidence": "Medium",
-      "_origin": "routine"
-    },
     "NHIT": {
       "name": "National High",
       "opinion": "Disclaimer of Opinion",
@@ -8136,6 +8112,96 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-06-15T05:36:10.356Z"
+    },
+    "SKFINDUS": {
+      "name": "SKF India Indus.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:22.668Z"
+    },
+    "WABAG": {
+      "name": "Va Tech Wabag",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:23.668Z"
+    },
+    "TECHNOE": {
+      "name": "Techno Elec.Engg",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:21.168Z"
+    },
+    "CARTRADE": {
+      "name": "Cartrade Tech",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:16:07.337Z"
+    },
+    "TRIDENT": {
+      "name": "Trident",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:24.168Z"
+    },
+    "VEDPOWER": {
+      "name": "Vedanta Power",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:20.668Z"
+    },
+    "AEQUS": {
+      "name": "Aequs",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:24.669Z"
+    },
+    "VOGL": {
+      "name": "Vedanta Oil and Gas",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:20.168Z"
+    },
+    "VAML": {
+      "name": "Vedanta Aluminium Metal",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-06-29T05:15:23.669Z"
     }
   }
 }
