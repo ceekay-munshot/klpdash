@@ -8251,8 +8251,9 @@ function renderStrategyConfig(strat) {
           <button type="button" data-strat-del="${strat.id}" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">Delete</button>
         </div>
       </div>
+      <div class="text-xs text-slate-500 mb-3">Drag a slider — the result updates instantly. Plain English: <em>"buy the top ${strat.basketSize} stocks, sell each one when it's up ${strat.target}%, down ${strat.sl}%, or held ${strat.maxHoldDays} days, and refresh the list every ${strat.rebalanceDays} days."</em></div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">${sliders}</div>
-      <div class="text-[10px] text-slate-400 mt-3 leading-snug">Three exit triggers, whichever hits first: profit target, stop-loss, or max holding. On each rebalance the basket refreshes to the top stocks by composite score. Capital &amp; charges are shared across strategies (panel below) so they compare on equal footing.</div>
+      <div class="text-[10px] text-slate-400 mt-3 leading-snug"><strong>Target / Stop-loss / Max holding</strong> are the three sell triggers — whichever happens first, that stock is sold and the next best one takes its place. <strong>Rebalance</strong> = how often the whole list is refreshed to the current top stocks.</div>
       ${renderIndicatorPicker(strat)}
     </div>`;
 }
@@ -8289,17 +8290,31 @@ function renderCustomOverview(views) {
   const cards = views.map((v, i) => renderStrategyCard(v.strat, v.view, palette[i % palette.length])).join("");
   return `
     <div class="space-y-4">
-      <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5 flex items-start justify-between gap-4 flex-wrap">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
-          <div class="text-sm text-slate-600 mt-1">Build strategies with your own target / stop-loss / holding / rebalance, backtest them over the snapshot history, and compare. Capital &amp; charges are shared across all.</div>
+      <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+            <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>A "what if I'd traded like this?" tester.</strong> Set your own buy &amp; sell rules and see how much money the plan <em>would have</em> made on past data. Build a few and compare which works best — it's practice, not live trading.</div>
+          </div>
+          <button type="button" data-strat-new class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 whitespace-nowrap">+ New strategy</button>
         </div>
-        <button type="button" data-strat-new class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 whitespace-nowrap">+ New strategy</button>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+          ${howStep("1", "Open a strategy", "Click a card below to set its rules with sliders.")}
+          ${howStep("2", "It tests itself", "Every change instantly replays history and redraws the line.")}
+          ${howStep("3", "Keep the winner", "The chart stacks all your plans — keep the best, delete the rest.")}
+        </div>
       </div>
-      ${renderSimPanel(views.find((v) => v.view)?.view || {})}
-      ${renderMultiCurveChart(series, "Strategy comparison", "Cumulative return, net of charges, backtested from upload date")}
+      ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+      <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">⚙ Shared capital &amp; charges <span class="font-normal text-slate-400">(applies to every plan)</span></summary>
+        <div class="mt-3">${renderSimPanel(views.find((v) => v.view)?.view || {})}</div>
+      </details>
     </div>`;
+}
+
+function howStep(n, title, body) {
+  return `<div class="bg-white/70 rounded-xl ring-1 ring-slate-100 px-3 py-2"><div class="text-xs font-bold text-indigo-600">${n}. ${escapeHtml(title)}</div><div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(body)}</div></div>`;
 }
 
 function renderCustomDeepDive(entry, todaysNames) {
@@ -8325,13 +8340,39 @@ function renderCustomDeepDive(entry, todaysNames) {
         <button type="button" data-strat-back class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
         <div class="text-[11px] text-slate-500">${view.tradeCount} trades · ${view.liveHoldings} held now</div>
       </div>
+      ${renderPlainResult(view)}
       ${renderStrategyConfig(strat)}
       ${todaysBlock}
-      ${renderSimPanel(view)}
-      ${renderMultiCurveChart(series, strat.name, view.periodLabel)}
-      ${renderStrategyKpis(view)}
-      ${renderActivePickRowsSplit(view)}
-      ${renderSectorTiming(view)}
+      ${renderMultiCurveChart(series, `${strat.name} vs Manual vs Nifty`, "Blue = your plan. Compared against the manual basket and Nifty 50.")}
+      <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">📊 Show detailed breakdown <span class="font-normal text-slate-400">(money in/out, risk, every trade, sector timing)</span></summary>
+        <div class="space-y-4 mt-3">
+          ${renderSimPanel(view)}
+          ${renderStrategyKpis(view)}
+          ${renderActivePickRowsSplit(view)}
+          ${renderSectorTiming(view)}
+        </div>
+      </details>
+    </div>`;
+}
+
+// Plain-English headline for a strategy — the one thing most people want
+// to know: "would this plan have made money?"
+function renderPlainResult(view) {
+  const money = (n) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+  const net = view.finalReturn;
+  const up = curveMaxUpside(view.equityCurve) ?? 0;
+  const dd = curveMaxDrawdown(view.equityCurve) ?? 0;
+  const cls = net >= 0 ? "text-emerald-700" : "text-rose-700";
+  const bg = net >= 0 ? "from-emerald-50 to-teal-50 ring-emerald-200" : "from-rose-50 to-pink-50 ring-rose-200";
+  return `
+    <div class="rounded-2xl ring-1 bg-gradient-to-br ${bg} p-4 sm:p-5">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">In plain words</div>
+      <div class="text-sm sm:text-base text-slate-800 leading-relaxed">
+        Run this plan with <strong>${money(view.startCapital)}</strong> and you'd have <strong class="${cls}">${money(view.finalValue)}</strong> today —
+        a <strong class="${cls}">${net >= 0 ? "+" : ""}${net.toFixed(2)}%</strong> return after all charges (${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)}).
+        Best it reached along the way: <strong class="text-emerald-700">+${up.toFixed(1)}%</strong>. Worst dip: <strong class="text-rose-700">${dd.toFixed(1)}%</strong>.
+      </div>
     </div>`;
 }
 
@@ -8552,38 +8593,41 @@ function renderAlertConfig(prefs) {
       </div>`;
   }).join("");
   return `
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
-      <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
-        <div class="flex items-center gap-2"><span class="text-base">🔔</span><h3 class="font-display font-bold text-slate-900 text-sm">Alert rules</h3></div>
-        <button type="button" id="alert-reset" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Reset defaults</button>
+    <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <summary class="cursor-pointer flex items-center gap-2 select-none">
+        <span class="text-base">⚙</span><span class="font-display font-bold text-slate-900 text-sm">Alert settings</span><span class="text-[11px] text-slate-400 font-normal">— turn rules on/off, set thresholds</span>
+      </summary>
+      <div class="mt-3">
+        <div class="flex items-center justify-between gap-3 py-2">
+          <span class="text-xs text-slate-600">Only alert on stocks scoring ≥</span>
+          <div class="flex items-center gap-2"><input type="number" data-alert-mincomposite value="${prefs.minComposite}" step="1" class="w-16 rounded-lg ring-1 ring-slate-200 px-2 py-1 text-xs tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" /><button type="button" id="alert-reset" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Reset</button></div>
+        </div>
+        ${rows}
+        <div class="text-[10px] text-slate-400 mt-2 leading-snug">Checked = on. The number next to each rule is its trigger level (e.g. RSI ≥ 70). Evaluated on the latest data; click any result to open that stock's chart.</div>
       </div>
-      <div class="flex items-center justify-between gap-3 py-2">
-        <span class="text-xs text-slate-600">Only alert on stocks with composite ≥</span>
-        <input type="number" data-alert-mincomposite value="${prefs.minComposite}" step="1" class="w-16 rounded-lg ring-1 ring-slate-200 px-2 py-1 text-xs tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" />
-      </div>
-      ${rows}
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Evaluated against the latest snapshot &amp; technicals. Target / stop-loss alerts read the active strategy's picks. Click any alert to open the stock's drill chart.</div>
-    </div>`;
+    </details>`;
 }
 
 function renderAlertFeed(alerts) {
   if (!alerts.length) {
     return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-8 text-center text-sm text-slate-500">No alerts firing right now. Loosen a threshold or enable more rules above.</div>`;
   }
-  return `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${alerts.map((g) => `
+  return `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${alerts.map((g) => {
+    const shown = g.items.slice(0, 6);
+    return `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-display font-bold text-slate-900 text-sm">${g.label}</h3>
         <span class="text-[11px] font-semibold text-slate-500">${g.total} match${g.total === 1 ? "" : "es"}</span>
       </div>
       <div class="space-y-0.5">
-        ${g.items.map((it) => `<button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(it.ticker)}" class="w-full text-left flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-indigo-50/50 transition">
+        ${shown.map((it) => `<button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(it.ticker)}" class="w-full text-left flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-indigo-50/50 transition">
           <div class="min-w-0"><div class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(it.name)}</div><div class="text-[10px] text-slate-400 truncate">${escapeHtml(it.sector || "")}</div></div>
-          <div class="text-right flex-shrink-0"><div class="text-[11px] font-bold tabular-nums text-indigo-700">${escapeHtml(it.detail)}</div>${it.composite != null ? `<div class="text-[9px] text-slate-400">composite ${it.composite.toFixed(1)}</div>` : ""}</div>
+          <div class="text-right flex-shrink-0"><div class="text-[11px] font-bold tabular-nums text-indigo-700">${escapeHtml(it.detail)}</div>${it.composite != null ? `<div class="text-[9px] text-slate-400">score ${it.composite.toFixed(1)}</div>` : ""}</div>
         </button>`).join("")}
-        ${g.total > g.items.length ? `<div class="text-[10px] text-slate-400 px-2 pt-1">+ ${g.total - g.items.length} more</div>` : ""}
+        ${g.total > shown.length ? `<div class="text-[10px] text-slate-400 px-2 pt-1">+ ${g.total - shown.length} more</div>` : ""}
       </div>
-    </div>`).join("")}</div>`;
+    </div>`; }).join("")}</div>`;
 }
 
 function updateAlertsBadge(count) {
@@ -8628,10 +8672,10 @@ async function renderAlerts() {
       <div class="space-y-4">
         <div class="bg-gradient-to-br from-rose-50 via-white to-amber-50 rounded-2xl ring-1 ring-rose-100 p-5">
           <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Alerts</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200">${totalCount} live</span></div>
-          <div class="text-sm text-slate-600 mt-1">Configurable signal &amp; outcome alerts on the latest data — target / stop-loss hits, volume spikes, momentum and proximity, and composite crossings. Tune the rules below.</div>
+          <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>What's happening in the market right now.</strong> This watches today's data and flags stocks doing something notable — hitting a target, spiking in volume, getting overbought, or nearing a 52-week high. Click any stock to see its chart. Adjust what counts as "notable" in Settings.</div>
         </div>
-        ${renderAlertConfig(alertPrefs)}
         ${renderAlertFeed(alerts)}
+        ${renderAlertConfig(alertPrefs)}
       </div>`;
     wireAlerts();
     $$("#alerts-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
