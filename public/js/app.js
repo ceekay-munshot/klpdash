@@ -7973,6 +7973,7 @@ function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
   const slPct = (strat.sl ?? 3) / 100;
   const maxHold = Math.max(1, Math.round(strat.maxHoldDays || 30));
   const rebalDays = Math.max(1, Math.round(strat.rebalanceDays || 7));
+  const sel = strat.indicators || [];
   const capital = simP?.capital ?? ACTIVE_INITIAL_CAPITAL;
   const bufferAmt = capital * Math.max(0, simP?.bufferPct ?? 0) / 100;
   const sideRate = perSideChargeRate(simP);
@@ -7993,6 +7994,10 @@ function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
 
     const qualifying = snap.stocks
       .filter((s) => s.composite != null && s.composite >= thr && s.dataComplete && !s.hardFailed && typeof s.close === "number" && s.ticker)
+      // Indicator AND-gate — applied only on days that carry per-indicator
+      // history (techPass). Days without it fall back to composite-only,
+      // so the indicator backtest accrues forward as snapshots gain the field.
+      .filter((s) => sel.length === 0 || !Array.isArray(s.techPass) || sel.every((k) => s.techPass.includes(k)))
       .sort((a, b) => b.composite - a.composite);
     const topN = qualifying.slice(0, N);
     const topNset = new Set(topN.map((s) => s.ticker));
@@ -8211,7 +8216,7 @@ function renderTodaysNames(result, strat) {
       <div class="flex items-center gap-2 mb-1"><span class="text-base">🎯</span><h3 class="font-display font-bold text-slate-900 text-sm">Today's qualifying names</h3></div>
       <div class="text-[11px] text-slate-500 mb-2">${head}</div>
       <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Indicator selection drives <strong>live</strong> name selection — today's granular technicals, AND-gate. The backtest curve above selects by composite score; per-indicator history isn't stored yet, so the indicator backtest will accrue once we start logging it forward.</div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Indicator selection drives the <strong>live</strong> names here (today's granular technicals, AND-gate) and the backtest on every day that carries per-indicator history — logged from today forward. Earlier snapshots fall back to composite-only selection, so the indicator backtest deepens each day.</div>
     </div>`;
 }
 

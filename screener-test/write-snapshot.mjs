@@ -17,6 +17,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scoreCompositeBatch, PILLAR_WEIGHTS } from "../public/js/composite-scoring.js";
+import * as techScoring from "../public/js/tech-scoring.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FUND_PATH      = resolve(__dirname, "../public/data/screener-companies.json");
@@ -78,6 +79,19 @@ async function run() {
       liquidity:    leanPillar(p.liquidity),
     };
 
+    // Per-indicator pass list — which technical rules passed today, by
+    // rule key. Lets the Custom Lab's indicator picker filter the basket
+    // historically (the backtest "accrues forward" as snapshots gain
+    // this field). null when there's no usable tech row for the stock.
+    let techPass = null;
+    if (tc && tc.cmp != null) {
+      try {
+        techPass = techScoring.scoreCompany(tc).breakdown
+          .filter((b) => b.status === "pass")
+          .map((b) => b.key);
+      } catch { techPass = null; }
+    }
+
     return {
       ticker,
       name: fc.Company || null,
@@ -89,6 +103,7 @@ async function run() {
       dataComplete: !!s.dataComplete,
       close,
       pillars,
+      techPass,
     };
   });
 
