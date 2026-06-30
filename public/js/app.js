@@ -206,6 +206,15 @@ const CONFIGS = {
     label: "Strategy",
     active: true,
   },
+
+  // Custom Strategy Lab — user-defined backtests (playbook). Its own
+  // bespoke section + renderer, sharing the strategy engine + viz from
+  // the Strategy tab. The selection/exit knobs live only here; the
+  // fixed tabs above stay untouched (founder's "keep existing fixed").
+  custom: {
+    label: "Custom",
+    custom: true,
+  },
 };
 
 // ---------------- State ----------------
@@ -637,11 +646,13 @@ async function switchTab(tabId) {
   const hero = !!c?.hero;
   const history = !!c?.history;
   const active = !!c?.active;
-  const bespoke = hero || history || active;
+  const custom = !!c?.custom;
+  const bespoke = hero || history || active || custom;
   document.querySelectorAll("main > section").forEach((sec) => {
     if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
     else if (sec.id === "history-section") sec.classList.toggle("hidden", !history);
     else if (sec.id === "active-section") sec.classList.toggle("hidden", !active);
+    else if (sec.id === "custom-section") sec.classList.toggle("hidden", !custom);
     else sec.classList.toggle("hidden", bespoke);
   });
   if (hero) {
@@ -656,6 +667,10 @@ async function switchTab(tabId) {
   }
   if (active) {
     await renderActive();
+    return;
+  }
+  if (custom) {
+    await renderCustom();
     return;
   }
 
@@ -7898,6 +7913,414 @@ function wire() {
   $("#sources-btn")?.addEventListener("click", openSourcesModal);
   setupGlobalSearch();
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrillDown(); });
+}
+
+// ============================================================
+// CUSTOM STRATEGY LAB (Phase 4)
+// ============================================================
+// User-defined strategies (a "playbook"): each carries its own
+// composite threshold, basket size, and the three exit triggers
+// (profit target / stop-loss / max holding) plus a rebalance cadence.
+// Capital + charges are shared (simPrefs) so strategies compare on
+// equal footing. Everything backtests over the snapshot history and
+// reuses the Strategy tab's chart / KPI / per-pick / sector renderers.
+const CUSTOM_STRATS_KEY = "klpdash-custom-strategies-v1";
+const STRAT_FIELDS = [
+  { key: "threshold",     label: "Composite ≥",    min: 50, max: 90,  step: 1,   suffix: "" },
+  { key: "basketSize",    label: "Basket size",    min: 3,  max: 15,  step: 1,   suffix: " stocks" },
+  { key: "target",        label: "Target",         min: 1,  max: 30,  step: 0.5, suffix: "%" },
+  { key: "sl",            label: "Stop-loss",      min: 1,  max: 20,  step: 0.5, suffix: "%" },
+  { key: "maxHoldDays",   label: "Max holding",    min: 5,  max: 120, step: 1,   suffix: " days" },
+  { key: "rebalanceDays", label: "Rebalance every", min: 1, max: 30,  step: 1,   suffix: " days" },
+];
+function newStratId() { return "strat-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e4).toString(36); }
+function defaultStrategy(name) {
+  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7 };
+}
+function seedStrategies() {
+  return [
+    { ...defaultStrategy("Momentum · 5/3 · weekly"), target: 5, sl: 3, rebalanceDays: 7, maxHoldDays: 30 },
+    { ...defaultStrategy("Aggressive · 10/5 · 3-day"), target: 10, sl: 5, rebalanceDays: 3, maxHoldDays: 20 },
+  ];
+}
+function loadStrategies() {
+  try { const raw = JSON.parse(localStorage.getItem(CUSTOM_STRATS_KEY)); if (Array.isArray(raw) && raw.length) return raw; } catch {}
+  return seedStrategies();
+}
+function saveStrategies(list) { try { localStorage.setItem(CUSTOM_STRATS_KEY, JSON.stringify(list)); } catch {} }
+let customStrategies = loadStrategies();
+let customSelectedId = null;
+
+function lastRet(curve) { for (let i = (curve?.length || 0) - 1; i >= 0; i--) if (curve[i].retPct != null) return curve[i].retPct; return 0; }
+function fmtSignedPct(v) { return (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
+
+// Custom-strategy backtest. Walks the snapshot trail from the upload
+// anchor holding up to N stocks (composite ≥ threshold). Each day every
+// holding is checked against the three exit triggers — whichever hits
+// first books a SELL; on a rebalance day, holdings that fall out of the
+// top-N qualifying set are also dropped. Freed slots refill with the
+// best qualifiers not held. Capital, buffer and per-side charges come
+// from simPrefs (shared across strategies).
+function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
+  if (!snapshots?.length) return null;
+  let sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  if (anchorDate) sorted = sorted.filter((s) => s.date >= anchorDate);
+  if (!sorted.length) return null;
+
+  const N = Math.max(1, Math.round(strat.basketSize || 7));
+  const thr = strat.threshold ?? 75;
+  const targetPct = (strat.target ?? 5) / 100;
+  const slPct = (strat.sl ?? 3) / 100;
+  const maxHold = Math.max(1, Math.round(strat.maxHoldDays || 30));
+  const rebalDays = Math.max(1, Math.round(strat.rebalanceDays || 7));
+  const capital = simP?.capital ?? ACTIVE_INITIAL_CAPITAL;
+  const bufferAmt = capital * Math.max(0, simP?.bufferPct ?? 0) / 100;
+  const sideRate = perSideChargeRate(simP);
+
+  let cash = capital, totalCharges = 0;
+  let lastRebal = sorted[0].date;
+  const holdings = new Map();   // ticker → { units, entryDate, entryPrice, name, sector }
+  const trades = [];
+  const equity = [];
+
+  for (const snap of sorted) {
+    const date = snap.date;
+    const closeBy = new Map();
+    for (const s of snap.stocks) if (typeof s.close === "number") closeBy.set(s.ticker, s.close);
+
+    const isRebalanceDay = date === sorted[0].date || daysBetween(lastRebal, date) >= rebalDays;
+    if (isRebalanceDay) lastRebal = date;
+
+    const qualifying = snap.stocks
+      .filter((s) => s.composite != null && s.composite >= thr && s.dataComplete && !s.hardFailed && typeof s.close === "number" && s.ticker)
+      .sort((a, b) => b.composite - a.composite);
+    const topN = qualifying.slice(0, N);
+    const topNset = new Set(topN.map((s) => s.ticker));
+    const exitedToday = new Set();
+
+    // 1. Exit checks — three triggers, plus rebalance de-qualification.
+    for (const [ticker, pos] of [...holdings.entries()]) {
+      const px = closeBy.get(ticker);
+      if (typeof px !== "number") continue;
+      const gain = px / pos.entryPrice - 1;
+      let reason = null;
+      if (gain >= targetPct) reason = "TARGET";
+      else if (gain <= -slPct) reason = "SL";
+      else if (daysBetween(pos.entryDate, date) >= maxHold) reason = "TIME";
+      else if (isRebalanceDay && !topNset.has(ticker)) reason = "REBAL";
+      if (!reason) continue;
+      const gross = pos.units * px;
+      const fee = gross * sideRate;
+      cash += gross - fee; totalCharges += fee;
+      trades.push({ action: "SELL", ticker, name: pos.name, sector: pos.sector, date, price: px, entryDate: pos.entryDate, entryPrice: pos.entryPrice, days: daysBetween(pos.entryDate, date), ret: (px / pos.entryPrice - 1) * 100, reason });
+      holdings.delete(ticker);
+      exitedToday.add(ticker);
+    }
+
+    // 2. Refill empty slots with best qualifiers not held / not just exited.
+    if (holdings.size < N) {
+      for (const s of topN) {
+        if (holdings.size >= N) break;
+        if (holdings.has(s.ticker) || exitedToday.has(s.ticker)) continue;
+        let nav = cash;
+        for (const [t, p] of holdings) nav += p.units * (closeBy.get(t) ?? p.entryPrice);
+        const slot = Math.max(0, nav - bufferAmt) / N;
+        const buyValue = Math.min(slot, Math.max(0, cash) / (1 + sideRate));
+        if (buyValue < 0.01) break;
+        const fee = buyValue * sideRate;
+        holdings.set(s.ticker, { units: buyValue / s.close, entryDate: date, entryPrice: s.close, name: s.name || s.ticker, sector: s.sector || null });
+        trades.push({ action: "BUY", ticker: s.ticker, name: s.name || s.ticker, sector: s.sector || null, date, price: s.close });
+        cash -= buyValue + fee; totalCharges += fee;
+      }
+    }
+
+    // 3. Mark to market.
+    let value = cash;
+    for (const [t, p] of holdings) value += p.units * (closeBy.get(t) ?? p.entryPrice);
+    equity.push({ date, value, holdingCount: holdings.size, cash });
+  }
+  return { equity, trades, holdings, startCapital: capital, totalCharges };
+}
+
+function buildCustomPicks(sim, snapshots, todayDate, strat) {
+  const picks = [];
+  const tPct = (strat.target ?? 5) / 100, sPct = (strat.sl ?? 3) / 100;
+  for (const t of sim.trades) {
+    if (t.action !== "BUY") continue;
+    const entryPrice = t.price;
+    const target = entryPrice * (1 + tPct), sl = entryPrice * (1 - sPct);
+    const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate);
+    const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate);
+    picks.push({ ticker: t.ticker, name: t.name || t.ticker, sector: t.sector || null, entryDate: t.date, entryPrice, target, sl, targetPct: tPct * 100, slPct: -sPct * 100, ...status, peak });
+  }
+  return enrichAndSortPicks(picks);
+}
+
+// Produces a view object compatible with the Strategy tab renderers
+// (renderStrategyKpis / renderActivePickRowsSplit / renderSectorTiming /
+// renderSimPanel), so a custom strategy's deep-dive reuses all of them.
+function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks) {
+  const sim = simulateCustomStrategy(snapshots, anchorDate, strat, simPrefs);
+  if (!sim || !sim.equity.length) return null;
+  const simGross = simulateCustomStrategy(snapshots, anchorDate, strat, zeroChargePrefs(simPrefs));
+  const picks = buildCustomPicks(sim, snapshots, todayDate, strat);
+  const hitSummary = computeOverallHitSummary(picks);
+  const equityCurve = sim.equity.map((e) => ({ date: e.date, retPct: (e.value / sim.startCapital - 1) * 100 }));
+  const finalReturn = equityCurve[equityCurve.length - 1].retPct;
+  const grossEnd = simGross.equity[simGross.equity.length - 1];
+  const grossFinalReturn = (grossEnd.value / simGross.startCapital - 1) * 100;
+  const dates = equityCurve.map((e) => e.date);
+  const niftyCurve = buildNiftyCurve(dates, niftyOn);
+  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
+  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+  const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
+  return {
+    kind: "custom", strat, sim, picks, hitSummary,
+    equityCurve, niftyCurve, manualCurve, manualPicks: manualRows, manualSummary,
+    periodLabel: `${strat.name} · from ${fmtDateDMY(anchorDate)}`,
+    finalReturn, niftyRet, alpha: niftyRet != null ? finalReturn - niftyRet : null,
+    manualFinalReturn: manualCurve.length ? (manualCurve[manualCurve.length - 1].retPct ?? null) : null,
+    startDate: equityCurve[0].date, endDate: equityCurve[equityCurve.length - 1].date,
+    finalValue: sim.equity[sim.equity.length - 1].value, startCapital: sim.startCapital,
+    grossFinalReturn, totalCharges: sim.totalCharges,
+    tradeCount: sim.trades.length, liveHoldings: sim.holdings.size,
+  };
+}
+
+// Lightweight multi-curve line chart (own markup, no shared IDs) — used
+// for the overview comparison and each strategy's deep-dive.
+function renderMultiCurveChart(series, title, subtitle) {
+  const valid = (series || []).filter((s) => s.curve && s.curve.some((p) => p.retPct != null));
+  if (!valid.length) return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5 text-xs text-slate-500">No curve data yet.</div>`;
+  const W = 820, H = 240, M = { left: 48, right: 16, top: 14, bottom: 26 };
+  const innerW = W - M.left - M.right, innerH = H - M.top - M.bottom;
+  const dates = valid.reduce((best, s) => s.curve.length > best.length ? s.curve.map((p) => p.date) : best, []);
+  const allV = valid.flatMap((s) => s.curve.map((p) => p.retPct).filter((v) => v != null)).concat([0]);
+  let lo = Math.min(...allV), hi = Math.max(...allV);
+  const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
+  const n = dates.length;
+  const xAt = (i) => M.left + (i / Math.max(1, n - 1)) * innerW;
+  const yAt = (v) => M.top + innerH - ((v - lo) / (hi - lo)) * innerH;
+  const grid = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+    const v = lo + (hi - lo) * t, y = (M.top + innerH - t * innerH).toFixed(1);
+    return `<line x1="${M.left}" x2="${W - M.right}" y1="${y}" y2="${y}" stroke="#e2e8f0" stroke-width="0.7" stroke-dasharray="3 4"/><text x="${M.left - 8}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="9.5" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
+  }).join("");
+  const paths = valid.map((s) => {
+    const byDate = new Map(s.curve.map((p) => [p.date, p.retPct]));
+    let d = "", started = false;
+    dates.forEach((dt, i) => { const v = byDate.get(dt); if (v == null) return; d += `${started ? "L" : "M"} ${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)} `; started = true; });
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}" stroke-linejoin="round" stroke-linecap="round" ${s.dash ? `stroke-dasharray="${s.dash}"` : ""}/>`;
+  }).join("");
+  const tickEvery = Math.max(1, Math.ceil(n / 7));
+  const xticks = dates.map((dt, i) => (i % tickEvery !== 0 && i !== n - 1) ? "" : `<text x="${xAt(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="9.5" fill="#64748b">${dt.slice(5)}</text>`).join("");
+  const legend = valid.map((s) => { const r = lastRet(s.curve); return `<span class="inline-flex items-center gap-1.5 text-[11px] text-slate-600"><span class="w-3 h-0.5 rounded" style="background:${s.color}"></span>${escapeHtml(s.label)} <span class="tabular-nums font-semibold ${r >= 0 ? "text-emerald-700" : "text-rose-700"}">${fmtSignedPct(r)}</span></span>`; }).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-baseline justify-between gap-2 flex-wrap mb-2">
+        <div><h3 class="font-display font-bold text-slate-900 text-sm">${escapeHtml(title)}</h3>${subtitle ? `<div class="text-[11px] text-slate-500">${escapeHtml(subtitle)}</div>` : ""}</div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">${legend}</div>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:260px">
+        ${grid}
+        <line x1="${M.left}" x2="${W - M.right}" y1="${yAt(0).toFixed(1)}" y2="${yAt(0).toFixed(1)}" stroke="#cbd5e1" stroke-width="1"/>
+        ${paths}${xticks}
+      </svg>
+    </div>`;
+}
+
+function stratChip(t) { return `<span class="inline-flex items-center px-1.5 py-0 rounded bg-slate-100 text-slate-600 ring-1 ring-slate-200 text-[9px] font-semibold tabular-nums">${t}</span>`; }
+
+function renderStrategyCard(strat, view, color) {
+  const net = view?.finalReturn;
+  const dd = view ? curveMaxDrawdown(view.equityCurve) : null;
+  const up = view ? curveMaxUpside(view.equityCurve) : null;
+  const charges = view?.totalCharges ?? 0;
+  const netCls = net == null ? "text-slate-500" : net >= 0 ? "text-emerald-700" : "text-rose-700";
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 flex flex-col gap-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${color}"></span>
+          <div class="font-display font-bold text-slate-900 text-sm truncate" title="${escapeHtml(strat.name)}">${escapeHtml(strat.name)}</div>
+        </div>
+        <div class="${netCls} text-xl font-bold tabular-nums leading-none">${net == null ? "—" : fmtSignedPct(net)}</div>
+      </div>
+      <div class="flex flex-wrap gap-1">
+        ${stratChip(`T ${strat.target}%`)} ${stratChip(`SL ${strat.sl}%`)} ${stratChip(`${strat.maxHoldDays}d hold`)} ${stratChip(`rebal ${strat.rebalanceDays}d`)} ${stratChip(`top ${strat.basketSize}`)} ${stratChip(`≥${strat.threshold}`)}
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div><div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Max up</div><div class="text-xs font-bold tabular-nums text-emerald-700">${up == null ? "—" : fmtSignedPct(up)}</div></div>
+        <div><div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Max DD</div><div class="text-xs font-bold tabular-nums text-rose-700">${dd == null ? "—" : fmtSignedPct(dd)}</div></div>
+        <div><div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Charges</div><div class="text-xs font-bold tabular-nums text-slate-700">₹${Math.round(charges).toLocaleString("en-IN")}</div></div>
+      </div>
+      <div class="flex items-center gap-2 mt-auto pt-1">
+        <button type="button" data-strat-open="${strat.id}" class="flex-1 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-xs font-semibold hover:bg-indigo-100">Open</button>
+        <button type="button" data-strat-dup="${strat.id}" class="px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">Duplicate</button>
+        <button type="button" data-strat-del="${strat.id}" class="px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50">Delete</button>
+      </div>
+    </div>`;
+}
+
+function renderStrategyConfig(strat) {
+  const sliders = STRAT_FIELDS.map((f) => `
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">${f.label}</span>
+        <span class="text-xs font-bold tabular-nums text-indigo-700" data-strat-out="${f.key}">${strat[f.key]}${f.suffix}</span>
+      </div>
+      <input type="range" data-strat-field="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${strat[f.key]}" class="w-full accent-indigo-600 cursor-pointer" />
+    </div>`).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+        <input type="text" data-strat-name value="${escapeHtml(strat.name)}" class="font-display font-bold text-slate-900 text-base bg-transparent ring-1 ring-transparent hover:ring-slate-200 focus:ring-2 focus:ring-indigo-300 rounded-lg px-2 py-1 outline-none min-w-0 flex-1" />
+        <div class="flex items-center gap-3">
+          <button type="button" data-strat-dup="${strat.id}" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Duplicate</button>
+          <button type="button" data-strat-del="${strat.id}" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">Delete</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">${sliders}</div>
+      <div class="text-[10px] text-slate-400 mt-3 leading-snug">Three exit triggers, whichever hits first: profit target, stop-loss, or max holding. On each rebalance the basket refreshes to the top stocks by composite score. Capital &amp; charges are shared across strategies (panel below) so they compare on equal footing. Indicator-level selection is the next sub-phase.</div>
+    </div>`;
+}
+
+function renderCustomOverview(views) {
+  const palette = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444"];
+  const series = views.filter((v) => v.view).map((v, i) => ({ label: v.strat.name, color: palette[i % palette.length], curve: v.view.equityCurve }));
+  const firstNifty = views.find((v) => v.view?.niftyCurve?.length);
+  if (firstNifty) series.push({ label: "Nifty 50", color: "#94a3b8", curve: firstNifty.view.niftyCurve, dash: "5 4" });
+  const cards = views.map((v, i) => renderStrategyCard(v.strat, v.view, palette[i % palette.length])).join("");
+  return `
+    <div class="space-y-4">
+      <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5 flex items-start justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+          <div class="text-sm text-slate-600 mt-1">Build strategies with your own target / stop-loss / holding / rebalance, backtest them over the snapshot history, and compare. Capital &amp; charges are shared across all.</div>
+        </div>
+        <button type="button" data-strat-new class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 whitespace-nowrap">+ New strategy</button>
+      </div>
+      ${renderSimPanel(views.find((v) => v.view)?.view || {})}
+      ${renderMultiCurveChart(series, "Strategy comparison", "Cumulative return, net of charges, backtested from upload date")}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+    </div>`;
+}
+
+function renderCustomDeepDive(entry) {
+  const { strat, view } = entry;
+  if (!view) {
+    return `
+      <div class="space-y-4">
+        <button type="button" data-strat-back class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
+        ${renderStrategyConfig(strat)}
+        <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-6 text-sm text-slate-500">No qualifying picks for this strategy over the available history. Loosen the composite threshold or widen the bands.</div>
+      </div>`;
+  }
+  const series = [
+    { label: strat.name, color: "#6366f1", curve: view.equityCurve, width: 2.4 },
+    { label: "Manual", color: "#f59e0b", curve: view.manualCurve || [] },
+    { label: "Nifty 50", color: "#94a3b8", curve: view.niftyCurve || [], dash: "5 4" },
+  ];
+  return `
+    <div class="space-y-4">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <button type="button" data-strat-back class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
+        <div class="text-[11px] text-slate-500">${view.tradeCount} trades · ${view.liveHoldings} held now</div>
+      </div>
+      ${renderStrategyConfig(strat)}
+      ${renderSimPanel(view)}
+      ${renderMultiCurveChart(series, strat.name, view.periodLabel)}
+      ${renderStrategyKpis(view)}
+      ${renderActivePickRowsSplit(view)}
+      ${renderSectorTiming(view)}
+    </div>`;
+}
+
+async function renderCustom() {
+  const host = $("#custom-content");
+  if (!host) return;
+  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading Custom Lab…</div>`;
+  try {
+    try { await ensureHistoryCache(); } catch (e) { host.innerHTML = renderHistoryEmpty(e.message); return; }
+    const { snapshots, benchmark, lkp } = state.cache.history;
+    if (!snapshots.length) { host.innerHTML = renderHistoryEmpty("No snapshots loaded."); return; }
+    const anchorDate = lkpAnchorDate(lkp, snapshots);
+    const todayDate = snapshots[snapshots.length - 1].date;
+    const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+    const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+    const niftyOn = (date) => { if (!niftyClosesByDate) return null; if (niftyClosesByDate[date] != null) return niftyClosesByDate[date]; let last = null; for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; } return last; };
+    const lkpResolved = lkpOverride() || lkp;
+    const anchorMonth = anchorDate?.slice(0, 7) || null;
+    const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
+    const manualPicks = lkpResolved ? (lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []) : [];
+
+    const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
+    if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
+      host.innerHTML = renderCustomDeepDive(views.find((v) => v.strat.id === customSelectedId));
+    } else {
+      customSelectedId = null;
+      host.innerHTML = renderCustomOverview(views);
+    }
+    wireCustomTab();
+    $$("#custom-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
+      const ticker = el.dataset.ticker; if (!ticker) return;
+      const pick = buildCohortClickPick(ticker, el.dataset.cohortSide || "ai", el.dataset.segAnchor || null);
+      if (pick) openHistoryDrill(pick);
+    }));
+    $$("#custom-content [data-pick-toggle]").forEach((btn) => btn.addEventListener("click", () => {
+      const side = btn.dataset.pickToggle; const list = $(`#custom-content [data-pick-list="${side}"]`); if (!list) return;
+      const extra = list.querySelectorAll(".pick-extra-row"); const expand = btn.dataset.expanded !== "1";
+      extra.forEach((el) => { el.style.display = expand ? "" : "none"; });
+      btn.dataset.expanded = expand ? "1" : "0";
+      btn.textContent = expand ? "Show less" : `+ ${extra.length} more`;
+    }));
+  } catch (e) {
+    console.error("renderCustom failed:", e);
+    host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-rose-200 p-6"><div class="text-rose-600 font-bold text-sm">Custom Lab failed to render</div><pre class="text-[10px] text-slate-500 mt-2 whitespace-pre-wrap overflow-x-auto">${escapeHtml(e?.stack || String(e))}</pre></div>`;
+  }
+}
+
+function wireCustomTab() {
+  const root = "#custom-content";
+  $$(`${root} [data-strat-new]`).forEach((b) => b.addEventListener("click", () => {
+    const s = defaultStrategy("Strategy " + String.fromCharCode(65 + customStrategies.length));
+    customStrategies.push(s); saveStrategies(customStrategies); customSelectedId = s.id; renderCustom();
+  }));
+  $$(`${root} [data-strat-open]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = b.dataset.stratOpen; renderCustom(); }));
+  $$(`${root} [data-strat-back]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = null; renderCustom(); }));
+  $$(`${root} [data-strat-dup]`).forEach((b) => b.addEventListener("click", () => {
+    const src = customStrategies.find((s) => s.id === b.dataset.stratDup); if (!src) return;
+    const copy = { ...src, id: newStratId(), name: src.name + " (copy)" };
+    customStrategies.push(copy); saveStrategies(customStrategies); customSelectedId = copy.id; renderCustom();
+  }));
+  $$(`${root} [data-strat-del]`).forEach((b) => b.addEventListener("click", () => {
+    if (customStrategies.length <= 1) { alert("Keep at least one strategy."); return; }
+    if (!confirm("Delete this strategy?")) return;
+    const id = b.dataset.stratDel;
+    customStrategies = customStrategies.filter((s) => s.id !== id); saveStrategies(customStrategies);
+    if (customSelectedId === id) customSelectedId = null; renderCustom();
+  }));
+  $$(`${root} [data-strat-name]`).forEach((inp) => inp.addEventListener("change", () => {
+    const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
+    s.name = inp.value.trim() || s.name; saveStrategies(customStrategies); renderCustom();
+  }));
+  $$(`${root} [data-strat-field]`).forEach((inp) => {
+    inp.addEventListener("input", () => {
+      const out = $(`${root} [data-strat-out="${inp.dataset.stratField}"]`);
+      if (out) { const f = STRAT_FIELDS.find((x) => x.key === inp.dataset.stratField); out.textContent = inp.value + (f ? f.suffix : ""); }
+    });
+    inp.addEventListener("change", () => {
+      const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
+      s[inp.dataset.stratField] = parseFloat(inp.value); saveStrategies(customStrategies); renderCustom();
+    });
+  });
+  // Shared capital & charges (reused renderSimPanel) — re-run all strategies.
+  $$(`${root} [data-sim-field]`).forEach((inp) => inp.addEventListener("change", () => {
+    const key = inp.dataset.simField; const num = parseFloat(inp.value);
+    if (!Number.isFinite(num) || num < 0) { inp.value = simPrefs[key]; return; }
+    simPrefs = { ...simPrefs, [key]: num }; saveSimPrefs(simPrefs); renderCustom();
+  }));
+  const sr = $(`${root} #sim-reset`);
+  if (sr) sr.addEventListener("click", () => { simPrefs = { ...SIM_DEFAULTS }; saveSimPrefs(simPrefs); renderCustom(); });
 }
 
 wire();
