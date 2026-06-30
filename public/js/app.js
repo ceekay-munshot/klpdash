@@ -215,6 +215,13 @@ const CONFIGS = {
     label: "Custom",
     custom: true,
   },
+
+  // Alerts — configurable signal/outcome alerts evaluated on the latest
+  // data. Its own bespoke section + renderer.
+  alerts: {
+    label: "Alerts",
+    alerts: true,
+  },
 };
 
 // ---------------- State ----------------
@@ -647,12 +654,14 @@ async function switchTab(tabId) {
   const history = !!c?.history;
   const active = !!c?.active;
   const custom = !!c?.custom;
-  const bespoke = hero || history || active || custom;
+  const alerts = !!c?.alerts;
+  const bespoke = hero || history || active || custom || alerts;
   document.querySelectorAll("main > section").forEach((sec) => {
     if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
     else if (sec.id === "history-section") sec.classList.toggle("hidden", !history);
     else if (sec.id === "active-section") sec.classList.toggle("hidden", !active);
     else if (sec.id === "custom-section") sec.classList.toggle("hidden", !custom);
+    else if (sec.id === "alerts-section") sec.classList.toggle("hidden", !alerts);
     else sec.classList.toggle("hidden", bespoke);
   });
   if (hero) {
@@ -671,6 +680,10 @@ async function switchTab(tabId) {
   }
   if (custom) {
     await renderCustom();
+    return;
+  }
+  if (alerts) {
+    await renderAlerts();
     return;
   }
 
@@ -8426,6 +8439,232 @@ function wireCustomTab() {
   }));
   const sr = $(`${root} #sim-reset`);
   if (sr) sr.addEventListener("click", () => { simPrefs = { ...SIM_DEFAULTS }; saveSimPrefs(simPrefs); renderCustom(); });
+}
+
+// ============================================================
+// ALERTS (Phase 5)
+// ============================================================
+// Configurable alert center: outcome alerts (target / SL hits today on
+// the active strategy) and signal alerts (volume / momentum / proximity
+// / composite cross) evaluated against the latest snapshot + technicals.
+// Each rule has an on/off toggle and (where relevant) a threshold. All
+// adjustable, persisted locally. A nav badge shows the live count.
+const ALERT_PREFS_KEY = "klpdash-alert-prefs-v1";
+const ALERT_DEFS = [
+  { key: "targetHit",      label: "🎯 Target hit today",       desc: "A strategy pick crossed its profit target today" },
+  { key: "slHit",          label: "⚠ Stop-loss hit today",     desc: "A strategy pick hit its stop-loss today" },
+  { key: "volume",         label: "📊 Volume spike",           desc: "Today's volume ≥ N× the recent average", unit: "× vol", step: 0.1 },
+  { key: "rsiHigh",        label: "🔥 RSI overbought",          desc: "RSI(14) at or above the level", unit: "RSI ≥", step: 1 },
+  { key: "rsiLow",         label: "🧊 RSI oversold",            desc: "RSI(14) at or below the level", unit: "RSI ≤", step: 1 },
+  { key: "near52w",        label: "🚀 Near 52-week high",       desc: "Within N% of the 52-week high", unit: "% from high", step: 0.5 },
+  { key: "adx",            label: "💪 Strong trend (ADX)",      desc: "ADX(14) at or above the level", unit: "ADX ≥", step: 1 },
+  { key: "compositeCross", label: "🔀 Composite crossed 75",    desc: "Entered / exited the basket vs the previous snapshot" },
+];
+const ALERT_DEFAULTS = {
+  minComposite: 60,
+  rules: {
+    targetHit: { on: true }, slHit: { on: true },
+    volume: { on: true, threshold: 1.5 },
+    rsiHigh: { on: true, threshold: 70 },
+    rsiLow: { on: false, threshold: 35 },
+    near52w: { on: true, threshold: 3 },
+    adx: { on: false, threshold: 40 },
+    compositeCross: { on: true },
+  },
+};
+function loadAlertPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ALERT_PREFS_KEY));
+    if (raw && raw.rules) return { ...ALERT_DEFAULTS, ...raw, rules: { ...ALERT_DEFAULTS.rules, ...raw.rules } };
+  } catch {}
+  return JSON.parse(JSON.stringify(ALERT_DEFAULTS));
+}
+function saveAlertPrefs(p) { try { localStorage.setItem(ALERT_PREFS_KEY, JSON.stringify(p)); } catch {} }
+let alertPrefs = loadAlertPrefs();
+
+// Evaluate every enabled rule against the latest data. Returns grouped
+// alert lists [{ key, label, items:[{ticker,name,sector,composite,detail}], total }].
+function evaluateAlerts(snapshots, techByTicker, strategyHits, prefs) {
+  const latest = snapshots[snapshots.length - 1];
+  const prev = snapshots[snapshots.length - 2] || null;
+  const latestByTicker = new Map(latest.stocks.map((s) => [s.ticker, s]));
+  const prevByTicker = prev ? new Map(prev.stocks.map((s) => [s.ticker, s])) : new Map();
+  const minC = prefs.minComposite ?? 60;
+  const R = prefs.rules;
+  const CAP = 25;
+  const out = [];
+
+  function signalAlert(key, label, predicate, detailFn) {
+    if (!R[key]?.on) return;
+    const items = [];
+    for (const [ticker, tc] of techByTicker) {
+      const snap = latestByTicker.get(ticker);
+      if (!snap || snap.composite == null || snap.composite < minC || snap.hardFailed) continue;
+      if (!predicate(tc)) continue;
+      items.push({ ticker, name: snap.name || tc.name || ticker, sector: snap.sector, composite: snap.composite, detail: detailFn(tc) });
+    }
+    items.sort((a, b) => b.composite - a.composite);
+    if (items.length) out.push({ key, label, items: items.slice(0, CAP), total: items.length });
+  }
+
+  if (R.targetHit?.on) {
+    const items = (strategyHits?.todayHits || []).filter((h) => h.status === "TARGET_HIT")
+      .map((h) => ({ ticker: h.ticker, name: h.name || h.ticker, sector: h.sector, composite: null, detail: `${h.basket} · hit ₹${formatPrice(h.exitPrice)}` }));
+    if (items.length) out.push({ key: "targetHit", label: "🎯 Target hit today", items, total: items.length });
+  }
+  if (R.slHit?.on) {
+    const items = (strategyHits?.todayHits || []).filter((h) => h.status === "SL_HIT")
+      .map((h) => ({ ticker: h.ticker, name: h.name || h.ticker, sector: h.sector, composite: null, detail: `${h.basket} · hit ₹${formatPrice(h.exitPrice)}` }));
+    if (items.length) out.push({ key: "slHit", label: "⚠ Stop-loss hit today", items, total: items.length });
+  }
+  signalAlert("volume", "📊 Volume spike", (tc) => tc.volume_ratio_today != null && tc.volume_ratio_today >= (R.volume.threshold ?? 1.5), (tc) => `${tc.volume_ratio_today.toFixed(2)}× vol`);
+  signalAlert("rsiHigh", "🔥 RSI overbought", (tc) => tc.rsi14 != null && tc.rsi14 >= (R.rsiHigh.threshold ?? 70), (tc) => `RSI ${tc.rsi14.toFixed(0)}`);
+  signalAlert("rsiLow", "🧊 RSI oversold", (tc) => tc.rsi14 != null && tc.rsi14 <= (R.rsiLow.threshold ?? 35), (tc) => `RSI ${tc.rsi14.toFixed(0)}`);
+  signalAlert("near52w", "🚀 Near 52-week high", (tc) => tc.high_proximity_pct != null && (1 - tc.high_proximity_pct) * 100 <= (R.near52w.threshold ?? 3), (tc) => `${((1 - tc.high_proximity_pct) * 100).toFixed(1)}% from high`);
+  signalAlert("adx", "💪 Strong trend (ADX)", (tc) => tc.adx14 != null && tc.adx14 >= (R.adx.threshold ?? 40), (tc) => `ADX ${tc.adx14.toFixed(0)}`);
+  if (R.compositeCross?.on && prev) {
+    const items = [];
+    for (const [ticker, s] of latestByTicker) {
+      const p = prevByTicker.get(ticker);
+      if (!p || p.composite == null || s.composite == null) continue;
+      if (p.composite < 75 && s.composite >= 75) items.push({ ticker, name: s.name || ticker, sector: s.sector, composite: s.composite, detail: `${p.composite.toFixed(1)} → ${s.composite.toFixed(1)} · entered ▲` });
+      else if (p.composite >= 75 && s.composite < 75) items.push({ ticker, name: s.name || ticker, sector: s.sector, composite: s.composite, detail: `${p.composite.toFixed(1)} → ${s.composite.toFixed(1)} · exited ▼` });
+    }
+    items.sort((a, b) => b.composite - a.composite);
+    if (items.length) out.push({ key: "compositeCross", label: "🔀 Composite crossed 75", items, total: items.length });
+  }
+  return out;
+}
+
+function renderAlertConfig(prefs) {
+  const rows = ALERT_DEFS.map((d) => {
+    const r = prefs.rules[d.key] || { on: false };
+    const thr = d.unit
+      ? `<input type="number" data-alert-threshold="${d.key}" value="${r.threshold ?? ""}" step="${d.step}" class="w-16 rounded-lg ring-1 ring-slate-200 px-2 py-1 text-xs tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" /><span class="text-[10px] text-slate-400 whitespace-nowrap">${d.unit}</span>`
+      : "";
+    return `
+      <div class="flex items-center justify-between gap-3 py-2 border-t border-slate-100">
+        <label class="flex items-center gap-2 cursor-pointer min-w-0">
+          <input type="checkbox" data-alert-on="${d.key}" ${r.on ? "checked" : ""} class="accent-indigo-600 w-4 h-4 flex-shrink-0" />
+          <span class="min-w-0"><span class="text-sm font-semibold text-slate-800">${d.label}</span><span class="block text-[10px] text-slate-400 truncate">${d.desc}</span></span>
+        </label>
+        <div class="flex items-center gap-1.5 flex-shrink-0">${thr}</div>
+      </div>`;
+  }).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+        <div class="flex items-center gap-2"><span class="text-base">🔔</span><h3 class="font-display font-bold text-slate-900 text-sm">Alert rules</h3></div>
+        <button type="button" id="alert-reset" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Reset defaults</button>
+      </div>
+      <div class="flex items-center justify-between gap-3 py-2">
+        <span class="text-xs text-slate-600">Only alert on stocks with composite ≥</span>
+        <input type="number" data-alert-mincomposite value="${prefs.minComposite}" step="1" class="w-16 rounded-lg ring-1 ring-slate-200 px-2 py-1 text-xs tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" />
+      </div>
+      ${rows}
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Evaluated against the latest snapshot &amp; technicals. Target / stop-loss alerts read the active strategy's picks. Click any alert to open the stock's drill chart.</div>
+    </div>`;
+}
+
+function renderAlertFeed(alerts) {
+  if (!alerts.length) {
+    return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-8 text-center text-sm text-slate-500">No alerts firing right now. Loosen a threshold or enable more rules above.</div>`;
+  }
+  return `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${alerts.map((g) => `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-display font-bold text-slate-900 text-sm">${g.label}</h3>
+        <span class="text-[11px] font-semibold text-slate-500">${g.total} match${g.total === 1 ? "" : "es"}</span>
+      </div>
+      <div class="space-y-0.5">
+        ${g.items.map((it) => `<button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(it.ticker)}" class="w-full text-left flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-indigo-50/50 transition">
+          <div class="min-w-0"><div class="text-xs font-semibold text-slate-800 truncate">${escapeHtml(it.name)}</div><div class="text-[10px] text-slate-400 truncate">${escapeHtml(it.sector || "")}</div></div>
+          <div class="text-right flex-shrink-0"><div class="text-[11px] font-bold tabular-nums text-indigo-700">${escapeHtml(it.detail)}</div>${it.composite != null ? `<div class="text-[9px] text-slate-400">composite ${it.composite.toFixed(1)}</div>` : ""}</div>
+        </button>`).join("")}
+        ${g.total > g.items.length ? `<div class="text-[10px] text-slate-400 px-2 pt-1">+ ${g.total - g.items.length} more</div>` : ""}
+      </div>
+    </div>`).join("")}</div>`;
+}
+
+function updateAlertsBadge(count) {
+  const b = $("#alerts-nav-badge");
+  if (!b) return;
+  b.textContent = count;
+  b.classList.toggle("hidden", !count);
+}
+
+async function renderAlerts() {
+  const host = $("#alerts-content");
+  if (!host) return;
+  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Evaluating alerts…</div>`;
+  try {
+    try { await ensureHistoryCache(); } catch (e) { host.innerHTML = renderHistoryEmpty(e.message); return; }
+    const { snapshots, benchmark, lkp } = state.cache.history;
+    if (!snapshots.length) { host.innerHTML = renderHistoryEmpty("No snapshots loaded."); return; }
+    if (!customTechByTicker) {
+      try { const tj = await fetch("data/technicals.json").then((r) => r.json()); customTechByTicker = new Map((tj.companies || []).map((c) => [c.ticker, c])); } catch { customTechByTicker = new Map(); }
+    }
+    const anchorDate = lkpAnchorDate(lkp, snapshots);
+    const todayDate = snapshots[snapshots.length - 1].date;
+    const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
+    const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
+    const niftyOn = (date) => { if (!niftyClosesByDate) return null; if (niftyClosesByDate[date] != null) return niftyClosesByDate[date]; let last = null; for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; } return last; };
+    const lkpResolved = lkpOverride() || lkp;
+    const anchorMonth = anchorDate?.slice(0, 7) || null;
+    const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
+    const manualPicks = lkpResolved ? (lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []) : [];
+    // Active strategy hits today drive the target / SL alerts.
+    let strategyHits = { todayHits: [] };
+    try {
+      const av = buildActiveView(snapshots, anchorDate, todayDate, "daily", niftyOn, manualPicks);
+      if (av) strategyHits = collectStrategyHits(av, todayDate);
+    } catch {}
+
+    const alerts = evaluateAlerts(snapshots, customTechByTicker, strategyHits, alertPrefs);
+    const totalCount = alerts.reduce((a, g) => a + g.total, 0);
+    updateAlertsBadge(totalCount);
+
+    host.innerHTML = `
+      <div class="space-y-4">
+        <div class="bg-gradient-to-br from-rose-50 via-white to-amber-50 rounded-2xl ring-1 ring-rose-100 p-5">
+          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Alerts</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200">${totalCount} live</span></div>
+          <div class="text-sm text-slate-600 mt-1">Configurable signal &amp; outcome alerts on the latest data — target / stop-loss hits, volume spikes, momentum and proximity, and composite crossings. Tune the rules below.</div>
+        </div>
+        ${renderAlertConfig(alertPrefs)}
+        ${renderAlertFeed(alerts)}
+      </div>`;
+    wireAlerts();
+    $$("#alerts-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
+      const ticker = el.dataset.ticker; if (!ticker) return;
+      const pick = buildCohortClickPick(ticker, "ai", null);
+      if (pick) openHistoryDrill(pick);
+    }));
+  } catch (e) {
+    console.error("renderAlerts failed:", e);
+    host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-rose-200 p-6"><div class="text-rose-600 font-bold text-sm">Alerts failed to render</div><pre class="text-[10px] text-slate-500 mt-2 whitespace-pre-wrap overflow-x-auto">${escapeHtml(e?.stack || String(e))}</pre></div>`;
+  }
+}
+
+function wireAlerts() {
+  const root = "#alerts-content";
+  $$(`${root} [data-alert-on]`).forEach((inp) => inp.addEventListener("change", () => {
+    const key = inp.dataset.alertOn;
+    alertPrefs.rules[key] = { ...(alertPrefs.rules[key] || {}), on: inp.checked };
+    saveAlertPrefs(alertPrefs); renderAlerts();
+  }));
+  $$(`${root} [data-alert-threshold]`).forEach((inp) => inp.addEventListener("change", () => {
+    const key = inp.dataset.alertThreshold; const num = parseFloat(inp.value);
+    if (!Number.isFinite(num)) { inp.value = alertPrefs.rules[key]?.threshold ?? ""; return; }
+    alertPrefs.rules[key] = { ...(alertPrefs.rules[key] || {}), threshold: num };
+    saveAlertPrefs(alertPrefs); renderAlerts();
+  }));
+  const mc = $(`${root} [data-alert-mincomposite]`);
+  if (mc) mc.addEventListener("change", () => {
+    const num = parseFloat(mc.value);
+    if (Number.isFinite(num)) { alertPrefs.minComposite = num; saveAlertPrefs(alertPrefs); renderAlerts(); }
+  });
+  const reset = $(`${root} #alert-reset`);
+  if (reset) reset.addEventListener("click", () => { alertPrefs = JSON.parse(JSON.stringify(ALERT_DEFAULTS)); saveAlertPrefs(alertPrefs); renderAlerts(); });
 }
 
 wire();
