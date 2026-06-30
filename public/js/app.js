@@ -320,6 +320,63 @@ function saveActiveCadence(v) {
   try { localStorage.setItem(ACTIVE_CADENCE_KEY, v); } catch {}
 }
 
+// ── Simulation inputs: capital, cash buffer, transaction charges ──────
+// Everything here is adjustable from the Strategy tab's "Capital &
+// charges" panel and persisted locally — the "real world" layer on top
+// of the model. Defaults are realistic Indian-equity delivery rates;
+// they are deliberately NOT the client's exact figures (he hasn't sent
+// them) — they're knobs he overwrites in the dashboard, and the curve
+// recomputes. Capital is the total pot; bufferPct is held back as idle
+// cash (his "buffer for charges / maintenance" idea), the rest is
+// deployed equal-weight across the basket.
+const SIM_PREFS_KEY = "klpdash-sim-prefs-v1";
+const SIM_DEFAULTS = {
+  capital: 500000,     // ₹ total pot
+  bufferPct: 0,        // % of capital kept as idle cash reserve
+  brokeragePct: 0.03,  // % of trade value, per side
+  sttPct: 0.10,        // % of trade value, per side (approx — STT is sell-side)
+  exchangePct: 0.003,  // % of trade value, per side (exchange turnover)
+  gstPct: 18,          // % GST levied on (brokerage + exchange)
+};
+const SIM_FIELDS = [
+  { key: "capital",      label: "Capital (₹)",        step: 50000, money: true },
+  { key: "bufferPct",    label: "Cash buffer (%)",    step: 1 },
+  { key: "brokeragePct", label: "Brokerage (%/side)", step: 0.01 },
+  { key: "sttPct",       label: "STT (%/side)",       step: 0.01 },
+  { key: "exchangePct",  label: "Exchange (%/side)",  step: 0.001 },
+  { key: "gstPct",       label: "GST (%)",            step: 1 },
+];
+function loadSimPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SIM_PREFS_KEY));
+    if (raw && typeof raw === "object") return { ...SIM_DEFAULTS, ...raw };
+  } catch {}
+  return { ...SIM_DEFAULTS };
+}
+function saveSimPrefs(p) {
+  try { localStorage.setItem(SIM_PREFS_KEY, JSON.stringify(p)); } catch {}
+}
+let simPrefs = loadSimPrefs();
+
+// Per-side charge as a fraction of trade value: brokerage + STT +
+// exchange turnover, plus GST on (brokerage + exchange). The simulator
+// debits this on every buy and every sell.
+function perSideChargeRate(p = simPrefs) {
+  const brok = (p.brokeragePct || 0) / 100;
+  const stt  = (p.sttPct || 0) / 100;
+  const exch = (p.exchangePct || 0) / 100;
+  const gst  = (p.gstPct || 0) / 100;
+  return brok + stt + exch + (brok + exch) * gst;
+}
+function chargeOn(notional, p = simPrefs) {
+  return Math.max(0, notional) * perSideChargeRate(p);
+}
+// Zero-charge clone — used to compute the gross (frictionless) curve so
+// the panel can show how much the charges actually cost.
+function zeroChargePrefs(p = simPrefs) {
+  return { ...p, brokeragePct: 0, sttPct: 0, exchangePct: 0, gstPct: 0 };
+}
+
 // History tab sub-view ("history" | "accuracy"). Toggled by an inline
 // switch below the Performance Tracker; persisted in localStorage so
 // the analyst's last choice survives reloads.
@@ -3935,7 +3992,7 @@ function renderHistoryEmpty(reason) {
 // friction.
 const ACTIVE_INITIAL_CAPITAL = 100000;
 
-function simulateActiveBasket(snapshots, anchorDate) {
+function simulateActiveBasket(snapshots, anchorDate, simP = simPrefs) {
   if (!snapshots?.length) return null;
   // Anchor at the client upload date when supplied (the founder's
   // "everything starts from upload" rule). Filter to snapshots ON or
@@ -3944,7 +4001,17 @@ function simulateActiveBasket(snapshots, anchorDate) {
   if (anchorDate) sorted = sorted.filter((s) => s.date >= anchorDate);
   if (!sorted.length) return null;
 
-  let cash = ACTIVE_INITIAL_CAPITAL;
+  // Real-world inputs: total pot, an idle cash buffer held back from
+  // deployment, and a per-side transaction charge applied to every BUY
+  // (position open) and SELL (position exit). Internal daily equal-weight
+  // trims / top-ups are model housekeeping — charging them would explode
+  // costs unrealistically — so charges land only on real basket changes,
+  // the round-trip the client actually pays per holding.
+  const capital = simP?.capital ?? ACTIVE_INITIAL_CAPITAL;
+  const bufferAmt = capital * Math.max(0, simP?.bufferPct ?? 0) / 100;
+  const sideRate = perSideChargeRate(simP);
+  let cash = capital;
+  let totalCharges = 0;
   const holdings = new Map();   // ticker → { units, entryDate, entryPrice, name, sector }
   const trades = [];            // BUY (new entrant) / SELL (basket exit), time-ordered
   const equity = [];            // { date, value, holdingCount, cash }
@@ -3966,7 +4033,10 @@ function simulateActiveBasket(snapshots, anchorDate) {
       if (targetByTicker.has(ticker)) continue;
       const exitPrice = closeByTicker.get(ticker);
       if (typeof exitPrice !== "number") continue;   // carry to next day if missing close
-      cash += pos.units * exitPrice;
+      const gross = pos.units * exitPrice;
+      const fee = gross * sideRate;
+      cash += gross - fee;
+      totalCharges += fee;
       const ret = (exitPrice / pos.entryPrice - 1) * 100;
       trades.push({
         action: "SELL",
@@ -3989,7 +4059,9 @@ function simulateActiveBasket(snapshots, anchorDate) {
         const px = closeByTicker.get(ticker) ?? pos.entryPrice;
         nav += pos.units * px;
       }
-      const targetValuePerStock = nav / target.length;
+      // Hold the buffer back as idle cash; deploy the rest equal-weight.
+      const deployable = Math.max(0, nav - bufferAmt);
+      const targetValuePerStock = deployable / target.length;
 
       // Adjust continuing positions to target value. On top-ups, update
       // entry price to weighted-average cost basis so closed-trade
@@ -4018,8 +4090,10 @@ function simulateActiveBasket(snapshots, anchorDate) {
       // Open new entrants at the target weight. Cap by remaining cash
       // so floating-point dust can't push cash negative.
       for (const e of newEntries) {
-        const buyValue = Math.min(targetValuePerStock, cash);
+        // Cap so buyValue + its charge can't overdraw cash.
+        const buyValue = Math.min(targetValuePerStock, Math.max(0, cash) / (1 + sideRate));
         if (buyValue < 0.01) continue;
+        const fee = buyValue * sideRate;
         const units = buyValue / e.close;
         holdings.set(e.ticker, {
           units, entryDate: date, entryPrice: e.close,
@@ -4030,7 +4104,8 @@ function simulateActiveBasket(snapshots, anchorDate) {
           ticker: e.ticker, name: e.name || e.ticker, sector: e.sector || null,
           date, price: e.close,
         });
-        cash -= buyValue;
+        cash -= buyValue + fee;
+        totalCharges += fee;
       }
     }
 
@@ -4043,7 +4118,7 @@ function simulateActiveBasket(snapshots, anchorDate) {
     equity.push({ date, value, holdingCount: holdings.size, cash });
   }
 
-  return { equity, trades, holdings, startCapital: ACTIVE_INITIAL_CAPITAL };
+  return { equity, trades, holdings, startCapital: capital, totalCharges };
 }
 
 // Derived stats from a simulation result + Nifty 50 closes for alpha.
@@ -4181,6 +4256,21 @@ async function renderActive() {
       btn.dataset.expanded = expand ? "1" : "0";
       btn.textContent = expand ? "Show less" : `+ ${extra.length} more`;
     }));
+    // Capital & charges panel — any change recomputes the whole strategy.
+    $$("#active-content [data-sim-field]").forEach((inp) => inp.addEventListener("change", () => {
+      const key = inp.dataset.simField;
+      const num = parseFloat(inp.value);
+      if (!Number.isFinite(num) || num < 0) { inp.value = simPrefs[key]; return; }
+      simPrefs = { ...simPrefs, [key]: num };
+      saveSimPrefs(simPrefs);
+      renderActive();
+    }));
+    const simReset = $("#sim-reset");
+    if (simReset) simReset.addEventListener("click", () => {
+      simPrefs = { ...SIM_DEFAULTS };
+      saveSimPrefs(simPrefs);
+      renderActive();
+    });
     // Chart hover crosshair + tooltip
     setupActiveChartHover(view);
   } catch (e) {
@@ -4205,16 +4295,21 @@ async function renderActive() {
 //   manualCurve, manualPicks, manualSummary, periodLabel, ... }.
 function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks) {
   if (cadence === "daily") {
-    const sim = simulateActiveBasket(snapshots, anchorDate);
+    const sim = simulateActiveBasket(snapshots, anchorDate, simPrefs);
     if (!sim || !sim.equity.length) return null;
+    // Frictionless twin — same allocation, zero charges — so we can show
+    // how much the charges actually cost (gross vs net).
+    const simGross = simulateActiveBasket(snapshots, anchorDate, zeroChargePrefs(simPrefs));
     const picks = buildActiveDailyPicks(sim, snapshots, todayDate);
     const hitSummary = computeOverallHitSummary(picks);
     const start = sim.equity[0];
     const end = sim.equity[sim.equity.length - 1];
-    const finalReturn = (end.value / start.value - 1) * 100;
+    const equityCurve = sim.equity.map((e) => ({ date: e.date, retPct: (e.value / sim.startCapital - 1) * 100 }));
+    const finalReturn = equityCurve[equityCurve.length - 1].retPct;
+    const grossEnd = simGross.equity[simGross.equity.length - 1];
+    const grossFinalReturn = (grossEnd.value / simGross.startCapital - 1) * 100;
     const nStart = niftyOn(start.date), nEnd = niftyOn(end.date);
     const niftyRet = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
-    const equityCurve = sim.equity.map((e) => ({ date: e.date, retPct: (e.value / sim.startCapital - 1) * 100 }));
     const dates = equityCurve.map((e) => e.date);
     const niftyCurve = buildNiftyCurve(dates, niftyOn);
     const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
@@ -4234,6 +4329,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
       manualFinalReturn: manualCurve.length ? (manualCurve[manualCurve.length - 1].retPct ?? null) : null,
       startDate: start.date, endDate: end.date,
       finalValue: end.value, startCapital: sim.startCapital,
+      grossFinalReturn, totalCharges: sim.totalCharges,
       tradeCount: sim.trades.length,
       liveHoldings: sim.holdings.size,
     };
@@ -4249,13 +4345,20 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   if (!segments.length) return null;
   const picks = buildActiveSegmentedPicks(segments, snapshots, todayDate);
   const hitSummary = computeOverallHitSummary(picks);
-  const equityCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate);
+  const sideRate = perSideChargeRate(simPrefs);
+  const equityCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate);
+  const grossCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate, 0);
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
   const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
   const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
   const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
+  const grossFinalReturn = grossCurve.length ? grossCurve[grossCurve.length - 1].retPct : finalReturn;
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
+  const capital = simPrefs.capital ?? ACTIVE_INITIAL_CAPITAL;
+  const finalValue = capital * (1 + finalReturn / 100);
+  // Charges in ₹ ≈ the gap the costs opened between gross and net pots.
+  const totalCharges = capital * (grossFinalReturn - finalReturn) / 100;
   const cadenceLabel = cadence === "weekly" ? "Weekly re-lock" : cadence === "monthly" ? "Monthly re-lock" : "Passive (basket frozen)";
   return {
     kind: cadence,
@@ -4268,6 +4371,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     manualFinalReturn: manualCurve.length ? (manualCurve[manualCurve.length - 1].retPct ?? null) : null,
     startDate: equityCurve.length ? equityCurve[0].date : anchorDate,
     endDate: equityCurve.length ? equityCurve[equityCurve.length - 1].date : todayDate,
+    finalValue, startCapital: capital, grossFinalReturn, totalCharges,
   };
 }
 
@@ -4405,12 +4509,18 @@ function buildActiveSegmentChain(snapshots, anchorDate, periodDays) {
 // Composite per-day equity curve across all segments. Each segment's
 // average basket return is multiplicatively chained to the previous
 // segment's end-factor (so a +5% week followed by +3% week = +8.15%).
-function buildSegmentedEquityCurve(segments, snapshots, anchorDate) {
+// sideRate (per-side charge fraction) nets out transaction costs: each
+// re-lock is a round-trip (sell the old basket, buy the new one), and
+// the very first segment is a buy only. Pass 0 for the gross curve.
+function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0) {
   if (!segments.length) return [];
   const curve = [];
   let prevFactor = 1.0;
   curve.push({ date: anchorDate, retPct: 0 });
-  for (const seg of segments) {
+  segments.forEach((seg, si) => {
+    // Charge to (re)lock this basket: a buy on the first segment, a full
+    // round-trip (sell previous + buy current) on every re-lock after.
+    prevFactor *= (1 - (si === 0 ? sideRate : 2 * sideRate));
     const entryCloses = {};
     for (const s of seg.top7) entryCloses[s.ticker] = s.close;
     let lastFactor = 1.0;
@@ -4433,7 +4543,7 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate) {
       else curve.push({ date: day.date, retPct: cum });
     }
     prevFactor *= lastFactor;
-  }
+  });
   return curve;
 }
 
@@ -4557,6 +4667,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${cadenceBar}
       ${renderTodayHitsBanner(hits, todayDate)}
       ${renderActiveHero(view, cadence, mode)}
+      ${renderSimPanel(view)}
       ${renderActiveCumulativeChart(view)}
       ${renderStrategyKpis(view)}
       ${renderActiveOverallHitsSplit(view)}
@@ -4745,6 +4856,62 @@ function renderActiveHero(view, cadence, mode) {
       </div>
     </div>
   `;
+}
+
+// "Capital & charges" — the real-world money layer. Shows ₹ capital
+// growth net of transaction costs and exposes every input (capital,
+// cash buffer, charge rates) as a knob. Founder ask: "if a user comes
+// with ₹5L, how does it grow net of charges." All cadences supported.
+function moneySimTile(label, value, sub, valueCls = "text-slate-900") {
+  return `
+    <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/60 px-3 py-2">
+      <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">${label}</div>
+      <div class="text-base font-display font-bold ${valueCls} tabular-nums mt-0.5 truncate">${value}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5 truncate">${sub}</div>
+    </div>`;
+}
+
+function renderSimPanel(view) {
+  const p = simPrefs;
+  const money = (n) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+  const pct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const net = view.finalReturn;
+  const gross = view.grossFinalReturn;
+  const drag = (gross != null && net != null) ? gross - net : null;
+  const cap = view.startCapital ?? p.capital;
+  const val = view.finalValue ?? cap;
+  const charges = view.totalCharges ?? 0;
+  const netCls = net == null ? "text-slate-900" : net >= 0 ? "text-emerald-700" : "text-rose-700";
+
+  const inputs = SIM_FIELDS.map((f) => `
+    <label class="flex flex-col gap-1">
+      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">${f.label}</span>
+      <input type="number" data-sim-field="${f.key}" value="${p[f.key]}" step="${f.step}" min="0"
+             class="w-full rounded-lg ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-300 px-2 py-1.5 text-sm tabular-nums outline-none" />
+    </label>`).join("");
+
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-base">💰</span>
+          <h3 class="font-display font-bold text-slate-900 text-sm">Capital &amp; charges</h3>
+          <span class="text-[10px] text-slate-400 hidden sm:inline">net of transaction costs</span>
+        </div>
+        <button type="button" id="sim-reset" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Reset defaults</button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        ${moneySimTile("Capital deployed", money(cap), "starting pot")}
+        ${moneySimTile("Value now · net", money(val), pct(net) + " net of charges", netCls)}
+        ${moneySimTile("Charges paid", money(charges), drag != null ? `${drag >= 0 ? "−" : "+"}${Math.abs(drag).toFixed(2)}% drag` : "")}
+        ${moneySimTile("Gross · no charges", pct(gross), "frictionless model")}
+      </div>
+      <details class="group">
+        <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Adjust capital, buffer &amp; charge rates ▾</summary>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-3">${inputs}</div>
+        <div class="text-[10px] text-slate-400 mt-2 leading-snug">Charges apply on every buy &amp; sell (round-trip per holding); daily internal rebalancing isn't charged. Cash buffer is held back from deployment. Rates are placeholders — overwrite with the client's actual figures and the curve recomputes.</div>
+      </details>
+    </div>`;
 }
 
 // Chart geometry kept in module-level constants so the hover setup
@@ -5407,7 +5574,7 @@ function renderActivePickColumn(title, palette, picks, side) {
 function renderActiveBetaCaveat(view, anchorDate) {
   return `
     <div class="text-xs text-slate-500 bg-slate-50 ring-1 ring-slate-200 rounded-xl p-3 leading-relaxed">
-      <strong>Beta caveat</strong> — strategy backtested from client upload date (${fmtDateDMY(anchorDate)}). Buys + sells transact at the same EOD close that marks the portfolio to market, so entry-day P&amp;L is zero by construction. No brokerage, slippage, or STT modelled yet (we'll revisit before promoting beyond Beta).
+      <strong>Beta caveat</strong> — strategy backtested from client upload date (${fmtDateDMY(anchorDate)}). Buys + sells transact at the same EOD close that marks the portfolio to market, so entry-day P&amp;L is zero by construction. Brokerage, STT, exchange &amp; GST are modelled via the Capital &amp; charges panel (round-trip per holding; rates editable) — slippage is not modelled yet.
     </div>
   `;
 }
