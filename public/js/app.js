@@ -7935,7 +7935,7 @@ const STRAT_FIELDS = [
 ];
 function newStratId() { return "strat-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e4).toString(36); }
 function defaultStrategy(name) {
-  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7 };
+  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, indicators: [] };
 }
 function seedStrategies() {
   return [
@@ -8161,6 +8161,60 @@ function renderStrategyCard(strat, view, color) {
     </div>`;
 }
 
+// Today's granular technicals (current per-indicator values), fetched
+// once and joined by ticker. Lets the indicator picker evaluate live
+// pass/fail per stock using the real tech-scoring rule functions.
+let customTechByTicker = null;
+
+// AND-gate: a stock passes only if every selected indicator is "pass"
+// on today's granular data. No selection → no indicator constraint.
+function passesIndicators(techCo, selectedKeys) {
+  if (!selectedKeys || !selectedKeys.length) return true;
+  for (const key of selectedKeys) {
+    const rule = tech.ACTIVE_RULES.find((r) => r.key === key);
+    if (!rule) continue;
+    const res = techCo ? rule.fn(techCo) : { status: "na" };
+    if (res.status !== "pass") return false;
+  }
+  return true;
+}
+
+// The names this strategy would pick RIGHT NOW: composite ≥ threshold,
+// passing all selected indicators (evaluated on today's technicals),
+// ranked by composite, capped at basket size.
+function buildTodaysNames(strat, latestSnap, techByTicker) {
+  const N = Math.max(1, Math.round(strat.basketSize || 7));
+  const thr = strat.threshold ?? 75;
+  const sel = strat.indicators || [];
+  const rows = [];
+  for (const s of (latestSnap?.stocks || [])) {
+    if (s.composite == null || s.composite < thr || !s.dataComplete || s.hardFailed || s.composite == null) continue;
+    if (!passesIndicators(techByTicker.get(s.ticker), sel)) continue;
+    rows.push({ ticker: s.ticker, name: s.name || s.ticker, sector: s.sector, composite: s.composite });
+  }
+  rows.sort((a, b) => b.composite - a.composite);
+  return { picks: rows.slice(0, N), qualifyingCount: rows.length };
+}
+
+function renderTodaysNames(result, strat) {
+  const sel = strat.indicators || [];
+  const head = sel.length
+    ? `${result.qualifyingCount} stock${result.qualifyingCount === 1 ? "" : "s"} pass composite ≥ ${strat.threshold} AND all ${sel.length} selected indicator${sel.length === 1 ? "" : "s"} today`
+    : `Top ${strat.basketSize} by composite ≥ ${strat.threshold} today (no indicator filter set)`;
+  const rows = result.picks.map((p) => `
+    <div class="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50">
+      <div class="min-w-0"><div class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="text-[10px] text-slate-400 truncate">${escapeHtml(p.sector || "")}</div></div>
+      <div class="text-right"><div class="text-xs font-bold tabular-nums text-indigo-700">${p.composite.toFixed(1)}</div><div class="text-[9px] text-slate-400 uppercase tracking-wider">composite</div></div>
+    </div>`).join("") || `<div class="text-xs text-slate-500 px-2 py-3">No stocks pass all selected indicators today — loosen the selection.</div>`;
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center gap-2 mb-1"><span class="text-base">🎯</span><h3 class="font-display font-bold text-slate-900 text-sm">Today's qualifying names</h3></div>
+      <div class="text-[11px] text-slate-500 mb-2">${head}</div>
+      <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Indicator selection drives <strong>live</strong> name selection — today's granular technicals, AND-gate. The backtest curve above selects by composite score; per-indicator history isn't stored yet, so the indicator backtest will accrue once we start logging it forward.</div>
+    </div>`;
+}
+
 function renderStrategyConfig(strat) {
   const sliders = STRAT_FIELDS.map((f) => `
     <div>
@@ -8180,8 +8234,33 @@ function renderStrategyConfig(strat) {
         </div>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">${sliders}</div>
-      <div class="text-[10px] text-slate-400 mt-3 leading-snug">Three exit triggers, whichever hits first: profit target, stop-loss, or max holding. On each rebalance the basket refreshes to the top stocks by composite score. Capital &amp; charges are shared across strategies (panel below) so they compare on equal footing. Indicator-level selection is the next sub-phase.</div>
+      <div class="text-[10px] text-slate-400 mt-3 leading-snug">Three exit triggers, whichever hits first: profit target, stop-loss, or max holding. On each rebalance the basket refreshes to the top stocks by composite score. Capital &amp; charges are shared across strategies (panel below) so they compare on equal footing.</div>
+      ${renderIndicatorPicker(strat)}
     </div>`;
+}
+
+// Advanced settings — choose which technical indicators a stock must
+// pass (AND-gate) to qualify. Drives today's live names; grouped by the
+// tech-scoring categories. None checked = composite-only selection.
+function renderIndicatorPicker(strat) {
+  const sel = new Set(strat.indicators || []);
+  const cats = {};
+  tech.ACTIVE_RULES.forEach((r) => { (cats[r.category] = cats[r.category] || []).push(r); });
+  const groups = Object.entries(cats).map(([cat, rules]) => `
+    <div>
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">${escapeHtml(cat)}</div>
+      <div class="space-y-1.5">
+        ${rules.map((r) => `<label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+          <input type="checkbox" data-strat-indicator="${r.key}" ${sel.has(r.key) ? "checked" : ""} class="accent-indigo-600 w-3.5 h-3.5" />
+          <span class="truncate" title="${escapeHtml(r.criteria || r.label)}">${escapeHtml(r.label)}</span></label>`).join("")}
+      </div>
+    </div>`).join("");
+  return `
+    <details class="mt-3" ${sel.size ? "open" : ""}>
+      <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — choose technical indicators (${sel.size} selected) ▾</summary>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3 mt-3">${groups}</div>
+      <div class="text-[10px] text-slate-400 mt-3">A stock qualifies only if it passes <strong>all</strong> checked indicators (AND-gate). None checked = composite-only. Fundamentals/sentiment indicators &amp; the client's revised parameter list slot in here next.</div>
+    </details>`;
 }
 
 function renderCustomOverview(views) {
@@ -8205,13 +8284,15 @@ function renderCustomOverview(views) {
     </div>`;
 }
 
-function renderCustomDeepDive(entry) {
+function renderCustomDeepDive(entry, todaysNames) {
   const { strat, view } = entry;
+  const todaysBlock = todaysNames ? renderTodaysNames(todaysNames, strat) : "";
   if (!view) {
     return `
       <div class="space-y-4">
         <button type="button" data-strat-back class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
         ${renderStrategyConfig(strat)}
+        ${todaysBlock}
         <div class="bg-white rounded-2xl ring-1 ring-slate-200 p-6 text-sm text-slate-500">No qualifying picks for this strategy over the available history. Loosen the composite threshold or widen the bands.</div>
       </div>`;
   }
@@ -8227,6 +8308,7 @@ function renderCustomDeepDive(entry) {
         <div class="text-[11px] text-slate-500">${view.tradeCount} trades · ${view.liveHoldings} held now</div>
       </div>
       ${renderStrategyConfig(strat)}
+      ${todaysBlock}
       ${renderSimPanel(view)}
       ${renderMultiCurveChart(series, strat.name, view.periodLabel)}
       ${renderStrategyKpis(view)}
@@ -8253,9 +8335,20 @@ async function renderCustom() {
     const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
     const manualPicks = lkpResolved ? (lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []) : [];
 
+    // Granular technicals (today) — fetched once, joined by ticker, so
+    // the indicator picker can evaluate live pass/fail per stock.
+    if (!customTechByTicker) {
+      try {
+        const tj = await fetch("data/technicals.json").then((r) => r.json());
+        customTechByTicker = new Map((tj.companies || []).map((c) => [c.ticker, c]));
+      } catch { customTechByTicker = new Map(); }
+    }
+
     const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
     if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
-      host.innerHTML = renderCustomDeepDive(views.find((v) => v.strat.id === customSelectedId));
+      const entry = views.find((v) => v.strat.id === customSelectedId);
+      const todaysNames = buildTodaysNames(entry.strat, snapshots[snapshots.length - 1], customTechByTicker);
+      host.innerHTML = renderCustomDeepDive(entry, todaysNames);
     } else {
       customSelectedId = null;
       host.innerHTML = renderCustomOverview(views);
@@ -8313,6 +8406,13 @@ function wireCustomTab() {
       s[inp.dataset.stratField] = parseFloat(inp.value); saveStrategies(customStrategies); renderCustom();
     });
   });
+  // Indicator checkboxes (AND-gate selection) — toggle + re-run.
+  $$(`${root} [data-strat-indicator]`).forEach((inp) => inp.addEventListener("change", () => {
+    const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
+    const set = new Set(s.indicators || []);
+    if (inp.checked) set.add(inp.dataset.stratIndicator); else set.delete(inp.dataset.stratIndicator);
+    s.indicators = [...set]; saveStrategies(customStrategies); renderCustom();
+  }));
   // Shared capital & charges (reused renderSimPanel) — re-run all strategies.
   $$(`${root} [data-sim-field]`).forEach((inp) => inp.addEventListener("change", () => {
     const key = inp.dataset.simField; const num = parseFloat(inp.value);
