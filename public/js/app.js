@@ -4170,6 +4170,17 @@ async function renderActive() {
       const pick = buildCohortClickPick(ticker, side, segAnchor);
       if (pick) openHistoryDrill(pick);
     }));
+    // "+ N more" — expand / collapse the per-pick column preview in place.
+    $$("#active-content [data-pick-toggle]").forEach((btn) => btn.addEventListener("click", () => {
+      const side = btn.dataset.pickToggle;
+      const list = $(`#active-content [data-pick-list="${side}"]`);
+      if (!list) return;
+      const extra = list.querySelectorAll(".pick-extra-row");
+      const expand = btn.dataset.expanded !== "1";
+      extra.forEach((el) => { el.style.display = expand ? "" : "none"; });
+      btn.dataset.expanded = expand ? "1" : "0";
+      btn.textContent = expand ? "Show less" : `+ ${extra.length} more`;
+    }));
     // Chart hover crosshair + tooltip
     setupActiveChartHover(view);
   } catch (e) {
@@ -5306,10 +5317,20 @@ function renderActivePickColumn(title, palette, picks, side) {
       </div>`;
   }
   const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
-  const rows = picks.map((r) => {
+  // Collapse long columns (AI accumulates a row per week×stock) to a
+  // preview that lines up with the shorter Manual column; a "+ N more"
+  // button expands the rest in place. Founder ask: keep the two columns
+  // visually level, no big scroll.
+  const PICK_PREVIEW_LIMIT = 7;
+  const rows = picks.map((r, i) => {
+    // Overflow rows are hidden via inline display:none (always wins over
+    // the grid/flex utility classes) and toggled by the "+ N more" button.
+    const isExtra = i >= PICK_PREVIEW_LIMIT;
+    const extraCls = isExtra ? " pick-extra-row" : "";
+    const extraStyle = isExtra ? ' style="display:none"' : "";
     if (r.notCovered) {
       return `
-        <div class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg bg-slate-50/40">
+        <div${extraStyle} class="grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg bg-slate-50/40${extraCls}">
           <div class="col-span-8 min-w-0">
             <div class="font-semibold text-slate-500 text-xs truncate" title="${escapeHtml(r.outReason || "")}">${escapeHtml(r.name)}</div>
             <div class="text-[10px] text-slate-400 truncate">${escapeHtml(r.outReason || "")}</div>
@@ -5346,7 +5367,7 @@ function renderActivePickColumn(title, palette, picks, side) {
           <span title="Worst drawdown since entry and days taken to reach it" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-50 text-rose-700 ring-1 ring-rose-200 text-[9px] font-semibold tabular-nums">▼ ${fmtPct(peak.maxDownsidePct)} · ${peak.daysToMaxDownside}d</span>
         </div>` : "";
     return `
-      <button type="button" data-cohort-row data-cohort-side="${side}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-x-2 gap-y-0 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint} hover:ring-1 hover:ring-indigo-200">
+      <button type="button"${extraStyle} data-cohort-row data-cohort-side="${side}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-x-2 gap-y-0 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint}${extraCls} hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
@@ -5373,7 +5394,10 @@ function renderActivePickColumn(title, palette, picks, side) {
         </div>
         <span class="text-[11px] text-slate-500">${picks.filter((p) => !p.notCovered).length} trackable</span>
       </div>
-      <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1 space-y-0.5">${rows}</div>
+      <div data-pick-list="${side}" class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 px-1 py-1 space-y-0.5">${rows}</div>
+      ${picks.length > PICK_PREVIEW_LIMIT
+        ? `<button type="button" data-pick-toggle="${side}" data-expanded="0" class="mt-2 w-full text-center text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 py-1.5 rounded-lg ring-1 ring-indigo-200 hover:bg-indigo-50/60 transition">+ ${picks.length - PICK_PREVIEW_LIMIT} more</button>`
+        : ""}
     </div>
   `;
 }
@@ -5899,6 +5923,34 @@ function openHistoryDrill(pick) {
   const retSubHtml = isLkp ? "vs entry midpoint" : `over ${pick.days} day${pick.days === 1 ? "" : "s"}`;
   const midBlockHtml = isLkp ? renderLkpTargets(pick) : renderScoreForensics(pick);
 
+  // Peak excursion since entry — same numbers as the per-pick row
+  // nuggets, expanded here with the exact peak / trough dates. Walks
+  // this ticker's price trail forward from the entry anchor.
+  const exEntryDate = pick.firstSBDate || state.cache.history?.cohortAnchor || points[0].date;
+  const exEntryPrice = (typeof pick.firstSBClose === "number") ? pick.firstSBClose
+    : (typeof levelAnchor === "number" && levelAnchor) ? levelAnchor
+    : points[0].close;
+  let exUp = null, exUpD = null, exDn = null, exDnD = null;
+  for (const p of points) {
+    if (p.date < exEntryDate || p.date > todayDate) continue;
+    const pct = (p.close / exEntryPrice - 1) * 100;
+    if (exUp == null || pct > exUp) { exUp = pct; exUpD = p.date; }
+    if (exDn == null || pct < exDn) { exDn = pct; exDnD = p.date; }
+  }
+  const excursionHtml = exUp != null ? `
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div class="rounded-xl ring-1 ring-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 px-3 py-2">
+          <div class="text-[9px] font-bold uppercase tracking-wider text-emerald-700">Max upside since entry</div>
+          <div class="text-sm font-display font-bold text-slate-900 mt-0.5 tabular-nums">${exUp >= 0 ? "+" : ""}${exUp.toFixed(2)}% <span class="text-[11px] font-semibold text-slate-500">· ${daysBetween(exEntryDate, exUpD)}d</span></div>
+          <div class="text-[11px] text-slate-600 mt-0.5">peak on ${fmtDateDMY(exUpD)}</div>
+        </div>
+        <div class="rounded-xl ring-1 ring-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 px-3 py-2">
+          <div class="text-[9px] font-bold uppercase tracking-wider text-rose-700">Max drawdown since entry</div>
+          <div class="text-sm font-display font-bold text-slate-900 mt-0.5 tabular-nums">${exDn >= 0 ? "+" : ""}${exDn.toFixed(2)}% <span class="text-[11px] font-semibold text-slate-500">· ${daysBetween(exEntryDate, exDnD)}d</span></div>
+          <div class="text-[11px] text-slate-600 mt-0.5">low on ${fmtDateDMY(exDnD)}</div>
+        </div>
+      </div>` : "";
+
   // Reason panel for currently-FILTERED stocks. Snapshots store only the
   // hardFailed boolean (not which rules fired), so we render a placeholder
   // immediately and asynchronously fetch the live composite for this ticker
@@ -5947,6 +5999,7 @@ function openHistoryDrill(pick) {
         </div>
       </div>
 
+      ${excursionHtml}
       ${hardFailPanelHtml}
       ${midBlockHtml}
 
