@@ -4574,6 +4574,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
     picks.push({
       ticker: t.ticker,
       name: t.name || t.ticker,
+      sector: t.sector || null,
       entryDate: t.date,
       entryPrice, target, sl,
       targetPct: AI_TARGET_PCT * 100,
@@ -4600,6 +4601,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
       picks.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
+        sector: s.sector || null,
         entryDate: seg.startDate,
         entryPrice: s.close,
         target, sl,
@@ -4673,6 +4675,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${renderActiveOverallHitsSplit(view)}
       ${renderActiveSegmentedBaskets(view, mode)}
       ${renderActivePickRowsSplit(view)}
+      ${renderSectorTiming(view)}
       ${renderActiveBetaCaveat(view, anchorDate)}
     </div>
   `;
@@ -5570,6 +5573,80 @@ function renderActivePickColumn(title, palette, picks, side) {
 }
 
 // Renderers moved above renderActiveBetaCaveat (split AI / Manual layouts).
+
+// Sector rebalance-timing roll-up. Groups this cadence's AI picks by
+// sector and averages each sector's peak excursion + days-to-peak — so
+// the desk reads the natural rebalance horizon per sector (founder ask:
+// "defense peaks in ~10 days, real estate ~3 — rebalance each on its own
+// clock"). Built on the same per-pick excursion data as the nuggets.
+function buildSectorTiming(picks) {
+  const groups = new Map();
+  for (const p of (picks || [])) {
+    if (!p.peak || !p.sector) continue;
+    if (!groups.has(p.sector)) groups.set(p.sector, []);
+    groups.get(p.sector).push(p);
+  }
+  const mean = (arr) => arr.reduce((a, v) => a + v, 0) / arr.length;
+  const rows = [];
+  for (const [sector, ps] of groups.entries()) {
+    rows.push({
+      sector, n: ps.length,
+      avgUpside: mean(ps.map((p) => p.peak.maxUpsidePct)),
+      avgDaysToPeak: mean(ps.map((p) => p.peak.daysToMaxUpside)),
+      avgDownside: mean(ps.map((p) => p.peak.maxDownsidePct)),
+      avgDaysToTrough: mean(ps.map((p) => p.peak.daysToMaxDownside)),
+      suggestedRebalance: Math.max(1, Math.round(mean(ps.map((p) => p.peak.daysToMaxUpside)))),
+    });
+  }
+  // Fastest-peaking sectors first; ties broken by larger (less noisy) sample.
+  rows.sort((a, b) => a.avgDaysToPeak - b.avgDaysToPeak || b.n - a.n);
+  return rows;
+}
+
+function renderSectorTiming(view) {
+  const rows = buildSectorTiming(view.picks);
+  if (!rows.length) return "";
+  const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const body = rows.map((r) => `
+    <tr class="border-t border-slate-100">
+      <td class="py-2 pr-2 min-w-0">
+        <div class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(r.sector)}">${escapeHtml(r.sector)}</div>
+        <div class="text-[10px] text-slate-400">${r.n} pick${r.n === 1 ? "" : "s"}</div>
+      </td>
+      <td class="py-2 px-2 text-right tabular-nums text-emerald-700 font-semibold">${pct(r.avgUpside)}</td>
+      <td class="py-2 px-2 text-right tabular-nums text-slate-700 font-semibold">${r.avgDaysToPeak.toFixed(1)}d</td>
+      <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(r.avgDownside)}</td>
+      <td class="py-2 pl-2 text-right">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[11px] font-bold tabular-nums">~${r.suggestedRebalance}d</span>
+      </td>
+    </tr>`).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🧭</span>
+          <h3 class="font-display font-bold text-slate-900 text-sm">Sector rebalance timing</h3>
+        </div>
+        <span class="text-[10px] text-slate-400">avg over this cadence's AI picks</span>
+      </div>
+      <div class="text-[11px] text-slate-500 mb-2">How long each sector's picks take to peak on average — the natural rebalance horizon for that sector. Fastest-peaking on top.</div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <th class="text-left pb-1 pr-2">Sector</th>
+              <th class="text-right pb-1 px-2">Avg peak</th>
+              <th class="text-right pb-1 px-2">Days to peak</th>
+              <th class="text-right pb-1 px-2">Avg drawdown</th>
+              <th class="text-right pb-1 pl-2">Rebalance</th>
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">"Rebalance" ≈ avg days-to-peak for that sector. Low pick counts are noisier — the Daily cadence gives the richest per-sector sample. Sector-level today; GICS industry / sub-industry is a follow-up.</div>
+    </div>`;
+}
 
 function renderActiveBetaCaveat(view, anchorDate) {
   return `
