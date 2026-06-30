@@ -3084,6 +3084,37 @@ function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, 
   return { status: "OPEN", currentClose: lastClose };
 }
 
+// Per-stock peak excursion — independent of target / SL. Walks the
+// snapshot trail from the entry date and records the best (highest
+// close) and worst (lowest close) the stock reached relative to entry,
+// plus how many days each took. Surfaces "how high did it go, and when"
+// so the desk can judge the optimal rebalance horizon (founder ask:
+// max upside + max downside + days-to-peak, stockwise). The entry day
+// itself counts as 0% at day 0, so maxUpside ≥ 0 and maxDownside ≤ 0.
+function computePeakStats(ticker, entryDate, entryPrice, snapshots, todayDate) {
+  if (!ticker || entryPrice == null || !entryDate) return null;
+  let maxUpPct = null, maxUpDate = null;
+  let maxDownPct = null, maxDownDate = null;
+  for (const snap of snapshots) {
+    if (snap.date < entryDate) continue;
+    if (todayDate && snap.date > todayDate) break;
+    const s = snap.stocks.find((x) => x.ticker === ticker);
+    if (!s || s.close == null) continue;
+    const pct = (s.close / entryPrice - 1) * 100;
+    if (maxUpPct == null || pct > maxUpPct) { maxUpPct = pct; maxUpDate = snap.date; }
+    if (maxDownPct == null || pct < maxDownPct) { maxDownPct = pct; maxDownDate = snap.date; }
+  }
+  if (maxUpPct == null) return null;
+  return {
+    maxUpsidePct: maxUpPct,
+    daysToMaxUpside: daysBetween(entryDate, maxUpDate),
+    maxUpsideDate: maxUpDate,
+    maxDownsidePct: maxDownPct,
+    daysToMaxDownside: daysBetween(entryDate, maxDownDate),
+    maxDownsideDate: maxDownDate,
+  };
+}
+
 // Build the rows + summary for the Accuracy view.
 //   cohort      → the AI cohort currently active (Static/Monthly/Weekly).
 //                  Each segment's top 7 contributes 7 picks (5% TGT / 20% SL).
@@ -4299,6 +4330,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
       continue;
     }
     const status = computeHitStatus(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate);
+    const peak = computePeakStats(p.ticker, entryDate, entryPrice, snapshots, todayDate);
     rows.push({
       ticker: p.ticker,
       name: p.selection || p.ticker,
@@ -4306,6 +4338,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
       targetPct: (target / entryPrice - 1) * 100,
       slPct: (sl / entryPrice - 1) * 100,
       ...status,
+      peak,
     });
   }
   const enriched = enrichAndSortPicks(rows.filter((r) => !r.notCovered));
@@ -4416,6 +4449,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
     const target = entryPrice * (1 + AI_TARGET_PCT);
     const sl = entryPrice * (1 - AI_SL_PCT);
     const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate);
+    const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate);
     picks.push({
       ticker: t.ticker,
       name: t.name || t.ticker,
@@ -4424,6 +4458,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
       targetPct: AI_TARGET_PCT * 100,
       slPct: -AI_SL_PCT * 100,
       ...status,
+      peak,
     });
   }
   return enrichAndSortPicks(picks);
@@ -4440,6 +4475,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
       const target = s.close * (1 + AI_TARGET_PCT);
       const sl = s.close * (1 - AI_SL_PCT);
       const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
+      const peak = computePeakStats(s.ticker, seg.startDate, s.close, snapshots, todayDate);
       picks.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
@@ -4450,6 +4486,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
         slPct: -AI_SL_PCT * 100,
         cohortLabel: segments.length > 1 ? seg.label : null,
         ...status,
+        peak,
       });
     }
   }
@@ -5298,8 +5335,18 @@ function renderActivePickColumn(title, palette, picks, side) {
     const currentReturnHtml = r.currentReturnPct != null
       ? `<span class="text-[10px] tabular-nums font-semibold ${r.currentReturnPct >= 0 ? "text-emerald-700" : "text-rose-700"} ml-1">${fmtPct(r.currentReturnPct)}</span>`
       : "";
+    // Peak excursion nuggets — max upside / max downside since entry,
+    // each with the day count to reach it. Founder ask: judge the
+    // optimal rebalance horizon from where picks actually peak.
+    const peak = r.peak;
+    const peakHtml = peak ? `
+        <div class="col-span-12 flex items-center gap-1.5 flex-wrap pt-1 mt-0.5 border-t border-slate-100">
+          <span class="text-[8px] uppercase tracking-wider text-slate-400 font-bold">Excursion</span>
+          <span title="Peak upside since entry and days taken to reach it" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-[9px] font-semibold tabular-nums">▲ ${fmtPct(peak.maxUpsidePct)} · ${peak.daysToMaxUpside}d</span>
+          <span title="Worst drawdown since entry and days taken to reach it" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-50 text-rose-700 ring-1 ring-rose-200 text-[9px] font-semibold tabular-nums">▼ ${fmtPct(peak.maxDownsidePct)} · ${peak.daysToMaxDownside}d</span>
+        </div>` : "";
     return `
-      <button type="button" data-cohort-row data-cohort-side="${side}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint} hover:ring-1 hover:ring-indigo-200">
+      <button type="button" data-cohort-row data-cohort-side="${side}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-x-2 gap-y-0 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint} hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-xs truncate">${escapeHtml(r.name)}${r.cohortLabel ? ` <span class="text-[9px] text-slate-400 font-normal">· ${escapeHtml(r.cohortLabel)}</span>` : ""}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">Entry ${fmtDateDMY(r.entryDate)} · ₹${formatPrice(r.entryPrice)}${currentReturnHtml}</div>
@@ -5314,6 +5361,7 @@ function renderActivePickColumn(title, palette, picks, side) {
           </div>
           <div class="text-[10px] text-slate-500 mt-0.5 truncate">${exit}</div>
         </div>
+        ${peakHtml}
       </button>`;
   }).join("");
   return `
