@@ -79,18 +79,12 @@ async function run() {
       liquidity:    leanPillar(p.liquidity),
     };
 
-    // Per-indicator pass list — which technical rules passed today, by
-    // rule key. Lets the Custom Lab's indicator picker filter the basket
-    // historically (the backtest "accrues forward" as snapshots gain
-    // this field). null when there's no usable tech row for the stock.
-    let techPass = null;
-    if (tc && tc.cmp != null) {
-      try {
-        techPass = techScoring.scoreCompany(tc).breakdown
-          .filter((b) => b.status === "pass")
-          .map((b) => b.key);
-      } catch { techPass = null; }
-    }
+    // Per-indicator raw values — lets the Custom Lab's tweakable
+    // parameter filters (RSI ≥ 65, within 5% of high, Beta 0.7–1.3…)
+    // backtest historically. The indicator backtest "accrues forward" as
+    // snapshots gain this field. null when there's no usable tech row.
+    let techVals = null;
+    try { techVals = techScoring.techVals(tc); } catch { techVals = null; }
 
     return {
       ticker,
@@ -103,7 +97,7 @@ async function run() {
       dataComplete: !!s.dataComplete,
       close,
       pillars,
-      techPass,
+      techVals,
     };
   });
 

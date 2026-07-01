@@ -248,4 +248,33 @@ export function scoreCompany(c) {
   };
 }
 
+// Compact per-indicator value record for the Custom Lab's tweakable
+// parameter filters — raw numbers + boolean flags, so a strategy can
+// test ANY threshold (RSI ≥ 65, within 5% of the high, Beta 0.7–1.3…)
+// live and historically. Shared by the snapshot writer and the app so
+// both evaluate identically. null when there's no usable tech row.
+export function techVals(c) {
+  if (!c || c.cmp == null) return null;
+  const macdPos = !!(c.macd && (c.macd.positive_crossover || c.macd.above_zero));
+  const num = (v) => (typeof v === "number" ? v : null);
+  return {
+    rsi:  num(c.rsi14),
+    adx:  num(c.adx14),
+    vol:  num(c.volume_ratio_today),
+    d52:  c.high_proximity_pct != null ? Number(((1 - c.high_proximity_pct) * 100).toFixed(2)) : null,
+    beta: num(c.beta_1y),
+    atr:  num(c.atr14_pct),
+    e50:  !!c.above_50ema,
+    d200: !!c.above_200dma,
+    gc:   !!c.golden_cross,
+    hh:   !!c.higher_highs_lows,
+    macd: macdPos,
+    rs:   c.relative_strength_6m != null ? c.relative_strength_6m > 0 : null,
+    dlv:  c.delivery_trend_diff != null ? c.delivery_trend_diff > 0 : null,
+    inst: (c.chg_fii_hold != null || c.chg_dii_hold != null) ? ((c.chg_fii_hold || 0) + (c.chg_dii_hold || 0)) > 0 : null,
+    cons: !!c.consolidation_breakout,
+    base: !!c.base_formation,
+  };
+}
+
 export { ACTIVE_RULES, DEFERRED };

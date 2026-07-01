@@ -26,16 +26,15 @@ const tech = JSON.parse(readFileSync(TECH_PATH, "utf8"));
 
 const techByTicker = new Map((tech.companies || []).map((c) => [String(c.ticker).toUpperCase(), c]));
 
-let withPass = 0;
+let withVals = 0;
 for (const s of snap.stocks) {
   const tc = s.ticker ? techByTicker.get(String(s.ticker).toUpperCase()) : null;
-  let techPass = null;
-  if (tc && tc.cmp != null) {
-    try { techPass = techScoring.scoreCompany(tc).breakdown.filter((b) => b.status === "pass").map((b) => b.key); } catch { techPass = null; }
-  }
-  s.techPass = techPass;
-  if (Array.isArray(techPass)) withPass++;
+  let vals = null;
+  try { vals = techScoring.techVals(tc); } catch { vals = null; }
+  delete s.techPass;   // superseded by the richer techVals record
+  s.techVals = vals;
+  if (vals) withVals++;
 }
 
 writeFileSync(snapPath, JSON.stringify(snap, null, 2));
-console.log(`Added techPass to ${latest}: ${withPass}/${snap.stocks.length} stocks have a pass list.`);
+console.log(`Added techVals to ${latest}: ${withVals}/${snap.stocks.length} stocks have indicator values.`);

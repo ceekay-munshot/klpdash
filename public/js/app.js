@@ -7948,8 +7948,50 @@ const STRAT_FIELDS = [
 ];
 function newStratId() { return "strat-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e4).toString(36); }
 function defaultStrategy(name) {
-  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, indicators: [] };
+  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, params: {} };
 }
+
+// Tweakable technical parameters for the Custom Lab. Numeric ones expose
+// their level(s) as inputs (RSI 55–75, ADX ≥ 25…); boolean ones are a
+// simple on/off. `field` maps to the compact techVals record. A stock
+// qualifies only if it passes every switched-on parameter (AND-gate).
+const TECH_PARAMS = [
+  { key: "rsi",  cat: "Momentum", label: "RSI (14) between",   kind: "range", field: "rsi",  def: { min: 55, max: 75 }, step: 1 },
+  { key: "adx",  cat: "Momentum", label: "ADX (14) ≥",         kind: "min",   field: "adx",  def: { val: 25 },        step: 1 },
+  { key: "macd", cat: "Momentum", label: "MACD positive",      kind: "bool",  field: "macd" },
+  { key: "rs",   cat: "Momentum", label: "Outperforming Nifty", kind: "bool", field: "rs" },
+  { key: "vol",  cat: "Volume",   label: "Volume ≥ (× avg)",   kind: "min",   field: "vol",  def: { val: 1.5 },       step: 0.1 },
+  { key: "dlv",  cat: "Volume",   label: "Rising delivery %",  kind: "bool",  field: "dlv" },
+  { key: "inst", cat: "Volume",   label: "Net FII+DII buying", kind: "bool",  field: "inst" },
+  { key: "d52",  cat: "Breakout", label: "Within % of 52w high", kind: "max", field: "d52",  def: { val: 10 },        step: 0.5 },
+  { key: "cons", cat: "Breakout", label: "Consolidation breakout", kind: "bool", field: "cons" },
+  { key: "base", cat: "Breakout", label: "Base formation",     kind: "bool",  field: "base" },
+  { key: "e50",  cat: "Trend",    label: "Price above 50 EMA",  kind: "bool",  field: "e50" },
+  { key: "d200", cat: "Trend",    label: "Price above 200 DMA", kind: "bool",  field: "d200" },
+  { key: "gc",   cat: "Trend",    label: "Golden Cross",       kind: "bool",  field: "gc" },
+  { key: "hh",   cat: "Trend",    label: "Higher Highs–Lows",  kind: "bool",  field: "hh" },
+  { key: "beta", cat: "Risk",     label: "Beta between",       kind: "range", field: "beta", def: { min: 0.7, max: 1.3 }, step: 0.1 },
+  { key: "atr",  cat: "Risk",     label: "ATR < (% of price)", kind: "max",   field: "atr",  def: { val: 2.5 },       step: 0.1 },
+];
+const TECH_PARAM_CATS = ["Trend", "Momentum", "Volume", "Breakout", "Risk"];
+
+// AND-gate: a stock passes only if every switched-on parameter is met on
+// its indicator values (tv = techVals). No params on → no constraint.
+function passesParams(tv, params) {
+  const keys = Object.keys(params || {}).filter((k) => params[k]?.on);
+  if (!keys.length) return true;
+  if (!tv) return false;   // can't verify → exclude
+  for (const key of keys) {
+    const def = TECH_PARAMS.find((p) => p.key === key); if (!def) continue;
+    const v = tv[def.field]; const c = params[key];
+    if (def.kind === "range") { if (v == null || v < c.min || v > c.max) return false; }
+    else if (def.kind === "min") { if (v == null || v < c.val) return false; }
+    else if (def.kind === "max") { if (v == null || v > c.val) return false; }
+    else if (def.kind === "bool") { if (v !== true) return false; }
+  }
+  return true;
+}
+function activeParamCount(params) { return Object.keys(params || {}).filter((k) => params[k]?.on).length; }
 function seedStrategies() {
   return [
     { ...defaultStrategy("Momentum · 5/3 · weekly"), target: 5, sl: 3, rebalanceDays: 7, maxHoldDays: 30 },
@@ -7986,7 +8028,8 @@ function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
   const slPct = (strat.sl ?? 3) / 100;
   const maxHold = Math.max(1, Math.round(strat.maxHoldDays || 30));
   const rebalDays = Math.max(1, Math.round(strat.rebalanceDays || 7));
-  const sel = strat.indicators || [];
+  const params = strat.params || {};
+  const hasParams = activeParamCount(params) > 0;
   const capital = simP?.capital ?? ACTIVE_INITIAL_CAPITAL;
   const bufferAmt = capital * Math.max(0, simP?.bufferPct ?? 0) / 100;
   const sideRate = perSideChargeRate(simP);
@@ -8007,10 +8050,10 @@ function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
 
     const qualifying = snap.stocks
       .filter((s) => s.composite != null && s.composite >= thr && s.dataComplete && !s.hardFailed && typeof s.close === "number" && s.ticker)
-      // Indicator AND-gate — applied only on days that carry per-indicator
-      // history (techPass). Days without it fall back to composite-only,
-      // so the indicator backtest accrues forward as snapshots gain the field.
-      .filter((s) => sel.length === 0 || !Array.isArray(s.techPass) || sel.every((k) => s.techPass.includes(k)))
+      // Parameter AND-gate — applied only on days that carry indicator
+      // values (techVals). Days without it fall back to composite-only, so
+      // the parameter backtest accrues forward as snapshots gain the field.
+      .filter((s) => !hasParams || !s.techVals || passesParams(s.techVals, params))
       .sort((a, b) => b.composite - a.composite);
     const topN = qualifying.slice(0, N);
     const topNset = new Set(topN.map((s) => s.ticker));
@@ -8184,30 +8227,17 @@ function renderStrategyCard(strat, view, color) {
 // pass/fail per stock using the real tech-scoring rule functions.
 let customTechByTicker = null;
 
-// AND-gate: a stock passes only if every selected indicator is "pass"
-// on today's granular data. No selection → no indicator constraint.
-function passesIndicators(techCo, selectedKeys) {
-  if (!selectedKeys || !selectedKeys.length) return true;
-  for (const key of selectedKeys) {
-    const rule = tech.ACTIVE_RULES.find((r) => r.key === key);
-    if (!rule) continue;
-    const res = techCo ? rule.fn(techCo) : { status: "na" };
-    if (res.status !== "pass") return false;
-  }
-  return true;
-}
-
 // The names this strategy would pick RIGHT NOW: composite ≥ threshold,
-// passing all selected indicators (evaluated on today's technicals),
-// ranked by composite, capped at basket size.
+// passing every switched-on technical parameter (evaluated on today's
+// values), ranked by composite, capped at basket size.
 function buildTodaysNames(strat, latestSnap, techByTicker) {
   const N = Math.max(1, Math.round(strat.basketSize || 7));
   const thr = strat.threshold ?? 75;
-  const sel = strat.indicators || [];
+  const params = strat.params || {};
   const rows = [];
   for (const s of (latestSnap?.stocks || [])) {
-    if (s.composite == null || s.composite < thr || !s.dataComplete || s.hardFailed || s.composite == null) continue;
-    if (!passesIndicators(techByTicker.get(s.ticker), sel)) continue;
+    if (s.composite == null || s.composite < thr || !s.dataComplete || s.hardFailed) continue;
+    if (!passesParams(tech.techVals(techByTicker.get(s.ticker)), params)) continue;
     rows.push({ ticker: s.ticker, name: s.name || s.ticker, sector: s.sector, composite: s.composite });
   }
   rows.sort((a, b) => b.composite - a.composite);
@@ -8215,21 +8245,21 @@ function buildTodaysNames(strat, latestSnap, techByTicker) {
 }
 
 function renderTodaysNames(result, strat) {
-  const sel = strat.indicators || [];
-  const head = sel.length
-    ? `${result.qualifyingCount} stock${result.qualifyingCount === 1 ? "" : "s"} pass composite ≥ ${strat.threshold} AND all ${sel.length} selected indicator${sel.length === 1 ? "" : "s"} today`
-    : `Top ${strat.basketSize} by composite ≥ ${strat.threshold} today (no indicator filter set)`;
+  const n = activeParamCount(strat.params);
+  const head = n
+    ? `${result.qualifyingCount} stock${result.qualifyingCount === 1 ? "" : "s"} pass composite ≥ ${strat.threshold} AND all ${n} filter${n === 1 ? "" : "s"} you set — today`
+    : `Top ${strat.basketSize} by composite ≥ ${strat.threshold} today (no indicator filters set)`;
   const rows = result.picks.map((p) => `
     <div class="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50">
       <div class="min-w-0"><div class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div><div class="text-[10px] text-slate-400 truncate">${escapeHtml(p.sector || "")}</div></div>
-      <div class="text-right"><div class="text-xs font-bold tabular-nums text-indigo-700">${p.composite.toFixed(1)}</div><div class="text-[9px] text-slate-400 uppercase tracking-wider">composite</div></div>
-    </div>`).join("") || `<div class="text-xs text-slate-500 px-2 py-3">No stocks pass all selected indicators today — loosen the selection.</div>`;
+      <div class="text-right"><div class="text-xs font-bold tabular-nums text-indigo-700">${p.composite.toFixed(1)}</div><div class="text-[9px] text-slate-400 uppercase tracking-wider">score</div></div>
+    </div>`).join("") || `<div class="text-xs text-slate-500 px-2 py-3">No stocks pass all your filters today — loosen a threshold or turn one off.</div>`;
   return `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
       <div class="flex items-center gap-2 mb-1"><span class="text-base">🎯</span><h3 class="font-display font-bold text-slate-900 text-sm">Today's qualifying names</h3></div>
       <div class="text-[11px] text-slate-500 mb-2">${head}</div>
       <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Indicator selection drives the <strong>live</strong> names here (today's granular technicals, AND-gate) and the backtest on every day that carries per-indicator history — logged from today forward. Earlier snapshots fall back to composite-only selection, so the indicator backtest deepens each day.</div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Your parameter filters drive the <strong>live</strong> names here (today's values, AND-gate) and the backtest on every day that carries indicator history — logged from today forward. Earlier snapshots fall back to composite-only selection, so the indicator backtest deepens each day.</div>
     </div>`;
 }
 
@@ -8254,31 +8284,51 @@ function renderStrategyConfig(strat) {
       <div class="text-xs text-slate-500 mb-3">Drag a slider — the result updates instantly. Plain English: <em>"buy the top ${strat.basketSize} stocks, sell each one when it's up ${strat.target}%, down ${strat.sl}%, or held ${strat.maxHoldDays} days, and refresh the list every ${strat.rebalanceDays} days."</em></div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">${sliders}</div>
       <div class="text-[10px] text-slate-400 mt-3 leading-snug"><strong>Target / Stop-loss / Max holding</strong> are the three sell triggers — whichever happens first, that stock is sold and the next best one takes its place. <strong>Rebalance</strong> = how often the whole list is refreshed to the current top stocks.</div>
-      ${renderIndicatorPicker(strat)}
+      ${renderParamPicker(strat)}
     </div>`;
 }
 
-// Advanced settings — choose which technical indicators a stock must
-// pass (AND-gate) to qualify. Drives today's live names; grouped by the
-// tech-scoring categories. None checked = composite-only selection.
-function renderIndicatorPicker(strat) {
-  const sel = new Set(strat.indicators || []);
-  const cats = {};
-  tech.ACTIVE_RULES.forEach((r) => { (cats[r.category] = cats[r.category] || []).push(r); });
-  const groups = Object.entries(cats).map(([cat, rules]) => `
-    <div>
-      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">${escapeHtml(cat)}</div>
-      <div class="space-y-1.5">
-        ${rules.map((r) => `<label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-          <input type="checkbox" data-strat-indicator="${r.key}" ${sel.has(r.key) ? "checked" : ""} class="accent-indigo-600 w-3.5 h-3.5" />
-          <span class="truncate" title="${escapeHtml(r.criteria || r.label)}">${escapeHtml(r.label)}</span></label>`).join("")}
-      </div>
-    </div>`).join("");
+// Advanced settings — pick technical parameters AND tweak their values.
+// Numeric params expose their level(s) as inputs (RSI 55–75, ADX ≥ 25,
+// within 5% of the high…); boolean params are a simple on/off. Grouped
+// by category; a stock qualifies only if it passes every switched-on
+// parameter (AND-gate). Nothing on = composite-only selection.
+function renderParamPicker(strat) {
+  const params = strat.params || {};
+  const num = (v) => (v == null ? "" : v);
+  const fieldInputs = (p) => {
+    const c = params[p.key] || {};
+    const d = p.def || {};
+    const inp = (which, val) => `<input type="number" data-param-input="${p.key}" data-param-which="${which}" value="${num(val)}" step="${p.step || 1}" class="w-14 rounded ring-1 ring-slate-200 px-1.5 py-0.5 text-[11px] tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" />`;
+    if (p.kind === "range") return `${inp("min", c.min ?? d.min)}<span class="text-[10px] text-slate-400">–</span>${inp("max", c.max ?? d.max)}`;
+    if (p.kind === "min" || p.kind === "max") return inp("val", c.val ?? d.val);
+    return "";
+  };
+  const groups = TECH_PARAM_CATS.map((cat) => {
+    const ps = TECH_PARAMS.filter((p) => p.cat === cat);
+    if (!ps.length) return "";
+    return `
+      <div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">${escapeHtml(cat)}</div>
+        <div class="space-y-1.5">
+          ${ps.map((p) => {
+            const on = !!params[p.key]?.on;
+            return `<div class="flex items-center gap-2 text-xs">
+              <input type="checkbox" data-param-on="${p.key}" ${on ? "checked" : ""} class="accent-indigo-600 w-3.5 h-3.5 flex-shrink-0" />
+              <span class="text-slate-700 flex-1 min-w-0 truncate ${on ? "" : "text-slate-400"}">${escapeHtml(p.label)}</span>
+              <span class="flex items-center gap-1 flex-shrink-0 ${on ? "" : "opacity-40"}">${fieldInputs(p)}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }).join("");
+  const n = activeParamCount(params);
   return `
-    <details class="mt-3" ${sel.size ? "open" : ""}>
-      <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — choose technical indicators (${sel.size} selected) ▾</summary>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3 mt-3">${groups}</div>
-      <div class="text-[10px] text-slate-400 mt-3">A stock qualifies only if it passes <strong>all</strong> checked indicators (AND-gate). None checked = composite-only. Fundamentals/sentiment indicators &amp; the client's revised parameter list slot in here next.</div>
+    <details class="mt-3" ${n ? "open" : ""}>
+      <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — technical parameters (${n} on) ▾</summary>
+      <div class="text-[11px] text-slate-500 mt-2">Tick a parameter to require it, and <strong>tweak its value</strong> in the box. A stock must pass <strong>all</strong> the ones you switch on.</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-3 mt-3">${groups}</div>
+      <div class="text-[10px] text-slate-400 mt-3">Nothing on = pick purely by composite score. Fundamentals / sentiment parameters and the client's revised list slot into the same panel next.</div>
     </details>`;
 }
 
@@ -8465,12 +8515,24 @@ function wireCustomTab() {
       s[inp.dataset.stratField] = parseFloat(inp.value); saveStrategies(customStrategies); renderCustom();
     });
   });
-  // Indicator checkboxes (AND-gate selection) — toggle + re-run.
-  $$(`${root} [data-strat-indicator]`).forEach((inp) => inp.addEventListener("change", () => {
+  // Technical-parameter toggles — flip on/off, seed defaults, re-run.
+  $$(`${root} [data-param-on]`).forEach((inp) => inp.addEventListener("change", () => {
     const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
-    const set = new Set(s.indicators || []);
-    if (inp.checked) set.add(inp.dataset.stratIndicator); else set.delete(inp.dataset.stratIndicator);
-    s.indicators = [...set]; saveStrategies(customStrategies); renderCustom();
+    const key = inp.dataset.paramOn;
+    const def = TECH_PARAMS.find((p) => p.key === key);
+    s.params = s.params || {};
+    if (inp.checked) s.params[key] = { on: true, ...(def?.def || {}), ...(s.params[key] || {}), on: true };
+    else s.params[key] = { ...(s.params[key] || {}), on: false };
+    saveStrategies(customStrategies); renderCustom();
+  }));
+  // Technical-parameter value tweaks (min / max / val).
+  $$(`${root} [data-param-input]`).forEach((inp) => inp.addEventListener("change", () => {
+    const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
+    const key = inp.dataset.paramInput, which = inp.dataset.paramWhich;
+    const num = parseFloat(inp.value); if (!Number.isFinite(num)) return;
+    s.params = s.params || {};
+    s.params[key] = { ...(s.params[key] || { on: true }), [which]: num };
+    saveStrategies(customStrategies); renderCustom();
   }));
   // Shared capital & charges (reused renderSimPanel) — re-run all strategies.
   $$(`${root} [data-sim-field]`).forEach((inp) => inp.addEventListener("change", () => {
