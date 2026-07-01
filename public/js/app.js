@@ -623,12 +623,16 @@ async function switchTab(tabId) {
   // never touch border-colour classes here (toggling those alongside
   // ::after produces the double-underline reported by user).
   $$(".tab-btn").forEach((b) => {
-    const active = b.dataset.tab === tabId;
+    // Top Picks has no nav tab of its own — it's launched from the SPIP
+    // (composite) tab, so keep SPIP highlighted while viewing it.
+    const active = b.dataset.tab === tabId || (tabId === "topPicks" && b.dataset.tab === "composite");
     b.classList.toggle("text-indigo-600", active);
     b.classList.toggle("text-slate-500", !active);
     b.classList.toggle("hover:text-slate-700", !active);
     b.classList.toggle("is-active", active);
   });
+  // "★ Top Picks" launcher button lives in the controls row, SPIP tab only.
+  $("#top-picks-btn")?.classList.toggle("hidden", tabId !== "composite");
   state.activeTab = tabId;
   state.search = "";
   state.scoreFilter = "all";
@@ -1426,6 +1430,7 @@ function renderTopPicks() {
 
   if (picks.length === 0) {
     $("#top-picks-content").innerHTML = `
+      <button id="tp-back-btn" type="button" class="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700">← Back to SPIP Basket</button>
       <div class="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 p-12 text-center">
         <div class="text-6xl mb-4">🔍</div>
         <h2 class="text-2xl font-bold text-slate-900 mb-2">No stocks above 75 right now</h2>
@@ -1586,6 +1591,7 @@ function renderTopPicks() {
   `;
 
   $("#top-picks-content").innerHTML = `
+    <button id="tp-back-btn" type="button" class="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 print-hide">← Back to SPIP Basket</button>
     ${heroHeader}
     ${picks.length > 0 ? `
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
@@ -2733,9 +2739,10 @@ function lkpPicksForMonth(lkp, cohortMonth, mostRecentMonth) {
   if (lkp.picksByMonth && Array.isArray(lkp.picksByMonth[cohortMonth])) {
     return lkp.picksByMonth[cohortMonth];
   }
-  if (cohortMonth === mostRecentMonth && Array.isArray(lkp.picks)) {
-    return lkp.picks;
-  }
+  // The manual basket is "sticky" — the last uploaded picks keep showing
+  // (anchored at their upload date) until the client uploads a fresh set,
+  // even after the calendar rolls into a new month.
+  if (Array.isArray(lkp.picks)) return lkp.picks;
   return [];
 }
 
@@ -7922,6 +7929,8 @@ function wire() {
   });
   updateWatchCount();
   $("#export-btn").addEventListener("click", exportToExcel);
+  $("#top-picks-btn")?.addEventListener("click", () => switchTab("topPicks"));
+  document.addEventListener("click", (e) => { if (e.target.closest("#tp-back-btn")) switchTab("composite"); });
   $("#drill-overlay").addEventListener("click", closeDrillDown);
   $("#help-btn")?.addEventListener("click", openHelpModal);
   $("#sources-btn")?.addEventListener("click", openSourcesModal);
@@ -7938,7 +7947,7 @@ function wire() {
 // Capital + charges are shared (simPrefs) so strategies compare on
 // equal footing. Everything backtests over the snapshot history and
 // reuses the Strategy tab's chart / KPI / per-pick / sector renderers.
-const CUSTOM_STRATS_KEY = "klpdash-custom-strategies-v2";
+const CUSTOM_STRATS_KEY = "klpdash-custom-strategies-v3";
 const STRAT_FIELDS = [
   { key: "threshold",     label: "Composite ≥",    min: 50, max: 90,  step: 1,   suffix: "" },
   { key: "basketSize",    label: "Basket size",    min: 3,  max: 15,  step: 1,   suffix: " stocks" },
@@ -7949,7 +7958,7 @@ const STRAT_FIELDS = [
 ];
 function newStratId() { return "strat-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e4).toString(36); }
 function defaultStrategy(name) {
-  return { id: newStratId(), name: name || "New strategy", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, params: {} };
+  return { id: newStratId(), name: name || "New strategy", origin: "user", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, params: {} };
 }
 
 // Tweakable technical parameters for the Custom Lab. Numeric ones expose
@@ -7998,7 +8007,7 @@ function activeParamCount(params) { return Object.keys(params || {}).filter((k) 
 // the best performer in each of 5 distinct styles. The user can add / edit
 // / delete freely — these are just a strong starting playbook.
 function seedStrategies() {
-  const mk = (name, o) => ({ ...defaultStrategy(name), ...o });
+  const mk = (name, o) => ({ ...defaultStrategy(name), ...o, origin: "ai" });
   return [
     mk("★ Concentrated — top 5 names",       { threshold: 75, basketSize: 5,  target: 10, sl: 3, maxHoldDays: 15, rebalanceDays: 10 }),
     mk("Weekly rotation — top 5",            { threshold: 75, basketSize: 5,  target: 8,  sl: 5, maxHoldDays: 15, rebalanceDays: 7 }),
@@ -8425,31 +8434,40 @@ function renderParamPicker(strat) {
 
 function renderCustomOverview(views) {
   const palette = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444"];
-  const series = views.filter((v) => v.view).map((v, i) => ({ label: v.strat.name, color: palette[i % palette.length], curve: v.view.equityCurve }));
-  const firstNifty = views.find((v) => v.view?.niftyCurve?.length);
+  const withColor = views.map((v, i) => ({ ...v, color: palette[i % palette.length] }));
+  const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));
+  const firstNifty = withColor.find((v) => v.view?.niftyCurve?.length);
   if (firstNifty) series.push({ label: "Nifty 50", color: "#94a3b8", curve: firstNifty.view.niftyCurve, dash: "5 4" });
-  const cards = views.map((v, i) => renderStrategyCard(v.strat, v.view, palette[i % palette.length])).join("");
+  const aiViews = withColor.filter((v) => v.strat.origin === "ai");
+  const userViews = withColor.filter((v) => v.strat.origin !== "ai");
+  const grid = (arr) => `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${arr.map((v) => renderStrategyCard(v.strat, v.view, v.color)).join("")}</div>`;
   return `
-    <div class="space-y-4">
+    <div class="space-y-5">
       <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
-            <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>A "what if I'd traded like this?" tester.</strong> Set your own buy &amp; sell rules and see how much money the plan <em>would have</em> made on past data. Build a few and compare which works best — it's practice, not live trading.</div>
-          </div>
-          <button type="button" data-strat-new class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 whitespace-nowrap">+ New strategy</button>
-        </div>
+        <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+        <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>A "what if I'd traded like this?" tester.</strong> Set buy &amp; sell rules and see how much money each plan <em>would have</em> made on past data — practice, not live trading.</div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-          ${howStep("1", "Open a strategy", "Click a card below to set its rules with sliders.")}
+          ${howStep("1", "Open a strategy", "Click a card to set its rules with sliders.")}
           ${howStep("2", "It tests itself", "Every change instantly replays history and redraws the line.")}
-          ${howStep("3", "Keep the winner", "The chart stacks all your plans — keep the best, delete the rest.")}
+          ${howStep("3", "Keep the winner", "The chart stacks all plans — keep the best, delete the rest.")}
         </div>
       </div>
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">${cards}</div>
+      <section>
+        <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
+        <div class="text-[11px] text-slate-500 mb-3">The best performers found by backtesting ~1,000 parameter combinations on the price history. Open any to tweak, or Duplicate to make it your own.</div>
+        ${grid(aiViews)}
+      </section>
+      <section>
+        <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <div class="flex items-center gap-2"><span class="text-base">👤</span><h3 class="font-display font-bold text-slate-900 text-base">My strategies</h3></div>
+          <button type="button" data-strat-new class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-700 whitespace-nowrap">+ New strategy</button>
+        </div>
+        ${userViews.length ? grid(userViews) : `<div class="bg-white rounded-2xl ring-1 ring-dashed ring-slate-300 p-6 text-center text-sm text-slate-500">No strategies of your own yet. Click <strong>+ New strategy</strong>, or open an AI one above and hit <strong>Duplicate</strong>.</div>`}
+      </section>
       <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
         <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">⚙ Shared capital &amp; charges <span class="font-normal text-slate-400">(applies to every plan)</span></summary>
-        <div class="mt-3">${renderSimPanel(views.find((v) => v.view)?.view || {})}</div>
+        <div class="mt-3">${renderSimPanel(withColor.find((v) => v.view)?.view || {})}</div>
       </details>
     </div>`;
 }
@@ -8583,7 +8601,7 @@ function wireCustomTab() {
   $$(`${root} [data-strat-back]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = null; renderCustom(); }));
   $$(`${root} [data-strat-dup]`).forEach((b) => b.addEventListener("click", () => {
     const src = customStrategies.find((s) => s.id === b.dataset.stratDup); if (!src) return;
-    const copy = { ...src, id: newStratId(), name: src.name + " (copy)" };
+    const copy = { ...src, id: newStratId(), name: src.name.replace(/^★ /, "") + " (copy)", origin: "user" };
     customStrategies.push(copy); saveStrategies(customStrategies); customSelectedId = copy.id; renderCustom();
   }));
   $$(`${root} [data-strat-del]`).forEach((b) => b.addEventListener("click", () => {

@@ -163,9 +163,6 @@
         <button data-tab="composite" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors">
           SPIP Basket
         </button>
-        <button data-tab="topPicks" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
-          <span class="bg-gradient-to-r from-emerald-600 via-amber-500 to-pink-500 bg-clip-text text-transparent font-bold">★ Top Picks</span>
-        </button>
         <button data-tab="active" class="tab-btn px-4 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px transition-colors flex items-center gap-1.5">
           <span>Strategy</span>
           <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
@@ -255,6 +252,9 @@
           </div>
           <div class="flex items-center gap-3">
             <div class="text-xs text-slate-500 hidden sm:block"><span id="row-count" class="font-semibold text-slate-700">—</span> shown</div>
+            <button id="top-picks-btn" type="button" class="hidden inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all bg-gradient-to-r from-emerald-500 via-amber-500 to-pink-500" title="See the top-scoring names as a highlight page">
+              <span>★</span> Top Picks
+            </button>
             <button id="export-btn" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all">
               <span>📊</span> Export Excel
             </button>
