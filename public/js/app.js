@@ -4269,6 +4269,7 @@ async function renderActive() {
     wireStrategyModeToggle();
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
+    wireSectorTimingToggle("#active-content", renderActive);
     wireStrategyAlertsDropdown();
     wireAlertsInputs("#active-content", renderActive);
     // Cohort-style row clicks open the same drill modal everywhere else uses.
@@ -4597,6 +4598,25 @@ function buildNiftyCurve(dates, niftyOn) {
 // times, each entry is tracked separately (per founder confirmation —
 // every entry is a fresh prediction with its own entry close).
 // Targets follow the framework's uniform +5% / −20% bands.
+// Map ticker → GICS-style industry (finer than sector). Industry is a
+// stable attribute of a stock, so we read it from the snapshots (last-seen
+// wins) rather than threading it through every trade/holding — accurate
+// for grouping regardless of a pick's entry date.
+function buildIndustryMap(snapshots) {
+  const map = new Map();
+  for (const snap of (snapshots || [])) {
+    for (const s of (snap.stocks || [])) {
+      if (s.ticker && s.industry) map.set(s.ticker, s.industry);
+    }
+  }
+  return map;
+}
+function attachIndustry(picks, snapshots) {
+  const indBy = buildIndustryMap(snapshots);
+  for (const p of picks) p.industry = indBy.get(p.ticker) || null;
+  return picks;
+}
+
 function buildActiveDailyPicks(sim, snapshots, todayDate) {
   const picks = [];
   for (const t of sim.trades) {
@@ -4618,7 +4638,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
       peak,
     });
   }
-  return enrichAndSortPicks(picks);
+  return enrichAndSortPicks(attachIndustry(picks, snapshots));
 }
 
 // Weekly / Monthly picks: each segment's top 7 contribute 7 picks
@@ -4648,7 +4668,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
       });
     }
   }
-  return enrichAndSortPicks(picks);
+  return enrichAndSortPicks(attachIndustry(picks, snapshots));
 }
 
 function enrichAndSortPicks(picks) {
@@ -5615,12 +5635,17 @@ function renderActivePickColumn(title, palette, picks, side) {
 // the desk reads the natural rebalance horizon per sector (founder ask:
 // "defense peaks in ~10 days, real estate ~3 — rebalance each on its own
 // clock"). Built on the same per-pick excursion data as the nuggets.
-function buildSectorTiming(picks) {
+// Sector (broad) vs Industry (GICS sub-industry, finer) grouping for the
+// rebalance-timing table — toggled in the UI via `sectorTimingBy`.
+let sectorTimingBy = "sector";
+function buildSectorTiming(picks, groupBy) {
+  const by = groupBy === "industry" ? "industry" : "sector";
   const groups = new Map();
   for (const p of (picks || [])) {
-    if (!p.peak || !p.sector) continue;
-    if (!groups.has(p.sector)) groups.set(p.sector, []);
-    groups.get(p.sector).push(p);
+    const key = p[by] || (by === "industry" ? p.sector : null);   // fall back to sector if industry missing
+    if (!p.peak || !key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
   }
   const mean = (arr) => arr.reduce((a, v) => a + v, 0) / arr.length;
   const rows = [];
@@ -5634,14 +5659,22 @@ function buildSectorTiming(picks) {
       suggestedRebalance: Math.max(1, Math.round(mean(ps.map((p) => p.peak.daysToMaxUpside)))),
     });
   }
-  // Fastest-peaking sectors first; ties broken by larger (less noisy) sample.
+  // Fastest-peaking groups first; ties broken by larger (less noisy) sample.
   rows.sort((a, b) => a.avgDaysToPeak - b.avgDaysToPeak || b.n - a.n);
   return rows;
 }
 
 function renderSectorTiming(view) {
-  const rows = buildSectorTiming(view.picks);
+  const by = sectorTimingBy === "industry" ? "industry" : "sector";
+  const rows = buildSectorTiming(view.picks, by);
   if (!rows.length) return "";
+  // Only offer the Industry view if picks actually carry industry data.
+  const hasIndustry = (view.picks || []).some((p) => p.industry);
+  const label = by === "industry" ? "Industry" : "Sector";
+  const toggleBtn = (val, text) => `<button data-sector-timing="${val}" class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition ${by === val ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-700"}">${text}</button>`;
+  const toggle = hasIndustry
+    ? `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${toggleBtn("sector", "Sector")}${toggleBtn("industry", "Industry")}</div>`
+    : "";
   const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
   const body = rows.map((r) => `
     <tr class="border-t border-slate-100">
@@ -5661,16 +5694,16 @@ function renderSectorTiming(view) {
       <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
         <div class="flex items-center gap-2">
           <span class="text-base">🧭</span>
-          <h3 class="font-display font-bold text-slate-900 text-sm">Sector rebalance timing</h3>
+          <h3 class="font-display font-bold text-slate-900 text-sm">${label} rebalance timing</h3>
         </div>
-        <span class="text-[10px] text-slate-400">avg over this cadence's AI picks</span>
+        <div class="flex items-center gap-2">${toggle}<span class="text-[10px] text-slate-400">avg over this cadence's AI picks</span></div>
       </div>
-      <div class="text-[11px] text-slate-500 mb-2">How long each sector's picks take to peak on average — the natural rebalance horizon for that sector. Fastest-peaking on top.</div>
+      <div class="text-[11px] text-slate-500 mb-2">How long each ${label.toLowerCase()}'s picks take to peak on average — the natural rebalance horizon for that ${label.toLowerCase()}. Fastest-peaking on top.</div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
             <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              <th class="text-left pb-1 pr-2">Sector</th>
+              <th class="text-left pb-1 pr-2">${label}</th>
               <th class="text-right pb-1 px-2">Avg peak</th>
               <th class="text-right pb-1 px-2">Days to peak</th>
               <th class="text-right pb-1 px-2">Avg drawdown</th>
@@ -5680,7 +5713,7 @@ function renderSectorTiming(view) {
           <tbody>${body}</tbody>
         </table>
       </div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">"Rebalance" ≈ avg days-to-peak for that sector. Low pick counts are noisier — the Daily cadence gives the richest per-sector sample. Sector-level today; GICS industry / sub-industry is a follow-up.</div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">"Rebalance" ≈ avg days-to-peak for that ${label.toLowerCase()}. Low pick counts are noisier — the Daily cadence gives the richest per-${label.toLowerCase()} sample. Toggle <strong>Sector ↔ Industry</strong> for broad vs GICS sub-industry granularity.</div>
     </div>`;
 }
 
@@ -5720,6 +5753,17 @@ function wireStrategySegmentPills() {
     if (!Number.isFinite(idx) || idx === state.strategySegmentIdx) return;
     state.strategySegmentIdx = idx;
     renderActive();
+  }));
+}
+
+// Sector ↔ Industry toggle on the rebalance-timing table (shared by the
+// Active and Custom tabs — pass the tab's root + its re-render function).
+function wireSectorTimingToggle(root, rerender) {
+  $$(`${root} [data-sector-timing]`).forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.sectorTiming;
+    if ((v !== "sector" && v !== "industry") || v === sectorTimingBy) return;
+    sectorTimingBy = v;
+    rerender();
   }));
 }
 
@@ -7961,47 +8005,81 @@ function defaultStrategy(name) {
   return { id: newStratId(), name: name || "New strategy", origin: "user", threshold: 75, basketSize: 7, target: 5, sl: 3, maxHoldDays: 30, rebalanceDays: 7, params: {} };
 }
 
-// Tweakable technical parameters for the Custom Lab. Numeric ones expose
-// their level(s) as inputs (RSI 55–75, ADX ≥ 25…); boolean ones are a
-// simple on/off. `field` maps to the compact techVals record. A stock
-// qualifies only if it passes every switched-on parameter (AND-gate).
-const TECH_PARAMS = [
-  { key: "rsi",  cat: "Momentum", label: "RSI (14) between",   kind: "range", field: "rsi",  def: { min: 55, max: 75 }, step: 1 },
-  { key: "adx",  cat: "Momentum", label: "ADX (14) ≥",         kind: "min",   field: "adx",  def: { val: 25 },        step: 1 },
-  { key: "macd", cat: "Momentum", label: "MACD positive",      kind: "bool",  field: "macd" },
-  { key: "rs",   cat: "Momentum", label: "Outperforming Nifty", kind: "bool", field: "rs" },
-  { key: "vol",  cat: "Volume",   label: "Volume ≥ (× avg)",   kind: "min",   field: "vol",  def: { val: 1.5 },       step: 0.1 },
-  { key: "dlv",  cat: "Volume",   label: "Rising delivery %",  kind: "bool",  field: "dlv" },
-  { key: "inst", cat: "Volume",   label: "Net FII+DII buying", kind: "bool",  field: "inst" },
-  { key: "d52",  cat: "Breakout", label: "Within % of 52w high", kind: "max", field: "d52",  def: { val: 10 },        step: 0.5 },
-  { key: "cons", cat: "Breakout", label: "Consolidation breakout", kind: "bool", field: "cons" },
-  { key: "base", cat: "Breakout", label: "Base formation",     kind: "bool",  field: "base" },
-  { key: "e50",  cat: "Trend",    label: "Price above 50 EMA",  kind: "bool",  field: "e50" },
-  { key: "d200", cat: "Trend",    label: "Price above 200 DMA", kind: "bool",  field: "d200" },
-  { key: "gc",   cat: "Trend",    label: "Golden Cross",       kind: "bool",  field: "gc" },
-  { key: "hh",   cat: "Trend",    label: "Higher Highs–Lows",  kind: "bool",  field: "hh" },
-  { key: "beta", cat: "Risk",     label: "Beta between",       kind: "range", field: "beta", def: { min: 0.7, max: 1.3 }, step: 0.1 },
-  { key: "atr",  cat: "Risk",     label: "ATR < (% of price)", kind: "max",   field: "atr",  def: { val: 2.5 },       step: 0.1 },
+// Tweakable strategy parameters for the Custom Lab, across every pillar.
+// `pillar` = the top-level category (picked from a dropdown); `cat` = the
+// sub-group within it. `source` says where each value is read from:
+//   tech   → stock.techVals[field]  (granular technicals, accrue forward)
+//   fund   → stock.fundVals[field]  (fundamental ratios, accrue forward)
+//   pillar → stock.pillars[field].pct (pillar score, backtests fully)
+// A stock qualifies only if it passes every switched-on parameter (AND).
+const STRAT_PARAMS = [
+  // ── Technicals (granular) ──
+  { key: "rsi",  pillar: "Technicals", cat: "Momentum", label: "RSI (14) between",      kind: "range", source: "tech", field: "rsi",  def: { min: 55, max: 75 }, step: 1 },
+  { key: "adx",  pillar: "Technicals", cat: "Momentum", label: "ADX (14) ≥",            kind: "min",   source: "tech", field: "adx",  def: { val: 25 },  step: 1 },
+  { key: "macd", pillar: "Technicals", cat: "Momentum", label: "MACD positive",         kind: "bool",  source: "tech", field: "macd" },
+  { key: "rs",   pillar: "Technicals", cat: "Momentum", label: "Outperforming Nifty",   kind: "bool",  source: "tech", field: "rs" },
+  { key: "vol",  pillar: "Technicals", cat: "Volume",   label: "Volume ≥ (× avg)",      kind: "min",   source: "tech", field: "vol",  def: { val: 1.5 }, step: 0.1 },
+  { key: "dlv",  pillar: "Technicals", cat: "Volume",   label: "Rising delivery %",     kind: "bool",  source: "tech", field: "dlv" },
+  { key: "inst", pillar: "Technicals", cat: "Volume",   label: "Net FII+DII buying",    kind: "bool",  source: "tech", field: "inst" },
+  { key: "d52",  pillar: "Technicals", cat: "Breakout", label: "Within % of 52w high",  kind: "max",   source: "tech", field: "d52",  def: { val: 10 },  step: 0.5 },
+  { key: "cons", pillar: "Technicals", cat: "Breakout", label: "Consolidation breakout", kind: "bool", source: "tech", field: "cons" },
+  { key: "base", pillar: "Technicals", cat: "Breakout", label: "Base formation",        kind: "bool",  source: "tech", field: "base" },
+  { key: "e50",  pillar: "Technicals", cat: "Trend",    label: "Price above 50 EMA",    kind: "bool",  source: "tech", field: "e50" },
+  { key: "d200", pillar: "Technicals", cat: "Trend",    label: "Price above 200 DMA",   kind: "bool",  source: "tech", field: "d200" },
+  { key: "gc",   pillar: "Technicals", cat: "Trend",    label: "Golden Cross",          kind: "bool",  source: "tech", field: "gc" },
+  { key: "hh",   pillar: "Technicals", cat: "Trend",    label: "Higher Highs–Lows",     kind: "bool",  source: "tech", field: "hh" },
+  { key: "beta", pillar: "Technicals", cat: "Risk",     label: "Beta between",          kind: "range", source: "tech", field: "beta", def: { min: 0.7, max: 1.3 }, step: 0.1 },
+  { key: "atr",  pillar: "Technicals", cat: "Risk",     label: "ATR < (% of price)",    kind: "max",   source: "tech", field: "atr",  def: { val: 2.5 }, step: 0.1 },
+  // ── Fundamentals ──
+  { key: "fundScore", pillar: "Fundamentals", cat: "Overall",       label: "Fundamentals score ≥ (%)", kind: "min", source: "pillar", field: "fundamentals", def: { val: 60 }, step: 1 },
+  { key: "roe",       pillar: "Fundamentals", cat: "Profitability", label: "ROE ≥ (%)",   kind: "min", source: "fund", field: "roe",    def: { val: 15 }, step: 1 },
+  { key: "roce",      pillar: "Fundamentals", cat: "Profitability", label: "ROCE ≥ (%)",  kind: "min", source: "fund", field: "roce",   def: { val: 15 }, step: 1 },
+  { key: "de",        pillar: "Fundamentals", cat: "Balance sheet", label: "Debt / Equity ≤", kind: "max", source: "fund", field: "de", def: { val: 1 },  step: 0.1 },
+  { key: "pe",        pillar: "Fundamentals", cat: "Valuation",     label: "P/E ≤",       kind: "max", source: "fund", field: "pe",     def: { val: 40 }, step: 1 },
+  { key: "salesG",    pillar: "Fundamentals", cat: "Growth",        label: "Sales growth 3Y ≥ (%)", kind: "min", source: "fund", field: "salesG", def: { val: 10 }, step: 1 },
+  { key: "patG",      pillar: "Fundamentals", cat: "Growth",        label: "Profit growth 3Y ≥ (%)", kind: "min", source: "fund", field: "patG", def: { val: 10 }, step: 1 },
+  // ── Sentiment ──
+  { key: "sentScore", pillar: "Sentiment", cat: "Overall", label: "Sentiment score ≥ (%)", kind: "min", source: "pillar", field: "sentiment", def: { val: 55 }, step: 1 },
+  // ── Macro ──
+  { key: "macroScore", pillar: "Macro", cat: "Overall", label: "Macro score ≥ (%)", kind: "min", source: "pillar", field: "macro", def: { val: 55 }, step: 1 },
+  // ── Liquidity ──
+  { key: "liqScore", pillar: "Liquidity", cat: "Overall", label: "Liquidity score ≥ (%)", kind: "min", source: "pillar", field: "liquidity", def: { val: 55 }, step: 1 },
 ];
-const TECH_PARAM_CATS = ["Trend", "Momentum", "Volume", "Breakout", "Risk"];
+const PARAM_PILLARS = ["Technicals", "Fundamentals", "Sentiment", "Macro", "Liquidity"];
 
-// AND-gate: a stock passes only if every switched-on parameter is met on
-// its indicator values (tv = techVals). No params on → no constraint.
-function passesParams(tv, params) {
+// Read a parameter's value off a snapshot stock, by source.
+function paramValue(stock, def) {
+  if (!stock) return null;
+  if (def.source === "pillar") return stock.pillars?.[def.field]?.pct ?? null;
+  if (def.source === "tech")   return stock.techVals?.[def.field] ?? null;
+  if (def.source === "fund")   return stock.fundVals?.[def.field] ?? null;
+  return null;
+}
+
+// AND-gate: a stock passes only if every switched-on parameter is met.
+// Params whose source record is absent on a given day are SKIPPED (not
+// failed), so pillar-score params backtest fully while granular tech/fund
+// params only bind once the day carries their record (accrue forward).
+function passesParams(stock, params) {
   const keys = Object.keys(params || {}).filter((k) => params[k]?.on);
   if (!keys.length) return true;
-  if (!tv) return false;   // can't verify → exclude
   for (const key of keys) {
-    const def = TECH_PARAMS.find((p) => p.key === key); if (!def) continue;
-    const v = tv[def.field]; const c = params[key];
-    if (def.kind === "range") { if (v == null || v < c.min || v > c.max) return false; }
-    else if (def.kind === "min") { if (v == null || v < c.val) return false; }
-    else if (def.kind === "max") { if (v == null || v > c.val) return false; }
-    else if (def.kind === "bool") { if (v !== true) return false; }
+    const def = STRAT_PARAMS.find((p) => p.key === key); if (!def) continue;
+    if (def.source === "tech" && !stock.techVals) continue;   // day lacks the record → skip
+    if (def.source === "fund" && !stock.fundVals) continue;
+    const v = paramValue(stock, def); const c = params[key];
+    if (def.kind === "bool") { if (v !== true) return false; }
+    else if (v == null) return false;
+    else if (def.kind === "range") { if (v < c.min || v > c.max) return false; }
+    else if (def.kind === "min") { if (v < c.val) return false; }
+    else if (def.kind === "max") { if (v > c.val) return false; }
   }
   return true;
 }
 function activeParamCount(params) { return Object.keys(params || {}).filter((k) => params[k]?.on).length; }
+function activeParamCountForPillar(params, pillar) {
+  return Object.keys(params || {}).filter((k) => params[k]?.on && STRAT_PARAMS.find((p) => p.key === k)?.pillar === pillar).length;
+}
 // Seeded from an offline grid search (screener-test/grid-search-strategies.mjs)
 // over ~1,000 parameter combinations, backtested on the snapshot history:
 // the best performer in each of 5 distinct styles. The user can add / edit
@@ -8068,10 +8146,10 @@ function simulateCustomStrategy(snapshots, anchorDate, strat, simP = simPrefs) {
 
     const qualifying = snap.stocks
       .filter((s) => s.composite != null && s.composite >= thr && s.dataComplete && !s.hardFailed && typeof s.close === "number" && s.ticker)
-      // Parameter AND-gate — applied only on days that carry indicator
-      // values (techVals). Days without it fall back to composite-only, so
-      // the parameter backtest accrues forward as snapshots gain the field.
-      .filter((s) => !hasParams || !s.techVals || passesParams(s.techVals, params))
+      // Parameter AND-gate. passesParams reads pillar scores (always
+      // present → full backtest) and granular tech/fund values (present
+      // forward → accrue), skipping any param whose record a given day lacks.
+      .filter((s) => !hasParams || passesParams(s, params))
       .sort((a, b) => b.composite - a.composite);
     const topN = qualifying.slice(0, N);
     const topNset = new Set(topN.map((s) => s.ticker));
@@ -8132,7 +8210,7 @@ function buildCustomPicks(sim, snapshots, todayDate, strat) {
     const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate);
     picks.push({ ticker: t.ticker, name: t.name || t.ticker, sector: t.sector || null, entryDate: t.date, entryPrice, target, sl, targetPct: tPct * 100, slPct: -sPct * 100, ...status, peak });
   }
-  return enrichAndSortPicks(picks);
+  return enrichAndSortPicks(attachIndustry(picks, snapshots));
 }
 
 // Produces a view object compatible with the Strategy tab renderers
@@ -8293,14 +8371,14 @@ let customTechByTicker = null;
 // The names this strategy would pick RIGHT NOW: composite ≥ threshold,
 // passing every switched-on technical parameter (evaluated on today's
 // values), ranked by composite, capped at basket size.
-function buildTodaysNames(strat, latestSnap, techByTicker) {
+function buildTodaysNames(strat, latestSnap) {
   const N = Math.max(1, Math.round(strat.basketSize || 7));
   const thr = strat.threshold ?? 75;
   const params = strat.params || {};
   const rows = [];
   for (const s of (latestSnap?.stocks || [])) {
     if (s.composite == null || s.composite < thr || !s.dataComplete || s.hardFailed) continue;
-    if (!passesParams(tech.techVals(techByTicker.get(s.ticker)), params)) continue;
+    if (!passesParams(s, params)) continue;
     rows.push({ ticker: s.ticker, name: s.name || s.ticker, sector: s.sector, composite: s.composite });
   }
   rows.sort((a, b) => b.composite - a.composite);
@@ -8388,25 +8466,25 @@ function renderStrategyConfig(strat) {
     </div>`;
 }
 
-// Advanced settings — pick technical parameters AND tweak their values.
-// Numeric params expose their level(s) as inputs (RSI 55–75, ADX ≥ 25,
-// within 5% of the high…); boolean params are a simple on/off. Grouped
-// by category; a stock qualifies only if it passes every switched-on
-// parameter (AND-gate). Nothing on = composite-only selection.
+// Advanced settings — pick parameters from ANY pillar (dropdown to switch
+// between Technicals / Fundamentals / Sentiment / Macro / Liquidity) AND
+// tweak their values. A stock must pass every switched-on parameter.
+let paramPickerPillar = "Technicals";   // which pillar the dropdown shows
+let paramAdvancedOpen = false;          // persists the <details> state across re-renders
 function renderParamPicker(strat) {
   const params = strat.params || {};
+  const pillar = PARAM_PILLARS.includes(paramPickerPillar) ? paramPickerPillar : "Technicals";
   const num = (v) => (v == null ? "" : v);
   const fieldInputs = (p) => {
-    const c = params[p.key] || {};
-    const d = p.def || {};
+    const c = params[p.key] || {}; const d = p.def || {};
     const inp = (which, val) => `<input type="number" data-param-input="${p.key}" data-param-which="${which}" value="${num(val)}" step="${p.step || 1}" class="w-14 rounded ring-1 ring-slate-200 px-1.5 py-0.5 text-[11px] tabular-nums outline-none focus:ring-2 focus:ring-indigo-300" />`;
     if (p.kind === "range") return `${inp("min", c.min ?? d.min)}<span class="text-[10px] text-slate-400">–</span>${inp("max", c.max ?? d.max)}`;
     if (p.kind === "min" || p.kind === "max") return inp("val", c.val ?? d.val);
     return "";
   };
-  const groups = TECH_PARAM_CATS.map((cat) => {
-    const ps = TECH_PARAMS.filter((p) => p.cat === cat);
-    if (!ps.length) return "";
+  const cats = [...new Set(STRAT_PARAMS.filter((p) => p.pillar === pillar).map((p) => p.cat))];
+  const groups = cats.map((cat) => {
+    const ps = STRAT_PARAMS.filter((p) => p.pillar === pillar && p.cat === cat);
     return `
       <div>
         <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">${escapeHtml(cat)}</div>
@@ -8422,13 +8500,22 @@ function renderParamPicker(strat) {
         </div>
       </div>`;
   }).join("");
-  const n = activeParamCount(params);
+  const opts = PARAM_PILLARS.map((pl) => {
+    const c = activeParamCountForPillar(params, pl);
+    return `<option value="${pl}" ${pl === pillar ? "selected" : ""}>${pl}${c ? ` (${c} on)` : ""}</option>`;
+  }).join("");
+  const total = activeParamCount(params);
   return `
-    <details class="mt-3" ${n ? "open" : ""}>
-      <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — technical parameters (${n} on) ▾</summary>
-      <div class="text-[11px] text-slate-500 mt-2">Tick a parameter to require it, and <strong>tweak its value</strong> in the box. A stock must pass <strong>all</strong> the ones you switch on.</div>
+    <details data-param-advanced class="mt-3" ${paramAdvancedOpen || total ? "open" : ""}>
+      <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — extra parameters (${total} on) ▾</summary>
+      <div class="flex items-center gap-2 mt-3 flex-wrap">
+        <span class="text-[11px] font-semibold text-slate-600">Parameter type:</span>
+        <select data-param-pillar class="rounded-lg ring-1 ring-slate-200 px-2 py-1.5 text-sm font-semibold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-indigo-300">${opts}</select>
+        <span class="text-[11px] text-slate-400">switch between pillars to add any parameter</span>
+      </div>
+      <div class="text-[11px] text-slate-500 mt-2">Tick a parameter to require it, and <strong>tweak its value</strong>. A stock must pass <strong>all</strong> the ones you switch on (across every pillar).</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-3 mt-3">${groups}</div>
-      <div class="text-[10px] text-slate-400 mt-3">Nothing on = pick purely by composite score. Fundamentals / sentiment parameters and the client's revised list slot into the same panel next.</div>
+      <div class="text-[10px] text-slate-400 mt-3">Nothing on = pick purely by composite score. <strong>Pillar-score</strong> params (Fundamentals/Sentiment/Macro/Liquidity ≥ %) backtest over full history; <strong>granular</strong> tech/fundamental params bind on days that carry the data (accruing forward).</div>
     </details>`;
 }
 
@@ -8565,7 +8652,7 @@ async function renderCustom() {
     const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
     if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
       const entry = views.find((v) => v.strat.id === customSelectedId);
-      const todaysNames = buildTodaysNames(entry.strat, snapshots[snapshots.length - 1], customTechByTicker);
+      const todaysNames = buildTodaysNames(entry.strat, snapshots[snapshots.length - 1]);
       host.innerHTML = renderCustomDeepDive(entry, todaysNames);
     } else {
       customSelectedId = null;
@@ -8625,23 +8712,34 @@ function wireCustomTab() {
       s[inp.dataset.stratField] = parseFloat(inp.value); saveStrategies(customStrategies); renderCustom();
     });
   });
-  // Technical-parameter toggles — flip on/off, seed defaults, re-run.
+  // Parameter-pillar dropdown — switch which pillar's params are shown
+  // (Technicals / Fundamentals / Sentiment / Macro / Liquidity).
+  $$(`${root} [data-param-pillar]`).forEach((sel) => sel.addEventListener("change", () => {
+    paramPickerPillar = sel.value; paramAdvancedOpen = true; renderCustom();
+  }));
+  // Keep the Advanced <details> open/closed state across re-renders.
+  $$(`${root} [data-param-advanced]`).forEach((el) => el.addEventListener("toggle", () => {
+    paramAdvancedOpen = el.open;
+  }));
+  // Parameter toggles — flip on/off, seed defaults, re-run.
   $$(`${root} [data-param-on]`).forEach((inp) => inp.addEventListener("change", () => {
     const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
     const key = inp.dataset.paramOn;
-    const def = TECH_PARAMS.find((p) => p.key === key);
+    const def = STRAT_PARAMS.find((p) => p.key === key);
     s.params = s.params || {};
     if (inp.checked) s.params[key] = { on: true, ...(def?.def || {}), ...(s.params[key] || {}), on: true };
     else s.params[key] = { ...(s.params[key] || {}), on: false };
+    paramAdvancedOpen = true;
     saveStrategies(customStrategies); renderCustom();
   }));
-  // Technical-parameter value tweaks (min / max / val).
+  // Parameter value tweaks (min / max / val).
   $$(`${root} [data-param-input]`).forEach((inp) => inp.addEventListener("change", () => {
     const s = customStrategies.find((x) => x.id === customSelectedId); if (!s) return;
     const key = inp.dataset.paramInput, which = inp.dataset.paramWhich;
     const num = parseFloat(inp.value); if (!Number.isFinite(num)) return;
     s.params = s.params || {};
     s.params[key] = { ...(s.params[key] || { on: true }), [which]: num };
+    paramAdvancedOpen = true;
     saveStrategies(customStrategies); renderCustom();
   }));
   // Shared capital & charges (reused renderSimPanel) — re-run all strategies.
@@ -8652,6 +8750,8 @@ function wireCustomTab() {
   }));
   const sr = $(`${root} #sim-reset`);
   if (sr) sr.addEventListener("click", () => { simPrefs = { ...SIM_DEFAULTS }; saveSimPrefs(simPrefs); renderCustom(); });
+  // Sector ↔ Industry toggle on the rebalance-timing table.
+  wireSectorTimingToggle(root, renderCustom);
 }
 
 // ============================================================

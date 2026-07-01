@@ -569,4 +569,25 @@ export function scoreCompany(company) {
   };
 }
 
+// Compact fundamental-ratio record for the Custom Lab's parameter picker
+// (Fundamentals category). Parses the screener strings ("115 %", "0.00",
+// "34.2") into numbers so a strategy can filter on ROE ≥, P/E ≤, etc.,
+// live and — once snapshots log it — historically. null when no company.
+export function fundVals(fc) {
+  if (!fc) return null;
+  const num = (v) => {
+    if (v == null) return null;
+    const n = parseFloat(String(v).replace(/[%,\s]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    roe:    num(fc.ROE),
+    roce:   num(fc.ROCE),
+    de:     num(fc["Debt to equity"]),
+    pe:     num(fc["Stock P/E"]),
+    salesG: num(fc["Sales growth 3Years"]),
+    patG:   num(fc["Profit Var 3Yrs"]),
+  };
+}
+
 export { ACTIVE_RULES, DEFERRED };

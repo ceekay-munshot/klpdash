@@ -18,6 +18,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scoreCompositeBatch, PILLAR_WEIGHTS } from "../public/js/composite-scoring.js";
 import * as techScoring from "../public/js/tech-scoring.js";
+import * as fundScoring from "../public/js/scoring.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FUND_PATH      = resolve(__dirname, "../public/data/screener-companies.json");
@@ -85,12 +86,17 @@ async function run() {
     // snapshots gain this field. null when there's no usable tech row.
     let techVals = null;
     try { techVals = techScoring.techVals(tc); } catch { techVals = null; }
+    // Fundamental ratios (Custom Lab "Fundamentals" params) + industry
+    // (finer than sector — powers the sector/industry rebalance-timing view).
+    let fundVals = null;
+    try { fundVals = fundScoring.fundVals(fc); } catch { fundVals = null; }
 
     return {
       ticker,
       name: fc.Company || null,
       slug: slugify(fc.Company || ticker || ""),
       sector: fc.Sector || fc["Broad Industry"] || null,
+      industry: fc.Industry || fc["Broad Industry"] || null,
       composite: s.composite == null ? null : Number(s.composite.toFixed(2)),
       rating: s.rating || null,
       hardFailed: !!s.hardFailed,
@@ -98,6 +104,7 @@ async function run() {
       close,
       pillars,
       techVals,
+      fundVals,
     };
   });
 
