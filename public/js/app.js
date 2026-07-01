@@ -7938,7 +7938,7 @@ function wire() {
 // Capital + charges are shared (simPrefs) so strategies compare on
 // equal footing. Everything backtests over the snapshot history and
 // reuses the Strategy tab's chart / KPI / per-pick / sector renderers.
-const CUSTOM_STRATS_KEY = "klpdash-custom-strategies-v1";
+const CUSTOM_STRATS_KEY = "klpdash-custom-strategies-v2";
 const STRAT_FIELDS = [
   { key: "threshold",     label: "Composite ≥",    min: 50, max: 90,  step: 1,   suffix: "" },
   { key: "basketSize",    label: "Basket size",    min: 3,  max: 15,  step: 1,   suffix: " stocks" },
@@ -7993,10 +7993,18 @@ function passesParams(tv, params) {
   return true;
 }
 function activeParamCount(params) { return Object.keys(params || {}).filter((k) => params[k]?.on).length; }
+// Seeded from an offline grid search (screener-test/grid-search-strategies.mjs)
+// over ~1,000 parameter combinations, backtested on the snapshot history:
+// the best performer in each of 5 distinct styles. The user can add / edit
+// / delete freely — these are just a strong starting playbook.
 function seedStrategies() {
+  const mk = (name, o) => ({ ...defaultStrategy(name), ...o });
   return [
-    { ...defaultStrategy("Momentum · 5/3 · weekly"), target: 5, sl: 3, rebalanceDays: 7, maxHoldDays: 30 },
-    { ...defaultStrategy("Aggressive · 10/5 · 3-day"), target: 10, sl: 5, rebalanceDays: 3, maxHoldDays: 20 },
+    mk("★ Concentrated — top 5 names",       { threshold: 75, basketSize: 5,  target: 10, sl: 3, maxHoldDays: 15, rebalanceDays: 10 }),
+    mk("Weekly rotation — top 5",            { threshold: 75, basketSize: 5,  target: 8,  sl: 5, maxHoldDays: 15, rebalanceDays: 7 }),
+    mk("Quick rotation — top 7, 3-day",      { threshold: 75, basketSize: 7,  target: 8,  sl: 3, maxHoldDays: 20, rebalanceDays: 3 }),
+    mk("Broad & steady — top 10",            { threshold: 70, basketSize: 10, target: 20, sl: 8, maxHoldDays: 20, rebalanceDays: 10 }),
+    mk("Balanced — top 7, 5-day",            { threshold: 75, basketSize: 7,  target: 8,  sl: 5, maxHoldDays: 15, rebalanceDays: 5 }),
   ];
 }
 function loadStrategies() {
@@ -8151,9 +8159,10 @@ function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manua
 
 // Lightweight multi-curve line chart (own markup, no shared IDs) — used
 // for the overview comparison and each strategy's deep-dive.
+let _mccCtx = null;   // geometry + series for the multi-curve hover handler
 function renderMultiCurveChart(series, title, subtitle) {
   const valid = (series || []).filter((s) => s.curve && s.curve.some((p) => p.retPct != null));
-  if (!valid.length) return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5 text-xs text-slate-500">No curve data yet.</div>`;
+  if (!valid.length) { _mccCtx = null; return `<div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5 text-xs text-slate-500">No curve data yet.</div>`; }
   const W = 820, H = 240, M = { left: 48, right: 16, top: 14, bottom: 26 };
   const innerW = W - M.left - M.right, innerH = H - M.top - M.bottom;
   const dates = valid.reduce((best, s) => s.curve.length > best.length ? s.curve.map((p) => p.date) : best, []);
@@ -8176,18 +8185,62 @@ function renderMultiCurveChart(series, title, subtitle) {
   const tickEvery = Math.max(1, Math.ceil(n / 7));
   const xticks = dates.map((dt, i) => (i % tickEvery !== 0 && i !== n - 1) ? "" : `<text x="${xAt(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="9.5" fill="#64748b">${dt.slice(5)}</text>`).join("");
   const legend = valid.map((s) => { const r = lastRet(s.curve); return `<span class="inline-flex items-center gap-1.5 text-[11px] text-slate-600"><span class="w-3 h-0.5 rounded" style="background:${s.color}"></span>${escapeHtml(s.label)} <span class="tabular-nums font-semibold ${r >= 0 ? "text-emerald-700" : "text-rose-700"}">${fmtSignedPct(r)}</span></span>`; }).join("");
+  _mccCtx = { W, H, M, innerW, innerH, lo, hi, dates, series: valid.map((s) => ({ label: s.label, color: s.color, byDate: new Map(s.curve.map((p) => [p.date, p.retPct])) })) };
   return `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
       <div class="flex items-baseline justify-between gap-2 flex-wrap mb-2">
         <div><h3 class="font-display font-bold text-slate-900 text-sm">${escapeHtml(title)}</h3>${subtitle ? `<div class="text-[11px] text-slate-500">${escapeHtml(subtitle)}</div>` : ""}</div>
         <div class="flex flex-wrap items-center gap-x-3 gap-y-1">${legend}</div>
       </div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:260px">
-        ${grid}
-        <line x1="${M.left}" x2="${W - M.right}" y1="${yAt(0).toFixed(1)}" y2="${yAt(0).toFixed(1)}" stroke="#cbd5e1" stroke-width="1"/>
-        ${paths}${xticks}
-      </svg>
+      <div id="mcc-wrap" class="relative">
+        <svg id="mcc-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:260px">
+          ${grid}
+          <line x1="${M.left}" x2="${W - M.right}" y1="${yAt(0).toFixed(1)}" y2="${yAt(0).toFixed(1)}" stroke="#cbd5e1" stroke-width="1"/>
+          ${paths}${xticks}
+          <line id="mcc-guide" x1="0" y1="${M.top}" x2="0" y2="${(M.top + innerH).toFixed(1)}" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2 3" opacity="0"/>
+          <g id="mcc-dots"></g>
+          <rect id="mcc-capture" x="${M.left}" y="${M.top}" width="${innerW}" height="${innerH}" fill="transparent" style="cursor:crosshair"/>
+        </svg>
+        <div id="mcc-tip" class="hidden absolute z-10 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+10px)] bg-slate-900/95 backdrop-blur text-white text-[11px] rounded-xl shadow-2xl ring-1 ring-slate-700/60 px-3 py-2 whitespace-nowrap space-y-0.5"></div>
+      </div>
     </div>`;
+}
+
+// Hover crosshair + tooltip for the multi-curve chart. Reads geometry
+// from _mccCtx (set on the last render); only one chart is live at a time.
+function wireMultiCurveHover(root) {
+  const ctx = _mccCtx; if (!ctx) return;
+  const wrap = $(`${root} #mcc-wrap`); if (!wrap) return;
+  const svg = wrap.querySelector("#mcc-svg"), capture = wrap.querySelector("#mcc-capture");
+  const guide = wrap.querySelector("#mcc-guide"), dots = wrap.querySelector("#mcc-dots"), tip = wrap.querySelector("#mcc-tip");
+  if (!svg || !capture || !tip) return;
+  const { W, M, innerW, innerH, lo, hi, dates, series } = ctx;
+  const n = dates.length;
+  const xAt = (i) => M.left + (i / Math.max(1, n - 1)) * innerW;
+  const yAt = (v) => M.top + innerH - ((v - lo) / (hi - lo)) * innerH;
+  function move(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const scale = rect.width / W;
+    let i = Math.round(((clientX - rect.left) / scale - M.left) / innerW * (n - 1));
+    i = Math.max(0, Math.min(n - 1, i));
+    const dt = dates[i], gx = xAt(i);
+    guide.setAttribute("x1", gx); guide.setAttribute("x2", gx); guide.setAttribute("opacity", "1");
+    let dotsHtml = "", rows = "", topY = ctx.H;
+    for (const s of series) {
+      const v = s.byDate.get(dt); if (v == null) continue;
+      const dy = yAt(v); topY = Math.min(topY, dy);
+      dotsHtml += `<circle cx="${gx.toFixed(1)}" cy="${dy.toFixed(1)}" r="3.5" fill="#fff" stroke="${s.color}" stroke-width="2"/>`;
+      rows += `<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${s.color}"></span><span>${escapeHtml(s.label)}</span><span class="ml-3 tabular-nums font-semibold ${v >= 0 ? "text-emerald-300" : "text-rose-300"}">${v >= 0 ? "+" : ""}${v.toFixed(2)}%</span></div>`;
+    }
+    dots.innerHTML = dotsHtml;
+    tip.innerHTML = `<div class="font-bold">${dt}</div>${rows}`;
+    tip.classList.remove("hidden");
+    tip.style.left = (gx * scale) + "px";
+    tip.style.top = (topY * scale) + "px";
+  }
+  capture.addEventListener("mousemove", (e) => move(e.clientX));
+  capture.addEventListener("mouseleave", () => { guide.setAttribute("opacity", "0"); dots.innerHTML = ""; tip.classList.add("hidden"); });
+  capture.addEventListener("touchmove", (e) => { if (e.touches[0]) move(e.touches[0].clientX); }, { passive: true });
 }
 
 function stratChip(t) { return `<span class="inline-flex items-center px-1.5 py-0 rounded bg-slate-100 text-slate-600 ring-1 ring-slate-200 text-[9px] font-semibold tabular-nums">${t}</span>`; }
@@ -8264,27 +8317,64 @@ function renderTodaysNames(result, strat) {
     </div>`;
 }
 
+// Colour-coded, grouped strategy configurator. Three labelled steps —
+// which stocks, when to sell, how often to refresh — each slider with a
+// value chip + one-line helper. Reads like a sentence at the top.
+const STRAT_ACCENT = {
+  indigo:  { chip: "text-indigo-700 bg-indigo-50 ring-indigo-200",   range: "accent-indigo-600" },
+  emerald: { chip: "text-emerald-700 bg-emerald-50 ring-emerald-200", range: "accent-emerald-600" },
+  rose:    { chip: "text-rose-700 bg-rose-50 ring-rose-200",         range: "accent-rose-600" },
+  amber:   { chip: "text-amber-700 bg-amber-50 ring-amber-200",       range: "accent-amber-600" },
+  sky:     { chip: "text-sky-700 bg-sky-50 ring-sky-200",             range: "accent-sky-600" },
+};
+const STRAT_FIELD_META = {
+  threshold:     { group: 0, help: "min score to consider", accent: "indigo" },
+  basketSize:    { group: 0, help: "how many to hold",       accent: "indigo" },
+  target:        { group: 1, help: "take profit at",         accent: "emerald" },
+  sl:            { group: 1, help: "cut the loss at",        accent: "rose" },
+  maxHoldDays:   { group: 1, help: "sell if held this long",  accent: "amber" },
+  rebalanceDays: { group: 2, help: "rebuild the list every",  accent: "sky" },
+};
+const STRAT_GROUPS = [
+  { title: "① Which stocks to buy", cols: "grid-cols-2" },
+  { title: "② When to sell each one", cols: "grid-cols-1 sm:grid-cols-3" },
+  { title: "③ How often to refresh", cols: "grid-cols-1" },
+];
 function renderStrategyConfig(strat) {
-  const sliders = STRAT_FIELDS.map((f) => `
-    <div>
-      <div class="flex items-center justify-between mb-1">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">${f.label}</span>
-        <span class="text-xs font-bold tabular-nums text-indigo-700" data-strat-out="${f.key}">${strat[f.key]}${f.suffix}</span>
-      </div>
-      <input type="range" data-strat-field="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${strat[f.key]}" class="w-full accent-indigo-600 cursor-pointer" />
-    </div>`).join("");
+  const sliderHtml = (f) => {
+    const m = STRAT_FIELD_META[f.key]; const a = STRAT_ACCENT[m.accent];
+    return `
+      <div>
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <span class="text-xs font-semibold text-slate-700 truncate">${escapeHtml(f.label)}</span>
+          <span class="text-sm font-bold tabular-nums ${a.chip} ring-1 rounded-md px-2 py-0.5 flex-shrink-0" data-strat-out="${f.key}">${strat[f.key]}${f.suffix}</span>
+        </div>
+        <input type="range" data-strat-field="${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${strat[f.key]}" class="w-full ${a.range} cursor-pointer" />
+        <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(m.help)}</div>
+      </div>`;
+  };
+  const groups = STRAT_GROUPS.map((g, gi) => {
+    const fs = STRAT_FIELDS.filter((f) => STRAT_FIELD_META[f.key].group === gi);
+    return `
+      <div class="rounded-xl ring-1 ring-slate-100 bg-slate-50/50 p-3">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">${escapeHtml(g.title)}</div>
+        <div class="grid ${g.cols} gap-4">${fs.map(sliderHtml).join("")}</div>
+      </div>`;
+  }).join("");
   return `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
       <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
-        <input type="text" data-strat-name value="${escapeHtml(strat.name)}" class="font-display font-bold text-slate-900 text-base bg-transparent ring-1 ring-transparent hover:ring-slate-200 focus:ring-2 focus:ring-indigo-300 rounded-lg px-2 py-1 outline-none min-w-0 flex-1" />
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 min-w-0 flex-1">
+          <span class="text-lg">🎛️</span>
+          <input type="text" data-strat-name value="${escapeHtml(strat.name)}" class="font-display font-bold text-slate-900 text-base bg-transparent ring-1 ring-transparent hover:ring-slate-200 focus:ring-2 focus:ring-indigo-300 rounded-lg px-2 py-1 outline-none min-w-0 flex-1" title="Click to rename" />
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
           <button type="button" data-strat-dup="${strat.id}" class="text-[11px] font-semibold text-slate-500 hover:text-indigo-600">Duplicate</button>
           <button type="button" data-strat-del="${strat.id}" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">Delete</button>
         </div>
       </div>
-      <div class="text-xs text-slate-500 mb-3">Drag a slider — the result updates instantly. Plain English: <em>"buy the top ${strat.basketSize} stocks, sell each one when it's up ${strat.target}%, down ${strat.sl}%, or held ${strat.maxHoldDays} days, and refresh the list every ${strat.rebalanceDays} days."</em></div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">${sliders}</div>
-      <div class="text-[10px] text-slate-400 mt-3 leading-snug"><strong>Target / Stop-loss / Max holding</strong> are the three sell triggers — whichever happens first, that stock is sold and the next best one takes its place. <strong>Rebalance</strong> = how often the whole list is refreshed to the current top stocks.</div>
+      <div class="text-xs text-slate-500 mb-3 leading-relaxed">Reads as: <em>"buy the top <strong>${strat.basketSize}</strong> stocks scoring ≥ <strong>${strat.threshold}</strong>; sell each when it's up <strong>${strat.target}%</strong>, down <strong>${strat.sl}%</strong>, or held <strong>${strat.maxHoldDays}</strong> days; refresh the list every <strong>${strat.rebalanceDays}</strong> days."</em> Drag any slider — the result updates instantly.</div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">${groups}</div>
       ${renderParamPicker(strat)}
     </div>`;
 }
@@ -8464,6 +8554,7 @@ async function renderCustom() {
       host.innerHTML = renderCustomOverview(views);
     }
     wireCustomTab();
+    wireMultiCurveHover("#custom-content");
     $$("#custom-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
       const ticker = el.dataset.ticker; if (!ticker) return;
       const pick = buildCohortClickPick(ticker, el.dataset.cohortSide || "ai", el.dataset.segAnchor || null);
