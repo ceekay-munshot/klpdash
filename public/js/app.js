@@ -215,13 +215,6 @@ const CONFIGS = {
     label: "Custom",
     custom: true,
   },
-
-  // Alerts — configurable signal/outcome alerts evaluated on the latest
-  // data. Its own bespoke section + renderer.
-  alerts: {
-    label: "Alerts",
-    alerts: true,
-  },
 };
 
 // ---------------- State ----------------
@@ -654,14 +647,12 @@ async function switchTab(tabId) {
   const history = !!c?.history;
   const active = !!c?.active;
   const custom = !!c?.custom;
-  const alerts = !!c?.alerts;
-  const bespoke = hero || history || active || custom || alerts;
+  const bespoke = hero || history || active || custom;
   document.querySelectorAll("main > section").forEach((sec) => {
     if (sec.id === "top-picks-section") sec.classList.toggle("hidden", !hero);
     else if (sec.id === "history-section") sec.classList.toggle("hidden", !history);
     else if (sec.id === "active-section") sec.classList.toggle("hidden", !active);
     else if (sec.id === "custom-section") sec.classList.toggle("hidden", !custom);
-    else if (sec.id === "alerts-section") sec.classList.toggle("hidden", !alerts);
     else sec.classList.toggle("hidden", bespoke);
   });
   if (hero) {
@@ -680,10 +671,6 @@ async function switchTab(tabId) {
   }
   if (custom) {
     await renderCustom();
-    return;
-  }
-  if (alerts) {
-    await renderAlerts();
     return;
   }
 
@@ -4259,11 +4246,24 @@ async function renderActive() {
       : [];
 
     const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks);
-    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode);
+
+    // Alerts section (lives inside the Strategy tab, not a separate tab).
+    if (!customTechByTicker) {
+      try { const tj = await fetch("data/technicals.json").then((r) => r.json()); customTechByTicker = new Map((tj.companies || []).map((c) => [c.ticker, c])); } catch { customTechByTicker = new Map(); }
+    }
+    let alertsHtml = "";
+    try {
+      const strategyHits = view ? collectStrategyHits(view, todayDate) : { todayHits: [] };
+      const alerts = evaluateAlerts(snapshots, customTechByTicker, strategyHits, alertPrefs);
+      alertsHtml = renderAlertsSection(alerts, alertPrefs);
+    } catch (e) { console.error("alerts section failed:", e); }
+
+    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml);
     wireStrategyModeToggle();
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
     wireStrategyAlertsDropdown();
+    wireAlertsInputs("#active-content", renderActive);
     // Cohort-style row clicks open the same drill modal everywhere else uses.
     $$("#active-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
       const ticker = el.dataset.ticker;
@@ -4678,7 +4678,7 @@ function computeOverallHitSummary(picks) {
   return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
 }
 
-function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
+function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "") {
   const isPassive = mode === "passive";
   const cadenceBar = isPassive ? "" : renderActiveCadencePills(cadence);
   if (!view) {
@@ -4704,6 +4704,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode) {
       ${renderActiveSegmentedBaskets(view, mode)}
       ${renderActivePickRowsSplit(view)}
       ${renderSectorTiming(view)}
+      ${alertsHtml}
       ${renderActiveBetaCaveat(view, anchorDate)}
     </div>
   `;
@@ -8692,85 +8693,47 @@ function renderAlertFeed(alerts) {
     </div>`; }).join("")}</div>`;
 }
 
-function updateAlertsBadge(count) {
-  const b = $("#alerts-nav-badge");
-  if (!b) return;
-  b.textContent = count;
-  b.classList.toggle("hidden", !count);
-}
-
-async function renderAlerts() {
-  const host = $("#alerts-content");
-  if (!host) return;
-  host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Evaluating alerts…</div>`;
-  try {
-    try { await ensureHistoryCache(); } catch (e) { host.innerHTML = renderHistoryEmpty(e.message); return; }
-    const { snapshots, benchmark, lkp } = state.cache.history;
-    if (!snapshots.length) { host.innerHTML = renderHistoryEmpty("No snapshots loaded."); return; }
-    if (!customTechByTicker) {
-      try { const tj = await fetch("data/technicals.json").then((r) => r.json()); customTechByTicker = new Map((tj.companies || []).map((c) => [c.ticker, c])); } catch { customTechByTicker = new Map(); }
-    }
-    const anchorDate = lkpAnchorDate(lkp, snapshots);
-    const todayDate = snapshots[snapshots.length - 1].date;
-    const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
-    const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
-    const niftyOn = (date) => { if (!niftyClosesByDate) return null; if (niftyClosesByDate[date] != null) return niftyClosesByDate[date]; let last = null; for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; } return last; };
-    const lkpResolved = lkpOverride() || lkp;
-    const anchorMonth = anchorDate?.slice(0, 7) || null;
-    const mostRecentMonth = snapshots[snapshots.length - 1].date.slice(0, 7);
-    const manualPicks = lkpResolved ? (lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []) : [];
-    // Active strategy hits today drive the target / SL alerts.
-    let strategyHits = { todayHits: [] };
-    try {
-      const av = buildActiveView(snapshots, anchorDate, todayDate, "daily", niftyOn, manualPicks);
-      if (av) strategyHits = collectStrategyHits(av, todayDate);
-    } catch {}
-
-    const alerts = evaluateAlerts(snapshots, customTechByTicker, strategyHits, alertPrefs);
-    const totalCount = alerts.reduce((a, g) => a + g.total, 0);
-    updateAlertsBadge(totalCount);
-
-    host.innerHTML = `
-      <div class="space-y-4">
-        <div class="bg-gradient-to-br from-rose-50 via-white to-amber-50 rounded-2xl ring-1 ring-rose-100 p-5">
-          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Alerts</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 ring-1 ring-rose-200">${totalCount} live</span></div>
-          <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>What's happening in the market right now.</strong> This watches today's data and flags stocks doing something notable — hitting a target, spiking in volume, getting overbought, or nearing a 52-week high. Click any stock to see its chart. Adjust what counts as "notable" in Settings.</div>
-        </div>
+// Alerts as a compact, collapsible section inside the Strategy tab
+// (no longer a standalone tab). Collapsed by default with a live count
+// in the summary; expands to the feed + settings.
+function renderAlertsSection(alerts, prefs) {
+  const total = alerts.reduce((a, g) => a + g.total, 0);
+  return `
+    <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <summary class="cursor-pointer flex items-center gap-2 select-none flex-wrap">
+        <span class="text-base">🔔</span>
+        <span class="font-display font-bold text-slate-900 text-sm">Alerts — what's notable today</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${total ? "bg-rose-100 text-rose-700 ring-1 ring-rose-200" : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"}">${total} live</span>
+        <span class="text-[11px] text-slate-400 font-normal hidden sm:inline">target hits · volume · momentum · near-highs</span>
+      </summary>
+      <div class="mt-3 space-y-3">
         ${renderAlertFeed(alerts)}
-        ${renderAlertConfig(alertPrefs)}
-      </div>`;
-    wireAlerts();
-    $$("#alerts-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
-      const ticker = el.dataset.ticker; if (!ticker) return;
-      const pick = buildCohortClickPick(ticker, "ai", null);
-      if (pick) openHistoryDrill(pick);
-    }));
-  } catch (e) {
-    console.error("renderAlerts failed:", e);
-    host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-rose-200 p-6"><div class="text-rose-600 font-bold text-sm">Alerts failed to render</div><pre class="text-[10px] text-slate-500 mt-2 whitespace-pre-wrap overflow-x-auto">${escapeHtml(e?.stack || String(e))}</pre></div>`;
-  }
+        ${renderAlertConfig(prefs)}
+      </div>
+    </details>`;
 }
 
-function wireAlerts() {
-  const root = "#alerts-content";
+// Wire the alert toggles / thresholds within a given root, re-rendering
+// via the supplied callback (the Strategy tab passes renderActive).
+function wireAlertsInputs(root, rerender) {
   $$(`${root} [data-alert-on]`).forEach((inp) => inp.addEventListener("change", () => {
     const key = inp.dataset.alertOn;
     alertPrefs.rules[key] = { ...(alertPrefs.rules[key] || {}), on: inp.checked };
-    saveAlertPrefs(alertPrefs); renderAlerts();
+    saveAlertPrefs(alertPrefs); rerender();
   }));
   $$(`${root} [data-alert-threshold]`).forEach((inp) => inp.addEventListener("change", () => {
     const key = inp.dataset.alertThreshold; const num = parseFloat(inp.value);
     if (!Number.isFinite(num)) { inp.value = alertPrefs.rules[key]?.threshold ?? ""; return; }
     alertPrefs.rules[key] = { ...(alertPrefs.rules[key] || {}), threshold: num };
-    saveAlertPrefs(alertPrefs); renderAlerts();
+    saveAlertPrefs(alertPrefs); rerender();
   }));
   const mc = $(`${root} [data-alert-mincomposite]`);
   if (mc) mc.addEventListener("change", () => {
     const num = parseFloat(mc.value);
-    if (Number.isFinite(num)) { alertPrefs.minComposite = num; saveAlertPrefs(alertPrefs); renderAlerts(); }
+    if (Number.isFinite(num)) { alertPrefs.minComposite = num; saveAlertPrefs(alertPrefs); rerender(); }
   });
   const reset = $(`${root} #alert-reset`);
-  if (reset) reset.addEventListener("click", () => { alertPrefs = JSON.parse(JSON.stringify(ALERT_DEFAULTS)); saveAlertPrefs(alertPrefs); renderAlerts(); });
+  if (reset) reset.addEventListener("click", () => { alertPrefs = JSON.parse(JSON.stringify(ALERT_DEFAULTS)); saveAlertPrefs(alertPrefs); rerender(); });
 }
 
 wire();
