@@ -5805,6 +5805,16 @@ function wireStrategySegmentPills() {
   }));
 }
 
+// Re-render a tab without yanking the viewport to the top. The async tab
+// renderers briefly swap in a "Loading…" placeholder that collapses the
+// page height and resets window scroll; capture the offset and restore it
+// once the fresh content is painted (a microtask after innerHTML is set,
+// i.e. before the next paint — so with cached data there's no visible jump).
+function rerenderKeepingScroll(rerender) {
+  const y = window.scrollY;
+  Promise.resolve(rerender()).then(() => window.scrollTo(0, y)).catch(() => {});
+}
+
 // Sector ↔ Industry toggle on the rebalance-timing table (shared by the
 // Active and Custom tabs — pass the tab's root + its re-render function).
 function wireSectorTimingToggle(root, rerender) {
@@ -5812,7 +5822,7 @@ function wireSectorTimingToggle(root, rerender) {
     const v = btn.dataset.sectorTiming;
     if ((v !== "sector" && v !== "industry") || v === sectorTimingBy) return;
     sectorTimingBy = v;
-    rerender();
+    rerenderKeepingScroll(rerender);
   }));
 }
 
@@ -8803,7 +8813,7 @@ function wireCustomTab() {
   // Parameter-pillar dropdown — switch which pillar's params are shown
   // (Technicals / Fundamentals / Sentiment / Macro / Liquidity).
   $$(`${root} [data-param-pillar]`).forEach((sel) => sel.addEventListener("change", () => {
-    paramPickerPillar = sel.value; paramAdvancedOpen = true; renderCustom();
+    paramPickerPillar = sel.value; paramAdvancedOpen = true; rerenderKeepingScroll(renderCustom);
   }));
   // Keep the Advanced <details> open/closed state across re-renders.
   $$(`${root} [data-param-advanced]`).forEach((el) => el.addEventListener("toggle", () => {
@@ -8818,7 +8828,7 @@ function wireCustomTab() {
     if (inp.checked) s.params[key] = { on: true, ...(def?.def || {}), ...(s.params[key] || {}), on: true };
     else s.params[key] = { ...(s.params[key] || {}), on: false };
     paramAdvancedOpen = true;
-    saveStrategies(customStrategies); renderCustom();
+    saveStrategies(customStrategies); rerenderKeepingScroll(renderCustom);
   }));
   // Parameter value tweaks (min / max / val).
   $$(`${root} [data-param-input]`).forEach((inp) => inp.addEventListener("change", () => {
@@ -8828,7 +8838,7 @@ function wireCustomTab() {
     s.params = s.params || {};
     s.params[key] = { ...(s.params[key] || { on: true }), [which]: num };
     paramAdvancedOpen = true;
-    saveStrategies(customStrategies); renderCustom();
+    saveStrategies(customStrategies); rerenderKeepingScroll(renderCustom);
   }));
   // Shared capital & charges (reused renderSimPanel) — re-run all strategies.
   $$(`${root} [data-sim-field]`).forEach((inp) => inp.addEventListener("change", () => {
