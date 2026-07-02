@@ -3834,15 +3834,23 @@ function setupCohortHover(series) {
       ${boundaryNote}
     `;
     tip.classList.remove("hidden");
-    const rect = svg.getBoundingClientRect();
-    const px = (x / W) * rect.width;
-    const py = (M.top + innerH / 2) / H * rect.height;       // tooltip vertically anchored to middle of chart
+    // Anchor via the live CTM (letterbox / zoom / DPR safe), not x/W*rect.width.
+    const cr = container.getBoundingClientRect();
+    const ctm = svg.getScreenCTM();
+    let px, py;
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = x; sp.y = M.top + innerH / 2;
+      const scr = sp.matrixTransform(ctm);
+      px = scr.x - cr.left; py = scr.y - cr.top;
+    } else {
+      const rect = svg.getBoundingClientRect();
+      px = (x / W) * rect.width; py = (M.top + innerH / 2) / H * rect.height;
+    }
     tip.style.left = `${px}px`;
     tip.style.top = `${py}px`;
     tip.style.transform = "translate(-50%, calc(-100% - 16px))";
     requestAnimationFrame(() => {
       const tr = tip.getBoundingClientRect();
-      const cr = container.getBoundingClientRect();
       let dx = 0;
       if (tr.left < cr.left + 6) dx = (cr.left + 6) - tr.left;
       else if (tr.right > cr.right - 6) dx = (cr.right - 6) - tr.right;
@@ -3855,10 +3863,16 @@ function setupCohortHover(series) {
     tip.classList.add("hidden");
   }
   function eventToIdx(e) {
-    const rect = svg.getBoundingClientRect();
     const t = e.touches ? e.touches[0] : e;
-    const xPx = t.clientX - rect.left;
-    const xView = (xPx / rect.width) * W;
+    let xView;
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = t.clientX; sp.y = t.clientY;
+      xView = sp.matrixTransform(ctm.inverse()).x;   // letterbox-aware
+    } else {
+      const rect = svg.getBoundingClientRect();
+      xView = ((t.clientX - rect.left) / rect.width) * W;
+    }
     let bestI = 0, bestD = Infinity;
     for (let i = 0; i < pts.length; i++) {
       const d = Math.abs(xAt(i) - xView);
@@ -5249,11 +5263,22 @@ function setupActiveChartHover(view) {
     if (nVal != null) { dotNifty.setAttribute("cx", aiPx); dotNifty.setAttribute("cy", yAt(nVal)); dotNifty.setAttribute("opacity", "1"); }
     else dotNifty.setAttribute("opacity", "0");
 
-    const rect = svg.getBoundingClientRect();
-    const sx = rect.width / W;
-    const sy = rect.height / H;
-    const tipX = aiPx * sx;
-    const tipY = aiPy * sy;
+    // Position the tooltip at the point's ACTUAL screen location using the
+    // SVG's live coordinate matrix. Deriving it from rect.width / W breaks
+    // when preserveAspectRatio letterboxes the chart (wide container →
+    // height-capped → side padding): today's point, drawn at the chart's
+    // right edge, would otherwise be mislocated out into the empty padding.
+    const contRect = container.getBoundingClientRect();
+    const ctm = svg.getScreenCTM();
+    let tipX, tipY;
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = aiPx; sp.y = aiPy;
+      const scr = sp.matrixTransform(ctm);
+      tipX = scr.x - contRect.left; tipY = scr.y - contRect.top;
+    } else {
+      const rect = svg.getBoundingClientRect();
+      tipX = aiPx * (rect.width / W); tipY = aiPy * (rect.height / H);
+    }
     const fmt = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
     const cls = (v) => v == null ? "text-slate-300" : v >= 0 ? "text-emerald-300" : "text-rose-300";
     tip.innerHTML = `
@@ -5262,9 +5287,19 @@ function setupActiveChartHover(view) {
       ${mVal != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.manual}"></span><span class="text-slate-300">Manual</span><span class="ml-auto font-bold tabular-nums ${cls(mVal)}">${fmt(mVal)}</span></div>` : ""}
       ${nVal != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.nifty}"></span><span class="text-slate-300">Nifty</span><span class="ml-auto font-bold tabular-nums ${cls(nVal)}">${fmt(nVal)}</span></div>` : ""}
     `;
+    tip.classList.remove("hidden");
     tip.style.left = tipX + "px";
     tip.style.top = tipY + "px";
-    tip.classList.remove("hidden");
+    // Flip / clamp horizontally so today's tooltip (pinned to the right
+    // edge) stays inside the card instead of clipping off-screen.
+    tip.style.transform = "translate(-50%, calc(-100% - 10px))";
+    requestAnimationFrame(() => {
+      const tr = tip.getBoundingClientRect();
+      let dx = 0;
+      if (tr.left < contRect.left + 6) dx = (contRect.left + 6) - tr.left;
+      else if (tr.right > contRect.right - 6) dx = (contRect.right - 6) - tr.right;
+      if (dx !== 0) tip.style.transform = `translate(calc(-50% + ${dx}px), calc(-100% - 10px))`;
+    });
   }
   function hide() {
     guide.setAttribute("opacity", "0");
@@ -5273,15 +5308,29 @@ function setupActiveChartHover(view) {
     dotNifty.setAttribute("opacity", "0");
     tip.classList.add("hidden");
   }
-  capture.addEventListener("mousemove", (e) => {
-    const rect = svg.getBoundingClientRect();
-    const sx = (e.clientX - rect.left) / rect.width * W;
-    // Map x → nearest snapshot index
-    const rel = (sx - M.left) / innerW;
-    const idx = Math.max(0, Math.min(pts.length - 1, Math.round(rel * (pts.length - 1))));
-    show(idx);
-  });
+  // Pointer x → nearest snapshot index, via the SVG's inverse CTM so
+  // letterbox padding, page zoom and device-pixel-ratio can't shift it.
+  function eventToIdx(e) {
+    const t = e.touches ? e.touches[0] : e;
+    let vx;
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = t.clientX; sp.y = t.clientY;
+      vx = sp.matrixTransform(ctm.inverse()).x;
+    } else {
+      const rect = svg.getBoundingClientRect();
+      vx = (t.clientX - rect.left) / rect.width * W;
+    }
+    const rel = (vx - M.left) / innerW;
+    return Math.max(0, Math.min(pts.length - 1, Math.round(rel * (pts.length - 1))));
+  }
+  capture.addEventListener("mousemove", (e) => show(eventToIdx(e)));
   capture.addEventListener("mouseleave", hide);
+  capture.addEventListener("touchstart", (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchmove",  (e) => { show(eventToIdx(e)); e.preventDefault(); }, { passive: false });
+  capture.addEventListener("touchend", hide);
+  // Surface today (last point) on render so it reads without hovering.
+  show(pts.length - 1);
 }
 
 // Two summary cards side by side: AI strategy hits + Manual basket hits.
@@ -6399,15 +6448,20 @@ function openHistoryDrill(pick) {
     hoverPt.setAttribute("cx", px); hoverPt.setAttribute("cy", py); hoverPt.setAttribute("opacity", "1");
     halo.setAttribute("cx", px); halo.setAttribute("cy", py); halo.setAttribute("opacity", "1");
 
-    const rect = svg.getBoundingClientRect();
-    // viewBox → pixel mapping (preserveAspectRatio = xMidYMid meet, which
-    // for our box scales by the smaller of width/height ratios — but here
-    // we control the modal width and the chart is the limiting axis, so
-    // x scale equals rect.width / W).
-    const sx = rect.width / W;
-    const sy = rect.height / H;
-    const tipX = px * sx;
-    const tipY = py * sy;
+    // viewBox → screen via the live CTM, so the tooltip tracks the point
+    // even when preserveAspectRatio letterboxes the chart or the page is
+    // zoomed (rect.width / W silently drifts in those cases).
+    const contRect = container.getBoundingClientRect();
+    const ctm = svg.getScreenCTM();
+    let tipX, tipY;
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = px; sp.y = py;
+      const scr = sp.matrixTransform(ctm);
+      tipX = scr.x - contRect.left; tipY = scr.y - contRect.top;
+    } else {
+      const rect = svg.getBoundingClientRect();
+      tipX = px * (rect.width / W); tipY = py * (rect.height / H);
+    }
 
     const ratingColor = RATING_FILL[p.rating] || "#cbd5e1";
     const compTxt = p.composite != null ? p.composite.toFixed(1) : "—";
@@ -6431,7 +6485,6 @@ function openHistoryDrill(pick) {
     `;
     tip.classList.remove("hidden");
     // Position then flip horizontally if too close to container edges.
-    const cw = container.clientWidth;
     tip.style.left = `${tipX}px`;
     tip.style.top = `${tipY}px`;
     tip.style.transform = "translate(-50%, calc(-100% - 14px))";
@@ -6452,10 +6505,16 @@ function openHistoryDrill(pick) {
   }
 
   function eventToIdx(e) {
-    const rect = svg.getBoundingClientRect();
     const t = e.touches ? e.touches[0] : e;
-    const xPx = t.clientX - rect.left;
-    const xView = (xPx / rect.width) * W;
+    let xView;
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = t.clientX; sp.y = t.clientY;
+      xView = sp.matrixTransform(ctm.inverse()).x;   // letterbox / zoom safe
+    } else {
+      const rect = svg.getBoundingClientRect();
+      xView = ((t.clientX - rect.left) / rect.width) * W;
+    }
     let bestI = 0, bestD = Infinity;
     for (let i = 0; i < points.length; i++) {
       const d = Math.abs(xAt(i) - xView);
@@ -8306,9 +8365,19 @@ function wireMultiCurveHover(root) {
   const xAt = (i) => M.left + (i / Math.max(1, n - 1)) * innerW;
   const yAt = (v) => M.top + innerH - ((v - lo) / (hi - lo)) * innerH;
   function move(clientX) {
-    const rect = svg.getBoundingClientRect();
-    const scale = rect.width / W;
-    let i = Math.round(((clientX - rect.left) / scale - M.left) / innerW * (n - 1));
+    // Map through the SVG's live CTM so preserveAspectRatio letterboxing,
+    // page zoom and device-pixel-ratio can't shift the pointer→date mapping
+    // (the plain clientX/rect.width math drifts once the chart is padded).
+    const ctm = svg.getScreenCTM();
+    let vx;
+    if (ctm) {
+      const sp = svg.createSVGPoint(); sp.x = clientX; sp.y = 0;
+      vx = sp.matrixTransform(ctm.inverse()).x;
+    } else {
+      const rect = svg.getBoundingClientRect();
+      vx = (clientX - rect.left) / rect.width * W;
+    }
+    let i = Math.round((vx - M.left) / innerW * (n - 1));
     i = Math.max(0, Math.min(n - 1, i));
     const dt = dates[i], gx = xAt(i);
     guide.setAttribute("x1", gx); guide.setAttribute("x2", gx); guide.setAttribute("opacity", "1");
@@ -8322,8 +8391,27 @@ function wireMultiCurveHover(root) {
     dots.innerHTML = dotsHtml;
     tip.innerHTML = `<div class="font-bold">${dt}</div>${rows}`;
     tip.classList.remove("hidden");
-    tip.style.left = (gx * scale) + "px";
-    tip.style.top = (topY * scale) + "px";
+    const wrapRect = wrap.getBoundingClientRect();
+    let tipX, tipY;
+    if (ctm) {
+      const sp2 = svg.createSVGPoint(); sp2.x = gx; sp2.y = topY;
+      const scr = sp2.matrixTransform(ctm);
+      tipX = scr.x - wrapRect.left; tipY = scr.y - wrapRect.top;
+    } else {
+      const rect = svg.getBoundingClientRect(); const scale = rect.width / W;
+      tipX = gx * scale; tipY = topY * scale;
+    }
+    tip.style.left = tipX + "px";
+    tip.style.top = tipY + "px";
+    // Flip / clamp so the last date's tooltip doesn't clip off the right edge.
+    tip.style.transform = "translate(-50%, calc(-100% - 10px))";
+    requestAnimationFrame(() => {
+      const tr = tip.getBoundingClientRect();
+      let dx = 0;
+      if (tr.left < wrapRect.left + 6) dx = (wrapRect.left + 6) - tr.left;
+      else if (tr.right > wrapRect.right - 6) dx = (wrapRect.right - 6) - tr.right;
+      if (dx !== 0) tip.style.transform = `translate(calc(-50% + ${dx}px), calc(-100% - 10px))`;
+    });
   }
   capture.addEventListener("mousemove", (e) => move(e.clientX));
   capture.addEventListener("mouseleave", () => { guide.setAttribute("opacity", "0"); dots.innerHTML = ""; tip.classList.add("hidden"); });
