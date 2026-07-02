@@ -8170,7 +8170,7 @@ function loadStrategies() {
 function saveStrategies(list) { try { localStorage.setItem(CUSTOM_STRATS_KEY, JSON.stringify(list)); } catch {} }
 let customStrategies = loadStrategies();
 let customSelectedId = null;
-let customPerfOpen = false;   // Performance comparison table expanded?
+let customPerfOpen = false;   // showing the Performance comparison page?
 
 function lastRet(curve) { for (let i = (curve?.length || 0) - 1; i >= 0; i--) if (curve[i].retPct != null) return curve[i].retPct; return 0; }
 function fmtSignedPct(v) { return (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
@@ -8645,9 +8645,11 @@ function renderParamPicker(strat) {
     </details>`;
 }
 
+const STRAT_PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444"];
+function stratColors(views) { return views.map((v, i) => ({ ...v, color: STRAT_PALETTE[i % STRAT_PALETTE.length] })); }
+
 function renderCustomOverview(views) {
-  const palette = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444"];
-  const withColor = views.map((v, i) => ({ ...v, color: palette[i % palette.length] }));
+  const withColor = stratColors(views);
   const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));
   const firstNifty = withColor.find((v) => v.view?.niftyCurve?.length);
   if (firstNifty) series.push({ label: "Nifty 50", color: "#94a3b8", curve: firstNifty.view.niftyCurve, dash: "5 4" });
@@ -8657,7 +8659,10 @@ function renderCustomOverview(views) {
   return `
     <div class="space-y-5">
       <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
-        <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Custom Strategy Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+          <button type="button" data-perf-open class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-indigo-700 ring-1 ring-indigo-200 text-sm font-semibold shadow-sm hover:bg-indigo-50 whitespace-nowrap">📊 Performance</button>
+        </div>
         <div class="text-sm text-slate-600 mt-1 max-w-2xl"><strong>A "what if I'd traded like this?" tester.</strong> Set buy &amp; sell rules and see how much money each plan <em>would have</em> made on past data — practice, not live trading.</div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
           ${howStep("1", "Open a strategy", "Click a card to set its rules with sliders.")}
@@ -8666,7 +8671,6 @@ function renderCustomOverview(views) {
         </div>
       </div>
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
-      ${renderCustomPerfSection(withColor)}
       <section>
         <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
         <div class="text-[11px] text-slate-500 mb-3">The best performers found by backtesting ~1,000 parameter combinations on the price history. Open any to tweak, or Duplicate to make it your own.</div>
@@ -8686,21 +8690,20 @@ function renderCustomOverview(views) {
     </div>`;
 }
 
-// Performance comparison — one row per strategy (AI presets + the user's
-// own), always current because it's rebuilt from `views` on every render,
-// so a strategy added/saved shows up here immediately. Collapsed behind a
-// button; click a row to open that strategy's deep-dive.
-function renderCustomPerfSection(views) {
-  const btn = `<button type="button" data-perf-toggle class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${customPerfOpen ? "bg-slate-100 text-slate-600 hover:bg-slate-200" : "bg-indigo-600 text-white hover:bg-indigo-700"}">${customPerfOpen ? "Hide performance ▴" : "📊 Performance table ▾"}</button>`;
+// Performance comparison — its own page inside the Custom Lab (reached via
+// the "📊 Performance" button at the top). One row per strategy (AI presets
+// + the user's own), rebuilt from `views` on every render so a strategy
+// added/saved shows up immediately. Click a row to open its deep-dive.
+function renderCustomPerformancePage(views) {
+  const withColor = stratColors(views);
   return `
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-2"><span class="text-base">📊</span><h3 class="font-display font-bold text-slate-900 text-sm">Performance comparison</h3><span class="text-[10px] text-slate-400">${views.length} ${views.length === 1 ? "strategy" : "strategies"}</span></div>
-        ${btn}
+    <div class="space-y-4">
+      <button type="button" data-perf-close class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+        <div class="flex items-center gap-2 mb-1"><span class="text-base">📊</span><h2 class="font-display font-bold text-slate-900 text-lg">Performance comparison</h2><span class="text-[10px] text-slate-400">${withColor.length} ${withColor.length === 1 ? "strategy" : "strategies"}</span></div>
+        <div class="text-[11px] text-slate-500 mb-1">Every strategy side by side — the AI presets and the ones you add. Click a row to open it.</div>
+        ${renderCustomPerfTable(withColor)}
       </div>
-      ${customPerfOpen
-        ? renderCustomPerfTable(views)
-        : `<div class="text-[11px] text-slate-500 mt-1">Every strategy's returns side by side — the AI presets and the ones you add. Click to expand.</div>`}
     </div>`;
 }
 
@@ -8855,7 +8858,9 @@ async function renderCustom() {
     }
 
     const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
-    if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
+    if (customPerfOpen) {
+      host.innerHTML = renderCustomPerformancePage(views);
+    } else if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
       const entry = views.find((v) => v.strat.id === customSelectedId);
       const todaysNames = buildTodaysNames(entry.strat, snapshots[snapshots.length - 1]);
       host.innerHTML = renderCustomDeepDive(entry, todaysNames);
@@ -8891,9 +8896,11 @@ function wireCustomTab() {
   }));
   $$(`${root} [data-strat-open]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = b.dataset.stratOpen; renderCustom(); }));
   $$(`${root} [data-strat-back]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = null; renderCustom(); }));
-  // Performance comparison table — toggle open/closed, and open a strategy from a row.
-  $$(`${root} [data-perf-toggle]`).forEach((b) => b.addEventListener("click", () => { customPerfOpen = !customPerfOpen; rerenderKeepingScroll(renderCustom); }));
-  $$(`${root} [data-perf-row]`).forEach((tr) => tr.addEventListener("click", () => { customSelectedId = tr.dataset.perfRow; renderCustom(); }));
+  // Performance page — open from the top button, back to overview, or open
+  // a strategy's deep-dive from a row (which leaves the performance page).
+  $$(`${root} [data-perf-open]`).forEach((b) => b.addEventListener("click", () => { customPerfOpen = true; customSelectedId = null; renderCustom(); }));
+  $$(`${root} [data-perf-close]`).forEach((b) => b.addEventListener("click", () => { customPerfOpen = false; renderCustom(); }));
+  $$(`${root} [data-perf-row]`).forEach((tr) => tr.addEventListener("click", () => { customPerfOpen = false; customSelectedId = tr.dataset.perfRow; renderCustom(); }));
   $$(`${root} [data-strat-dup]`).forEach((b) => b.addEventListener("click", () => {
     const src = customStrategies.find((s) => s.id === b.dataset.stratDup); if (!src) return;
     const copy = { ...src, id: newStratId(), name: src.name.replace(/^★ /, "") + " (copy)", origin: "user" };
