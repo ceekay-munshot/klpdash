@@ -8170,9 +8170,37 @@ function loadStrategies() {
 function saveStrategies(list) { try { localStorage.setItem(CUSTOM_STRATS_KEY, JSON.stringify(list)); } catch {} }
 let customStrategies = loadStrategies();
 let customSelectedId = null;
+let customPerfOpen = false;   // Performance comparison table expanded?
 
 function lastRet(curve) { for (let i = (curve?.length || 0) - 1; i >= 0; i--) if (curve[i].retPct != null) return curve[i].retPct; return 0; }
 function fmtSignedPct(v) { return (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
+
+// Trailing-window returns off a cumulative-return curve ([{date, retPct}]).
+// Returns are compounded on the equity FACTOR (1 + retPct/100), so the
+// window return is the growth between the two points, not a subtraction of
+// cumulative percentages. null when there isn't enough history to fill it.
+function shiftDateStr(d, deltaDays) {
+  const dt = new Date(d + "T00:00:00Z");
+  dt.setUTCDate(dt.getUTCDate() + deltaDays);
+  return dt.toISOString().slice(0, 10);
+}
+function windowReturnBetween(curve, fromRetPct, toRetPct) {
+  return ((1 + toRetPct / 100) / (1 + fromRetPct / 100) - 1) * 100;
+}
+function oneDayReturnPct(curve) {
+  if (!curve || curve.length < 2) return null;
+  return windowReturnBetween(curve, curve[curve.length - 2].retPct, curve[curve.length - 1].retPct);
+}
+function trailingReturnPct(curve, calendarDays) {
+  if (!curve || curve.length < 2) return null;
+  const last = curve[curve.length - 1];
+  const cutoff = shiftDateStr(last.date, -calendarDays);
+  if (curve[0].date > cutoff) return null;   // window predates inception
+  let base = null;
+  for (const p of curve) { if (p.date <= cutoff) base = p; else break; }
+  if (!base) return null;
+  return windowReturnBetween(curve, base.retPct, last.retPct);
+}
 
 // Custom-strategy backtest. Walks the snapshot trail from the upload
 // anchor holding up to N stocks (composite ≥ threshold). Each day every
@@ -8638,6 +8666,7 @@ function renderCustomOverview(views) {
         </div>
       </div>
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
+      ${renderCustomPerfSection(withColor)}
       <section>
         <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
         <div class="text-[11px] text-slate-500 mb-3">The best performers found by backtesting ~1,000 parameter combinations on the price history. Open any to tweak, or Duplicate to make it your own.</div>
@@ -8654,6 +8683,84 @@ function renderCustomOverview(views) {
         <summary class="cursor-pointer text-sm font-semibold text-slate-700 select-none">⚙ Shared capital &amp; charges <span class="font-normal text-slate-400">(applies to every plan)</span></summary>
         <div class="mt-3">${renderSimPanel(withColor.find((v) => v.view)?.view || {})}</div>
       </details>
+    </div>`;
+}
+
+// Performance comparison — one row per strategy (AI presets + the user's
+// own), always current because it's rebuilt from `views` on every render,
+// so a strategy added/saved shows up here immediately. Collapsed behind a
+// button; click a row to open that strategy's deep-dive.
+function renderCustomPerfSection(views) {
+  const btn = `<button type="button" data-perf-toggle class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${customPerfOpen ? "bg-slate-100 text-slate-600 hover:bg-slate-200" : "bg-indigo-600 text-white hover:bg-indigo-700"}">${customPerfOpen ? "Hide performance ▴" : "📊 Performance table ▾"}</button>`;
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2"><span class="text-base">📊</span><h3 class="font-display font-bold text-slate-900 text-sm">Performance comparison</h3><span class="text-[10px] text-slate-400">${views.length} ${views.length === 1 ? "strategy" : "strategies"}</span></div>
+        ${btn}
+      </div>
+      ${customPerfOpen
+        ? renderCustomPerfTable(views)
+        : `<div class="text-[11px] text-slate-500 mt-1">Every strategy's returns side by side — the AI presets and the ones you add. Click to expand.</div>`}
+    </div>`;
+}
+
+function renderCustomPerfTable(views) {
+  const rows = views.map((v) => {
+    const c = v.view?.equityCurve;
+    return {
+      s: v.strat, color: v.color,
+      inception: v.view?.finalReturn ?? null,
+      d1: c ? oneDayReturnPct(c) : null,
+      w1: c ? trailingReturnPct(c, 7) : null,
+      m1: c ? trailingReturnPct(c, 30) : null,
+      dd: c ? curveMaxDrawdown(c) : null,
+      alpha: v.view?.alpha ?? null,
+      hit: v.view?.hitSummary?.hitRate ?? null,
+      trades: v.view?.tradeCount ?? null,
+    };
+  });
+  rows.sort((a, b) => (b.inception ?? -Infinity) - (a.inception ?? -Infinity));
+  const startDate = views.find((v) => v.view)?.view?.startDate;
+  const pc = (v, digits = 2) => v == null
+    ? `<span class="text-slate-300">—</span>`
+    : `<span class="tabular-nums font-semibold ${v >= 0 ? "text-emerald-700" : "text-rose-700"}">${v >= 0 ? "+" : ""}${v.toFixed(digits)}%</span>`;
+  const body = rows.map((r) => `
+    <tr class="border-t border-slate-100 hover:bg-slate-50 cursor-pointer" data-perf-row="${r.s.id}">
+      <td class="py-2 pr-2 min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${r.color}"></span>
+          <span class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(r.s.name)}">${escapeHtml(r.s.name)}</span>
+          <span class="text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded flex-shrink-0 ${r.s.origin === "ai" ? "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100" : "bg-slate-100 text-slate-500"}">${r.s.origin === "ai" ? "AI" : "Mine"}</span>
+        </div>
+      </td>
+      <td class="py-2 px-2 text-right text-sm">${pc(r.inception)}</td>
+      <td class="py-2 px-2 text-right text-xs">${pc(r.d1)}</td>
+      <td class="py-2 px-2 text-right text-xs">${pc(r.w1)}</td>
+      <td class="py-2 px-2 text-right text-xs">${pc(r.m1)}</td>
+      <td class="py-2 px-2 text-right text-xs"><span class="tabular-nums ${r.dd == null ? "text-slate-300" : "text-rose-600 font-semibold"}">${r.dd == null ? "—" : r.dd.toFixed(1) + "%"}</span></td>
+      <td class="py-2 px-2 text-right text-xs">${pc(r.alpha)}</td>
+      <td class="py-2 px-2 text-right text-xs"><span class="tabular-nums ${r.hit == null ? "text-slate-300" : "text-slate-600 font-semibold"}">${r.hit == null ? "—" : r.hit.toFixed(0) + "%"}</span></td>
+      <td class="py-2 pl-2 text-right text-xs tabular-nums text-slate-500">${r.trades == null ? "—" : r.trades}</td>
+    </tr>`).join("");
+  return `
+    <div class="overflow-x-auto mt-3">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <th class="text-left pb-1 pr-2">Strategy</th>
+            <th class="text-right pb-1 px-2">Since inception</th>
+            <th class="text-right pb-1 px-2">1D</th>
+            <th class="text-right pb-1 px-2">1W</th>
+            <th class="text-right pb-1 px-2">1M</th>
+            <th class="text-right pb-1 px-2">Max DD</th>
+            <th class="text-right pb-1 px-2">vs Nifty</th>
+            <th class="text-right pb-1 px-2">Hit rate</th>
+            <th class="text-right pb-1 pl-2">Trades</th>
+          </tr>
+        </thead>
+        <tbody>${body}</tbody>
+      </table>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">All returns are net of charges${startDate ? `, backtested from ${fmtDateDMY(startDate)}` : ""}. <strong>Since inception</strong> = total return · <strong>1D/1W/1M</strong> = trailing windows (— when history is shorter than the window) · <strong>vs Nifty</strong> = return above the Nifty 50 over the same period · <strong>Hit rate</strong> = share of closed picks that hit target. Sorted by since-inception return; click a row to open it.</div>
     </div>`;
 }
 
@@ -8784,6 +8891,9 @@ function wireCustomTab() {
   }));
   $$(`${root} [data-strat-open]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = b.dataset.stratOpen; renderCustom(); }));
   $$(`${root} [data-strat-back]`).forEach((b) => b.addEventListener("click", () => { customSelectedId = null; renderCustom(); }));
+  // Performance comparison table — toggle open/closed, and open a strategy from a row.
+  $$(`${root} [data-perf-toggle]`).forEach((b) => b.addEventListener("click", () => { customPerfOpen = !customPerfOpen; rerenderKeepingScroll(renderCustom); }));
+  $$(`${root} [data-perf-row]`).forEach((tr) => tr.addEventListener("click", () => { customSelectedId = tr.dataset.perfRow; renderCustom(); }));
   $$(`${root} [data-strat-dup]`).forEach((b) => b.addEventListener("click", () => {
     const src = customStrategies.find((s) => s.id === b.dataset.stratDup); if (!src) return;
     const copy = { ...src, id: newStratId(), name: src.name.replace(/^★ /, "") + " (copy)", origin: "user" };
