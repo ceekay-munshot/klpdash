@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-07-02T04:37:59.331Z",
+  "generated_at": "2026-07-03T04:16:43.688Z",
   "source": "Yahoo Finance (live) + NSE (live sentiment) + macro-context.json (slow-changing)",
   "live": {
     "crude_brent": {
-      "latest": 70.84,
+      "latest": 72.21,
       "latest_unit": "$/bbl",
-      "pct_change_30d": -26.21,
+      "pct_change_30d": -26.17,
       "trend": "falling",
       "history_bars": 25
     },
     "usdinr": {
-      "latest": 94.96,
+      "latest": 95.26,
       "latest_unit": "₹/$",
-      "pct_change_30d": -0.32,
+      "pct_change_30d": -0.94,
       "trend": "stable",
       "history_bars": 26
     },
     "india_vix": {
-      "latest": 12.81,
+      "latest": 12,
       "latest_unit": "",
-      "pct_change_30d": -16.62,
+      "pct_change_30d": -26.29,
       "trend": "falling",
-      "history_bars": 24
+      "history_bars": 25
     }
   },
   "economic": {
@@ -48,8 +48,8 @@
     "fii_signal_note": "FII net positive in 5 of last 20 reported trading days (auto-computed from rolling daily snapshots).",
     "put_call_ratio": 0.96,
     "put_call_ratio_note": "Latest NSE option-chain PCR (refreshed weekly by routine). Source: NSE Nifty 50 option chain aggregate (total put OI / total call OI) via NiftyInvest and NiftyTrader, as of June 4, 2026. Call OI 13.73 Cr, Put OI 13.14 Cr; PCR ≈ 0.957., as of 2026-06-04.",
-    "market_breadth_ad_ratio": 1.81,
-    "market_breadth_note": "321 advances vs 177 declines across 502 Nifty 500 stocks (computed from Yahoo OHLCV).",
+    "market_breadth_ad_ratio": 1.83,
+    "market_breadth_note": "322 advances vs 176 declines across 502 Nifty 500 stocks (computed from Yahoo OHLCV).",
     "fii_positive_days": 5,
     "fii_total_days": 20
   },

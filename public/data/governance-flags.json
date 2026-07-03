@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-02T04:39:05.430Z",
+  "generated_at": "2026-07-03T04:17:27.022Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 17,
+  "total_entities_seen": 15,
   "flagged_companies": {
     "RELIANCE": {
       "primary_name": "Reliance Infrastructure",
@@ -21,7 +21,26 @@
           "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infrastructure"
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
+    },
+    "OLAELEC": {
+      "primary_name": "Ola Electric",
+      "order_type": "sebi-investigation",
+      "snippet": "Ola Electric files application to settle Sebi probe over false information allegations.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-investigation",
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        }
+      ],
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -40,7 +59,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -59,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -78,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -97,7 +116,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -116,10 +135,16 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-07-02T04:39:05.430Z"
+      "first_seen_at": "2026-07-03T04:17:27.022Z"
     }
   },
   "unmatched_sample": [
+    {
+      "name": "Functional & Innovative Foods Limited",
+      "type": "other",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
     {
       "name": "Darjeeling Industries",
       "type": "sebi-ban",
@@ -128,61 +153,37 @@
     },
     {
       "name": "Sathya Agencies",
-      "type": "other",
+      "type": "sebi-approval",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Zerodha",
-      "type": "other",
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "SEBI",
-      "type": "other",
+      "name": "Functional & Innovative Foods",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "SEBI",
-      "type": "other",
+      "name": "Swara Baby",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Anil Ambani's Reliance Infra",
-      "type": "other",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "SEBI",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "SEBI",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Jio Platforms",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "other",
+      "name": "Zerodha",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -192,39 +193,69 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-02T04:37:59.392Z",
+      "at": "2026-07-03T04:16:43.753Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 1,
-      "total_extracted": 1,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
       "prefilter_sample": [
+        {
+          "name": "Functional & Innovative Foods Limited",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi’s pump-and-dump crackdown: 5 ways to protect yourself from stock market scams"
+        },
+        {
+          "name": "NSE",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Delhi High Court declares NSE a public authority under RTI Act"
+        },
+        {
+          "name": "Zerodha",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Zerodha launches India's first life cycle funds: Know how the 2 new schemes work"
+        },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch."
+          "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch"
         }
       ],
-      "after_filter_count": 0,
+      "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 0,
+        "not_listed": 3,
         "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
-      "sample": []
+      "sample": [
+        {
+          "name": "Functional & Innovative Foods Limited",
+          "order_type": "other",
+          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
+        }
+      ]
     },
     {
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-02T04:38:06.718Z",
+      "at": "2026-07-03T04:16:55.336Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 4,
+      "total_extracted": 4,
       "prefilter_sample": [
         {
           "name": "Darjeeling Industries",
@@ -245,20 +276,8 @@
           "snippet": "Rajesh Exports failed to produce foreign transaction records: ED"
         },
         {
-          "name": "Oyo",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Oyo parent PRISM files updated IPO papers, aims to raise ₹6,650 crore"
-        },
-        {
-          "name": "Fibe",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Fibe files IPO papers; plans ₹750 crore fresh issue, 40 million-share OFS"
-        },
-        {
           "name": "Sathya Agencies",
-          "order_type": "other",
+          "order_type": "sebi-approval",
           "is_listed_entity": true,
           "snippet": "Consumer durables retailer Sathya Agencies gets Sebi nod for ₹600-cr IPO"
         }
@@ -266,7 +285,7 @@
       "after_filter_count": 3,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 3,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -283,7 +302,7 @@
         },
         {
           "name": "Sathya Agencies",
-          "order_type": "other",
+          "order_type": "sebi-approval",
           "snippet": "Consumer durables retailer Sathya Agencies gets Sebi nod for ₹600-cr IPO"
         }
       ]
@@ -292,144 +311,105 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-02T04:38:22.246Z",
+      "at": "2026-07-03T04:17:01.820Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 13,
-      "total_extracted": 13,
+      "total_extracted_raw": 9,
+      "total_extracted": 9,
       "prefilter_sample": [
         {
-          "name": "Zerodha",
-          "order_type": "other",
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod"
+          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations."
         },
         {
-          "name": "SEBI",
-          "order_type": "other",
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi moves to standardise consent rules for AIFs"
+          "snippet": "Rajesh Exports' troubles deepen with ED searches amid Rs 15 lakh crore revenue row."
         },
         {
-          "name": "SEBI",
-          "order_type": "other",
+          "name": "Ola Electric",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi resolves over 5,500 investor complaints in May via SCORES platform"
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
+        },
+        {
+          "name": "Functional & Innovative Foods",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Functional & Innovative Foods files DRHP with Sebi for IPO."
+        },
+        {
+          "name": "Swara Baby",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Swara Baby files DRHP with Sebi for Rs 1,000 crore IPO."
         },
         {
           "name": "Anil Ambani's Reliance Infra",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infra"
-        },
-        {
-          "name": "SEBI",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi proposes common advertising code for brokers, mutual funds, may allow celebrity endorsements"
-        },
-        {
-          "name": "SEBI",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi plans simpler rulebook for stock exchanges, doing away with obsolete provisions"
-        },
-        {
-          "name": "Jio Platforms",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi seeks clarification from Jio Platforms on IPO filing"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports' troubles deepen with ED searches amid Rs 15 lakh crore revenue row"
+          "snippet": "Sebi rejects Anil Ambani's Reliance Infra settlement application."
         },
         {
           "name": "Zerodha",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Zerodha eyes foray into investment banking"
+          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod."
         },
         {
-          "name": "Oyo parent Prism",
-          "order_type": "other",
+          "name": "Adani Enterprises",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Oyo parent Prism files updated IPO papers for fresh issue worth Rs 6,650 crore"
+          "snippet": "Adani Enterprises launches QIP, sets floor price at Rs 3,034.68 per share."
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "other",
+          "name": "PRISM",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "ED carries out searches at locations linked to Rajesh Exports"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Rajesh Exports shares jump 5% after 30% crash in 7 days. How the alleged Rs 15.15 lakh cr fraud saga unfolded"
+          "snippet": "PRISM files IPO papers for Rs 6650 crore fresh issue, reports Rs 748 crore profit in 9MFY26."
         }
       ],
-      "after_filter_count": 9,
+      "after_filter_count": 6,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 4,
+        "no_sebi_signal_in_snippet": 3,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
-          "name": "Zerodha",
-          "order_type": "other",
-          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod"
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations."
         },
         {
-          "name": "SEBI",
-          "order_type": "other",
-          "snippet": "Sebi moves to standardise consent rules for AIFs"
+          "name": "Ola Electric",
+          "order_type": "sebi-investigation",
+          "snippet": "Ola Electric files application to settle Sebi probe over false information allegations."
         },
         {
-          "name": "SEBI",
-          "order_type": "other",
-          "snippet": "Sebi resolves over 5,500 investor complaints in May via SCORES platform"
+          "name": "Functional & Innovative Foods",
+          "order_type": "sebi-investigation",
+          "snippet": "Functional & Innovative Foods files DRHP with Sebi for IPO."
+        },
+        {
+          "name": "Swara Baby",
+          "order_type": "sebi-investigation",
+          "snippet": "Swara Baby files DRHP with Sebi for Rs 1,000 crore IPO."
         },
         {
           "name": "Anil Ambani's Reliance Infra",
-          "order_type": "other",
-          "snippet": "Sebi rejects Anil Ambani's settlement request over Reliance Infra"
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi rejects Anil Ambani's Reliance Infra settlement application."
         },
         {
-          "name": "SEBI",
-          "order_type": "other",
-          "snippet": "Sebi proposes common advertising code for brokers, mutual funds, may allow celebrity endorsements"
-        },
-        {
-          "name": "SEBI",
-          "order_type": "other",
-          "snippet": "Sebi plans simpler rulebook for stock exchanges, doing away with obsolete provisions"
-        },
-        {
-          "name": "Jio Platforms",
-          "order_type": "other",
-          "snippet": "Sebi seeks clarification from Jio Platforms on IPO filing"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "snippet": "SFIO to probe Rajesh Exports over SEBI's fraud allegations"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "snippet": "Rajesh Exports shares jump 5% after 30% crash in 7 days. How the alleged Rs 15.15 lakh cr fraud saga unfolded"
+          "name": "Zerodha",
+          "order_type": "sebi-investigation",
+          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod."
         }
       ]
     },
@@ -437,7 +417,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-07-02T04:38:55.727Z",
+      "at": "2026-07-03T04:17:21.286Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
