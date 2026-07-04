@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-03T04:16:20.901Z",
+  "generated_at": "2026-07-04T04:19:12.080Z",
   "pcr": {
     "value": 1,
     "source": "NSE option-chain (via Firecrawl LLM extract)",
@@ -13,7 +13,7 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-07-03T04:16:26.821Z",
+        "at": "2026-07-04T04:19:14.392Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 200,
         "outcome": "extract_ok",
@@ -23,13 +23,13 @@
         "extract_value": "{\"nifty_pcr\":0}"
       },
       {
-        "at": "2026-07-03T04:16:27.993Z",
+        "at": "2026-07-04T04:19:14.945Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 200,
         "upstream_status": 200,
-        "html_len": 543595,
+        "html_len": 310581,
         "raw_len": 0,
-        "md_len": 134992,
+        "md_len": 80985,
         "body_sample": "<!DOCTYPE html><html lang=\"en\">\n  <body class=\"notranslate showBand\" direction=\"rtl\" style=\"padding-top: 8521px;\">\n    <!-- Google Tag Manager (noscript) -->\n\n\n    \n<!-- End Google Tag Manager (noscript) -->\n    \n    <div id=\"pageLoader\"><div class=\"loader-wrp\"><div class=\"spin-loader\" aria-hidden=\"true\"></div></div></div>\n    \n\n<div id=\"betaVerBand\">\n    <!-- <span id=\"betaVderBandText\">YOU ARE O",
         "outcome": "ok"
       }
