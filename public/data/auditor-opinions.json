@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-06T05:48:51.938Z",
+  "generated_at": "2026-07-07T05:26:40.617Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -9,9 +9,9 @@
   "cache_max_age_days": 30,
   "total_universe": 520,
   "total_cached": 520,
-  "total_live_opinion": 75,
+  "total_live_opinion": 96,
   "total_not_disclosed": 0,
-  "total_errors": 445,
+  "total_errors": 424,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -28,20 +28,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.799Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "544467": {
       "name": "N S D L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.144Z"
+      "fetched_at": "2026-07-07T04:44:46.462Z"
     },
     "PGHH": {
       "name": "P & G Hygiene",
@@ -75,13 +75,13 @@
     },
     "GILLETTE": {
       "name": "Gillette India",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Most recent annual report not provided / Independent Auditor’s Report section",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Most recent annual report not provided / Independent Auditor’s Report section |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.091Z"
+      "fetched_at": "2026-07-07T04:34:48.243Z"
     },
     "NESTLEIND": {
       "name": "Nestle India",
@@ -145,13 +145,13 @@
     },
     "PAGEIND": {
       "name": "Page Industries",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report details or auditor’s report reference",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:00.857Z"
+      "fetched_at": "2026-07-07T04:34:42.870Z"
     },
     "TCS": {
       "name": "TCS",
@@ -175,13 +175,13 @@
     },
     "HBLENGINE": {
       "name": "HBL Engineering",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no company/annual report details",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no company/annual report details |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.122Z"
+      "fetched_at": "2026-07-07T04:34:56.807Z"
     },
     "BSE": {
       "name": "BSE",
@@ -191,7 +191,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.122Z"
+      "fetched_at": "2026-07-07T04:39:25.020Z"
     },
     "ANANDRATHI": {
       "name": "Anand Rathi Wea.",
@@ -311,7 +311,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.122Z"
+      "fetched_at": "2026-07-07T04:39:25.021Z"
     },
     "GRSE": {
       "name": "Garden Reach Sh.",
@@ -385,13 +385,13 @@
     },
     "NATIONALUM": {
       "name": "Natl. Aluminium",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "No company/annual report provided",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company/annual report provided |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:21.840Z"
+      "fetched_at": "2026-07-07T04:34:46.312Z"
     },
     "CUMMINSIND": {
       "name": "Cummins India",
@@ -491,7 +491,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.124Z"
+      "fetched_at": "2026-07-07T04:39:25.021Z"
     },
     "SOLARINDS": {
       "name": "Solar Industries",
@@ -501,7 +501,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.125Z"
+      "fetched_at": "2026-07-07T04:39:25.022Z"
     },
     "BEL": {
       "name": "Bharat Electron",
@@ -555,13 +555,13 @@
     },
     "HEROMOTOCO": {
       "name": "Hero Motocorp",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis indicates no annual report information was gathered",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis indicates no annual report information was gathered |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:22.839Z"
+      "fetched_at": "2026-07-07T04:34:40.834Z"
     },
     "COALINDIA": {
       "name": "Coal India",
@@ -575,13 +575,13 @@
     },
     "LICI": {
       "name": "Life Insurance",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided: “No successful information was gathered to generate a final summary.”",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided: “No successful information was gathered to generate a final summary.” |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:29.836Z"
+      "fetched_at": "2026-07-07T04:34:35.608Z"
     },
     "CHENNPETRO": {
       "name": "C P C L",
@@ -601,7 +601,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.127Z"
+      "fetched_at": "2026-07-07T04:39:25.024Z"
     },
     "ECLERX": {
       "name": "eClerx Services",
@@ -631,7 +631,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.128Z"
+      "fetched_at": "2026-07-07T04:39:25.026Z"
     },
     "CEMPRO": {
       "name": "Cemindia Project",
@@ -651,7 +651,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:27.837Z"
+      "fetched_at": "2026-07-07T04:39:20.715Z"
     },
     "CUPID": {
       "name": "Cupid",
@@ -678,10 +678,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.128Z"
+      "fetched_at": "2026-07-07T04:39:08.223Z"
     },
     "BAGMANE": {
       "name": "Bagmane Prime REIT",
@@ -701,17 +701,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.128Z"
+      "fetched_at": "2026-07-07T04:39:25.026Z"
     },
     "CRISIL": {
       "name": "CRISIL",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided: “No successful information was gathered to generate a final summary.”",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided: “No successful information was gathered to generate a final summary.” |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.130Z"
+      "fetched_at": "2026-07-07T04:34:36.432Z"
     },
     "AJANTPHARM": {
       "name": "Ajanta Pharma",
@@ -721,7 +721,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.127Z"
+      "fetched_at": "2026-07-07T04:39:25.024Z"
     },
     "ABSLAMC": {
       "name": "Aditya AMC",
@@ -745,23 +745,23 @@
     },
     "CDSL": {
       "name": "C D S L",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided contains no annual report details or auditor’s report reference",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided contains no annual report details or auditor’s report reference |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.130Z"
+      "fetched_at": "2026-07-07T04:34:42.883Z"
     },
     "HAL": {
       "name": "Hind.Aeronautics",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report details or auditor’s report reference",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:20.841Z"
+      "fetched_at": "2026-07-07T04:34:37.764Z"
     },
     "APLAPOLLO": {
       "name": "APL Apollo Tubes",
@@ -771,7 +771,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.131Z"
+      "fetched_at": "2026-07-07T04:39:25.026Z"
     },
     "ACUTAAS": {
       "name": "Acutaas Chemical",
@@ -781,7 +781,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.131Z"
+      "fetched_at": "2026-07-07T04:39:25.026Z"
     },
     "APARINDS": {
       "name": "Apar Inds.",
@@ -811,7 +811,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.132Z"
+      "fetched_at": "2026-07-07T04:39:25.027Z"
     },
     "IGIL": {
       "name": "International Gemological Instit",
@@ -825,13 +825,13 @@
     },
     "ENGINERSIN": {
       "name": "Engineers India",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report details; source not identified",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details; source not identified |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:34:39.114Z"
     },
     "HCLTECH": {
       "name": "HCL Technologies",
@@ -855,13 +855,13 @@
     },
     "KFINTECH": {
       "name": "KFin Technolog.",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report/company details; source not available",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details; source not available |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.136Z"
+      "fetched_at": "2026-07-07T04:34:41.942Z"
     },
     "ANTHEM": {
       "name": "Anthem Bioscienc",
@@ -878,50 +878,50 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:39:06.226Z"
     },
     "SHAILY": {
       "name": "Shaily Engineer.",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "No annual report/company provided",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No annual report/company provided |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:34:39.880Z"
     },
     "HEXT": {
       "name": "Hexaware Tech.",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "No annual report/company provided",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No annual report/company provided |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:34:46.424Z"
     },
     "TATAELXSI": {
       "name": "Tata Elxsi",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis states: \"No successful information was gathered to generate a final summary.\"",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states: \"No successful information was gathered to generate a final summary.\" |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:34:33.496Z"
     },
     "ABB": {
       "name": "A B B",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:25.338Z"
+      "fetched_at": "2026-07-07T04:39:25.029Z"
     },
     "SCHNEIDER": {
       "name": "Schneider Elect.",
@@ -941,7 +941,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.133Z"
+      "fetched_at": "2026-07-07T04:39:25.029Z"
     },
     "LTM": {
       "name": "LTM",
@@ -971,87 +971,87 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.136Z"
+      "fetched_at": "2026-07-07T04:39:25.029Z"
     },
     "BAYERCROP": {
       "name": "Bayer Crop Sci.",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis section provided: “No successful information was gathered to generate a final summary.”",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis section provided: “No successful information was gathered to generate a final summary.” |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.137Z"
+      "fetched_at": "2026-07-07T04:34:44.605Z"
     },
     "POWERINDIA": {
       "name": "Hitachi Energy",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis indicates no annual report information was successfully gathered",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis indicates no annual report information was successfully gathered |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.137Z"
+      "fetched_at": "2026-07-07T04:34:52.467Z"
     },
     "HINDUNILVR": {
       "name": "Hind. Unilever",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:32.335Z"
+      "fetched_at": "2026-07-07T04:39:25.029Z"
     },
     "RUBICON": {
       "name": "Rubicon Research",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided no annual report/company details",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:34:51.549Z"
     },
     "LALPATHLAB": {
       "name": "Dr Lal Pathlabs",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis states: “No successful information was gathered to generate a final summary.”",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states: “No successful information was gathered to generate a final summary.” |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:34:38.725Z"
     },
     "BAJAJ-AUTO": {
       "name": "Bajaj Auto",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.087Z"
+      "fetched_at": "2026-07-07T04:39:25.031Z"
     },
     "RRKABEL": {
       "name": "R R Kabel",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "Analysis provided contains no annual report details or auditor’s report reference",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided contains no annual report details or auditor’s report reference |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.087Z"
+      "fetched_at": "2026-07-07T04:34:32.948Z"
     },
     "SCHAEFFLER": {
       "name": "Schaeffler India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.087Z"
+      "fetched_at": "2026-07-07T04:39:25.031Z"
     },
     "TRENT": {
       "name": "Trent",
@@ -1061,7 +1061,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:54.087Z"
+      "fetched_at": "2026-07-07T04:39:15.217Z"
     },
     "NMDC": {
       "name": "NMDC",
@@ -1071,27 +1071,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:39:14.718Z"
     },
     "UNITDSPR": {
       "name": "United Spirits",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:39:25.031Z"
     },
     "CGPOWER": {
       "name": "CG Power & Ind",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:39:25.032Z"
     },
     "GABRIEL": {
       "name": "Gabriel India",
@@ -1101,17 +1101,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.088Z"
+      "fetched_at": "2026-07-07T04:39:17.716Z"
     },
     "LTTS": {
       "name": "L&T Technology",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "No company annual report provided / analysis states no successful information was gathered",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company annual report provided / analysis states no successful information was gathered |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:34:48.315Z"
     },
     "NEULANDLAB": {
       "name": "Neuland Labs.",
@@ -1121,7 +1121,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.087Z"
+      "fetched_at": "2026-07-07T04:39:24.713Z"
     },
     "ASIANPAINT": {
       "name": "Asian Paints",
@@ -1131,17 +1131,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:01:56.087Z"
+      "fetched_at": "2026-07-07T04:39:24.713Z"
     },
     "KPITTECH": {
       "name": "KPIT Technologi.",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
+      "opinion": "Disclaimer of Opinion",
+      "source": "No annual report/company provided",
+      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | No annual report/company provided |",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.577Z"
+      "fetched_at": "2026-07-07T04:34:35.614Z"
     },
     "AVANTIFEED": {
       "name": "Avanti Feeds",
@@ -1151,7 +1151,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:12.076Z"
+      "fetched_at": "2026-07-07T04:44:46.961Z"
     },
     "JBCHEPHARM": {
       "name": "J B Chemicals &",
@@ -1161,7 +1161,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "TITAN": {
       "name": "Titan Company",
@@ -1171,7 +1171,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:50:40.219Z"
     },
     "BPCL": {
       "name": "B P C L",
@@ -1181,7 +1181,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.577Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "CHAMBLFERT": {
       "name": "Chambal Fert.",
@@ -1191,7 +1191,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.577Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "THANGAMAYL": {
       "name": "Thangamayil Jew.",
@@ -1201,7 +1201,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:30.562Z"
+      "fetched_at": "2026-07-07T04:44:42.963Z"
     },
     "ALIVUS": {
       "name": "Alivus Life",
@@ -1211,7 +1211,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:44:42.963Z"
     },
     "HAVELLS": {
       "name": "Havells India",
@@ -1221,7 +1221,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "KSB": {
       "name": "KSB",
@@ -1231,7 +1231,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:44:46.464Z"
     },
     "CAPLIPOINT": {
       "name": "Caplin Point Lab",
@@ -1241,7 +1241,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.577Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "DOMS": {
       "name": "DOMS Industries",
@@ -1251,7 +1251,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:44:46.462Z"
     },
     "PFIZER": {
       "name": "Pfizer",
@@ -1261,7 +1261,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:44:46.462Z"
     },
     "RADICO": {
       "name": "Radico Khaitan",
@@ -1271,7 +1271,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.578Z"
+      "fetched_at": "2026-07-07T04:44:46.462Z"
     },
     "EMCURE": {
       "name": "Emcure Pharma",
@@ -1281,7 +1281,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.075Z"
+      "fetched_at": "2026-07-07T04:45:09.945Z"
     },
     "ELGIEQUIP": {
       "name": "Elgi Equipments",
@@ -1291,17 +1291,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "ICICIGI": {
       "name": "ICICI Lombard",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.150Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "COFORGE": {
       "name": "Coforge",
@@ -1311,7 +1311,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.064Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "SUMICHEM": {
       "name": "Sumitomo Chemi.",
@@ -1321,7 +1321,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.064Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "DATAPATTNS": {
       "name": "Data Pattern",
@@ -1331,7 +1331,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.064Z"
+      "fetched_at": "2026-07-07T04:44:46.462Z"
     },
     "KAJARIACER": {
       "name": "Kajaria Ceramics",
@@ -1341,7 +1341,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:45:09.945Z"
     },
     "TECHM": {
       "name": "Tech Mahindra",
@@ -1351,7 +1351,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "WELCORP": {
       "name": "Welspun Corp",
@@ -1361,37 +1361,37 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "MPHASIS": {
       "name": "Mphasis",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.146Z"
+      "fetched_at": "2026-07-07T04:44:46.961Z"
     },
     "COROMANDEL": {
       "name": "Coromandel Inter",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.149Z"
+      "fetched_at": "2026-07-07T04:45:09.945Z"
     },
     "PETRONET": {
       "name": "Petronet LNG",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.145Z"
+      "fetched_at": "2026-07-07T04:45:09.946Z"
     },
     "GRINDWELL": {
       "name": "Grindwell Norton",
@@ -1401,17 +1401,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.820Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "HINDPETRO": {
       "name": "H P C L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.146Z"
+      "fetched_at": "2026-07-07T04:44:46.464Z"
     },
     "BBOX": {
       "name": "Black Box",
@@ -1421,7 +1421,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.063Z"
+      "fetched_at": "2026-07-07T04:44:46.464Z"
     },
     "BERGEPAINT": {
       "name": "Berger Paints",
@@ -1431,27 +1431,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.062Z"
+      "fetched_at": "2026-07-07T04:45:09.945Z"
     },
     "HSCL": {
       "name": "Himadri Special",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.146Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "PRIVISCL": {
       "name": "Privi Speci.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.146Z"
+      "fetched_at": "2026-07-07T04:45:10.946Z"
     },
     "DIVISLAB": {
       "name": "Divi's Lab.",
@@ -1461,37 +1461,37 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:32.064Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "BHARTIHEXA": {
       "name": "Bharti Hexacom",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.150Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "BOSCHLTD": {
       "name": "Bosch",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.150Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "FINEORG": {
       "name": "Fine Organic",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.151Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "NAVINFLUOR": {
       "name": "Navin Fluo.Intl.",
@@ -1501,7 +1501,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:55.826Z"
+      "fetched_at": "2026-07-07T04:45:10.446Z"
     },
     "VINATIORGA": {
       "name": "Vinati Organics",
@@ -1511,7 +1511,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:55.826Z"
+      "fetched_at": "2026-07-07T04:45:10.447Z"
     },
     "JYOTICNC": {
       "name": "Jyoti CNC Auto.",
@@ -1521,7 +1521,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:55.826Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "VIJAYA": {
       "name": "Vijaya Diagnost.",
@@ -1531,7 +1531,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:55.826Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "ALKEM": {
       "name": "Alkem Lab",
@@ -1541,7 +1541,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:54.326Z"
+      "fetched_at": "2026-07-07T04:45:11.449Z"
     },
     "SIEMENS": {
       "name": "Siemens",
@@ -1551,7 +1551,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:07:55.826Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "SUPREMEIND": {
       "name": "Supreme Inds.",
@@ -1561,7 +1561,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.320Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "BLUESTARCO": {
       "name": "Blue Star",
@@ -1571,7 +1571,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.820Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "ZYDUSLIFE": {
       "name": "Zydus Lifesci.",
@@ -1581,7 +1581,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "AIAENG": {
       "name": "AIA Engineering",
@@ -1591,7 +1591,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.820Z"
+      "fetched_at": "2026-07-07T04:45:10.947Z"
     },
     "SHRIPISTON": {
       "name": "SPR Auto Technologies",
@@ -1601,7 +1601,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.320Z"
+      "fetched_at": "2026-07-07T04:45:11.448Z"
     },
     "TATATECH": {
       "name": "Tata Technolog.",
@@ -1611,7 +1611,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:45:11.449Z"
     },
     "KIRLOSBROS": {
       "name": "Kirl. Brothers",
@@ -1621,7 +1621,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.820Z"
+      "fetched_at": "2026-07-07T04:45:11.447Z"
     },
     "EIHOTEL": {
       "name": "EIH",
@@ -1631,7 +1631,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:50:39.718Z"
     },
     "SUNPHARMA": {
       "name": "Sun Pharma.Inds.",
@@ -1641,7 +1641,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:50:40.219Z"
     },
     "KALYANKJIL": {
       "name": "Kalyan Jewellers",
@@ -1651,7 +1651,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:50:39.718Z"
     },
     "DABUR": {
       "name": "Dabur India",
@@ -1661,7 +1661,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.805Z"
+      "fetched_at": "2026-07-07T04:50:39.718Z"
     },
     "GPIL": {
       "name": "Godawari Power",
@@ -1671,7 +1671,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.821Z"
+      "fetched_at": "2026-07-07T04:50:40.221Z"
     },
     "ASTRAMICRO": {
       "name": "Astra Microwave",
@@ -1681,7 +1681,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:33.798Z"
+      "fetched_at": "2026-07-07T04:50:30.223Z"
     },
     "USHAMART": {
       "name": "Usha Martin",
@@ -1691,7 +1691,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.822Z"
+      "fetched_at": "2026-07-07T04:50:40.219Z"
     },
     "METROBRAND": {
       "name": "Metro Brands",
@@ -1701,7 +1701,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:03.822Z"
+      "fetched_at": "2026-07-07T04:50:30.723Z"
     },
     "KPRMILL": {
       "name": "K P R Mill Ltd",
@@ -1711,7 +1711,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:33.798Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "KEI": {
       "name": "KEI Industries",
@@ -1721,17 +1721,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.805Z"
+      "fetched_at": "2026-07-07T04:50:30.223Z"
     },
     "SYRMA": {
       "name": "Syrma SGS Tech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.171Z"
+      "fetched_at": "2026-07-07T04:56:59.956Z"
     },
     "ZFCVINDIA": {
       "name": "ZF Commercial",
@@ -1741,7 +1741,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:33.798Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "ASTRAL": {
       "name": "Astral",
@@ -1751,17 +1751,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.805Z"
+      "fetched_at": "2026-07-07T04:50:30.723Z"
     },
     "BIKAJI": {
       "name": "Bikaji Foods",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:37.150Z"
+      "fetched_at": "2026-07-07T04:45:10.448Z"
     },
     "VBL": {
       "name": "Varun Beverages",
@@ -1771,7 +1771,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.805Z"
+      "fetched_at": "2026-07-07T04:50:30.224Z"
     },
     "UNOMINDA": {
       "name": "Uno Minda",
@@ -1781,7 +1781,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:33.797Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "SAILIFE": {
       "name": "Sai Life",
@@ -1791,7 +1791,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:33.798Z"
+      "fetched_at": "2026-07-07T04:50:30.224Z"
     },
     "INDUSTOWER": {
       "name": "Indus Towers",
@@ -1801,117 +1801,117 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:34.297Z"
+      "fetched_at": "2026-07-07T04:50:39.717Z"
     },
     "JSL": {
       "name": "Jindal Stain.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.156Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "SPLPETRO": {
       "name": "Supreme Petroch.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.159Z"
+      "fetched_at": "2026-07-07T04:51:02.204Z"
     },
     "HONASA": {
       "name": "Honasa Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.157Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "GODREJCP": {
       "name": "Godrej Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.159Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "MARUTI": {
       "name": "Maruti Suzuki",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.159Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "CROMPTON": {
       "name": "Crompton Gr. Con",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.159Z"
+      "fetched_at": "2026-07-07T04:50:40.219Z"
     },
     "IOC": {
       "name": "I O C L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.160Z"
+      "fetched_at": "2026-07-07T04:50:40.219Z"
     },
     "CEATLTD": {
       "name": "CEAT",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.160Z"
+      "fetched_at": "2026-07-07T04:51:01.705Z"
     },
     "BHARTIARTL": {
       "name": "Bharti Airtel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.160Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "ABDL": {
       "name": "Allied Blenders",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.165Z"
+      "fetched_at": "2026-07-07T04:51:01.703Z"
     },
     "GESHIP": {
       "name": "GE Shipping Co",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.165Z"
+      "fetched_at": "2026-07-07T04:51:01.705Z"
     },
     "AWL": {
       "name": "AWL Agri Busine.",
@@ -1921,17 +1921,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.806Z"
+      "fetched_at": "2026-07-07T04:51:01.703Z"
     },
     "ENDURANCE": {
       "name": "Endurance Tech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.165Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "TIMKEN": {
       "name": "Timken India",
@@ -1941,7 +1941,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.806Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "RAINBOW": {
       "name": "Rainbow Child.",
@@ -1951,7 +1951,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.040Z"
+      "fetched_at": "2026-07-07T04:51:01.703Z"
     },
     "GALLANTT": {
       "name": "Gallantt Ispat L",
@@ -1961,7 +1961,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:13:52.047Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "HAPPYFORGE": {
       "name": "Happy Forgings",
@@ -1971,7 +1971,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:13:52.047Z"
+      "fetched_at": "2026-07-07T04:51:02.206Z"
     },
     "GRWRHITECH": {
       "name": "Garware Hi Tech",
@@ -1981,7 +1981,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.204Z"
     },
     "TBOTEK": {
       "name": "TBO Tek",
@@ -1991,7 +1991,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "CHOICEIN": {
       "name": "Choice Intl.",
@@ -2001,7 +2001,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:13:54.544Z"
+      "fetched_at": "2026-07-07T04:51:02.204Z"
     },
     "RATNAMANI": {
       "name": "Ratnamani Metals",
@@ -2011,7 +2011,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:13:54.545Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "IGL": {
       "name": "Indraprastha Gas",
@@ -2021,7 +2021,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.204Z"
     },
     "APOLLOHOSP": {
       "name": "Apollo Hospitals",
@@ -2031,7 +2031,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "WIPRO": {
       "name": "Wipro",
@@ -2041,7 +2041,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "EIDPARRY": {
       "name": "EID Parry",
@@ -2051,7 +2051,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:00.041Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "OBEROIRLTY": {
       "name": "Oberoi Realty",
@@ -2061,7 +2061,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:56:40.970Z"
     },
     "LTFOODS": {
       "name": "L T Foods",
@@ -2071,7 +2071,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.032Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "MRPL": {
       "name": "M R P L",
@@ -2081,7 +2081,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.032Z"
+      "fetched_at": "2026-07-07T04:56:24.477Z"
     },
     "LAURUSLABS": {
       "name": "Laurus Labs",
@@ -2091,7 +2091,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:51:02.205Z"
     },
     "SUNDRMFAST": {
       "name": "Sundram Fasten.",
@@ -2101,7 +2101,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.032Z"
+      "fetched_at": "2026-07-07T04:56:17.980Z"
     },
     "NUVAMA": {
       "name": "Nuvama Wealth",
@@ -2111,7 +2111,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:56:24.477Z"
     },
     "REDINGTON": {
       "name": "Redington",
@@ -2121,7 +2121,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:56:18.980Z"
     },
     "TVSMOTOR": {
       "name": "TVS Motor Co.",
@@ -2131,7 +2131,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.522Z"
+      "fetched_at": "2026-07-07T04:56:24.977Z"
     },
     "SARDAEN": {
       "name": "Sarda Energy",
@@ -2141,7 +2141,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:56:18.980Z"
     },
     "GICRE": {
       "name": "General Insuranc",
@@ -2151,7 +2151,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.033Z"
+      "fetched_at": "2026-07-07T04:56:24.477Z"
     },
     "ADANIPOWER": {
       "name": "Adani Power",
@@ -2161,7 +2161,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.032Z"
+      "fetched_at": "2026-07-07T04:56:24.977Z"
     },
     "IPCALAB": {
       "name": "Ipca Labs.",
@@ -2171,7 +2171,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:12.032Z"
+      "fetched_at": "2026-07-07T04:56:24.477Z"
     },
     "INDHOTEL": {
       "name": "Indian Hotels Co",
@@ -2181,7 +2181,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.519Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "NYKAA": {
       "name": "FSN E-Commerce",
@@ -2191,7 +2191,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.022Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "DMART": {
       "name": "Avenue Super.",
@@ -2201,7 +2201,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.017Z"
+      "fetched_at": "2026-07-07T04:56:24.977Z"
     },
     "NATCOPHARM": {
       "name": "Natco Pharma",
@@ -2211,17 +2211,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.518Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "MEDANTA": {
       "name": "Global Health",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.170Z"
+      "fetched_at": "2026-07-07T04:56:24.977Z"
     },
     "PARADEEP": {
       "name": "Paradeep Phosph.",
@@ -2231,7 +2231,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.518Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "CHALET": {
       "name": "Chalet Hotels",
@@ -2241,17 +2241,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.519Z"
+      "fetched_at": "2026-07-07T04:56:40.970Z"
     },
     "VGUARD": {
       "name": "V-Guard Industri",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.160Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "TVSHLTD": {
       "name": "TVS Holdings",
@@ -2261,7 +2261,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.519Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "TIINDIA": {
       "name": "Tube Investments",
@@ -2271,7 +2271,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.518Z"
+      "fetched_at": "2026-07-07T04:56:40.970Z"
     },
     "LINDEINDIA": {
       "name": "Linde India",
@@ -2281,7 +2281,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:09.533Z"
+      "fetched_at": "2026-07-07T04:51:02.204Z"
     },
     "AFFLE": {
       "name": "Affle 3i",
@@ -2291,7 +2291,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.519Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "HONAUT": {
       "name": "Honeywell Auto",
@@ -2301,7 +2301,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:35.017Z"
+      "fetched_at": "2026-07-07T04:56:59.456Z"
     },
     "KPIL": {
       "name": "Kalpataru Proj.",
@@ -2311,7 +2311,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:22.806Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "CIPLA": {
       "name": "Cipla",
@@ -2321,17 +2321,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.023Z"
+      "fetched_at": "2026-07-07T04:56:59.456Z"
     },
     "LODHA": {
       "name": "Lodha Developers",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.172Z"
+      "fetched_at": "2026-07-07T04:56:59.456Z"
     },
     "SUNTV": {
       "name": "Sun TV Network",
@@ -2341,57 +2341,57 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.023Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "VEDL": {
       "name": "Vedanta",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.174Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "ZENTEC": {
       "name": "Zen Technologies",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.172Z"
+      "fetched_at": "2026-07-07T04:56:59.456Z"
     },
     "FSL": {
       "name": "Firstsour.Solu.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.174Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "FINCABLES": {
       "name": "Finolex Cables",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.174Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "COCHINSHIP": {
       "name": "Cochin Shipyard",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.174Z"
+      "fetched_at": "2026-07-07T04:56:59.456Z"
     },
     "CCL": {
       "name": "CCL Products",
@@ -2401,7 +2401,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.023Z"
+      "fetched_at": "2026-07-07T04:56:59.956Z"
     },
     "SONACOMS": {
       "name": "Sona BLW Precis.",
@@ -2411,27 +2411,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.772Z"
+      "fetched_at": "2026-07-07T04:57:00.458Z"
     },
     "MUTHOOTFIN": {
       "name": "Muthoot Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.174Z"
+      "fetched_at": "2026-07-07T04:57:00.458Z"
     },
     "MRF": {
       "name": "MRF",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.175Z"
+      "fetched_at": "2026-07-07T04:56:59.958Z"
     },
     "ESCORTS": {
       "name": "Escorts Kubota",
@@ -2441,7 +2441,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "PATANJALI": {
       "name": "Patanjali Foods",
@@ -2451,7 +2451,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "GRANULES": {
       "name": "Granules India",
@@ -2461,7 +2461,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:27.023Z"
+      "fetched_at": "2026-07-07T04:56:59.958Z"
     },
     "M&M": {
       "name": "M & M",
@@ -2471,7 +2471,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:19:55.773Z"
+      "fetched_at": "2026-07-07T04:56:59.957Z"
     },
     "TORNTPHARM": {
       "name": "Torrent Pharma.",
@@ -2481,7 +2481,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T04:57:00.458Z"
     },
     "APTUS": {
       "name": "Aptus Value Hou.",
@@ -2491,7 +2491,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.772Z"
+      "fetched_at": "2026-07-07T04:56:59.958Z"
     },
     "NH": {
       "name": "Narayana Hrudaya",
@@ -2501,7 +2501,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:19:55.772Z"
+      "fetched_at": "2026-07-07T04:56:59.958Z"
     },
     "HATSUN": {
       "name": "Hatsun Agro",
@@ -2511,7 +2511,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.774Z"
+      "fetched_at": "2026-07-07T04:56:59.958Z"
     },
     "MTARTECH": {
       "name": "MTAR Technologie",
@@ -2521,7 +2521,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.772Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "ATGL": {
       "name": "Adani Total Gas",
@@ -2531,7 +2531,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "GLAND": {
       "name": "Gland Pharma",
@@ -2541,7 +2541,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "JKCEMENT": {
       "name": "J K Cements",
@@ -2551,7 +2551,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "SBILIFE": {
       "name": "SBI Life Insuran",
@@ -2561,7 +2561,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T04:57:00.458Z"
     },
     "THERMAX": {
       "name": "Thermax",
@@ -2571,7 +2571,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.274Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "ATUL": {
       "name": "Atul",
@@ -2581,7 +2581,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.772Z"
+      "fetched_at": "2026-07-07T04:57:00.459Z"
     },
     "VMM": {
       "name": "Vishal Mega Mart",
@@ -2591,7 +2591,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.274Z"
+      "fetched_at": "2026-07-07T04:57:00.457Z"
     },
     "JBMA": {
       "name": "JBM Auto",
@@ -2601,7 +2601,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:47.198Z"
     },
     "ANGELONE": {
       "name": "Angel One",
@@ -2611,7 +2611,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "FIVESTAR": {
       "name": "Five-Star Bus.Fi",
@@ -2621,7 +2621,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "CIEINDIA": {
       "name": "CIE Automotive",
@@ -2631,7 +2631,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "KIRLOSENG": {
       "name": "Kirloskar Oil",
@@ -2641,7 +2641,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T05:02:47.198Z"
     },
     "MAXHEALTH": {
       "name": "Max Healthcare",
@@ -2651,7 +2651,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:47.198Z"
     },
     "PIIND": {
       "name": "P I Industries",
@@ -2661,7 +2661,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:47.198Z"
     },
     "TATACOMM": {
       "name": "Tata Comm",
@@ -2671,7 +2671,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.271Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "BASF": {
       "name": "BASF India",
@@ -2681,7 +2681,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:47.198Z"
     },
     "SRF": {
       "name": "SRF",
@@ -2691,7 +2691,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "JUBLFOOD": {
       "name": "Jubilant Food.",
@@ -2701,7 +2701,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "LT": {
       "name": "Larsen & Toubro",
@@ -2711,7 +2711,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:47.698Z"
     },
     "KEC": {
       "name": "KEC International",
@@ -2721,7 +2721,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:00.770Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "APOLLO": {
       "name": "Apollo Micro Sys",
@@ -2731,7 +2731,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.271Z"
+      "fetched_at": "2026-07-07T05:02:47.199Z"
     },
     "SCI": {
       "name": "S C I",
@@ -2741,7 +2741,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:00.770Z"
+      "fetched_at": "2026-07-07T05:02:47.698Z"
     },
     "ONGC": {
       "name": "O N G C",
@@ -2751,7 +2751,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:47.698Z"
     },
     "CRAFTSMAN": {
       "name": "Craftsman Auto",
@@ -2761,7 +2761,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "ADANIPORTS": {
       "name": "Adani Ports",
@@ -2771,7 +2771,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:47.698Z"
     },
     "ERIS": {
       "name": "ERIS Lifescience",
@@ -2781,7 +2781,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "SANSERA": {
       "name": "Sansera Enginee.",
@@ -2791,7 +2791,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.274Z"
+      "fetched_at": "2026-07-07T05:02:48.199Z"
     },
     "POLYMED": {
       "name": "Poly Medicure",
@@ -2801,7 +2801,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.271Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "TORNTPOWER": {
       "name": "Torrent Power",
@@ -2811,7 +2811,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:47.699Z"
     },
     "BELRISE": {
       "name": "Belrise Industri",
@@ -2821,7 +2821,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.272Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "BDL": {
       "name": "Bharat Dynamics",
@@ -2831,7 +2831,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "APOLLOTYRE": {
       "name": "Apollo Tyres",
@@ -2841,7 +2841,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "ASHOKLEY": {
       "name": "Ashok Leyland",
@@ -2851,7 +2851,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.272Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "JSWINFRA": {
       "name": "JSW Infrast",
@@ -2861,7 +2861,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.774Z"
+      "fetched_at": "2026-07-07T05:02:48.199Z"
     },
     "HINDALCO": {
       "name": "Hindalco Inds.",
@@ -2871,7 +2871,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.537Z"
+      "fetched_at": "2026-07-07T05:02:48.202Z"
     },
     "AIIL": {
       "name": "Authum Invest",
@@ -2881,7 +2881,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.273Z"
+      "fetched_at": "2026-07-07T05:02:48.199Z"
     },
     "DRREDDY": {
       "name": "Dr Reddy's Labs",
@@ -2891,7 +2891,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.536Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "AEGISLOG": {
       "name": "Aegis Logistics",
@@ -2901,7 +2901,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:48.199Z"
     },
     "MANKIND": {
       "name": "Mankind Pharma",
@@ -2911,7 +2911,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "FORTIS": {
       "name": "Fortis Health.",
@@ -2921,7 +2921,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "ARE&M": {
       "name": "Amara Raja Ener.",
@@ -2931,7 +2931,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.773Z"
+      "fetched_at": "2026-07-07T05:02:48.199Z"
     },
     "SAGILITY": {
       "name": "Sagility",
@@ -2941,7 +2941,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.274Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "KAYNES": {
       "name": "Kaynes Tech",
@@ -2951,7 +2951,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:02.772Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "AETHER": {
       "name": "Aether Industri.",
@@ -2961,7 +2961,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:08:25.442Z"
     },
     "BHARATFORG": {
       "name": "Bharat Forge",
@@ -2971,17 +2971,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.537Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "MOTHERSON": {
       "name": "Samvardh. Mothe.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.535Z"
+      "fetched_at": "2026-07-07T05:03:00.465Z"
     },
     "GODIGIT": {
       "name": "Go Digit General",
@@ -2991,7 +2991,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.537Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "KANSAINER": {
       "name": "Kansai Nerolac",
@@ -3001,7 +3001,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "SHYAMMETL": {
       "name": "Shyam Metalics",
@@ -3011,57 +3011,57 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.536Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "NAVA": {
       "name": "Nava",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.535Z"
+      "fetched_at": "2026-07-07T05:03:00.466Z"
     },
     "PHOENIXLTD": {
       "name": "Phoenix Mills",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.536Z"
+      "fetched_at": "2026-07-07T05:03:00.466Z"
     },
     "AUROPHARMA": {
       "name": "Aurobindo Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.537Z"
+      "fetched_at": "2026-07-07T05:03:00.466Z"
     },
     "ULTRACEMCO": {
       "name": "UltraTech Cem.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.535Z"
+      "fetched_at": "2026-07-07T05:03:00.469Z"
     },
     "MINDACORP": {
       "name": "Minda Corp",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.536Z"
+      "fetched_at": "2026-07-07T05:03:00.469Z"
     },
     "MOTILALOFS": {
       "name": "Motil.Oswal.Fin.",
@@ -3071,7 +3071,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:22.536Z"
+      "fetched_at": "2026-07-07T05:02:48.201Z"
     },
     "TATASTEEL": {
       "name": "Tata Steel",
@@ -3081,27 +3081,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.036Z"
+      "fetched_at": "2026-07-07T05:08:17.446Z"
     },
     "APLLTD": {
       "name": "Alembic Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:03:00.469Z"
     },
     "FRACTAL": {
       "name": "Fractal Analyt.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:03:00.469Z"
     },
     "CONCOR": {
       "name": "Container Corpn.",
@@ -3111,7 +3111,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.035Z"
+      "fetched_at": "2026-07-07T05:08:19.945Z"
     },
     "BALKRISIND": {
       "name": "Balkrishna Inds",
@@ -3121,7 +3121,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:08:19.945Z"
     },
     "360ONE": {
       "name": "360 ONE",
@@ -3131,7 +3131,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:08:19.945Z"
     },
     "ANANTRAJ": {
       "name": "Anant Raj",
@@ -3141,7 +3141,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:19.945Z"
     },
     "AZAD": {
       "name": "Azad Engineering",
@@ -3151,7 +3151,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.036Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "DCMSHRIRAM": {
       "name": "DCM Shriram",
@@ -3161,7 +3161,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.036Z"
+      "fetched_at": "2026-07-07T05:08:25.444Z"
     },
     "ASAHIINDIA": {
       "name": "Asahi India Glas",
@@ -3171,7 +3171,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:25.442Z"
     },
     "CGCL": {
       "name": "Capri Global",
@@ -3181,7 +3181,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.536Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "GMRAIRPORT": {
       "name": "GMR Airports",
@@ -3191,7 +3191,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.536Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "DEEPAKFERT": {
       "name": "Deepak Fertilis.",
@@ -3201,7 +3201,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.036Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "OIL": {
       "name": "Oil India",
@@ -3211,7 +3211,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.036Z"
+      "fetched_at": "2026-07-07T05:08:25.942Z"
     },
     "PFOCUS": {
       "name": "Prime Focus",
@@ -3221,7 +3221,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "DEEPAKNTR": {
       "name": "Deepak Nitrite",
@@ -3231,7 +3231,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.536Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "SHRIRAMFIN": {
       "name": "Shriram Finance",
@@ -3241,7 +3241,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "CENTURYPLY": {
       "name": "Century Plyboard",
@@ -3251,7 +3251,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:24.537Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "ASTERDM": {
       "name": "Aster DM Health.",
@@ -3261,7 +3261,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.036Z"
+      "fetched_at": "2026-07-07T05:08:42.933Z"
     },
     "AADHARHFC": {
       "name": "Aadhar Hsg. Fin.",
@@ -3271,7 +3271,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.036Z"
+      "fetched_at": "2026-07-07T05:08:25.942Z"
     },
     "VERTIS": {
       "name": "Vertis Infra.",
@@ -3281,7 +3281,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.037Z"
+      "fetched_at": "2026-07-07T05:08:25.942Z"
     },
     "ACC": {
       "name": "ACC",
@@ -3291,7 +3291,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.037Z"
+      "fetched_at": "2026-07-07T05:08:42.931Z"
     },
     "AGARWALEYE": {
       "name": "Dr Agarwal's Hea",
@@ -3301,17 +3301,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.037Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "JSWCEMENT": {
       "name": "JSW Cement",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.781Z"
+      "fetched_at": "2026-07-07T05:08:42.931Z"
     },
     "BAJAJHLDNG": {
       "name": "Bajaj Holdings",
@@ -3321,37 +3321,37 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.781Z"
+      "fetched_at": "2026-07-07T05:09:00.475Z"
     },
     "JSWSTEEL": {
       "name": "JSW Steel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.782Z"
+      "fetched_at": "2026-07-07T05:08:43.431Z"
     },
     "HFCL": {
       "name": "HFCL",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.784Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "BAJFINANCE": {
       "name": "Bajaj Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.785Z"
+      "fetched_at": "2026-07-07T05:08:43.431Z"
     },
     "VENTIVE": {
       "name": "Ventive Hospital",
@@ -3361,7 +3361,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.785Z"
+      "fetched_at": "2026-07-07T05:09:00.476Z"
     },
     "GMDCLTD": {
       "name": "G M D C",
@@ -3371,7 +3371,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.785Z"
+      "fetched_at": "2026-07-07T05:09:00.477Z"
     },
     "RVNL": {
       "name": "Rail Vikas",
@@ -3381,17 +3381,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.785Z"
+      "fetched_at": "2026-07-07T05:09:00.477Z"
     },
     "IIFL": {
       "name": "IIFL Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.782Z"
+      "fetched_at": "2026-07-07T05:08:42.932Z"
     },
     "ITCHOTELS": {
       "name": "ITC Hotels",
@@ -3401,47 +3401,47 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:26:02.785Z"
+      "fetched_at": "2026-07-07T05:09:00.477Z"
     },
     "UBL": {
       "name": "United Breweries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:21.248Z"
+      "fetched_at": "2026-07-07T05:09:00.477Z"
     },
     "CESC": {
       "name": "CESC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.480Z"
     },
     "BAJAJFINSV": {
       "name": "Bajaj Finserv",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:21.248Z"
+      "fetched_at": "2026-07-07T05:09:00.480Z"
     },
     "BRIGADE": {
       "name": "Brigade Enterpr.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:21.248Z"
+      "fetched_at": "2026-07-07T05:09:00.480Z"
     },
     "RELIANCE": {
       "name": "Reliance Industries",
@@ -3451,107 +3451,107 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.745Z"
+      "fetched_at": "2026-07-07T05:14:24.173Z"
     },
     "SHREECEM": {
       "name": "Shree Cement",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.481Z"
     },
     "INOXWIND": {
       "name": "Inox Wind",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.481Z"
     },
     "CARBORUNIV": {
       "name": "Carborundum Uni.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:28.243Z"
+      "fetched_at": "2026-07-07T05:09:00.481Z"
     },
     "TATAPOWER": {
       "name": "Tata Power Co.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:21.248Z"
+      "fetched_at": "2026-07-07T05:09:00.480Z"
     },
     "NLCINDIA": {
       "name": "NLC India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.481Z"
     },
     "JINDALSAW": {
       "name": "Jindal Saw",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.745Z"
+      "fetched_at": "2026-07-07T05:09:00.481Z"
     },
     "PRESTIGE": {
       "name": "Prestige Estates",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.482Z"
     },
     "PGEL": {
       "name": "PG Electroplast",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.745Z"
+      "fetched_at": "2026-07-07T05:09:00.482Z"
     },
     "POLICYBZR": {
       "name": "PB Fintech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:09:00.482Z"
     },
     "HDFCLIFE": {
       "name": "HDFC Life Insur.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.745Z"
+      "fetched_at": "2026-07-07T05:09:00.483Z"
     },
     "AMBER": {
       "name": "Amber Enterp.",
@@ -3561,7 +3561,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.745Z"
+      "fetched_at": "2026-07-07T05:14:16.177Z"
     },
     "UPL": {
       "name": "UPL",
@@ -3571,7 +3571,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.744Z"
+      "fetched_at": "2026-07-07T05:14:24.173Z"
     },
     "ICICIPRULI": {
       "name": "ICICI Pru Life",
@@ -3581,7 +3581,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.743Z"
+      "fetched_at": "2026-07-07T05:14:16.177Z"
     },
     "SYNGENE": {
       "name": "Syngene Intl.",
@@ -3591,7 +3591,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.743Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "SBICARD": {
       "name": "SBI Cards",
@@ -3601,7 +3601,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:29.743Z"
+      "fetched_at": "2026-07-07T05:14:24.173Z"
     },
     "CREDITACC": {
       "name": "CreditAcc. Gram.",
@@ -3611,37 +3611,37 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.227Z"
+      "fetched_at": "2026-07-07T05:14:16.677Z"
     },
     "FLUOROCHEM": {
       "name": "Gujarat Fluoroch",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.789Z"
+      "fetched_at": "2026-07-07T05:14:24.173Z"
     },
     "CHOLAHLDNG": {
       "name": "Chola Financial",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.789Z"
+      "fetched_at": "2026-07-07T05:14:24.172Z"
     },
     "POWERGRID": {
       "name": "Power Grid Corpn",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.790Z"
+      "fetched_at": "2026-07-07T05:14:24.172Z"
     },
     "PFC": {
       "name": "Power Fin.Corpn.",
@@ -3651,7 +3651,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.227Z"
+      "fetched_at": "2026-07-07T05:14:24.673Z"
     },
     "RECLTD": {
       "name": "REC Ltd",
@@ -3661,17 +3661,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:30.243Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "ADANIENSOL": {
       "name": "Adani Energy Sol",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.792Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "CHOLAFIN": {
       "name": "Cholaman.Inv.&Fn",
@@ -3681,7 +3681,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:51.227Z"
+      "fetched_at": "2026-07-07T05:14:34.169Z"
     },
     "JINDALSTEL": {
       "name": "Jindal Steel",
@@ -3691,17 +3691,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.227Z"
+      "fetched_at": "2026-07-07T05:14:34.169Z"
     },
     "IRCON": {
       "name": "Ircon Intl.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.792Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "GAIL": {
       "name": "GAIL (India)",
@@ -3711,27 +3711,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.227Z"
+      "fetched_at": "2026-07-07T05:14:34.169Z"
     },
     "IREDA": {
       "name": "Indian Renewable",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.799Z"
+      "fetched_at": "2026-07-07T05:14:34.668Z"
     },
     "SUNDARMFIN": {
       "name": "Sundaram Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.792Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "PNBHOUSING": {
       "name": "PNB Housing",
@@ -3741,27 +3741,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.226Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "KIMS": {
       "name": "Krishna Institu.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.792Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "TATACONSUM": {
       "name": "Tata Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.793Z"
+      "fetched_at": "2026-07-07T05:14:34.169Z"
     },
     "HDBFS": {
       "name": "HDB FINANC SER",
@@ -3771,37 +3771,37 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.226Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "VOLTAS": {
       "name": "Voltas",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.793Z"
+      "fetched_at": "2026-07-07T05:14:34.168Z"
     },
     "JUBLPHARMA": {
       "name": "Jubilant Pharmo",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.793Z"
+      "fetched_at": "2026-07-07T05:14:34.167Z"
     },
     "ACMESOLAR": {
       "name": "ACME Solar Hold.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.793Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "VTL": {
       "name": "Vardhman Textile",
@@ -3811,27 +3811,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:31:54.226Z"
+      "fetched_at": "2026-07-07T05:14:34.671Z"
     },
     "GODREJIND": {
       "name": "Godrej Industrie",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.794Z"
+      "fetched_at": "2026-07-07T05:14:34.671Z"
     },
     "BAJAJHFL": {
       "name": "Bajaj Housing",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.794Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "EXIDEIND": {
       "name": "Exide Inds.",
@@ -3841,67 +3841,67 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.470Z"
+      "fetched_at": "2026-07-07T05:14:34.671Z"
     },
     "M&MFIN": {
       "name": "M & M Fin. Serv.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.798Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "ABCAPITAL": {
       "name": "Aditya Birla Cap",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.798Z"
+      "fetched_at": "2026-07-07T05:14:34.671Z"
     },
     "THELEELA": {
       "name": "Leela Palaces Hotels",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.798Z"
+      "fetched_at": "2026-07-07T05:14:34.668Z"
     },
     "LICHSGFIN": {
       "name": "LIC Housing Fin.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.799Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "TATACAP": {
       "name": "Tata Capital",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.799Z"
+      "fetched_at": "2026-07-07T05:14:35.169Z"
     },
     "STARHEALTH": {
       "name": "Star Health Insu",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:32:02.799Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "BHEL": {
       "name": "B H E L",
@@ -3911,7 +3911,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.970Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "LENSKART": {
       "name": "Lenskart Solut.",
@@ -3921,7 +3921,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.470Z"
+      "fetched_at": "2026-07-07T05:14:34.669Z"
     },
     "HUDCO": {
       "name": "H U D C O",
@@ -3931,7 +3931,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.969Z"
+      "fetched_at": "2026-07-07T05:14:35.168Z"
     },
     "LTF": {
       "name": "L&T Finance Ltd",
@@ -3941,7 +3941,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.970Z"
+      "fetched_at": "2026-07-07T05:14:35.168Z"
     },
     "COHANCE": {
       "name": "Cohance Life",
@@ -3951,7 +3951,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.970Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "CANHLIFE": {
       "name": "Canara HSBC",
@@ -3961,7 +3961,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.970Z"
+      "fetched_at": "2026-07-07T05:14:35.168Z"
     },
     "NTPC": {
       "name": "NTPC",
@@ -3971,17 +3971,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.970Z"
+      "fetched_at": "2026-07-07T05:14:35.168Z"
     },
     "JSWENERGY": {
       "name": "JSW Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:15:00.491Z"
     },
     "GODREJPROP": {
       "name": "Godrej Propert.",
@@ -3991,7 +3991,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:14:35.168Z"
     },
     "MANAPPURAM": {
       "name": "Manappuram Fin.",
@@ -4001,17 +4001,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:14:35.169Z"
     },
     "GRASIM": {
       "name": "Grasim Inds",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:15:00.491Z"
     },
     "DALBHARAT": {
       "name": "Dalmia BharatLtd",
@@ -4021,17 +4021,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.961Z"
+      "fetched_at": "2026-07-07T05:20:18.903Z"
     },
     "INDIGRID": {
       "name": "IndiGrid Trust",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:15:00.491Z"
     },
     "SAIL": {
       "name": "S A I L",
@@ -4041,7 +4041,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:20:18.901Z"
     },
     "STLTECH": {
       "name": "Sterlite Tech.",
@@ -4051,7 +4051,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "PTCIL": {
       "name": "PTC Industries",
@@ -4061,7 +4061,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:20.470Z"
+      "fetched_at": "2026-07-07T05:14:34.670Z"
     },
     "BEML": {
       "name": "BEML Ltd",
@@ -4071,7 +4071,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "AUBANK": {
       "name": "AU Small Finance",
@@ -4081,7 +4081,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.962Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "KARURVYSYA": {
       "name": "Karur Vysya Bank",
@@ -4091,7 +4091,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.961Z"
+      "fetched_at": "2026-07-07T05:20:18.903Z"
     },
     "MINDSPACE": {
       "name": "Mindspace Busine",
@@ -4101,7 +4101,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.964Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "WOCKPHARMA": {
       "name": "Wockhardt",
@@ -4111,7 +4111,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.462Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "POONAWALLA": {
       "name": "Poonawalla Fin",
@@ -4121,7 +4121,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.964Z"
+      "fetched_at": "2026-07-07T05:20:32.392Z"
     },
     "IRB": {
       "name": "IRB Infra.Devl.",
@@ -4131,7 +4131,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.964Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "ANURAS": {
       "name": "Anupam Rasayan",
@@ -4141,7 +4141,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.964Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "AEGISVOPAK": {
       "name": "Aegis Vopak Term",
@@ -4151,7 +4151,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:32.391Z"
     },
     "ICICIBANK": {
       "name": "ICICI Bank",
@@ -4161,7 +4161,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.391Z"
     },
     "HDFCBANK": {
       "name": "HDFC Bank",
@@ -4171,7 +4171,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:32.894Z"
     },
     "ADANIGREEN": {
       "name": "Adani Green",
@@ -4181,7 +4181,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.961Z"
+      "fetched_at": "2026-07-07T05:20:32.391Z"
     },
     "KOTAKBANK": {
       "name": "Kotak Mah. Bank",
@@ -4191,7 +4191,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.391Z"
     },
     "LMW": {
       "name": "LMW",
@@ -4201,7 +4201,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "SOBHA": {
       "name": "Sobha",
@@ -4211,7 +4211,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "AARTIIND": {
       "name": "Aarti Industries",
@@ -4221,7 +4221,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "CUB": {
       "name": "City Union Bank",
@@ -4231,7 +4231,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "INDIGO": {
       "name": "Interglobe Aviat",
@@ -4241,7 +4241,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.963Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "CUBEINVIT": {
       "name": "Cube Highways",
@@ -4251,7 +4251,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "CANBK": {
       "name": "Canara Bank",
@@ -4261,7 +4261,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.961Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "IDBI": {
       "name": "IDBI Bank",
@@ -4271,7 +4271,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:03.207Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "PIRAMALFIN": {
       "name": "Piramal Finance.",
@@ -4281,7 +4281,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.961Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "BANDHANBNK": {
       "name": "Bandhan Bank",
@@ -4291,7 +4291,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "FEDERALBNK": {
       "name": "Federal Bank",
@@ -4301,7 +4301,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "DLF": {
       "name": "DLF",
@@ -4311,7 +4311,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:32.892Z"
     },
     "INDIANB": {
       "name": "Indian Bank",
@@ -4321,7 +4321,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "UNIONBANK": {
       "name": "Union Bank (I)",
@@ -4331,7 +4331,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "WELSPUNLIV": {
       "name": "Welspun Living",
@@ -4341,7 +4341,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "AXISBANK": {
       "name": "Axis Bank",
@@ -4351,7 +4351,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:32.893Z"
     },
     "CLEANMAX": {
       "name": "Clean Max Enviro",
@@ -4361,7 +4361,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "NXST": {
       "name": "Nexus Select",
@@ -4371,7 +4371,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.463Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "SBIN": {
       "name": "SBI",
@@ -4381,7 +4381,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.462Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "RAMCOCEM": {
       "name": "The Ramco Cement",
@@ -4391,7 +4391,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.464Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "IOB": {
       "name": "I O B",
@@ -4401,7 +4401,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:42:54.212Z"
+      "fetched_at": "2026-07-07T05:20:33.395Z"
     },
     "MAHABANK": {
       "name": "Bank of Maha",
@@ -4411,7 +4411,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:42:54.212Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "ADANIENT": {
       "name": "Adani Enterp.",
@@ -4421,7 +4421,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "IDFCFIRSTB": {
       "name": "IDFC First Bank",
@@ -4431,7 +4431,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:03.206Z"
+      "fetched_at": "2026-07-07T05:20:33.395Z"
     },
     "YESBANK": {
       "name": "Yes Bank",
@@ -4441,7 +4441,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:42:56.710Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "PSB": {
       "name": "Pun. & Sind Bank",
@@ -4451,7 +4451,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:42:59.208Z"
+      "fetched_at": "2026-07-07T05:20:32.891Z"
     },
     "BANKINDIA": {
       "name": "Bank of India",
@@ -4461,7 +4461,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:02.706Z"
+      "fetched_at": "2026-07-07T05:20:33.395Z"
     },
     "SJVN": {
       "name": "SJVN",
@@ -4471,7 +4471,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "J&KBANK": {
       "name": "J & K Bank",
@@ -4481,7 +4481,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:42:58.708Z"
+      "fetched_at": "2026-07-07T05:20:33.395Z"
     },
     "RBLBANK": {
       "name": "RBL Bank",
@@ -4491,7 +4491,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:03.207Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "NHPC": {
       "name": "NHPC Ltd",
@@ -4501,7 +4501,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:20:33.393Z"
     },
     "EMBASSY": {
       "name": "Embassy Off.REIT",
@@ -4511,7 +4511,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "INDUSINDBK": {
       "name": "IndusInd Bank",
@@ -4521,7 +4521,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:03.207Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "BIRET": {
       "name": "Brookfield India",
@@ -4531,27 +4531,27 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "IRFC": {
       "name": "I R F C",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:21:00.498Z"
     },
     "BANKBARODA": {
       "name": "Bank of Baroda",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:21:00.498Z"
     },
     "CENTRALBK": {
       "name": "Central Bank",
@@ -4561,7 +4561,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:26:19.628Z"
     },
     "PNB": {
       "name": "Punjab Natl.Bank",
@@ -4571,7 +4571,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:34.462Z"
+      "fetched_at": "2026-07-07T05:20:33.394Z"
     },
     "AMBUJACEM": {
       "name": "Ambuja Cements",
@@ -4581,7 +4581,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "UCOBANK": {
       "name": "UCO Bank",
@@ -4591,7 +4591,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "NAUKRI": {
       "name": "Info Edg.(India)",
@@ -4601,7 +4601,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "IFCI": {
       "name": "IFCI",
@@ -4611,7 +4611,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:09.702Z"
+      "fetched_at": "2026-07-07T05:26:23.127Z"
     },
     "PAYTM": {
       "name": "One 97",
@@ -4621,7 +4621,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "ZYDUSWELL": {
       "name": "Zydus Wellness",
@@ -4631,7 +4631,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "FACT": {
       "name": "F A C T",
@@ -4641,7 +4641,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:23.128Z"
     },
     "SAMMAANCAP": {
       "name": "Sammaan Capital",
@@ -4651,7 +4651,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:26:23.128Z"
     },
     "DEVYANI": {
       "name": "Devyani Intl.",
@@ -4661,7 +4661,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "NHIT": {
       "name": "National High",
@@ -4671,7 +4671,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.202Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "BHARATCOAL": {
       "name": "Bharat Coking",
@@ -4681,7 +4681,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:23.128Z"
     },
     "PINELABS": {
       "name": "Pine Labs",
@@ -4691,7 +4691,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:23.128Z"
     },
     "PWL": {
       "name": "Physicswallah",
@@ -4701,7 +4701,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:39.615Z"
     },
     "NIACL": {
       "name": "New India Assura",
@@ -4711,7 +4711,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:39.616Z"
     },
     "BIOCON": {
       "name": "Biocon",
@@ -4721,7 +4721,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:37.615Z"
     },
     "TATACHEM": {
       "name": "Tata Chemicals",
@@ -4731,7 +4731,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "NTPCGREEN": {
       "name": "NTPC Green Ene.",
@@ -4741,7 +4741,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.201Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "NIVABUPA": {
       "name": "Niva Bupa Health",
@@ -4751,7 +4751,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "ETERNAL": {
       "name": "Eternal",
@@ -4761,7 +4761,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:40.116Z"
     },
     "MFSL": {
       "name": "Max Financial",
@@ -4771,7 +4771,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "DELHIVERY": {
       "name": "Delhivery",
@@ -4781,7 +4781,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "TMPV": {
       "name": "Tata Motors PVeh",
@@ -4791,7 +4791,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.703Z"
+      "fetched_at": "2026-07-07T05:26:40.116Z"
     },
     "PPLPHARMA": {
       "name": "Piramal Pharma",
@@ -4801,7 +4801,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "JIOFIN": {
       "name": "Jio Financial",
@@ -4811,17 +4811,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.704Z"
+      "fetched_at": "2026-07-07T05:26:40.116Z"
     },
     "TATAINVEST": {
       "name": "Tata Inv.Corpn.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:34.471Z"
+      "fetched_at": "2026-07-07T05:26:40.116Z"
     },
     "ITI": {
       "name": "ITI",
@@ -4831,47 +4831,47 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.702Z"
+      "fetched_at": "2026-07-07T05:26:40.116Z"
     },
     "KIOCL": {
       "name": "KIOCL",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:34.472Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "MAHSCOOTER": {
       "name": "Mah. Scooters",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:34.473Z"
+      "fetched_at": "2026-07-07T05:26:40.117Z"
     },
     "ONESOURCE": {
       "name": "OneSource Speci.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:34.473Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "JSWHL": {
       "name": "JSW Holdings",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:34.473Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "IDEA": {
       "name": "Vodafone Idea",
@@ -4881,7 +4881,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:40.946Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "ABREL": {
       "name": "A B Real Estate",
@@ -4891,7 +4891,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:40.946Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "URBANCO": {
       "name": "Urban Company",
@@ -4901,7 +4901,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:40.946Z"
+      "fetched_at": "2026-07-07T05:26:40.616Z"
     },
     "NSLNISP": {
       "name": "NMDC Steel",
@@ -4911,7 +4911,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:43:10.203Z"
+      "fetched_at": "2026-07-07T05:26:39.616Z"
     },
     "OLAELEC": {
       "name": "Ola Electric",
@@ -4921,7 +4921,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:40.946Z"
+      "fetched_at": "2026-07-07T05:26:40.616Z"
     },
     "ATHERENERG": {
       "name": "Ather Energy",
@@ -4931,7 +4931,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:51.937Z"
+      "fetched_at": "2026-07-07T05:26:40.615Z"
     },
     "SWIGGY": {
       "name": "Swiggy",
@@ -4941,7 +4941,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:40.946Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "MEESHO": {
       "name": "Meesho",
@@ -4951,7 +4951,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:47.941Z"
+      "fetched_at": "2026-07-07T05:26:40.118Z"
     },
     "KRT": {
       "name": "Knowledge Realty",
@@ -4961,7 +4961,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:47.941Z"
+      "fetched_at": "2026-07-07T05:26:40.616Z"
     },
     "TMCV": {
       "name": "Tata Motors",
@@ -4971,7 +4971,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.125Z"
+      "fetched_at": "2026-07-07T04:39:25.023Z"
     },
     "ARVIND": {
       "name": "Arvind Ltd",
@@ -4981,7 +4981,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:20:01.773Z"
+      "fetched_at": "2026-07-07T05:02:48.200Z"
     },
     "INGERRAND": {
       "name": "Ingersoll-Rand",
@@ -5111,7 +5111,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:56:37.125Z"
+      "fetched_at": "2026-07-07T04:39:25.024Z"
     },
     "JAINREC": {
       "name": "Jain Resource",
@@ -5121,17 +5121,17 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:02:11.577Z"
+      "fetched_at": "2026-07-07T04:44:46.463Z"
     },
     "PARKHOSPS": {
       "name": "Park Medi World",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.156Z"
+      "fetched_at": "2026-07-07T04:51:01.703Z"
     },
     "VIYASH": {
       "name": "Viyash Scientific",
@@ -5141,37 +5141,37 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:34.298Z"
+      "fetched_at": "2026-07-07T04:51:01.704Z"
     },
     "GUJENERGY": {
       "name": "Gujarat Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:08:37.161Z"
+      "fetched_at": "2026-07-07T04:50:40.220Z"
     },
     "GRAVITA": {
       "name": "Gravita India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.171Z"
+      "fetched_at": "2026-07-07T04:56:40.470Z"
     },
     "UTIAMC": {
       "name": "UTI AMC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:14:37.175Z"
+      "fetched_at": "2026-07-07T04:57:00.458Z"
     },
     "JMFINANCIL": {
       "name": "JM Financial",
@@ -5181,7 +5181,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:23.037Z"
+      "fetched_at": "2026-07-07T05:08:25.443Z"
     },
     "HOMEFIRST": {
       "name": "Home First Finan",
@@ -5191,7 +5191,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:25:25.037Z"
+      "fetched_at": "2026-07-07T05:08:58.920Z"
     },
     "PCBL": {
       "name": "PCBL Chemical",
@@ -5201,7 +5201,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:37:33.964Z"
+      "fetched_at": "2026-07-07T05:20:18.902Z"
     },
     "VISL": {
       "name": "Vedanta Iron & Steel",
@@ -5211,7 +5211,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T05:48:47.941Z"
+      "fetched_at": "2026-07-07T05:26:40.616Z"
     }
   }
 }
