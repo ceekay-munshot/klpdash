@@ -249,6 +249,21 @@ function savePillarWeights(w) {
   try { localStorage.setItem(PILLAR_WEIGHTS_KEY, JSON.stringify(w)); } catch {}
 }
 
+// Weight Lab — a sandbox pillar-weight mix, independent of the live SPIP
+// weights, so the desk can experiment (and let AI search) without touching
+// the published basket until they hit "Apply to SPIP".
+const LAB_WEIGHTS_KEY = "klpdash-lab-weights-v1";
+function loadLabWeights() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LAB_WEIGHTS_KEY) || "null");
+    if (s && ["fundamentals", "technicals", "macro", "sentiment", "liquidity"].every((k) => typeof s[k] === "number")) return s;
+  } catch {}
+  return { ...composite.PILLAR_WEIGHTS };
+}
+function saveLabWeights(w) {
+  try { localStorage.setItem(LAB_WEIGHTS_KEY, JSON.stringify(w)); } catch {}
+}
+
 // Client-configurable allocation per pick for the History portfolio
 // backtest. Defaults to ₹1L. Stored as a plain integer in localStorage.
 const ALLOC_KEY = "klpdash-alloc-per-pick-v1";
@@ -505,6 +520,8 @@ const state = {
   activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
   manualReturnMode: loadManualReturnMode(), // "booked" | "held" — manual-basket return convention
   manualMonth: null,                  // selected client-basket month "YYYY-MM" (null = latest)
+  labWeights: loadLabWeights(),       // Weight Lab sandbox pillar mix
+  labAiBest: null,                    // last AI weight-search result (in-memory)
   strategySegmentIdx: null,           // which segment pill is selected (null = latest)
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
@@ -8852,6 +8869,236 @@ function renderParamPicker(strat) {
 const STRAT_PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444"];
 function stratColors(views) { return views.map((v, i) => ({ ...v, color: STRAT_PALETTE[i % STRAT_PALETTE.length] })); }
 
+// ------------------- Weight Lab: pillar-weight tuning + AI search -------------------
+// Replicates the SPIP composite (a weighted blend of the 5 pillars) but lets
+// the desk change the blend and see which mix would have picked the best
+// held basket — or let AI grid-search ~1,000 mixes for the best one.
+const LAB_PILLARS = [
+  { key: "fundamentals", label: "Fundamental", dot: "bg-indigo-500" },
+  { key: "technicals",   label: "Technical",   dot: "bg-sky-500" },
+  { key: "macro",        label: "Macro",       dot: "bg-emerald-500" },
+  { key: "sentiment",    label: "Sentiment",   dot: "bg-amber-500" },
+  { key: "liquidity",    label: "Liquidity",   dot: "bg-rose-500" },
+];
+
+// Normalise a raw weight mix to integers summing to 100 (last pillar absorbs
+// rounding). Falls back to the framework default if the mix is all-zero.
+function normalizeWeights(w) {
+  const keys = LAB_PILLARS.map((p) => p.key);
+  const sum = keys.reduce((a, k) => a + (Number(w[k]) || 0), 0);
+  if (sum <= 0) return { ...composite.PILLAR_WEIGHTS };
+  const out = {}; let acc = 0;
+  keys.forEach((k, i) => {
+    if (i === keys.length - 1) out[k] = 100 - acc;
+    else { out[k] = Math.round((Number(w[k]) || 0) / sum * 100); acc += out[k]; }
+  });
+  return out;
+}
+
+// Precompute what the lab needs once: the anchor candidates (with their pillar
+// pct vector) and a per-day ticker→close map for the tracking window. Reused
+// across every weight mix so the AI search stays fast.
+function buildLabContext(snapshots, anchorDate) {
+  const anchorSnap = snapshots.find((s) => s.date >= anchorDate) || snapshots[0];
+  const tracking = snapshots.filter((s) => s.date >= anchorSnap.date);
+  const trackMaps = tracking.map((s) => {
+    const m = new Map();
+    for (const st of s.stocks) if (typeof st.close === "number") m.set(st.ticker, st.close);
+    return m;
+  });
+  const cands = [];
+  for (const s of anchorSnap.stocks) {
+    if (!s.dataComplete || s.hardFailed || typeof s.close !== "number" || !s.ticker) continue;
+    const p = s.pillars;
+    const v = LAB_PILLARS.map((x) => p?.[x.key]?.pct);
+    if (v.some((x) => x == null)) continue;
+    cands.push({ ticker: s.ticker, name: s.name || s.ticker, close: s.close, v });
+  }
+  return { anchorSnap, tracking, trackMaps, cands };
+}
+
+// Held (passive) top-N basket under a weight mix: rank candidates by the
+// weighted-average pillar score, hold, track equal-weight to today. Returns
+// { finalReturn, maxDD, picks, curve }.
+function heldPerfCore(ctx, weights, N = 7) {
+  const wsum = LAB_PILLARS.reduce((a, x) => a + (weights[x.key] || 0), 0) || 1;
+  const wv = LAB_PILLARS.map((x) => (weights[x.key] || 0) / wsum);
+  const ranked = ctx.cands
+    .map((c) => { let sc = 0; for (let i = 0; i < 5; i++) sc += c.v[i] * wv[i]; return { c, sc }; })
+    .sort((a, b) => b.sc - a.sc)
+    .slice(0, N);
+  if (!ranked.length) return null;
+  const entry = {}; const picks = [];
+  for (const { c, sc } of ranked) { entry[c.ticker] = c.close; picks.push({ ticker: c.ticker, name: c.name, composite: sc }); }
+  const last = { ...entry };
+  const curve = ctx.trackMaps.map((m, i) => {
+    let sum = 0, n = 0;
+    for (const tk of Object.keys(entry)) {
+      const cl = m.has(tk) ? m.get(tk) : last[tk];
+      if (typeof cl === "number") { last[tk] = cl; sum += cl / entry[tk]; n++; }
+    }
+    return { date: ctx.tracking[i].date, retPct: n ? (sum / n - 1) * 100 : null };
+  });
+  return { finalReturn: lastRet(curve), maxDD: curveMaxDrawdown(curve), picks, curve };
+}
+
+function weightedBasketPerf(snapshots, anchorDate, weights, N = 7) {
+  if (!snapshots?.length) return null;
+  return heldPerfCore(buildLabContext(snapshots, anchorDate), weights, N);
+}
+
+// Grid-search pillar weights (step 10, summing to 100 → ~1,000 mixes) for the
+// best risk-adjusted score (return + 0.4·drawdown, drawdown ≤ 0).
+function findBestWeights(ctx, N = 7) {
+  const step = 10; let best = null, tried = 0;
+  for (let f = 0; f <= 100; f += step)
+    for (let t = 0; f + t <= 100; t += step)
+      for (let m = 0; f + t + m <= 100; m += step)
+        for (let se = 0; f + t + m + se <= 100; se += step) {
+          const l = 100 - f - t - m - se;
+          const weights = { fundamentals: f, technicals: t, macro: m, sentiment: se, liquidity: l };
+          const perf = heldPerfCore(ctx, weights, N);
+          tried++;
+          if (!perf) continue;
+          const score = perf.finalReturn + 0.4 * perf.maxDD;
+          if (!best || score > best.score) best = { weights, perf, score };
+        }
+  return best ? { ...best, tried } : null;
+}
+
+function labWeightChips(w) {
+  return LAB_PILLARS.map((p) => `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 tabular-nums"><span class="inline-block w-1.5 h-1.5 rounded-full ${p.dot}"></span>${p.label.slice(0, 4)} ${w[p.key] ?? 0}</span>`).join(" ");
+}
+
+// One result card: a weight mix + its held-basket return, drawdown and picks.
+function renderLabResultCard(title, badge, weights, perf, highlight) {
+  const nW = normalizeWeights(weights);
+  const ret = perf?.finalReturn;
+  const dd = perf?.maxDD;
+  const retCls = ret == null ? "text-slate-400" : ret >= 0 ? "text-emerald-600" : "text-rose-600";
+  const picks = (perf?.picks || []).map((p) => p.ticker).slice(0, 7);
+  return `
+    <div class="rounded-xl p-3 ring-1 ${highlight ? "ring-emerald-300 bg-emerald-50/40" : "ring-slate-200 bg-white"}">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">${escapeHtml(title)}</div>
+        ${badge || ""}
+      </div>
+      <div class="flex items-baseline gap-2">
+        <div class="${retCls} text-2xl font-bold tabular-nums leading-none">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+        <div class="text-[10px] tabular-nums ${dd < -0.005 ? "text-rose-600" : "text-slate-400"}"><span class="uppercase tracking-wider font-semibold text-slate-400">DD</span> ${dd == null ? "—" : dd.toFixed(2) + "%"}</div>
+      </div>
+      <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5">${labWeightChips(nW)}</div>
+      <div class="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-snug"><span class="font-semibold text-slate-400">Basket:</span> ${picks.length ? picks.map((t) => escapeHtml(t)).join(" · ") : "—"}</div>
+    </div>`;
+}
+
+function renderWeightLab() {
+  const snaps = state.cache.history?.snapshots;
+  if (!snaps?.length) return `<section id="weight-lab"></section>`;
+  const anchor = snaps[0].date, today = snaps[snaps.length - 1].date;
+  const ctx = buildLabContext(snaps, anchor);
+  const defW = { ...composite.PILLAR_WEIGHTS };
+  const yourW = state.labWeights || defW;
+  const perfDef = heldPerfCore(ctx, defW);
+  const perfYour = heldPerfCore(ctx, yourW);
+  const aiBest = state.labAiBest;
+  const nDays = ctx.tracking.length;
+
+  const sliders = LAB_PILLARS.map((p) => {
+    const val = yourW[p.key] ?? 0;
+    return `
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0"></span>
+        <span class="text-[11px] font-semibold text-slate-600 w-20 flex-shrink-0">${p.label}</span>
+        <input type="range" min="0" max="100" step="5" data-lab-w="${p.key}" value="${val}" class="flex-1 accent-indigo-600">
+        <span class="text-xs font-bold tabular-nums text-slate-800 w-8 text-right" data-lab-wval="${p.key}">${val}</span>
+      </div>`;
+  }).join("");
+
+  const aiBadge = `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">AI best</span>`;
+  const defBadge = `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 ring-1 ring-slate-200">current</span>`;
+  const yourBadge = `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">yours</span>`;
+
+  const aiCard = aiBest
+    ? renderLabResultCard("AI best mix", aiBadge, aiBest.weights, aiBest.perf, true)
+    : `<div class="rounded-xl p-3 ring-1 ring-dashed ring-slate-300 bg-slate-50/40 flex flex-col items-center justify-center text-center gap-2">
+         <div class="text-[11px] text-slate-500 leading-snug">Let AI search ~1,000 weight mixes for the best-performing basket.</div>
+         <button type="button" data-lab-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best weights</button>
+       </div>`;
+
+  return `
+    <section id="weight-lab" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⚖️</span>
+          <h3 class="font-display font-bold text-slate-900 text-base">Weight Lab</h3>
+          <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span>
+        </div>
+        <div class="text-[11px] text-slate-500">Held top-7 · backtested over ${nDays} days · ${fmtDateDMY(anchor)} → ${fmtDateDMY(today)}</div>
+      </div>
+      <div class="text-sm text-slate-600 mb-4 max-w-2xl">Change how much each pillar counts and watch which basket the mix would have picked — then let AI hunt for the best mix. This is the same 5-pillar blend the SPIP Basket uses; nothing changes on the live basket until you hit <strong>Apply to SPIP</strong>.</div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div>
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Your weights</div>
+          <div class="space-y-2.5">${sliders}</div>
+          <div class="flex items-center gap-2 mt-4 flex-wrap">
+            <button type="button" data-lab-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 AI find best weights</button>
+            <button type="button" data-lab-apply class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Apply to SPIP Basket</button>
+            <button type="button" data-lab-reset class="px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          ${renderLabResultCard("Default SPIP", defBadge, defW, perfDef, false)}
+          ${renderLabResultCard("Your weights", yourBadge, yourW, perfYour, false)}
+          ${aiCard}
+        </div>
+      </div>
+    </section>`;
+}
+
+function refreshWeightLab() {
+  const el = document.querySelector("#custom-content #weight-lab");
+  if (!el) return;
+  el.outerHTML = renderWeightLab();
+  wireWeightLab();
+}
+
+function wireWeightLab() {
+  const root = "#custom-content";
+  $$(`${root} [data-lab-w]`).forEach((inp) => {
+    inp.addEventListener("input", () => {
+      const s = $(`${root} [data-lab-wval="${inp.dataset.labW}"]`);
+      if (s) s.textContent = inp.value;
+    });
+    inp.addEventListener("change", () => {
+      const w = { ...(state.labWeights || composite.PILLAR_WEIGHTS) };
+      w[inp.dataset.labW] = Math.max(0, Math.min(100, Number(inp.value) || 0));
+      state.labWeights = w; saveLabWeights(w); refreshWeightLab();
+    });
+  });
+  $$(`${root} [data-lab-ai]`).forEach((btn) => btn.addEventListener("click", () => {
+    btn.disabled = true; btn.textContent = "🤖 Searching ~1,000 mixes…";
+    setTimeout(() => {
+      const snaps = state.cache.history?.snapshots;
+      if (!snaps?.length) return;
+      const ctx = buildLabContext(snaps, snaps[0].date);
+      const best = findBestWeights(ctx);
+      if (best) { state.labAiBest = best; state.labWeights = { ...best.weights }; saveLabWeights(state.labWeights); }
+      refreshWeightLab();
+    }, 30);
+  }));
+  $(`${root} [data-lab-apply]`)?.addEventListener("click", () => {
+    const w = normalizeWeights(state.labWeights || composite.PILLAR_WEIGHTS);
+    state.pillarWeights = w; savePillarWeights(w);
+    delete state.cache.composite; delete state.cache.topPicks; state.compositeBySlug.clear();
+    alert(`Applied to SPIP Basket: F${w.fundamentals} · T${w.technicals} · M${w.macro} · S${w.sentiment} · L${w.liquidity}. Open the SPIP Basket tab to see the re-scored basket.`);
+  });
+  $(`${root} [data-lab-reset]`)?.addEventListener("click", () => {
+    state.labWeights = { ...composite.PILLAR_WEIGHTS };
+    saveLabWeights(state.labWeights); state.labAiBest = null; refreshWeightLab();
+  });
+}
+
 function renderCustomOverview(views) {
   const withColor = stratColors(views);
   const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));
@@ -8874,6 +9121,7 @@ function renderCustomOverview(views) {
           ${howStep("3", "Keep the winner", "The chart stacks all plans — keep the best, delete the rest.")}
         </div>
       </div>
+      ${renderWeightLab()}
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
       <section>
         <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
@@ -9073,6 +9321,7 @@ async function renderCustom() {
       host.innerHTML = renderCustomOverview(views);
     }
     wireCustomTab();
+    wireWeightLab();
     wireMultiCurveHover("#custom-content");
     $$("#custom-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
       const ticker = el.dataset.ticker; if (!ticker) return;
