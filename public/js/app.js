@@ -365,6 +365,13 @@ function saveManualReturnMode(v) {
   try { localStorage.setItem(MANUAL_RETURN_KEY, v); } catch {}
 }
 
+// Focus mode. Hides the rotation / rebalancing strategy views — the
+// Strategy-tab "Active" mode and the Custom-tab strategy cards — so the
+// dashboard shows only the client's core product: the held basket vs the
+// manual basket, plus the Weight Lab. Nothing is deleted; flip this to
+// true to bring the rotation strategies back exactly as they were.
+const SHOW_ROTATION_STRATEGIES = false;
+
 // ── Simulation inputs: capital, cash buffer, transaction charges ──────
 // Everything here is adjustable from the Strategy tab's "Capital &
 // charges" panel and persisted locally — the "real world" layer on top
@@ -1159,38 +1166,42 @@ function renderCompositeTopCards() {
   // user reaches the picks below.
   const seg = (pct, klass) => pct > 0 ? `<div class="${klass} h-full" style="width:${pct}%" title="${pct.toFixed(1)}%"></div>` : "";
   const pctOf = (n) => total ? (n / total) * 100 : 0;
+  // Semantic grade: positive (green) → caution (amber) → negative (red) →
+  // out-of-play (greys). Same colour drives the bar segment and its legend
+  // swatch so they always agree.
   const cats = [
-    { count: counts.strong,   label: "Strong Buy", dot: "bg-emerald-500" },
-    { count: counts.buy,      label: "Buy",        dot: "bg-blue-500" },
-    { count: counts.watch,    label: "Watch",      dot: "bg-amber-500" },
-    { count: counts.avoid,    label: "Avoid",      dot: "bg-rose-500" },
-    { count: counts.unrated,  label: "Unrated",    dot: "bg-slate-400" },
-    { count: counts.filtered, label: "Hard-Fail",  dot: "bg-slate-700" },
+    { count: counts.strong,   label: "Strong Buy", bar: "bg-emerald-500" },
+    { count: counts.buy,      label: "Buy",        bar: "bg-teal-500" },
+    { count: counts.watch,    label: "Watch",      bar: "bg-amber-400" },
+    { count: counts.avoid,    label: "Avoid",      bar: "bg-rose-500" },
+    { count: counts.unrated,  label: "Unrated",    bar: "bg-slate-300" },
+    { count: counts.filtered, label: "Hard-Fail",  bar: "bg-slate-500" },
   ];
   const distributionStrip = `
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-      <div class="flex items-center gap-3 flex-1 min-w-[320px]">
-        <span class="text-xs text-slate-500 whitespace-nowrap">${total} stocks scanned</span>
-        <div class="flex-1 flex h-2 overflow-hidden rounded-full ring-1 ring-slate-200/80 bg-slate-100" title="${cats.map(c=>`${c.count} ${c.label}`).join(" · ")}">
-          ${seg(pctOf(counts.strong),   "bg-emerald-500")}
-          ${seg(pctOf(counts.buy),      "bg-blue-500")}
-          ${seg(pctOf(counts.watch),    "bg-amber-500")}
-          ${seg(pctOf(counts.avoid),    "bg-rose-500")}
-          ${seg(pctOf(counts.unrated),  "bg-slate-300")}
-          ${seg(pctOf(counts.filtered), "bg-slate-700")}
+    <div class="rounded-2xl ring-1 ring-slate-200/70 bg-gradient-to-br from-white to-slate-50/60 p-4 mb-5">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-display font-extrabold text-slate-900 tabular-nums leading-none">${total}</span>
+          <span class="text-xs text-slate-500">stocks scanned</span>
         </div>
+        ${pillarWeightPill}
       </div>
-      ${pillarWeightPill}
-    </div>
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5 text-xs text-slate-600">
-      ${cats.map((c) => `
-        <span class="inline-flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>
-          <span class="font-semibold text-slate-900 tabular-nums">${c.count}</span>
-          <span class="text-slate-500">${c.label}</span>
+      <div class="flex h-3 overflow-hidden rounded-full ring-1 ring-slate-200 bg-slate-100 shadow-inner" title="${cats.map(c=>`${c.count} ${c.label}`).join(" · ")}">
+        ${cats.map((c) => seg(pctOf(c.count), c.bar)).join("")}
+      </div>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs">
+        ${cats.map((c) => `
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-[3px] ${c.bar}"></span>
+            <span class="font-bold text-slate-900 tabular-nums">${c.count}</span>
+            <span class="text-slate-500">${c.label}</span>
+          </span>
+        `).join("")}
+        <span class="ml-auto inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full bg-indigo-50 ring-1 ring-indigo-100">
+          <span class="text-[11px] text-slate-500">In basket</span>
+          <span class="inline-flex items-center justify-center min-w-[22px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white text-[11px] font-bold tabular-nums">${inBasket}</span>
         </span>
-      `).join("")}
-      <span class="ml-auto text-slate-400">→ <span class="font-semibold text-indigo-700 tabular-nums">${inBasket}</span> in basket</span>
+      </div>
     </div>
   `;
 
@@ -4377,7 +4388,7 @@ async function renderActive() {
     // contract. Active mode passes the user-chosen cadence; Passive mode
     // passes "passive" so the view builder produces a single-segment chain
     // anchored at upload (no re-locking — AI basket fixed forever).
-    const mode = state.strategyMode;
+    const mode = SHOW_ROTATION_STRATEGIES ? state.strategyMode : "passive";
     const cadence = mode === "passive" ? "passive" : state.activeCadence;
     // Manual basket — fixed at upload, same across all 3 cadences. Resolved
     // via the same picksByMonth / picks fallback the History tab uses.
@@ -4920,7 +4931,6 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
       ${renderActivePickRowsSplit(view)}
       ${renderSectorTiming(view)}
       ${alertsHtml}
-      ${renderActiveBetaCaveat(view, anchorDate)}
     </div>
   `;
 }
@@ -4972,12 +4982,19 @@ function renderStrategyModeToggle(mode, hits) {
         <span class="block text-[10px] font-normal mt-0.5 ${isActive ? "text-indigo-100" : "text-slate-400"}">${sub}</span>
       </button>`;
   };
-  return `
-    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex gap-1 flex-1 sm:flex-initial">
+  const modePills = SHOW_ROTATION_STRATEGIES
+    ? `<div class="flex gap-1 flex-1 sm:flex-initial">
         ${pill("active", "Active strategy", "AI re-locks at cadence")}
         ${pill("passive", "Passive strategy", "AI frozen at upload")}
-      </div>
+      </div>`
+    : `<div class="flex items-center gap-2 flex-1">
+        <span class="text-base">🎯</span>
+        <div><div class="text-sm font-semibold text-slate-900">AI basket vs Manual basket</div>
+        <div class="text-[10px] text-slate-400">This month's AI top 7, held and tracked against the client's basket</div></div>
+      </div>`;
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center justify-between gap-2">
+      ${modePills}
       <div class="flex items-center gap-2 pr-1 sm:pr-2">
         <input id="lkp-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
         <button id="lkp-upload-btn" type="button" title="Upload the month's client basket (Excel / CSV)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-indigo-50 hover:ring-indigo-200 text-xs font-semibold text-slate-700">⬆ <span class="hidden sm:inline">Upload basket</span></button>
@@ -9127,6 +9144,19 @@ function wireWeightLab() {
 }
 
 function renderCustomOverview(views) {
+  // Focus mode: the Custom tab is just the Weight Lab (the rotation strategy
+  // cards + comparison chart are hidden). Flip SHOW_ROTATION_STRATEGIES to
+  // bring the full Strategy Lab back.
+  if (!SHOW_ROTATION_STRATEGIES) {
+    return `
+      <div class="space-y-5">
+        <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
+          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Weight Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+          <div class="text-sm text-slate-600 mt-1 max-w-2xl">Tune how much each pillar counts in the SPIP score and see which basket the mix would have picked — or let AI find the best-performing blend. Apply a mix to push it to the live SPIP Basket.</div>
+        </div>
+        ${renderWeightLab()}
+      </div>`;
+  }
   const withColor = stratColors(views);
   const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));
   const firstNifty = withColor.find((v) => v.view?.niftyCurve?.length);
@@ -9458,26 +9488,19 @@ function wireCustomTab() {
 // Each rule has an on/off toggle and (where relevant) a threshold. All
 // adjustable, persisted locally. A nav badge shows the live count.
 const ALERT_PREFS_KEY = "klpdash-alert-prefs-v1";
+// Only basket-outcome alerts: a pick hit its target (upside) or its
+// stop-loss (downside) today. The old signal alerts (volume, RSI, near
+// 52-week high, ADX, composite-crossed) were noise for this product and
+// were removed.
 const ALERT_DEFS = [
-  { key: "targetHit",      label: "🎯 Target hit today",       desc: "A strategy pick crossed its profit target today" },
-  { key: "slHit",          label: "⚠ Stop-loss hit today",     desc: "A strategy pick hit its stop-loss today" },
-  { key: "volume",         label: "📊 Volume spike",           desc: "Today's volume ≥ N× the recent average", unit: "× vol", step: 0.1 },
-  { key: "rsiHigh",        label: "🔥 RSI overbought",          desc: "RSI(14) at or above the level", unit: "RSI ≥", step: 1 },
-  { key: "rsiLow",         label: "🧊 RSI oversold",            desc: "RSI(14) at or below the level", unit: "RSI ≤", step: 1 },
-  { key: "near52w",        label: "🚀 Near 52-week high",       desc: "Within N% of the 52-week high", unit: "% from high", step: 0.5 },
-  { key: "adx",            label: "💪 Strong trend (ADX)",      desc: "ADX(14) at or above the level", unit: "ADX ≥", step: 1 },
-  { key: "compositeCross", label: "🔀 Composite crossed 75",    desc: "Entered / exited the basket vs the previous snapshot" },
+  { key: "targetHit",      label: "🎯 Target hit today",       desc: "A basket pick crossed its profit target today" },
+  { key: "slHit",          label: "⚠ Stop-loss hit today",     desc: "A basket pick hit its stop-loss today" },
 ];
 const ALERT_DEFAULTS = {
   minComposite: 60,
   rules: {
-    targetHit: { on: true }, slHit: { on: true },
-    volume: { on: true, threshold: 1.5 },
-    rsiHigh: { on: true, threshold: 70 },
-    rsiLow: { on: false, threshold: 35 },
-    near52w: { on: true, threshold: 3 },
-    adx: { on: false, threshold: 40 },
-    compositeCross: { on: true },
+    targetHit: { on: true },
+    slHit: { on: true },
   },
 };
 function loadAlertPrefs() {
@@ -9493,27 +9516,8 @@ let alertPrefs = loadAlertPrefs();
 // Evaluate every enabled rule against the latest data. Returns grouped
 // alert lists [{ key, label, items:[{ticker,name,sector,composite,detail}], total }].
 function evaluateAlerts(snapshots, techByTicker, strategyHits, prefs) {
-  const latest = snapshots[snapshots.length - 1];
-  const prev = snapshots[snapshots.length - 2] || null;
-  const latestByTicker = new Map(latest.stocks.map((s) => [s.ticker, s]));
-  const prevByTicker = prev ? new Map(prev.stocks.map((s) => [s.ticker, s])) : new Map();
-  const minC = prefs.minComposite ?? 60;
   const R = prefs.rules;
-  const CAP = 25;
   const out = [];
-
-  function signalAlert(key, label, predicate, detailFn) {
-    if (!R[key]?.on) return;
-    const items = [];
-    for (const [ticker, tc] of techByTicker) {
-      const snap = latestByTicker.get(ticker);
-      if (!snap || snap.composite == null || snap.composite < minC || snap.hardFailed) continue;
-      if (!predicate(tc)) continue;
-      items.push({ ticker, name: snap.name || tc.name || ticker, sector: snap.sector, composite: snap.composite, detail: detailFn(tc) });
-    }
-    items.sort((a, b) => b.composite - a.composite);
-    if (items.length) out.push({ key, label, items: items.slice(0, CAP), total: items.length });
-  }
 
   if (R.targetHit?.on) {
     const items = (strategyHits?.todayHits || []).filter((h) => h.status === "TARGET_HIT")
@@ -9524,22 +9528,6 @@ function evaluateAlerts(snapshots, techByTicker, strategyHits, prefs) {
     const items = (strategyHits?.todayHits || []).filter((h) => h.status === "SL_HIT")
       .map((h) => ({ ticker: h.ticker, name: h.name || h.ticker, sector: h.sector, composite: null, detail: `${h.basket} · hit ₹${formatPrice(h.exitPrice)}` }));
     if (items.length) out.push({ key: "slHit", label: "⚠ Stop-loss hit today", items, total: items.length });
-  }
-  signalAlert("volume", "📊 Volume spike", (tc) => tc.volume_ratio_today != null && tc.volume_ratio_today >= (R.volume.threshold ?? 1.5), (tc) => `${tc.volume_ratio_today.toFixed(2)}× vol`);
-  signalAlert("rsiHigh", "🔥 RSI overbought", (tc) => tc.rsi14 != null && tc.rsi14 >= (R.rsiHigh.threshold ?? 70), (tc) => `RSI ${tc.rsi14.toFixed(0)}`);
-  signalAlert("rsiLow", "🧊 RSI oversold", (tc) => tc.rsi14 != null && tc.rsi14 <= (R.rsiLow.threshold ?? 35), (tc) => `RSI ${tc.rsi14.toFixed(0)}`);
-  signalAlert("near52w", "🚀 Near 52-week high", (tc) => tc.high_proximity_pct != null && (1 - tc.high_proximity_pct) * 100 <= (R.near52w.threshold ?? 3), (tc) => `${((1 - tc.high_proximity_pct) * 100).toFixed(1)}% from high`);
-  signalAlert("adx", "💪 Strong trend (ADX)", (tc) => tc.adx14 != null && tc.adx14 >= (R.adx.threshold ?? 40), (tc) => `ADX ${tc.adx14.toFixed(0)}`);
-  if (R.compositeCross?.on && prev) {
-    const items = [];
-    for (const [ticker, s] of latestByTicker) {
-      const p = prevByTicker.get(ticker);
-      if (!p || p.composite == null || s.composite == null) continue;
-      if (p.composite < 75 && s.composite >= 75) items.push({ ticker, name: s.name || ticker, sector: s.sector, composite: s.composite, detail: `${p.composite.toFixed(1)} → ${s.composite.toFixed(1)} · entered ▲` });
-      else if (p.composite >= 75 && s.composite < 75) items.push({ ticker, name: s.name || ticker, sector: s.sector, composite: s.composite, detail: `${p.composite.toFixed(1)} → ${s.composite.toFixed(1)} · exited ▼` });
-    }
-    items.sort((a, b) => b.composite - a.composite);
-    if (items.length) out.push({ key: "compositeCross", label: "🔀 Composite crossed 75", items, total: items.length });
   }
   return out;
 }
@@ -9606,9 +9594,9 @@ function renderAlertsSection(alerts, prefs) {
     <details class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
       <summary class="cursor-pointer flex items-center gap-2 select-none flex-wrap">
         <span class="text-base">🔔</span>
-        <span class="font-display font-bold text-slate-900 text-sm">Alerts — what's notable today</span>
+        <span class="font-display font-bold text-slate-900 text-sm">Alerts — basket picks that hit today</span>
         <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${total ? "bg-rose-100 text-rose-700 ring-1 ring-rose-200" : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"}">${total} live</span>
-        <span class="text-[11px] text-slate-400 font-normal hidden sm:inline">target hits · volume · momentum · near-highs</span>
+        <span class="text-[11px] text-slate-400 font-normal hidden sm:inline">target &amp; stop-loss hits</span>
       </summary>
       <div class="mt-3 space-y-3">
         ${renderAlertFeed(alerts)}
