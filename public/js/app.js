@@ -5030,10 +5030,17 @@ function renderActiveHero(view, cadence, mode) {
     ? `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 ring-1 ring-slate-300">passive</span>`
     : `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">${cadence}</span>`;
   const aiLabel = isPassive ? "AI passive" : "AI active";
+  // Return and drawdown, together — Pratik: don't look at return alone, a
+  // basket that's up on average can still have hidden peak-to-trough pain.
+  const aiDD = curveMaxDrawdown(view.equityCurve || []);
+  const manualDD = view.manualFinalReturn != null ? curveMaxDrawdown(view.manualCurve || []) : null;
+  const ddLine = (dd) => dd == null ? "" :
+    `<div class="text-[10px] mt-0.5 tabular-nums" title="Worst peak-to-trough decline in this window (max drawdown)"><span class="text-slate-400 font-semibold uppercase tracking-wider">Max DD</span> <span class="font-bold ${dd < -0.005 ? "text-rose-600" : "text-slate-500"}">${dd.toFixed(2)}%</span></div>`;
   const manualReturnHtml = view.manualFinalReturn != null
     ? `<div class="text-right pl-4 border-l border-indigo-100 ml-2">
          <div class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Manual basket</div>
          <div class="${view.manualFinalReturn >= 0 ? "text-emerald-600" : "text-rose-600"} text-2xl font-bold leading-tight tabular-nums">${view.manualFinalReturn >= 0 ? "+" : ""}${view.manualFinalReturn.toFixed(2)}%</div>
+         ${ddLine(manualDD)}
          <div class="text-[11px] text-slate-500 mt-1">${view.manualBooked ? "Booked · capped at Target 2 / SL" : "If held · mark-to-market"}</div>
        </div>`
     : "";
@@ -5053,6 +5060,7 @@ function renderActiveHero(view, cadence, mode) {
           <div class="text-right">
             <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">${aiLabel}</div>
             <div class="${retCls} text-4xl font-bold leading-tight tabular-nums">${retSign}${view.finalReturn.toFixed(2)}%</div>
+            ${ddLine(aiDD)}
             <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(sizeStr)}</div>
           </div>
           ${manualReturnHtml}
