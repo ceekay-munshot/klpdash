@@ -2419,7 +2419,9 @@ async function handleLkpExcelUpload(file) {
     const picks = rows.map((r) => lkpRowToPick(r, universe)).filter(Boolean);
     if (!picks.length) { alert("No valid rows found. Expected columns like: Selection, Entry, TGT1, TGT2, SL."); return; }
     saveLkpOverride({ label: "LKP Manual picks", source: "Excel upload (browser preview)", generated_at: new Date().toISOString(), picks });
-    renderHistory();
+    // Re-render whichever tab is showing the manual basket.
+    const t = state.activeTab;
+    if (t === "custom") renderCustom(); else if (t === "active") renderActive(); else renderHistory();
     const matched = picks.filter((p) => p.in_universe).length;
     if (matched < picks.length) {
       const miss = picks.filter((p) => !p.in_universe).map((p) => p.selection).join(", ");
@@ -2689,6 +2691,12 @@ function monthLabelYM(ym) {
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const [y, m] = ym.split("-").map(Number);
   return `${MONTHS[m - 1] || ym} ${y}`;
+}
+
+// Add n calendar months to a YYYY-MM-DD date (UTC).
+function addMonthsStr(dateStr, n) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + n, d)).toISOString().slice(0, 10);
 }
 
 // Report-month selector — one pill per client basket month so June stays
@@ -4342,7 +4350,18 @@ async function renderActive() {
       : (manualMonths[manualMonths.length - 1] || null);
     const anchorDate = manualMonthAnchor(lkpForMonths, selectedMonth, snapshots);
     const monthSelectorHtml = renderManualMonthSelector(manualMonths, selectedMonth, lkpForMonths, snapshots);
-    const todayDate = snapshots[snapshots.length - 1].date;
+    // A basket is tracked for its 4-month life. Once past the hold window,
+    // stop the clock at month 4 (both baskets) — any still-open pick is
+    // closed at that day's market price, matching the client's hold rule.
+    const HOLD_MONTHS = 4;
+    const fullToday = snapshots[snapshots.length - 1].date;
+    const capDate = anchorDate ? addMonthsStr(anchorDate, HOLD_MONTHS) : fullToday;
+    const capped = capDate < fullToday;
+    const todayDate = capped ? capDate : fullToday;
+    const viewSnaps = capped ? snapshots.filter((s) => s.date <= todayDate) : snapshots;
+    const holdNote = capped
+      ? `<div class="bg-slate-50 rounded-2xl ring-1 ring-slate-200 px-3 py-2 text-[11px] text-slate-600 flex items-center gap-2"><span>🔒</span><span>This basket completed its <strong>4-month hold</strong> — tracking closed on ${fmtDateDMY(todayDate)}. Open positions were marked at that day's close.</span></div>`
+      : "";
 
     const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
     const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
@@ -4369,7 +4388,7 @@ async function renderActive() {
       ? lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []
       : [];
 
-    const view = buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks);
+    const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks);
 
     // Alerts section (lives inside the Strategy tab, not a separate tab).
     if (!customTechByTicker) {
@@ -4382,10 +4401,14 @@ async function renderActive() {
       alertsHtml = renderAlertsSection(alerts, alertPrefs);
     } catch (e) { console.error("alerts section failed:", e); }
 
-    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml, monthSelectorHtml);
+    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml, monthSelectorHtml, holdNote);
     wireStrategyModeToggle();
     wireManualReturnToggle();
     wireManualMonthPills();
+    // Client-basket upload (Excel / CSV) — surfaced here on the Strategy tab.
+    $("#lkp-upload-btn")?.addEventListener("click", () => $("#lkp-file-input")?.click());
+    $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
+    $("#lkp-reset-upload")?.addEventListener("click", () => { clearLkpOverride(); renderActive(); });
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
     wireSectorTimingToggle("#active-content", renderActive);
@@ -4865,13 +4888,14 @@ function computeOverallHitSummary(picks) {
   return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
 }
 
-function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "", monthSelectorHtml = "") {
+function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "", monthSelectorHtml = "", holdNote = "") {
   const isPassive = mode === "passive";
   const cadenceBar = isPassive ? "" : renderActiveCadencePills(cadence);
   if (!view) {
     return `
       <div class="space-y-4">
         ${monthSelectorHtml}
+        ${holdNote}
         ${renderStrategyModeToggle(mode, null)}
         ${cadenceBar}
         ${renderHistoryEmpty(isPassive ? "No passive picks yet — upload a client basket and wait for a snapshot." : "No active picks yet — snapshot trail too short for this cadence.")}
@@ -4882,6 +4906,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
   return `
     <div id="active-strategy" class="space-y-4">
       ${monthSelectorHtml}
+      ${holdNote}
       ${renderStrategyModeToggle(mode, hits)}
       ${cadenceBar}
       ${renderTodayHitsBanner(hits, todayDate)}
@@ -4954,7 +4979,9 @@ function renderStrategyModeToggle(mode, hits) {
         ${pill("passive", "Passive strategy", "AI frozen at upload")}
       </div>
       <div class="flex items-center gap-2 pr-1 sm:pr-2">
-        <div class="text-[11px] text-slate-500 hidden sm:block">Anchored at upload date</div>
+        <input id="lkp-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+        <button id="lkp-upload-btn" type="button" title="Upload the month's client basket (Excel / CSV)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-indigo-50 hover:ring-indigo-200 text-xs font-semibold text-slate-700">⬆ <span class="hidden sm:inline">Upload basket</span></button>
+        ${lkpOverride() ? `<button id="lkp-reset-upload" type="button" title="Discard the uploaded basket and use the published one" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">Reset</button>` : ""}
         ${hits ? renderStrategyAlertsBell(hits) : ""}
       </div>
     </div>
