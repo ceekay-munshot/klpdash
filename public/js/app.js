@@ -329,6 +329,24 @@ function saveActiveCadence(v) {
   try { localStorage.setItem(ACTIVE_CADENCE_KEY, v); } catch {}
 }
 
+// Manual-basket return mode ("booked" | "held"). Booked (default) = each
+// pick freezes the day its close first hits Target 2 (cap the gain) or SL
+// (cap the loss) — the client's real exit, so one runaway winner can't
+// flatter the basket. Held = mark-to-market to today, ignoring the exits
+// ("what if we never sold"). The Strategy-tab toggle flips it and every
+// manual figure — headline, chart line, basket rows — follows.
+const MANUAL_RETURN_KEY = "klpdash-manual-return-mode-v1";
+const MANUAL_RETURN_MODES = ["booked", "held"];
+function loadManualReturnMode() {
+  try {
+    const v = localStorage.getItem(MANUAL_RETURN_KEY);
+    return MANUAL_RETURN_MODES.includes(v) ? v : "booked";
+  } catch { return "booked"; }
+}
+function saveManualReturnMode(v) {
+  try { localStorage.setItem(MANUAL_RETURN_KEY, v); } catch {}
+}
+
 // ── Simulation inputs: capital, cash buffer, transaction charges ──────
 // Everything here is adjustable from the Strategy tab's "Capital &
 // charges" panel and persisted locally — the "real world" layer on top
@@ -482,6 +500,7 @@ const state = {
   historyView: loadHistoryView(), // "history" | "accuracy"
   strategyMode: loadStrategyMode(),  // "active" | "passive"
   activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
+  manualReturnMode: loadManualReturnMode(), // "booked" | "held" — manual-basket return convention
   strategySegmentIdx: null,           // which segment pill is selected (null = latest)
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
@@ -4281,6 +4300,7 @@ async function renderActive() {
 
     host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml);
     wireStrategyModeToggle();
+    wireManualReturnToggle();
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
     wireSectorTimingToggle("#active-content", renderActive);
@@ -4362,8 +4382,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     const niftyRet = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
     const dates = equityCurve.map((e) => e.date);
     const niftyCurve = buildNiftyCurve(dates, niftyOn);
-    const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
-    const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+    const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
     // Per-day segment chain so the basket roster panel can show each
     // day's top 7 (founder ask — same affordance the History tab used
     // to give for weekly baskets, just at 1-day granularity here).
@@ -4372,7 +4391,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
       kind: "daily",
       sim, picks, hitSummary, segments,
       equityCurve, niftyCurve, manualCurve,
-      manualPicks: manualRows, manualSummary,
+      manualPicks: manualRows, manualSummary, manualBooked,
       periodLabel: `Daily rebalance from ${fmtDateDMY(anchorDate)}`,
       finalReturn, niftyRet,
       alpha: niftyRet != null ? finalReturn - niftyRet : null,
@@ -4400,8 +4419,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   const grossCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate, 0);
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
-  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
-  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
   const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
   const grossFinalReturn = grossCurve.length ? grossCurve[grossCurve.length - 1].retPct : finalReturn;
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
@@ -4414,7 +4432,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     kind: cadence,
     segments, picks, hitSummary,
     equityCurve, niftyCurve, manualCurve,
-    manualPicks: manualRows, manualSummary,
+    manualPicks: manualRows, manualSummary, manualBooked,
     periodLabel: `${cadenceLabel} from ${fmtDateDMY(anchorDate)}${cadence === "passive" ? "" : ` · ${segments.length} segment${segments.length === 1 ? "" : "s"}`}`,
     finalReturn, niftyRet,
     alpha: niftyRet != null ? finalReturn - niftyRet : null,
@@ -4429,7 +4447,12 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
 // close on the upload date (in-universe picks only — out-of-coverage
 // picks are skipped). Forward-fills missing closes so the basket size
 // stays at its locked count even on illiquid days.
-function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates) {
+//
+// bookingMap (optional): ticker -> { booked, bookDate, bookPrice }. When
+// supplied (Booked mode), a pick's price freezes at bookPrice from its
+// bookDate onward — modelling the real exit at Target 2 / SL so a winner
+// that kept running past target doesn't keep inflating the basket.
+function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap) {
   if (!manualPicks?.length || !dates?.length) return [];
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   if (!anchorSnap) return [];
@@ -4448,10 +4471,17 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates) {
     if (!snap) return { date, retPct: null };
     let sum = 0, n = 0;
     for (const ticker of Object.keys(entryCloses)) {
-      const s = snap.stocks.find((x) => x.ticker === ticker);
-      const close = (s && typeof s.close === "number") ? s.close : lastClose[ticker];
+      const bk = bookingMap?.get(ticker);
+      const frozen = bk && bk.booked && date >= bk.bookDate;
+      let close;
+      if (frozen) {
+        close = bk.bookPrice;               // sold here — price locked
+      } else {
+        const s = snap.stocks.find((x) => x.ticker === ticker);
+        close = (s && typeof s.close === "number") ? s.close : lastClose[ticker];
+      }
       if (typeof close === "number") {
-        lastClose[ticker] = close;
+        if (!frozen) lastClose[ticker] = close;
         sum += close / entryCloses[ticker];
         n++;
       }
@@ -4462,12 +4492,16 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates) {
 }
 
 // Manual basket per-pick accuracy. Each in-universe pick = a row with
-// the client's TGT1 + SL (not the AI's uniform bands). Out-of-coverage
-// picks appear as Not Covered rows.
+// the client's TGT2 (the max target — freeze level) + SL, not the AI's
+// uniform bands. Out-of-coverage picks appear as Not Covered rows. Each
+// covered row also carries its booking (frozen at Target 2 / SL when hit),
+// its booked return and its mark-to-market "if held" return so the UI can
+// flip between the two without recomputing.
 function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
   const result = { manualPicks: [], manualSummary: null };
   if (!manualPicks?.length) return result;
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
+  const lastSnap = snapshots[snapshots.length - 1];
   const rows = [];
   for (const p of manualPicks) {
     if (!p.in_universe || !p.ticker) {
@@ -4482,7 +4516,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
     const entryFromSnap = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
     const entryPrice = entryFromSnap ?? p.entry ?? null;
     const entryDate = anchorSnap?.date || anchorDate;
-    const target = p.tgt1 ?? null;
+    const target = p.tgt2 ?? p.tgt1 ?? null;   // freeze at Target 2 (the max target)
     const sl = p.sl ?? null;
     if (entryPrice == null || target == null || sl == null) {
       rows.push({
@@ -4496,6 +4530,17 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
     }
     const status = computeHitStatus(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate);
     const peak = computePeakStats(p.ticker, entryDate, entryPrice, snapshots, todayDate);
+    // Booking = the real exit. Freeze at the LEVEL (Target 2 / SL), not the
+    // overshooting close — a pick that ran to +22% but had Target 2 = +12%
+    // books at +12%. Held return marks to market, so the UI can show both.
+    const todayCloseVal = lastSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close ?? entryPrice;
+    const heldRet = entryPrice ? (todayCloseVal / entryPrice - 1) * 100 : null;
+    const isBooked = status.status === "TARGET_HIT" || status.status === "SL_HIT";
+    const bookPrice = status.status === "TARGET_HIT" ? target : status.status === "SL_HIT" ? sl : null;
+    const booking = isBooked
+      ? { booked: true, reason: status.status === "TARGET_HIT" ? "TARGET" : "SL", bookDate: status.hitDate, bookPrice, daysToBook: status.daysToHit }
+      : { booked: false };
+    const bookedRet = (isBooked && entryPrice) ? (bookPrice / entryPrice - 1) * 100 : heldRet;
     rows.push({
       ticker: p.ticker,
       name: p.selection || p.ticker,
@@ -4504,6 +4549,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
       slPct: (sl / entryPrice - 1) * 100,
       ...status,
       peak,
+      todayClose: todayCloseVal, heldRet, bookedRet, booking,
     });
   }
   const enriched = enrichAndSortPicks(rows.filter((r) => !r.notCovered));
@@ -4514,6 +4560,21 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
   result.manualPicks = [...enriched, ...notCovered];
   result.manualSummary = summary;
   return result;
+}
+
+// Resolve the manual basket's curve + rows + summary honouring the current
+// return mode. Booked (default) freezes each pick at Target 2 / SL the day
+// it hits; Held marks to market. Shared by the Active, Passive and Custom
+// views so every manual figure agrees. Returns manualBooked so the render
+// layer knows which convention produced the numbers.
+function buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates) {
+  const manualBooked = state.manualReturnMode !== "held";
+  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+  const bookingMap = manualBooked
+    ? new Map(manualRows.filter((r) => r.booking?.booked && r.ticker).map((r) => [r.ticker, r.booking]))
+    : null;
+  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap);
+  return { manualRows, manualSummary, manualCurve, manualBooked };
 }
 
 // Re-pick top 7 every periodDays from anchorDate. Each segment locks at
@@ -4738,6 +4799,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
       ${cadenceBar}
       ${renderTodayHitsBanner(hits, todayDate)}
       ${renderActiveHero(view, cadence, mode)}
+      ${renderManualReturnToggle(view)}
       ${renderSimPanel(view)}
       ${renderActiveCumulativeChart(view)}
       ${renderStrategyKpis(view)}
@@ -4903,7 +4965,7 @@ function renderActiveHero(view, cadence, mode) {
     ? `<div class="text-right pl-4 border-l border-indigo-100 ml-2">
          <div class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Manual basket</div>
          <div class="${view.manualFinalReturn >= 0 ? "text-emerald-600" : "text-rose-600"} text-2xl font-bold leading-tight tabular-nums">${view.manualFinalReturn >= 0 ? "+" : ""}${view.manualFinalReturn.toFixed(2)}%</div>
-         <div class="text-[11px] text-slate-500 mt-1">Client basket, frozen at upload</div>
+         <div class="text-[11px] text-slate-500 mt-1">${view.manualBooked ? "Booked · capped at Target 2 / SL" : "If held · mark-to-market"}</div>
        </div>`
     : "";
   return `
@@ -4927,6 +4989,36 @@ function renderActiveHero(view, cadence, mode) {
           ${manualReturnHtml}
         </div>
       </div>
+    </div>
+  `;
+}
+
+// Manual-basket return convention toggle. Booked (default) freezes each
+// pick at Target 2 / SL the day it hits — the client's real exit, so a
+// runaway winner can't flatter the basket. If held marks to market ("what
+// if we never sold"). Flips the headline, chart line and every basket row.
+function renderManualReturnToggle(view) {
+  if (view.manualFinalReturn == null) return "";
+  const mode = state.manualReturnMode === "held" ? "held" : "booked";
+  const pill = (k, label, sub) => {
+    const on = mode === k;
+    return `
+      <button type="button" data-manual-return="${k}" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition ${on ? "bg-amber-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}">
+        <span class="block">${label}</span>
+        <span class="block text-[10px] font-normal mt-0.5 ${on ? "text-amber-50" : "text-slate-400"}">${sub}</span>
+      </button>`;
+  };
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-1.5 px-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Manual returns</span>
+      </div>
+      <div class="flex gap-1 flex-1 sm:flex-initial">
+        ${pill("booked", "Booked", "exit at Target 2 / SL")}
+        ${pill("held", "If held", "mark-to-market today")}
+      </div>
+      <span class="text-[11px] text-slate-500 pr-2 hidden lg:block ml-auto">Booked freezes a pick the day it hits Target 2 or SL — the real exit.</span>
     </div>
   `;
 }
@@ -5340,7 +5432,7 @@ function renderActiveOverallHitsSplit(view) {
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
       <div class="flex items-baseline justify-between mb-3 flex-wrap gap-2">
         <h3 class="font-display font-bold text-slate-900 text-base">Overall accuracy</h3>
-        <span class="text-[11px] text-slate-500">Across the full period · AI uses +5% / −20% · Manual uses client TGT1 / SL</span>
+        <span class="text-[11px] text-slate-500">Across the full period · AI uses +5% / −20% · Manual uses client TGT2 / SL</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         ${renderActiveSummaryCard("AI active", "indigo", view.hitSummary)}
@@ -5516,6 +5608,7 @@ function renderManualBasketTable(manualPicks) {
   const todayClose = state.cache.history?.todayClose || {};
   const byTicker = state.cache.history?.byTicker || new Map();
   const inCoverage = manualPicks.filter((p) => !p.notCovered).length;
+  const booked = state.manualReturnMode !== "held";
 
   const rows = manualPicks.map((r) => {
     if (r.notCovered) {
@@ -5531,7 +5624,10 @@ function renderManualBasketTable(manualPicks) {
         </div>`;
     }
     const today = (typeof todayClose[r.ticker] === "number") ? todayClose[r.ticker] : r.entryPrice;
-    const ret = r.entryPrice ? ((today / r.entryPrice) - 1) * 100 : null;
+    const heldRet = (r.heldRet != null) ? r.heldRet : (r.entryPrice ? ((today / r.entryPrice) - 1) * 100 : null);
+    const isBooked = booked && r.booking?.booked;
+    const displayRet = isBooked ? r.bookedRet : heldRet;
+    const exitPx = isBooked ? r.booking.bookPrice : today;
     const tk = byTicker.get(r.ticker);
     let currentRating = null;
     if (tk?.points?.length) {
@@ -5539,17 +5635,29 @@ function renderManualBasketTable(manualPicks) {
         if (tk.points[i].rating) { currentRating = tk.points[i].rating; break; }
       }
     }
-    const retCls = ret == null ? "text-slate-500" : ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const retCls = displayRet == null ? "text-slate-500" : displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
     const ratingChip = currentRating
       ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
       : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
+    const lockBadge = isBooked
+      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${r.booking.reason === "TARGET" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Booked ${fmtDateDMY(r.booking.bookDate)} · ${r.booking.daysToBook}d after entry">🔒 ${r.booking.reason === "TARGET" ? "TGT2" : "SL"}</span>`
+      : "";
+    const heldNote = (isBooked && heldRet != null)
+      ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was actually captured">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
+      : "";
     return `
       <button type="button" data-cohort-row data-cohort-side="manual" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-amber-50/40 hover:ring-1 hover:ring-amber-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
-          <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
-          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(today)}</div>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>
+            ${lockBadge}
+          </div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(exitPx)}${isBooked ? " · booked" : ""}</div>
         </div>
-        <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-sm font-bold ${retCls}">${ret == null ? "—" : (ret >= 0 ? "+" : "") + ret.toFixed(2) + "%"}</div>
+        <div class="col-span-3 sm:col-span-3 text-right">
+          <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet == null ? "—" : (displayRet >= 0 ? "+" : "") + displayRet.toFixed(2) + "%"}</div>
+          ${heldNote}
+        </div>
         <div class="col-span-3 sm:col-span-4 text-right">${ratingChip}</div>
       </button>`;
   }).join("");
@@ -5792,6 +5900,16 @@ function wireStrategyModeToggle() {
     state.strategyMode = v;
     state.strategySegmentIdx = null;   // reset to latest segment on mode change
     saveStrategyMode(v);
+    renderActive();
+  }));
+}
+
+function wireManualReturnToggle() {
+  $$("#active-content [data-manual-return]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.manualReturn === "held" ? "held" : "booked";
+    if (v === state.manualReturnMode) return;
+    state.manualReturnMode = v;
+    saveManualReturnMode(v);
     renderActive();
   }));
 }
@@ -8325,12 +8443,11 @@ function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manua
   const grossFinalReturn = (grossEnd.value / simGross.startCapital - 1) * 100;
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
-  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates);
-  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
   return {
     kind: "custom", strat, sim, picks, hitSummary,
-    equityCurve, niftyCurve, manualCurve, manualPicks: manualRows, manualSummary,
+    equityCurve, niftyCurve, manualCurve, manualPicks: manualRows, manualSummary, manualBooked,
     periodLabel: `${strat.name} · from ${fmtDateDMY(anchorDate)}`,
     finalReturn, niftyRet, alpha: niftyRet != null ? finalReturn - niftyRet : null,
     manualFinalReturn: manualCurve.length ? (manualCurve[manualCurve.length - 1].retPct ?? null) : null,
