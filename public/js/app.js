@@ -307,8 +307,8 @@ const STRATEGY_MODES = ["active", "passive"];
 function loadStrategyMode() {
   try {
     const v = localStorage.getItem(STRATEGY_MODE_KEY);
-    return STRATEGY_MODES.includes(v) ? v : "active";
-  } catch { return "active"; }
+    return STRATEGY_MODES.includes(v) ? v : "passive";
+  } catch { return "passive"; }
 }
 function saveStrategyMode(v) {
   try { localStorage.setItem(STRATEGY_MODE_KEY, v); } catch {}
@@ -318,12 +318,15 @@ function saveStrategyMode(v) {
 // rebalance frequency / segment length when strategyMode === "active".
 // All three anchor at the client upload date (lkp.generated_at).
 const ACTIVE_CADENCE_KEY = "klpdash-active-cadence-v1";
-const ACTIVE_CADENCES = ["daily", "weekly", "monthly"];
+// Daily rebalancing retired — it re-picks 7 fresh names every day, the
+// opposite of the client's "pick 7 and hold" product, and only added
+// noise. Weekly / Monthly remain for rebalancing-frequency experiments.
+const ACTIVE_CADENCES = ["weekly", "monthly"];
 function loadActiveCadence() {
   try {
     const v = localStorage.getItem(ACTIVE_CADENCE_KEY);
-    return ACTIVE_CADENCES.includes(v) ? v : "daily";
-  } catch { return "daily"; }
+    return ACTIVE_CADENCES.includes(v) ? v : "weekly";
+  } catch { return "weekly"; }
 }
 function saveActiveCadence(v) {
   try { localStorage.setItem(ACTIVE_CADENCE_KEY, v); } catch {}
@@ -501,6 +504,7 @@ const state = {
   strategyMode: loadStrategyMode(),  // "active" | "passive"
   activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
   manualReturnMode: loadManualReturnMode(), // "booked" | "held" — manual-basket return convention
+  manualMonth: null,                  // selected client-basket month "YYYY-MM" (null = latest)
   strategySegmentIdx: null,           // which segment pill is selected (null = latest)
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
@@ -2640,6 +2644,61 @@ function staticAnchorDate(snapshots) {
 // Falls back to most-recent month-end snapshot if no LKP file exists
 // yet, so the tracker still shows something (AI line + Nifty line) for
 // internal review.
+// Months the client has baskets for (oldest → newest). Uses picksByMonth
+// keys when present; otherwise the single legacy basket's anchor month.
+function availableManualMonths(lkp, snapshots) {
+  if (!lkp) return [];
+  if (lkp.picksByMonth && typeof lkp.picksByMonth === "object") {
+    return Object.keys(lkp.picksByMonth)
+      .filter((m) => Array.isArray(lkp.picksByMonth[m]) && lkp.picksByMonth[m].length)
+      .sort();
+  }
+  const d = lkpAnchorDate(lkp, snapshots);
+  return d ? [d.slice(0, 7)] : [];
+}
+
+// Anchor (cost-basis) date for a given basket month. Prefer the recorded
+// anchorByMonth; else the first snapshot in that month; else the file's
+// generated_at.
+function manualMonthAnchor(lkp, month, snapshots) {
+  if (!month) return lkpAnchorDate(lkp, snapshots);
+  if (lkp?.anchorByMonth?.[month]) return lkp.anchorByMonth[month];
+  const s = snapshots.find((x) => x.date.slice(0, 7) === month);
+  if (s) return s.date;
+  return lkpAnchorDate(lkp, snapshots);
+}
+
+function monthLabelYM(ym) {
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [y, m] = ym.split("-").map(Number);
+  return `${MONTHS[m - 1] || ym} ${y}`;
+}
+
+// Report-month selector — one pill per client basket month so June stays
+// visible after July is uploaded (each keeps its own anchor + track
+// record). The latest month is the default; hidden when only one exists.
+function renderManualMonthSelector(months, selectedMonth, lkp, snapshots) {
+  if (!months || months.length <= 1) return "";
+  const pills = months.map((m) => {
+    const on = m === selectedMonth;
+    const isLatest = m === months[months.length - 1];
+    return `
+      <button type="button" data-manual-month="${m}" class="px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition ${on ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-slate-400 hover:text-slate-900"}">
+        ${escapeHtml(monthLabelYM(m))}${isLatest ? ` <span class="text-[9px] font-bold uppercase ${on ? "text-slate-300" : "text-emerald-600"}">latest</span>` : ""}
+      </button>`;
+  }).join("");
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-1.5 px-2">
+        <span class="text-base">📅</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Report month</span>
+      </div>
+      <div class="flex items-center gap-1 overflow-x-auto -my-1 py-1">${pills}</div>
+      <span class="text-[11px] text-slate-500 pr-2 hidden lg:block ml-auto">Each month keeps its own basket, anchor date and track record.</span>
+    </div>
+  `;
+}
+
 function lkpAnchorDate(lkp, snapshots) {
   if (lkp?.generated_at) {
     const d = String(lkp.generated_at).slice(0, 10);
@@ -4257,7 +4316,15 @@ async function renderActive() {
       return;
     }
 
-    const anchorDate = lkpAnchorDate(lkp, snapshots);
+    // Report-month selection — June stays reachable after July is uploaded.
+    // Default = latest month; each month anchors at its own report date.
+    const lkpForMonths = lkpOverride() || lkp;
+    const manualMonths = availableManualMonths(lkpForMonths, snapshots);
+    const selectedMonth = (state.manualMonth && manualMonths.includes(state.manualMonth))
+      ? state.manualMonth
+      : (manualMonths[manualMonths.length - 1] || null);
+    const anchorDate = manualMonthAnchor(lkpForMonths, selectedMonth, snapshots);
+    const monthSelectorHtml = renderManualMonthSelector(manualMonths, selectedMonth, lkpForMonths, snapshots);
     const todayDate = snapshots[snapshots.length - 1].date;
 
     const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
@@ -4298,9 +4365,10 @@ async function renderActive() {
       alertsHtml = renderAlertsSection(alerts, alertPrefs);
     } catch (e) { console.error("alerts section failed:", e); }
 
-    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml);
+    host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml, monthSelectorHtml);
     wireStrategyModeToggle();
     wireManualReturnToggle();
+    wireManualMonthPills();
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
     wireSectorTimingToggle("#active-content", renderActive);
@@ -4780,12 +4848,13 @@ function computeOverallHitSummary(picks) {
   return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
 }
 
-function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "") {
+function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "", monthSelectorHtml = "") {
   const isPassive = mode === "passive";
   const cadenceBar = isPassive ? "" : renderActiveCadencePills(cadence);
   if (!view) {
     return `
       <div class="space-y-4">
+        ${monthSelectorHtml}
         ${renderStrategyModeToggle(mode, null)}
         ${cadenceBar}
         ${renderHistoryEmpty(isPassive ? "No passive picks yet — upload a client basket and wait for a snapshot." : "No active picks yet — snapshot trail too short for this cadence.")}
@@ -4795,6 +4864,7 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
   const hits = collectStrategyHits(view, todayDate);
   return `
     <div id="active-strategy" class="space-y-4">
+      ${monthSelectorHtml}
       ${renderStrategyModeToggle(mode, hits)}
       ${cadenceBar}
       ${renderTodayHitsBanner(hits, todayDate)}
@@ -4933,7 +5003,6 @@ function renderActiveCadencePills(cadence) {
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 px-2 sm:px-4 py-1 flex flex-wrap items-baseline gap-1 justify-between">
       <div class="flex items-baseline gap-0">
-        ${pill("daily", "Daily", "rebalance every day")}
         ${pill("weekly", "Weekly", "re-lock every 7 days")}
         ${pill("monthly", "Monthly", "re-lock every 30 days")}
       </div>
@@ -5910,6 +5979,16 @@ function wireManualReturnToggle() {
     if (v === state.manualReturnMode) return;
     state.manualReturnMode = v;
     saveManualReturnMode(v);
+    renderActive();
+  }));
+}
+
+function wireManualMonthPills() {
+  $$("#active-content [data-manual-month]").forEach((btn) => btn.addEventListener("click", () => {
+    const m = btn.dataset.manualMonth;
+    if (!m || m === state.manualMonth) return;
+    state.manualMonth = m;
+    state.strategySegmentIdx = null;   // reset to latest segment on month change
     renderActive();
   }));
 }
