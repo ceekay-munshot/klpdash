@@ -9254,88 +9254,85 @@ function renderTechBacktest() {
   const p = state.techParams;
   const ctx = buildTechContext(techHist, p.windowDays);
   const r = runTechBacktest(ctx, p);
-  const best = state.techAiBest;
-  const retCls = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-600" : "text-rose-600";
+  const retCls = r.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
   const d0 = ctx.dates[0], dN = ctx.dates[ctx.dates.length - 1];
 
   const controls = TECH_FIELDS.map((f) => `
-    <div class="flex items-center gap-2">
-      <span class="text-[11px] font-semibold text-slate-600 w-24 flex-shrink-0">${f.label}</span>
+    <label class="flex items-center gap-2">
+      <span class="text-[11px] font-semibold text-slate-500 w-[70px] flex-shrink-0">${f.label}</span>
       <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" data-tech-p="${f.key}" value="${p[f.key]}" class="flex-1 accent-indigo-600">
-      <span class="text-xs font-bold tabular-nums text-slate-800 w-12 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
-    </div>`).join("");
+      <span class="text-xs font-bold tabular-nums text-slate-800 w-10 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
+    </label>`).join("");
 
-  const winPill = (d, label) => `<button type="button" data-tech-window="${d}" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${p.windowDays === d ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-slate-400"}">${label}</button>`;
-
-  const tile = (label, val, cls = "text-slate-900", sub = "") => `
-    <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/60 px-3 py-2">
-      <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">${label}</div>
-      <div class="text-lg font-display font-bold ${cls} tabular-nums leading-tight">${val}</div>
-      ${sub ? `<div class="text-[10px] text-slate-400">${sub}</div>` : ""}
-    </div>`;
+  const winPill = (d, label) => `<button type="button" data-tech-window="${d}" class="px-3 py-1 rounded-lg text-[11px] font-semibold transition ${p.windowDays === d ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-slate-400"}">${label}</button>`;
 
   const picks = r.picksNow.map((x) => `
-    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white ring-1 ring-slate-200 text-[11px]">
+    <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(x.ticker)}" title="Open ${escapeHtml(x.ticker)} chart" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50 hover:-translate-y-px transition text-xs">
       <span class="font-semibold text-slate-800">${escapeHtml(x.ticker)}</span>
-      <span class="text-slate-400 tabular-nums">${x.score}</span>
-    </span>`).join(" ");
-
-  const bestRow = best ? `
-    <div class="mt-3 rounded-xl ring-1 ring-emerald-200 bg-emerald-50/50 p-3 text-xs">
-      <span class="font-bold text-emerald-700 uppercase tracking-wider text-[10px]">AI best</span>
-      <span class="text-slate-700"> ${best.r.finalReturn >= 0 ? "+" : ""}${best.r.finalReturn.toFixed(2)}% · DD ${best.r.maxDD.toFixed(2)}% — </span>
-      <span class="text-slate-500 tabular-nums">basket ${best.params.basketSize} · rebal ${best.params.rebalanceDays}d · tgt ${best.params.targetPct}% · SL ${best.params.slPct}% · score≥${best.params.threshold}</span>
-      <button type="button" data-tech-apply-best class="ml-1 font-semibold text-emerald-700 hover:underline">Use these</button>
-    </div>` : "";
+      <span class="text-[10px] text-slate-400 tabular-nums">${x.score}</span>
+    </button>`).join("");
 
   return `
-    <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
-      <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
-        <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">1-Year Technical Back-test</h3><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
-        <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(504, "2Y")}</div>
-      </div>
-      <div class="text-sm text-slate-600 mb-4 max-w-2xl">Pure-technical rotation over real daily prices (${ctx.dates.length} days · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)}). Rank by the technical score, hold the top names, exit on target / stop-loss. Tune the rules or let AI find the best.</div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div>
-          <div class="space-y-2.5">${controls}</div>
-          <div class="flex items-center gap-2 mt-4 flex-wrap">
-            <button type="button" data-tech-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best settings</button>
-            <button type="button" data-tech-reset class="px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
-          </div>
-          ${bestRow}
+    <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
+      <div class="px-4 sm:px-5 pt-4 sm:pt-5">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+          <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(504, "2Y")}</div>
         </div>
-        <div>
-          <div class="grid grid-cols-4 gap-2 mb-3">
-            ${tile("Return", `${r.finalReturn >= 0 ? "+" : ""}${r.finalReturn.toFixed(1)}%`, retCls(r.finalReturn))}
-            ${tile("Max DD", `${r.maxDD.toFixed(1)}%`, "text-rose-600")}
-            ${tile("Trades", String(r.trades))}
-            ${tile("Days", String(r.days))}
+        <div class="text-[11px] text-slate-400 mt-1 tabular-nums">Real daily prices · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)} · ${ctx.dates.length} days</div>
+        <div class="flex items-end gap-6 mt-4">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Return</div>
+            <div class="${retCls} text-[2.6rem] font-display font-extrabold tabular-nums leading-none">${r.finalReturn >= 0 ? "+" : ""}${r.finalReturn.toFixed(1)}%</div>
           </div>
-          ${renderTechCurve(r.curve)}
-          <div class="mt-3">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Top picks today</div>
-            <div class="flex flex-wrap gap-1.5">${picks || '<span class="text-xs text-slate-400">none above threshold</span>'}</div>
+          <div class="pb-1">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Max drawdown</div>
+            <div class="text-rose-600 text-2xl font-bold tabular-nums leading-none">${r.maxDD.toFixed(1)}%</div>
           </div>
+          <div class="pb-1.5 ml-auto text-right text-[11px] text-slate-400 tabular-nums leading-tight">${r.trades} trades<br>${r.days} days held</div>
+        </div>
+      </div>
+
+      ${renderTechCurve(r.curve)}
+
+      <div class="px-4 sm:px-5 pb-4 sm:pb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">${controls}</div>
+        <div class="flex items-center gap-2 mt-4 flex-wrap">
+          <button type="button" data-tech-ai class="px-3.5 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best settings</button>
+          <button type="button" data-tech-reset class="px-3 py-2 rounded-lg text-slate-500 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
+          <span class="text-[11px] text-slate-400 ml-auto hidden sm:inline">Tap a pick to open its chart →</span>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Top picks now</div>
+          <div class="flex flex-wrap gap-1.5">${picks || '<span class="text-xs text-slate-400">none above threshold</span>'}</div>
         </div>
       </div>
     </section>`;
 }
 
+// Big, full-width equity curve — the hero visual. Area fill under the line,
+// dashed zero baseline, colour by up/down. SVG stretches to the card width.
 function renderTechCurve(curve) {
   const pts = (curve || []).filter((p) => p.retPct != null);
-  if (pts.length < 2) return `<div class="text-[11px] text-slate-400 text-center py-6 ring-1 ring-slate-100 rounded-xl">Not enough data.</div>`;
-  const W = 480, H = 96, M = { l: 4, r: 4, t: 6, b: 6 };
+  if (pts.length < 2) return `<div class="px-5 py-10 text-center text-[11px] text-slate-400">Not enough data to plot.</div>`;
+  const W = 1000, H = 210, M = { l: 4, r: 4, t: 16, b: 16 };
   const iw = W - M.l - M.r, ih = H - M.t - M.b;
   const vals = pts.map((p) => p.retPct);
   let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1;
   const x = (i) => M.l + (i / (pts.length - 1)) * iw;
   const y = (v) => M.t + (1 - (v - lo) / (hi - lo)) * ih;
-  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.retPct).toFixed(1)}`).join(" ");
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.retPct).toFixed(1)}`).join(" ");
+  const area = `${line} L${x(pts.length - 1).toFixed(1)},${y(lo).toFixed(1)} L${x(0).toFixed(1)},${y(lo).toFixed(1)} Z`;
   const zeroY = y(0).toFixed(1);
   const up = pts[pts.length - 1].retPct >= 0;
-  return `<svg viewBox="0 0 ${W} ${H}" class="w-full" preserveAspectRatio="none" style="height:96px">
-    <line x1="${M.l}" y1="${zeroY}" x2="${W - M.r}" y2="${zeroY}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 3"/>
-    <path d="${d}" fill="none" stroke="${up ? "#059669" : "#e11d48"}" stroke-width="1.5" stroke-linejoin="round"/>
+  const col = up ? "#059669" : "#e11d48";
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:210px;display:block">
+    <defs><linearGradient id="tech-area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${col}" stop-opacity="0.22"/><stop offset="100%" stop-color="${col}" stop-opacity="0.02"/>
+    </linearGradient></defs>
+    <line x1="${M.l}" y1="${zeroY}" x2="${W - M.r}" y2="${zeroY}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 5"/>
+    <path d="${area}" fill="url(#tech-area)"/>
+    <path d="${line}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 }
 
@@ -9357,8 +9354,13 @@ function wireTechBacktest() {
       refreshTechBacktest();
     }, 30);
   });
-  $(`${root} [data-tech-apply-best]`)?.addEventListener("click", () => { if (state.techAiBest) { state.techParams = { ...state.techParams, ...state.techAiBest.params }; saveTechParams(state.techParams); refreshTechBacktest(); } });
   $(`${root} [data-tech-reset]`)?.addEventListener("click", () => { state.techParams = { ...TECH_DEFAULTS }; saveTechParams(state.techParams); state.techAiBest = null; refreshTechBacktest(); });
+  // Clickable picks — open the stock's drill chart (re-wired after each refresh).
+  $$(`${root} #tech-backtest [data-cohort-row]`).forEach((el) => el.addEventListener("click", () => {
+    const t = el.dataset.ticker; if (!t) return;
+    const pick = buildCohortClickPick(t, "ai", null);
+    if (pick) openHistoryDrill(pick);
+  }));
 }
 
 function refreshTechBacktest() {
