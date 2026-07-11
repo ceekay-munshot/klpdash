@@ -17,8 +17,8 @@ import { sma, ema, rsi, roc, macd, adx, highProximity, technicalScore } from "./
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP_DIR = resolve(__dirname, "../public/data/snapshots");
 const OUT_PATH = resolve(__dirname, "../public/data/history-technical.json");
-const FETCH_DAYS = 740;    // ~2 calendar years → ~500 trading days (warm-up + window)
-const KEEP = 300;          // trading days retained per ticker (~14 months)
+const FETCH_DAYS = 1120;   // ~3 calendar years → ~760 trading days (warm-up + 2-yr window)
+const KEEP = 504;          // trading days retained per ticker (~2 years)
 const LIMIT = Number(process.argv[2]) || Infinity;
 
 run().catch((e) => { console.error("Fatal:", e.stack || e.message); process.exit(1); });

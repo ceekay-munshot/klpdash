@@ -9292,7 +9292,7 @@ function renderTechBacktest() {
     <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
       <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
         <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">1-Year Technical Back-test</h3><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
-        <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(300, "Max")}</div>
+        <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(504, "2Y")}</div>
       </div>
       <div class="text-sm text-slate-600 mb-4 max-w-2xl">Pure-technical rotation over real daily prices (${ctx.dates.length} days · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)}). Rank by the technical score, hold the top names, exit on target / stop-loss. Tune the rules or let AI find the best.</div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
