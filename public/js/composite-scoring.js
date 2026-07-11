@@ -25,6 +25,12 @@ import * as tech from "./tech-scoring.js";
 import * as macro from "./macro-scoring.js";
 import * as senliq from "./sentiment-liquidity-scoring.js";
 
+// Hard-fail rule labels that are TREND / TRADABILITY filters, not company
+// red flags. A stock trips these because of where the market is right now
+// (below its 200-day average) or how thinly it trades — both flip back as
+// conditions change, so the UI shows them apart from fundamental red flags.
+const FILTER_HARD_FAILS = ["Price Above 200 DMA", "Avg Daily Traded Value"];
+
 export const PILLAR_WEIGHTS = {
   fundamentals: 40,
   technicals: 35,
@@ -169,12 +175,21 @@ export function scoreCompositeOne(fundCo, techCo, macroCtx, weights = PILLAR_WEI
   const senliqResult = hasTechData ? senliq.scoreCompany({ ...techCo, _macro: macroCtx }) : null;
   const split        = senliqResult ? splitSenliq(senliqResult) : null;
 
-  // Collect all hard fails from every pillar.
+  // Collect all hard fails from every pillar, then split them into two very
+  // different kinds so the UI can stop lumping them together:
+  //  - FUNDAMENTAL red flags = something wrong with the COMPANY (bad auditor,
+  //    extreme debt, negative cash flow, pledge, SEBI) → genuine "avoid".
+  //  - FILTER flags = a temporary market condition, not a company problem:
+  //    below the 200-day trend, or too thinly traded. These flip back as the
+  //    stock/market moves, so they shouldn't read as scary red flags.
   const allHardFails = [
     ...(fundResult.hardFails || []),
     ...(techResult?.hardFails || []),
     ...(senliqResult?.hardFails || []),
   ];
+  const filterFlags = allHardFails.filter((l) => FILTER_HARD_FAILS.includes(l));
+  const fundamentalFlags = allHardFails.filter((l) => !FILTER_HARD_FAILS.includes(l));
+  const isRedFlag = fundamentalFlags.length > 0;
 
   // Weighted composite — only sum pillars that have data.
   const pillars = {
@@ -225,6 +240,9 @@ export function scoreCompositeOne(fundCo, techCo, macroCtx, weights = PILLAR_WEI
     rating,
     hardFails: allHardFails,
     hardFailed,
+    fundamentalFlags,
+    filterFlags,
+    isRedFlag,
     pillars,
     pillarResults: { fund: fundResult, tech: techResult, macro: macroResult, senliq: senliqResult, split },
     dataComplete: hasTechData,

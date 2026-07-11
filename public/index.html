@@ -240,7 +240,8 @@
               <option value="good">Good (60–80%)</option>
               <option value="average">Average (40–60%)</option>
               <option value="weak">Weak (&lt;40%)</option>
-              <option value="hardfail">Hard-fail flagged</option>
+              <option value="redflag">⚠ Red flag (fundamentals)</option>
+              <option value="belowtrend">Below trend / illiquid</option>
             </select>
             <button id="watch-toggle" type="button" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg hover:bg-amber-50 hover:border-amber-200 transition-colors" title="Show only watchlisted companies">
               <span id="watch-star-icon" class="text-amber-400">☆</span>
@@ -298,7 +299,8 @@
           <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Fail</div>
           <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span> Hard Fail (red flag)</div>
           <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> N/A — see drill-down for reason</div>
-          <div class="flex items-center gap-1.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-100 text-rose-700 ring-1 ring-rose-200">⚠ Red Flag</span> Hard-fail per client framework (negative CFO, ICR &lt; 1.5, or pledge &gt; 20%)</div>
+          <div class="flex items-center gap-1.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-100 text-rose-700 ring-1 ring-rose-200">⚠ Red Flag</span> Fundamental problem (negative CFO, ICR &lt; 1.5, pledge &gt; 20%, D/E &gt; 2, auditor/governance)</div>
+          <div class="flex items-center gap-1.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 text-slate-500 ring-1 ring-slate-200">Below trend</span> Below 200-day average or thin liquidity — a market condition, not a company problem</div>
         </div>
       </section>
 

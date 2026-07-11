@@ -819,6 +819,9 @@ async function loadTab(tabId) {
         pillarResults: r.pillarResults,
         hardFails: r.hardFails,
         hardFailed: r.hardFailed,
+        fundamentalFlags: r.fundamentalFlags || [],
+        filterFlags: r.filterFlags || [],
+        isRedFlag: !!r.isRedFlag,
         unrated: !r.dataComplete,
         totalPoints: r.composite ?? 0,
         totalMax: 100,
@@ -1142,10 +1145,13 @@ function renderTopCards() {
 function renderCompositeTopCards() {
   const st = tabState();
   const all = st.scored;
-  // 6-bucket count (filtered + unrated separated from rated tiers)
-  const counts = { strong: 0, buy: 0, watch: 0, avoid: 0, filtered: 0, unrated: 0 };
+  // Split the old single "Hard-Fail" bucket into a genuine fundamental
+  // Red flag vs a Below-trend / illiquid filter (a market condition, not a
+  // company problem) so the scary number stops conflating the two.
+  const counts = { strong: 0, buy: 0, watch: 0, avoid: 0, redFlag: 0, belowTrend: 0, unrated: 0 };
   for (const s of all) {
-    if (s.hardFailed) counts.filtered++;
+    if (s.isRedFlag) counts.redFlag++;
+    else if (s.hardFailed) counts.belowTrend++;   // only 200-DMA / liquidity filters
     else if (s.unrated) counts.unrated++;
     else if (s.rating === "STRONG BUY") counts.strong++;
     else if (s.rating === "BUY") counts.buy++;
@@ -1179,12 +1185,13 @@ function renderCompositeTopCards() {
   // out-of-play (greys). Same colour drives the bar segment and its legend
   // swatch so they always agree.
   const cats = [
-    { count: counts.strong,   label: "Strong Buy", bar: "bg-emerald-500" },
-    { count: counts.buy,      label: "Buy",        bar: "bg-teal-500" },
-    { count: counts.watch,    label: "Watch",      bar: "bg-amber-400" },
-    { count: counts.avoid,    label: "Avoid",      bar: "bg-rose-500" },
-    { count: counts.unrated,  label: "Unrated",    bar: "bg-slate-300" },
-    { count: counts.filtered, label: "Hard-Fail",  bar: "bg-slate-500" },
+    { count: counts.strong,     label: "Strong Buy",  bar: "bg-emerald-500" },
+    { count: counts.buy,        label: "Buy",         bar: "bg-teal-500" },
+    { count: counts.watch,      label: "Watch",       bar: "bg-amber-400" },
+    { count: counts.avoid,      label: "Avoid",       bar: "bg-rose-500" },
+    { count: counts.redFlag,    label: "Red flag",    bar: "bg-rose-700" },
+    { count: counts.belowTrend, label: "Below trend", bar: "bg-slate-400" },
+    { count: counts.unrated,    label: "Unrated",     bar: "bg-slate-300" },
   ];
   const distributionStrip = `
     <div class="rounded-2xl ring-1 ring-slate-200/70 bg-gradient-to-br from-white to-slate-50/60 p-4 mb-5">
@@ -1284,7 +1291,7 @@ function renderCompositeTopCards() {
             </div>
           </div>
           <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #cbd5e1; font-size: 11px; color: #64748b;">
-            ${inBasket} of ${total} stocks in basket · ${counts.filtered} hard-failed · ${counts.unrated} unrated
+            ${inBasket} of ${total} stocks in basket · ${counts.redFlag} red flag · ${counts.belowTrend} below trend · ${counts.unrated} unrated
           </div>
         </div>
         <p style="font-size: 11px; color: #94a3b8; margin-top: 36px;">For internal use only · LKP Research</p>
@@ -6823,7 +6830,8 @@ function applyFilters() {
   let rows = st.scored.filter((s) => {
     if (state.watchOnly && !state.watchlist.has(companyKey(s.company))) return false;
     if (q && !c.name(s.company).toLowerCase().includes(q)) return false;
-    if (state.scoreFilter === "hardfail") return s.hardFails.length > 0;
+    if (state.scoreFilter === "redflag") return !!s.isRedFlag;
+    if (state.scoreFilter === "belowtrend") return s.hardFails.length > 0 && !s.isRedFlag;
     if (state.scoreFilter !== "all") {
       const tier = s.hardFails.length ? "hardfail" : scoreTier(s.scorePct);
       if (tier !== state.scoreFilter) return false;
@@ -6871,11 +6879,15 @@ function renderTable() {
       const dot = ({ pass: "bg-emerald-500", partial: "bg-amber-400", fail: "bg-rose-400", hard_fail: "bg-rose-600", na: "bg-slate-300" })[b.status];
       return `<span class="w-1.5 h-1.5 rounded-full ${dot}" title="${escapeHtml(b.label)}: ${b.status}"></span>`;
     }).join("");
-    const flagged = s.hardFails.length > 0;
+    // Split (fundamental red flag vs below-trend/illiquid filter) only applies
+    // on the composite tab. On single-pillar tabs a hard-fail IS a genuine flag
+    // for that pillar, so show it as a red flag with no "below trend" split.
+    const redFlag = c.composite ? !!s.isRedFlag : s.hardFails.length > 0;
+    const belowTrend = c.composite && s.hardFails.length > 0 && !s.isRedFlag;
     const slug = companyKey(s.company);
     const watched = state.watchlist.has(slug);
     return `
-      <tr data-idx="${i}" class="row-clickable border-b border-slate-100 cursor-pointer transition-colors ${flagged ? "bg-rose-50/40 hover:bg-rose-50" : "hover:bg-slate-50"}" ${flagged ? `style="box-shadow: inset 3px 0 0 #f43f5e"` : ""}>
+      <tr data-idx="${i}" class="row-clickable border-b border-slate-100 cursor-pointer transition-colors ${redFlag ? "bg-rose-50/40 hover:bg-rose-50" : "hover:bg-slate-50"}" ${redFlag ? `style="box-shadow: inset 3px 0 0 #f43f5e"` : belowTrend ? `style="box-shadow: inset 3px 0 0 #cbd5e1"` : ""}>
         <td class="px-4 py-3 text-sm text-slate-500 font-medium">
           <div class="flex items-center gap-1">
             <button data-watch="${escapeHtml(slug)}" class="watch-star text-base leading-none transition-colors ${watched ? "text-amber-400" : "text-slate-300 hover:text-amber-400"}" title="${watched ? "Remove from watchlist" : "Add to watchlist"}">${watched ? "★" : "☆"}</button>
@@ -6894,7 +6906,7 @@ function renderTable() {
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
             <span class="inline-flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-lg text-sm font-bold tabular-nums ${scoreBadgeClass(s.scorePct)}">${c.composite ? Number(s.totalPoints).toFixed(1) : s.totalPoints}/${s.totalMax}</span>
-            ${flagged ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-rose-100 text-rose-700 ring-1 ring-rose-200" title="${escapeHtml(s.hardFails.join(", "))}">⚠ Red Flag</span>` : ""}
+            ${redFlag ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-rose-100 text-rose-700 ring-1 ring-rose-200" title="${escapeHtml((s.fundamentalFlags || s.hardFails || []).join(", "))}">⚠ Red Flag</span>` : belowTrend ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-500 ring-1 ring-slate-200" title="${escapeHtml((s.filterFlags || s.hardFails || []).join(", "))}">Below trend</span>` : ""}
             ${s.tickerError ? `<span class="text-[10px] text-slate-400 italic" title="${escapeHtml(s.tickerError)}">no data</span>` : ""}
           </div>
         </td>
