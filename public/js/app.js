@@ -4939,7 +4939,6 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
       ${renderActiveSegmentedBaskets(view, mode)}
       ${renderActivePickRowsSplit(view)}
       ${renderSectorTiming(view)}
-      ${alertsHtml}
     </div>
   `;
 }
@@ -6017,7 +6016,6 @@ function renderSectorTiming(view) {
           <tbody>${body}</tbody>
         </table>
       </div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">"Rebalance" ≈ avg days-to-peak for that ${label.toLowerCase()}. Low pick counts are noisier — the Daily cadence gives the richest per-${label.toLowerCase()} sample. Toggle <strong>Sector ↔ Industry</strong> for broad vs GICS sub-industry granularity.</div>
     </div>`;
 }
 
@@ -9085,7 +9083,6 @@ function renderWeightLab() {
         <div class="flex items-center gap-2">
           <span class="text-base">⚖️</span>
           <h3 class="font-display font-bold text-slate-900 text-base">Weight Lab</h3>
-          <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span>
         </div>
         <div class="text-[11px] text-slate-500">Held top-7 · backtested over ${nDays} days · ${fmtDateDMY(anchor)} → ${fmtDateDMY(today)}</div>
       </div>
@@ -9276,7 +9273,7 @@ function renderTechBacktest() {
     <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
       <div class="px-4 sm:px-5 pt-4 sm:pt-5">
         <div class="flex items-center justify-between gap-3 flex-wrap">
-          <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+          <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3></div>
           <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(504, "2Y")}</div>
         </div>
         <div class="text-[11px] text-slate-400 mt-1 tabular-nums">Real daily prices · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)} · ${ctx.dates.length} days</div>
@@ -9312,8 +9309,11 @@ function renderTechBacktest() {
 
 // Big, full-width equity curve — the hero visual. Area fill under the line,
 // dashed zero baseline, colour by up/down. SVG stretches to the card width.
+// Hover crosshair + tooltip are wired in wireTechBacktest off techCurvePts.
+let techCurvePts = [];
 function renderTechCurve(curve) {
   const pts = (curve || []).filter((p) => p.retPct != null);
+  techCurvePts = pts;
   if (pts.length < 2) return `<div class="px-5 py-10 text-center text-[11px] text-slate-400">Not enough data to plot.</div>`;
   const W = 1000, H = 210, M = { l: 4, r: 4, t: 16, b: 16 };
   const iw = W - M.l - M.r, ih = H - M.t - M.b;
@@ -9326,14 +9326,19 @@ function renderTechCurve(curve) {
   const zeroY = y(0).toFixed(1);
   const up = pts[pts.length - 1].retPct >= 0;
   const col = up ? "#059669" : "#e11d48";
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:210px;display:block">
-    <defs><linearGradient id="tech-area" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${col}" stop-opacity="0.22"/><stop offset="100%" stop-color="${col}" stop-opacity="0.02"/>
-    </linearGradient></defs>
-    <line x1="${M.l}" y1="${zeroY}" x2="${W - M.r}" y2="${zeroY}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 5"/>
-    <path d="${area}" fill="url(#tech-area)"/>
-    <path d="${line}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-  </svg>`;
+  return `<div id="tech-chart" class="relative select-none" style="cursor:crosshair">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:210px;display:block">
+      <defs><linearGradient id="tech-area" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${col}" stop-opacity="0.22"/><stop offset="100%" stop-color="${col}" stop-opacity="0.02"/>
+      </linearGradient></defs>
+      <line x1="${M.l}" y1="${zeroY}" x2="${W - M.r}" y2="${zeroY}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 5"/>
+      <path d="${area}" fill="url(#tech-area)"/>
+      <path d="${line}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div data-tech-cross class="absolute top-0 bottom-0 w-px bg-slate-400/70 pointer-events-none hidden"></div>
+    <div data-tech-dot class="absolute w-2 h-2 rounded-full pointer-events-none hidden" style="background:${col};transform:translate(-50%,-50%)"></div>
+    <div data-tech-tip class="absolute pointer-events-none hidden px-2 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold tabular-nums shadow-lg z-10 whitespace-nowrap" style="top:6px"></div>
+  </div>`;
 }
 
 function wireTechBacktest() {
@@ -9361,6 +9366,26 @@ function wireTechBacktest() {
     const pick = buildCohortClickPick(t, "ai", null);
     if (pick) openHistoryDrill(pick);
   }));
+  // Chart hover — crosshair + dot + date/return tooltip.
+  const chart = document.querySelector(`${root} #tech-chart`);
+  if (chart && techCurvePts.length > 1) {
+    const cross = chart.querySelector("[data-tech-cross]"), dot = chart.querySelector("[data-tech-dot]"), tip = chart.querySelector("[data-tech-tip]");
+    const W = 1000, H = 210, M = { l: 4, r: 4, t: 16, b: 16 }, iw = W - 8, ih = H - 32, n = techCurvePts.length;
+    const vals = techCurvePts.map((p) => p.retPct);
+    let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1;
+    chart.addEventListener("mousemove", (e) => {
+      const rect = chart.getBoundingClientRect();
+      const idx = Math.max(0, Math.min(n - 1, Math.round((e.clientX - rect.left) / rect.width * (n - 1))));
+      const pt = techCurvePts[idx]; if (!pt) return;
+      const px = ((M.l + (idx / (n - 1)) * iw) / W) * rect.width;
+      const py = ((M.t + (1 - (pt.retPct - lo) / (hi - lo)) * ih) / H) * rect.height;
+      cross.style.left = `${px}px`; cross.classList.remove("hidden");
+      dot.style.left = `${px}px`; dot.style.top = `${py}px`; dot.classList.remove("hidden");
+      tip.textContent = `${fmtDateDMY(pt.date)} · ${pt.retPct >= 0 ? "+" : ""}${pt.retPct.toFixed(1)}%`;
+      tip.style.left = `${Math.max(4, Math.min(rect.width - 120, px - 45))}px`; tip.classList.remove("hidden");
+    });
+    chart.addEventListener("mouseleave", () => { cross.classList.add("hidden"); dot.classList.add("hidden"); tip.classList.add("hidden"); });
+  }
 }
 
 function refreshTechBacktest() {
@@ -9375,15 +9400,7 @@ function renderCustomOverview(views) {
   // cards + comparison chart are hidden). Flip SHOW_ROTATION_STRATEGIES to
   // bring the full Strategy Lab back.
   if (!SHOW_ROTATION_STRATEGIES) {
-    return `
-      <div class="space-y-5">
-        <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
-          <div class="flex items-center gap-2"><h2 class="font-display font-bold text-xl text-slate-900">Weight Lab</h2><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
-          <div class="text-sm text-slate-600 mt-1 max-w-2xl">Tune how much each pillar counts in the SPIP score and see which basket the mix would have picked — or let AI find the best-performing blend. Apply a mix to push it to the live SPIP Basket.</div>
-        </div>
-        ${renderWeightLab()}
-        ${renderTechBacktest()}
-      </div>`;
+    return `<div class="space-y-5">${renderTechBacktest()}${renderWeightLab()}</div>`;
   }
   const withColor = stratColors(views);
   const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));

@@ -128,6 +128,10 @@ function ruleNPM(c) {
 function ruleCFO(c) {
   // Per client framework: PASS if positive CFO for 10 consecutive years;
   // HARD FAIL if any year is negative. Series is oldest → newest.
+  // Financial-sector exception (same rationale as D/E): banks/NBFCs consume
+  // cash as they grow the loan book, so negative operating cash flow is
+  // structural, not a red flag. Non-financials keep the strict test.
+  if ((c["Broad Sector"] || "").trim() === "Financial Services") return naWithReason(c, "cfo", 2);
   const series = parseSeries(c["CF Operations Series"]);
   const ly = parseNumber(c["CF Operations LY"]);
   const py = parseNumber(c["CF Operations PY"]);
@@ -265,6 +269,10 @@ function ruleDebtEquity(c) {
 
 function ruleInterestCoverage(c) {
   const v = parseNumber(c["Int Coverage"]);
+  // Financial-sector exception (same rationale as D/E): interest is a bank /
+  // NBFC's raw material, so interest-coverage isn't a meaningful debt-service
+  // test — excluding them stops ~36 blue-chip financials being red-flagged.
+  if ((c["Broad Sector"] || "").trim() === "Financial Services") return naWithReason(c, "icr", 2);
   if (v == null) return naWithReason(c, "icr", 2);
   if (v > 3) return { points: 2, max: 2, status: "pass", value: v.toString(), note: "Interest coverage > 3 — debt comfortably serviced." };
   if (v >= 1.5) return { points: 1, max: 2, status: "partial", value: v.toString(), note: "Coverage 1.5–3 — tight." };
@@ -504,8 +512,18 @@ function ruleAuditorOpinion(c) {
       note: "Auditor opinion not disclosed in the latest annual report." };
   }
   const detail = buildAuditorDetail(c);
-  // Adverse opinion or disclaimer → hard fail per client framework.
+  // Adverse opinion or disclaimer → hard fail per client framework — BUT only
+  // when it's a genuine auditor verdict. The extraction agent DEFAULTS to
+  // "Disclaimer of Opinion" whenever it can't find or read a company's annual
+  // report, which wrongly red-flagged ~110 blue-chips (Colgate, P&G, ICICI AMC…).
+  // If the source shows the extraction failed, treat it as N/A, not a red flag.
   if (/\b(adverse|disclaimer)\b/.test(opLower)) {
+    const src = String(c.auditor_opinion_source || "").toLowerCase();
+    const extractionFailed = /no annual report|annual report.{0,20}not (?:provided|identified|available)|not provided|no successful information|no auditor|could ?n.?.?t extract|no reference|not available|no company details|no information|not specified|no details|not disclosed|no data|not identified|no company name/.test(src);
+    if (extractionFailed) {
+      return { points: 0, max: 2, status: "na", value: op,
+        note: "Auditor opinion couldn't be extracted (no annual report found for this company) — not counted as a red flag." };
+    }
     return { points: 0, max: 2, status: "hard_fail", value: op,
       note: `${op} per the most recent annual report. Hard fail per client framework.${detail}` };
   }
