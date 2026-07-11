@@ -1708,6 +1708,12 @@ async function ensureHistoryCache() {
   const ooc = await fetch("data/out-of-coverage-history.json")
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
+  // Live intraday feed (Munshot) — current price + day high/low per basket
+  // ticker. Powers live prices and intraday target/SL touch detection.
+  const livePrices = await fetch("data/live-prices.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => j?.prices || {})
+    .catch(() => ({}));
 
   // Inject synthetic stock entries for out-of-coverage tickers (LKP picks
   // below our ~Rs 12,500 Cr universe, e.g. ELECON). Once they look like
@@ -1776,6 +1782,12 @@ async function ensureHistoryCache() {
   const todayClose = {};
   const todaySnap = snapshots[snapshots.length - 1];
   for (const s of todaySnap.stocks) if (typeof s.close === "number") todayClose[s.ticker] = s.close;
+  // Overlay the live price where we have one, so displays show the current
+  // traded price rather than the end-of-day snapshot close.
+  for (const [t, p] of Object.entries(livePrices)) {
+    if (p && typeof p.current === "number") todayClose[t] = p.current;
+  }
+  state.cache.history.livePrices = livePrices;
   // LKP picks indexed by ticker so manual-row clicks resolve to the
   // client-entry framing (with targets/SL) rather than the snapshot trail.
   const lkpForCache = lkpOverride() || lkp;
@@ -3293,6 +3305,50 @@ function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, 
   return { status: "OPEN", currentClose: lastClose };
 }
 
+// Manual-basket milestone detection. Unlike the AI cohort's single band,
+// the client basket has TWO targets — T1 (first target) and T2 (the max /
+// freeze level) — plus SL. We surface T1 as a milestone while the pick
+// keeps running toward T2, and freeze/book at T2 (or SL). Detection is on
+// the daily CLOSE for past days (all we store historically), but for TODAY
+// it widens to the live intraday HIGH / LOW from Munshot when available —
+// so a target that was only TOUCHED intraday (the client's definition of
+// "hit": Paytm spiked to 1359 over T2 1350 but closed 1341.8) still counts.
+function computeManualMilestones(ticker, entryDate, entryPrice, tgt1, tgt2, sl, snapshots, todayDate, live) {
+  const out = { status: "OPEN", currentClose: null, t1: { hit: false } };
+  if (!ticker || entryPrice == null || tgt2 == null || sl == null) return out;
+  let lastClose = null;
+  for (const snap of snapshots) {
+    if (snap.date < entryDate) continue;
+    const s = snap.stocks.find((x) => x.ticker === ticker);
+    const isToday = snap.date === todayDate;
+    let close = (s && s.close != null) ? s.close : null;
+    if (close == null && isToday && live?.current != null) close = live.current;
+    if (close == null) continue;
+    lastClose = close;
+    // Reach range for the day: historically we only have the close (hi=lo=
+    // close); today we widen to the live intraday high/low + current.
+    let hi = close, lo = close;
+    if (isToday && live) {
+      if (live.dayHigh != null) hi = Math.max(hi, live.dayHigh);
+      if (live.dayLow  != null) lo = Math.min(lo, live.dayLow);
+      if (live.current != null) { hi = Math.max(hi, live.current); lo = Math.min(lo, live.current); }
+    }
+    // Target 1 milestone — first day the high reaches T1 (it never un-hits).
+    if (!out.t1.hit && tgt1 != null && hi >= tgt1) {
+      out.t1 = { hit: true, date: snap.date, daysToHit: daysBetween(entryDate, snap.date), hitToday: isToday };
+    }
+    // Booking event — first of Target 2 (high) or SL (low). Freeze there.
+    if (hi >= tgt2) {
+      return { ...out, status: "TARGET_HIT", hitDate: snap.date, daysToHit: daysBetween(entryDate, snap.date), exitPrice: tgt2, hitToday: isToday, currentClose: lastClose };
+    }
+    if (lo <= sl) {
+      return { ...out, status: "SL_HIT", hitDate: snap.date, daysToHit: daysBetween(entryDate, snap.date), exitPrice: sl, hitToday: isToday, currentClose: lastClose };
+    }
+  }
+  out.currentClose = lastClose;
+  return out;
+}
+
 // Per-stock peak excursion — independent of target / SL. Walks the
 // snapshot trail from the entry date and records the best (highest
 // close) and worst (lowest close) the stock reached relative to entry,
@@ -4635,6 +4691,7 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
 function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
   const result = { manualPicks: [], manualSummary: null };
   if (!manualPicks?.length) return result;
+  const livePrices = state.cache.history?.livePrices || {};
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   const lastSnap = snapshots[snapshots.length - 1];
   const rows = [];
@@ -4663,12 +4720,15 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
       });
       continue;
     }
-    const status = computeHitStatus(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate);
+    const live = livePrices[p.ticker] || livePrices[(p.selection || "").toUpperCase()] || null;
+    const status = computeManualMilestones(p.ticker, entryDate, entryPrice, p.tgt1 ?? null, target, sl, snapshots, todayDate, live);
     const peak = computePeakStats(p.ticker, entryDate, entryPrice, snapshots, todayDate);
     // Booking = the real exit. Freeze at the LEVEL (Target 2 / SL), not the
     // overshooting close — a pick that ran to +22% but had Target 2 = +12%
     // books at +12%. Held return marks to market, so the UI can show both.
-    const todayCloseVal = lastSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close ?? entryPrice;
+    const todayCloseVal = (live && typeof live.current === "number")
+      ? live.current
+      : (lastSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close ?? entryPrice);
     const heldRet = entryPrice ? (todayCloseVal / entryPrice - 1) * 100 : null;
     const isBooked = status.status === "TARGET_HIT" || status.status === "SL_HIT";
     const bookPrice = status.status === "TARGET_HIT" ? target : status.status === "SL_HIT" ? sl : null;
@@ -5792,8 +5852,15 @@ function renderManualBasketTable(manualPicks) {
     const ratingChip = currentRating
       ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
       : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
+    // Target 1 milestone — shown whenever T1 was reached but the pick isn't
+    // already booked at Target 2 (the TGT2 lock implies T1). Answers the
+    // client's "has it hit the first target yet?" at a glance.
+    const t1Hit = r.t1 && r.t1.hit;
+    const t1Badge = (t1Hit && !(isBooked && r.booking.reason === "TARGET"))
+      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-emerald-50 text-emerald-700 ring-emerald-200" title="Target 1 reached ${fmtDateDMY(r.t1.date)}${r.t1.hitToday ? " (today, intraday)" : ""} — running to Target 2">🎯 T1 hit</span>`
+      : "";
     const lockBadge = isBooked
-      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${r.booking.reason === "TARGET" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Booked ${fmtDateDMY(r.booking.bookDate)} · ${r.booking.daysToBook}d after entry">🔒 ${r.booking.reason === "TARGET" ? "TGT2" : "SL"}</span>`
+      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${r.booking.reason === "TARGET" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Booked ${fmtDateDMY(r.booking.bookDate)} · ${r.booking.daysToBook}d after entry${r.hitToday ? " · touched intraday today" : ""}">🔒 ${r.booking.reason === "TARGET" ? "TGT2" : "SL"}</span>`
       : "";
     const heldNote = (isBooked && heldRet != null)
       ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was actually captured">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
@@ -5803,7 +5870,7 @@ function renderManualBasketTable(manualPicks) {
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>
-            ${lockBadge}
+            ${t1Badge}${lockBadge}
           </div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(exitPx)}${isBooked ? " · booked" : ""}</div>
         </div>
@@ -5914,6 +5981,7 @@ function renderActivePickColumn(title, palette, picks, side) {
         </div>
         <div class="col-span-4 text-right">
           <div class="flex items-center justify-end flex-wrap gap-1">
+            ${(r.t1 && r.t1.hit && r.status !== "TARGET_HIT") ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-emerald-50 text-emerald-700 ring-emerald-200" title="Target 1 reached ${fmtDateDMY(r.t1.date)}${r.t1.hitToday ? " (today, intraday)" : ""} — running to Target 2">🎯 T1</span>` : ""}
             <span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 ${statusCls}">${statusLabel}</span>
           </div>
           <div class="text-[10px] text-slate-500 mt-0.5 truncate">${exit}</div>
