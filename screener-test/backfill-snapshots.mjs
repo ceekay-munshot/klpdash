@@ -29,9 +29,13 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scoreCompositeBatch, PILLAR_WEIGHTS } from "../public/js/composite-scoring.js";
+import * as techScoring from "../public/js/tech-scoring.js";
+import * as fundScoring from "../public/js/scoring.js";
+import { enrichCompanies } from "./lib/enrich-companies.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT     = resolve(__dirname, "..");
+const DATA_DIR      = resolve(REPO_ROOT, "public/data");
 const SNAPSHOTS_DIR = resolve(REPO_ROOT, "public/data/snapshots");
 const INDEX_PATH    = resolve(SNAPSHOTS_DIR, "index.json");
 const FRAMEWORK_VERSION = "v1";
@@ -121,6 +125,13 @@ async function buildSnapshotFromCommit(sha, date) {
   const fundCompanies = Array.isArray(fund) ? fund : (fund.companies || []);
   const techCompanies = tech.companies || tech || [];
 
+  // Enrich with the same auxiliary data the live tab / daily writer use.
+  // Historical fund/tech/macro come from the commit; the aux sources
+  // (auditor / governance / insider / revenue-mix / ATR) use their current
+  // versions — they change slowly, so this is the best available proxy for
+  // what the tab would have shown that day.
+  enrichCompanies(fundCompanies, techCompanies, macro, DATA_DIR);
+
   const scored = scoreCompositeBatch(fundCompanies, techCompanies, macro);
 
   const techByTicker = {};
@@ -147,17 +158,27 @@ async function buildSnapshotFromCommit(sha, date) {
       sentiment:    leanPillar(p.sentiment),
       liquidity:    leanPillar(p.liquidity),
     };
+    // Same per-indicator / per-ratio fields the daily writer emits, so a
+    // backfilled snapshot is interchangeable with a live-written one (the
+    // Custom Lab back-test reads techVals / fundVals).
+    let techVals = null;
+    try { techVals = techScoring.techVals(tc); } catch { techVals = null; }
+    let fundVals = null;
+    try { fundVals = fundScoring.fundVals(fc); } catch { fundVals = null; }
     return {
       ticker,
       name: fc.Company || null,
       slug: slugify(fc.Company || ticker || ""),
       sector: fc.Sector || fc["Broad Industry"] || null,
+      industry: fc.Industry || fc["Broad Industry"] || null,
       composite: s.composite == null ? null : Number(s.composite.toFixed(2)),
       rating: s.rating || null,
       hardFailed: !!s.hardFailed,
       dataComplete: !!s.dataComplete,
       close,
       pillars,
+      techVals,
+      fundVals,
     };
   });
 

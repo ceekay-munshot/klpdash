@@ -19,8 +19,10 @@ import { fileURLToPath } from "node:url";
 import { scoreCompositeBatch, PILLAR_WEIGHTS } from "../public/js/composite-scoring.js";
 import * as techScoring from "../public/js/tech-scoring.js";
 import * as fundScoring from "../public/js/scoring.js";
+import { enrichCompanies } from "./lib/enrich-companies.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const DATA_DIR       = resolve(__dirname, "../public/data");
 const FUND_PATH      = resolve(__dirname, "../public/data/screener-companies.json");
 const TECH_PATH      = resolve(__dirname, "../public/data/technicals.json");
 const MACRO_PATH     = resolve(__dirname, "../public/data/macro.json");
@@ -45,6 +47,13 @@ async function run() {
 
   const fundCompanies = Array.isArray(fund) ? fund : (fund.companies || []);
   const techCompanies = tech.companies || tech || [];
+
+  // Fuse the same auxiliary data the live SPIP Basket tab merges before
+  // scoring (auditor / governance / insider / revenue-mix / macro overlays
+  // / ATR) so the snapshot's composite, rating and hard-fails match what
+  // the dashboard renders for the same day.
+  const enrich = enrichCompanies(fundCompanies, techCompanies, macro, DATA_DIR);
+  console.log(`  enrichment: auditor ${enrich.auditorLoaded ? enrich.counts.auditor : "off"} · governance ${enrich.governanceLoaded ? enrich.counts.governance : "off"} · insider ${enrich.insiderLoaded ? enrich.counts.insider : "off"} · revenue-mix ${enrich.counts.revenueMix}`);
 
   const scored = scoreCompositeBatch(fundCompanies, techCompanies, macro);
 
