@@ -264,6 +264,13 @@ function saveLabWeights(w) {
   try { localStorage.setItem(LAB_WEIGHTS_KEY, JSON.stringify(w)); } catch {}
 }
 
+// 1-year technical back-test settings (defined here so state init can read
+// them — the rest of the back-test lives down by the Custom tab).
+const TECH_PARAMS_KEY = "klpdash-tech-params-v1";
+const TECH_DEFAULTS = { basketSize: 7, rebalanceDays: 10, targetPct: 12, slPct: 8, threshold: 55, windowDays: 252 };
+function loadTechParams() { try { const r = JSON.parse(localStorage.getItem(TECH_PARAMS_KEY)); if (r) return { ...TECH_DEFAULTS, ...r }; } catch {} return { ...TECH_DEFAULTS }; }
+function saveTechParams(p) { try { localStorage.setItem(TECH_PARAMS_KEY, JSON.stringify(p)); } catch {} }
+
 // Client-configurable allocation per pick for the History portfolio
 // backtest. Defaults to ₹1L. Stored as a plain integer in localStorage.
 const ALLOC_KEY = "klpdash-alloc-per-pick-v1";
@@ -529,6 +536,8 @@ const state = {
   manualMonth: null,                  // selected client-basket month "YYYY-MM" (null = latest)
   labWeights: loadLabWeights(),       // Weight Lab sandbox pillar mix
   labAiBest: null,                    // last AI weight-search result (in-memory)
+  techParams: loadTechParams(),       // 1-year technical back-test settings
+  techAiBest: null,                   // last AI tech-strategy search (in-memory)
   strategySegmentIdx: null,           // which segment pill is selected (null = latest)
   recomputeHistory: loadRecomputeHistory(),
   // Lazy composite cache — populated on first drill-down or when composite
@@ -9143,6 +9152,222 @@ function wireWeightLab() {
   });
 }
 
+// ============ 1-Year Technical Back-test (real OHLC history) ============
+// Replays a pure-technical rotation over ~1 year of real daily prices
+// (data/history-technical.json, built by scrape-history-ohlc.mjs): rank the
+// universe by the technical score each day, hold the top N, exit on target /
+// stop-loss / drop-out, rebalance on a cadence. This is Bharat's "test the
+// technicals over a year before running live" — separate from the live product.
+let techHist = null;
+async function loadTechHistory() {
+  if (techHist !== null) return techHist;
+  try { techHist = await fetch("data/history-technical.json").then((r) => (r.ok ? r.json() : false)); }
+  catch { techHist = false; }
+  return techHist;
+}
+
+// Pre-rank each day once (score desc) so grid search stays fast.
+function buildTechContext(hist, windowDays) {
+  const start = Math.max(0, hist.dates.length - windowDays);
+  const dates = hist.dates.slice(start);
+  const T = Object.keys(hist.tickers);
+  const ranked = dates.map((_, di) => {
+    const i = start + di, row = [];
+    for (const t of T) { const sc = hist.tickers[t].score[i], cl = hist.tickers[t].close[i]; if (sc != null && cl != null) row.push({ t, score: sc, close: cl }); }
+    row.sort((a, b) => b.score - a.score);
+    return row;
+  });
+  const closeAt = (t, di) => hist.tickers[t].close[start + di];
+  return { start, dates, T, ranked, closeAt, hist };
+}
+
+function runTechBacktest(ctx, p) {
+  const { dates, ranked, closeAt, hist } = ctx;
+  const N = Math.max(1, p.basketSize), thr = p.threshold, tgt = p.targetPct / 100, sl = p.slPct / 100, reb = Math.max(1, p.rebalanceDays);
+  let cash = 1, lastReb = 0, trades = 0;
+  const holds = new Map();
+  const curve = [];
+  for (let di = 0; di < dates.length; di++) {
+    const isReb = di === 0 || (di - lastReb) >= reb;
+    if (isReb) lastReb = di;
+    const qual = ranked[di].filter((r) => r.score >= thr);
+    const topN = new Set(qual.slice(0, N).map((r) => r.t));
+    for (const [t, pos] of [...holds]) {
+      const px = closeAt(t, di); if (px == null) continue;
+      const g = px / pos.entryPrice - 1;
+      if (g >= tgt || g <= -sl || (isReb && !topN.has(t))) { cash += pos.units * px; holds.delete(t); trades++; }
+    }
+    if (holds.size < N) {
+      for (const r of qual) {
+        if (holds.size >= N) break;
+        if (holds.has(r.t)) continue;
+        let nav = cash; for (const [tk, pos] of holds) nav += pos.units * (closeAt(tk, di) ?? pos.entryPrice);
+        const buy = Math.min(nav / N, cash);
+        if (buy < 1e-6) break;
+        holds.set(r.t, { units: buy / r.close, entryPrice: r.close }); cash -= buy; trades++;
+      }
+    }
+    let val = cash; for (const [t, pos] of holds) val += pos.units * (closeAt(t, di) ?? pos.entryPrice);
+    curve.push({ date: dates[di], retPct: (val - 1) * 100 });
+  }
+  const finalReturn = curve.length ? curve[curve.length - 1].retPct : 0;
+  let peak = -Infinity, maxDD = 0;
+  for (const pt of curve) { const f = 1 + pt.retPct / 100; if (f > peak) peak = f; const dd = (f / peak - 1) * 100; if (dd < maxDD) maxDD = dd; }
+  const last = ranked[ranked.length - 1] || [];
+  const picksNow = last.filter((r) => r.score >= thr).slice(0, N)
+    .map((r) => ({ ticker: r.t, score: r.score, sector: hist.tickers[r.t].sector }));
+  return { finalReturn, maxDD, curve, trades, picksNow, days: curve.length };
+}
+
+// Grid-search the strategy params for the best risk-adjusted score.
+function findBestTechStrategy(ctx) {
+  const GRID = { basketSize: [5, 7, 10], rebalanceDays: [5, 10, 20], targetPct: [8, 12, 20], slPct: [5, 8, 12], threshold: [50, 55, 60] };
+  let best = null, tried = 0;
+  for (const basketSize of GRID.basketSize)
+    for (const rebalanceDays of GRID.rebalanceDays)
+      for (const targetPct of GRID.targetPct)
+        for (const slPct of GRID.slPct)
+          for (const threshold of GRID.threshold) {
+            const params = { basketSize, rebalanceDays, targetPct, slPct, threshold };
+            const r = runTechBacktest(ctx, params); tried++;
+            const score = r.finalReturn + 0.4 * r.maxDD;
+            if (!best || score > best.score) best = { params, r, score };
+          }
+  return best ? { ...best, tried } : null;
+}
+
+const TECH_FIELDS = [
+  { key: "basketSize",    label: "Basket size",   min: 3,  max: 15, step: 1, suffix: "" },
+  { key: "rebalanceDays", label: "Rebalance",     min: 1,  max: 30, step: 1, suffix: "d" },
+  { key: "targetPct",     label: "Target",        min: 3,  max: 40, step: 1, suffix: "%" },
+  { key: "slPct",         label: "Stop-loss",     min: 2,  max: 25, step: 1, suffix: "%" },
+  { key: "threshold",     label: "Min score",     min: 0,  max: 90, step: 5, suffix: "" },
+];
+
+function renderTechBacktest() {
+  if (techHist === false || !techHist) {
+    return `<section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+      <div class="flex items-center gap-2 mb-1"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">1-Year Technical Back-test</h3></div>
+      <div class="text-sm text-slate-500">History not loaded yet — run <code class="bg-slate-100 px-1 rounded text-[11px]">scrape-history-ohlc.mjs</code> to build <code class="bg-slate-100 px-1 rounded text-[11px]">history-technical.json</code>.</div>
+    </section>`;
+  }
+  const p = state.techParams;
+  const ctx = buildTechContext(techHist, p.windowDays);
+  const r = runTechBacktest(ctx, p);
+  const best = state.techAiBest;
+  const retCls = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-600" : "text-rose-600";
+  const d0 = ctx.dates[0], dN = ctx.dates[ctx.dates.length - 1];
+
+  const controls = TECH_FIELDS.map((f) => `
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-semibold text-slate-600 w-24 flex-shrink-0">${f.label}</span>
+      <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" data-tech-p="${f.key}" value="${p[f.key]}" class="flex-1 accent-indigo-600">
+      <span class="text-xs font-bold tabular-nums text-slate-800 w-12 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
+    </div>`).join("");
+
+  const winPill = (d, label) => `<button type="button" data-tech-window="${d}" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${p.windowDays === d ? "bg-slate-900 text-white" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-slate-400"}">${label}</button>`;
+
+  const tile = (label, val, cls = "text-slate-900", sub = "") => `
+    <div class="rounded-xl ring-1 ring-slate-200 bg-slate-50/60 px-3 py-2">
+      <div class="text-[9px] font-bold uppercase tracking-wider text-slate-500">${label}</div>
+      <div class="text-lg font-display font-bold ${cls} tabular-nums leading-tight">${val}</div>
+      ${sub ? `<div class="text-[10px] text-slate-400">${sub}</div>` : ""}
+    </div>`;
+
+  const picks = r.picksNow.map((x) => `
+    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white ring-1 ring-slate-200 text-[11px]">
+      <span class="font-semibold text-slate-800">${escapeHtml(x.ticker)}</span>
+      <span class="text-slate-400 tabular-nums">${x.score}</span>
+    </span>`).join(" ");
+
+  const bestRow = best ? `
+    <div class="mt-3 rounded-xl ring-1 ring-emerald-200 bg-emerald-50/50 p-3 text-xs">
+      <span class="font-bold text-emerald-700 uppercase tracking-wider text-[10px]">AI best</span>
+      <span class="text-slate-700"> ${best.r.finalReturn >= 0 ? "+" : ""}${best.r.finalReturn.toFixed(2)}% · DD ${best.r.maxDD.toFixed(2)}% — </span>
+      <span class="text-slate-500 tabular-nums">basket ${best.params.basketSize} · rebal ${best.params.rebalanceDays}d · tgt ${best.params.targetPct}% · SL ${best.params.slPct}% · score≥${best.params.threshold}</span>
+      <button type="button" data-tech-apply-best class="ml-1 font-semibold text-emerald-700 hover:underline">Use these</button>
+    </div>` : "";
+
+  return `
+    <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
+        <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">1-Year Technical Back-test</h3><span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">Lab</span></div>
+        <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(300, "Max")}</div>
+      </div>
+      <div class="text-sm text-slate-600 mb-4 max-w-2xl">Pure-technical rotation over real daily prices (${ctx.dates.length} days · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)}). Rank by the technical score, hold the top names, exit on target / stop-loss. Tune the rules or let AI find the best.</div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div>
+          <div class="space-y-2.5">${controls}</div>
+          <div class="flex items-center gap-2 mt-4 flex-wrap">
+            <button type="button" data-tech-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best settings</button>
+            <button type="button" data-tech-reset class="px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
+          </div>
+          ${bestRow}
+        </div>
+        <div>
+          <div class="grid grid-cols-4 gap-2 mb-3">
+            ${tile("Return", `${r.finalReturn >= 0 ? "+" : ""}${r.finalReturn.toFixed(1)}%`, retCls(r.finalReturn))}
+            ${tile("Max DD", `${r.maxDD.toFixed(1)}%`, "text-rose-600")}
+            ${tile("Trades", String(r.trades))}
+            ${tile("Days", String(r.days))}
+          </div>
+          ${renderTechCurve(r.curve)}
+          <div class="mt-3">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Top picks today</div>
+            <div class="flex flex-wrap gap-1.5">${picks || '<span class="text-xs text-slate-400">none above threshold</span>'}</div>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderTechCurve(curve) {
+  const pts = (curve || []).filter((p) => p.retPct != null);
+  if (pts.length < 2) return `<div class="text-[11px] text-slate-400 text-center py-6 ring-1 ring-slate-100 rounded-xl">Not enough data.</div>`;
+  const W = 480, H = 96, M = { l: 4, r: 4, t: 6, b: 6 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const vals = pts.map((p) => p.retPct);
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals); if (hi === lo) hi = lo + 1;
+  const x = (i) => M.l + (i / (pts.length - 1)) * iw;
+  const y = (v) => M.t + (1 - (v - lo) / (hi - lo)) * ih;
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.retPct).toFixed(1)}`).join(" ");
+  const zeroY = y(0).toFixed(1);
+  const up = pts[pts.length - 1].retPct >= 0;
+  return `<svg viewBox="0 0 ${W} ${H}" class="w-full" preserveAspectRatio="none" style="height:96px">
+    <line x1="${M.l}" y1="${zeroY}" x2="${W - M.r}" y2="${zeroY}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 3"/>
+    <path d="${d}" fill="none" stroke="${up ? "#059669" : "#e11d48"}" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function wireTechBacktest() {
+  const root = "#custom-content";
+  $$(`${root} [data-tech-p]`).forEach((inp) => {
+    inp.addEventListener("input", () => { const s = $(`${root} [data-tech-pval="${inp.dataset.techP}"]`); const f = TECH_FIELDS.find((x) => x.key === inp.dataset.techP); if (s) s.textContent = inp.value + (f ? f.suffix : ""); });
+    inp.addEventListener("change", () => { state.techParams = { ...state.techParams, [inp.dataset.techP]: Number(inp.value) }; saveTechParams(state.techParams); refreshTechBacktest(); });
+  });
+  $$(`${root} [data-tech-window]`).forEach((b) => b.addEventListener("click", () => { state.techParams = { ...state.techParams, windowDays: Number(b.dataset.techWindow) }; saveTechParams(state.techParams); refreshTechBacktest(); }));
+  const ai = $(`${root} [data-tech-ai]`);
+  if (ai) ai.addEventListener("click", () => {
+    ai.disabled = true; ai.textContent = "🤖 Searching…";
+    setTimeout(() => {
+      const ctx = buildTechContext(techHist, state.techParams.windowDays);
+      const best = findBestTechStrategy(ctx);
+      state.techAiBest = best;
+      if (best) { state.techParams = { ...state.techParams, ...best.params }; saveTechParams(state.techParams); }
+      refreshTechBacktest();
+    }, 30);
+  });
+  $(`${root} [data-tech-apply-best]`)?.addEventListener("click", () => { if (state.techAiBest) { state.techParams = { ...state.techParams, ...state.techAiBest.params }; saveTechParams(state.techParams); refreshTechBacktest(); } });
+  $(`${root} [data-tech-reset]`)?.addEventListener("click", () => { state.techParams = { ...TECH_DEFAULTS }; saveTechParams(state.techParams); state.techAiBest = null; refreshTechBacktest(); });
+}
+
+function refreshTechBacktest() {
+  const el = document.querySelector("#custom-content #tech-backtest");
+  if (!el) return;
+  el.outerHTML = renderTechBacktest();
+  wireTechBacktest();
+}
+
 function renderCustomOverview(views) {
   // Focus mode: the Custom tab is just the Weight Lab (the rotation strategy
   // cards + comparison chart are hidden). Flip SHOW_ROTATION_STRATEGIES to
@@ -9155,6 +9380,7 @@ function renderCustomOverview(views) {
           <div class="text-sm text-slate-600 mt-1 max-w-2xl">Tune how much each pillar counts in the SPIP score and see which basket the mix would have picked — or let AI find the best-performing blend. Apply a mix to push it to the live SPIP Basket.</div>
         </div>
         ${renderWeightLab()}
+        ${renderTechBacktest()}
       </div>`;
   }
   const withColor = stratColors(views);
@@ -9179,6 +9405,7 @@ function renderCustomOverview(views) {
         </div>
       </div>
       ${renderWeightLab()}
+      ${renderTechBacktest()}
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
       <section>
         <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
@@ -9345,6 +9572,7 @@ async function renderCustom() {
   host.innerHTML = `<div class="bg-white rounded-2xl ring-1 ring-slate-200 p-10 text-center text-slate-500 text-sm">Loading Custom Lab…</div>`;
   try {
     try { await ensureHistoryCache(); } catch (e) { host.innerHTML = renderHistoryEmpty(e.message); return; }
+    await loadTechHistory();
     const { snapshots, benchmark, lkp } = state.cache.history;
     if (!snapshots.length) { host.innerHTML = renderHistoryEmpty("No snapshots loaded."); return; }
     const anchorDate = lkpAnchorDate(lkp, snapshots);
@@ -9379,6 +9607,7 @@ async function renderCustom() {
     }
     wireCustomTab();
     wireWeightLab();
+    wireTechBacktest();
     wireMultiCurveHover("#custom-content");
     $$("#custom-content [data-cohort-row]").forEach((el) => el.addEventListener("click", () => {
       const ticker = el.dataset.ticker; if (!ticker) return;
