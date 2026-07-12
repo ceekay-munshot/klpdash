@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-11T03:51:58.141Z",
+  "generated_at": "2026-07-12T04:08:15.347Z",
   "source_count": 4,
   "curated_baseline_count": 5,
   "total_entities_seen": 17,
@@ -23,11 +23,17 @@
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
+          "order_type": "sebi-warning",
+          "snippet": "Reliance Industries received a warning letter from market regulator Sebi. The letter cited alleged insider trading by two employees and a relative."
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-warning",
+          "snippet": "Reliance Industries received an administrative warning from Sebi regarding insider trading."
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -46,7 +52,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -65,7 +71,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -84,7 +90,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -103,7 +109,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -122,22 +128,10 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-07-11T03:51:58.141Z"
+      "first_seen_at": "2026-07-12T04:08:15.347Z"
     }
   },
   "unmatched_sample": [
-    {
-      "name": "Functional & Innovative Foods Ltd",
-      "type": "other",
-      "source": "Mint — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "MFs",
-      "type": "other",
-      "source": "Mint — SEBI topic (news)",
-      "origin": "scraper"
-    },
     {
       "name": "Osiajee Texfab",
       "type": "sebi-ban",
@@ -151,37 +145,43 @@
       "origin": "scraper"
     },
     {
-      "name": "Rentomojo",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Moneyview",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Chandan Steel",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
       "name": "Osiajee Texfab",
       "type": "sebi-ban",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Rajesh Exports",
+      "name": "Tonbo Imaging",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Jio Platforms",
+      "name": "Moneyview",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Chandan Steel",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rentomojo",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Manipal Health",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Pragyawan Technologies",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -192,181 +192,7 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-11T03:51:31.253Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 8,
-      "total_extracted": 8,
-      "prefilter_sample": [
-        {
-          "name": "Functional & Innovative Foods Ltd",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "ED searches Rajesh Exports premises over ₹3,000-cr dubious deals, gold mismatch"
-        },
-        {
-          "name": "NSE",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Delhi High Court declares NSE a public authority under RTI Act"
-        },
-        {
-          "name": "Zerodha",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Zerodha launches India's first life cycle funds: Know how the 2 new schemes work, minimum investment, and suitability"
-        },
-        {
-          "name": "Pristine Logistics",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "GIP-backed Pristine Logistics takes confidential route to IPO; picks Axis, CLSA, SBI as book managers"
-        },
-        {
-          "name": "Dixon Technologies",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "18 months on, Dixon gets govt nod for JV with China's Vivo"
-        },
-        {
-          "name": "TCS",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "TCS flags no let-up in client caution after tepid Q1"
-        },
-        {
-          "name": "MFs",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "MFs wary of Sebi plan to allow celeb ads, cite mis-selling, edge for big entities"
-        }
-      ],
-      "after_filter_count": 2,
-      "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 6,
-        "resolved_in_favour": 0,
-        "no_name": 0
-      },
-      "sample": [
-        {
-          "name": "Functional & Innovative Foods Ltd",
-          "order_type": "other",
-          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
-        },
-        {
-          "name": "MFs",
-          "order_type": "other",
-          "snippet": "MFs wary of Sebi plan to allow celeb ads, cite mis-selling, edge for big entities"
-        }
-      ]
-    },
-    {
-      "url": "https://www.business-standard.com/topic/sebi",
-      "label": "Business Standard — SEBI topic (news)",
-      "mode": "news",
-      "at": "2026-07-11T03:51:38.822Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 7,
-      "total_extracted": 7,
-      "prefilter_sample": [
-        {
-          "name": "Osiajee Texfab",
-          "order_type": "sebi-ban",
-          "is_listed_entity": true,
-          "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "NFRA chief says Rajesh Exports probe is underway, can't share timeline"
-        },
-        {
-          "name": "Reliance",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
-        },
-        {
-          "name": "Rentomojo",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Rentomojo secures Sebi nod for IPO comprising fresh issue and OFS"
-        },
-        {
-          "name": "Moneyview",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Moneyview, Chandan Steel get Sebi's approval to raise funds through IPOs"
-        },
-        {
-          "name": "Chandan Steel",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Moneyview, Chandan Steel get Sebi's approval to raise funds through IPOs"
-        }
-      ],
-      "after_filter_count": 6,
-      "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
-        "resolved_in_favour": 0,
-        "no_name": 0
-      },
-      "sample": [
-        {
-          "name": "Osiajee Texfab",
-          "order_type": "sebi-ban",
-          "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
-        },
-        {
-          "name": "Reliance",
-          "order_type": "other",
-          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
-        },
-        {
-          "name": "Rentomojo",
-          "order_type": "other",
-          "snippet": "Rentomojo secures Sebi nod for IPO comprising fresh issue and OFS"
-        },
-        {
-          "name": "Moneyview",
-          "order_type": "other",
-          "snippet": "Moneyview, Chandan Steel get Sebi's approval to raise funds through IPOs"
-        },
-        {
-          "name": "Chandan Steel",
-          "order_type": "other",
-          "snippet": "Moneyview, Chandan Steel get Sebi's approval to raise funds through IPOs"
-        }
-      ]
-    },
-    {
-      "url": "https://economictimes.indiatimes.com/topic/sebi",
-      "label": "Economic Times — SEBI topic (news)",
-      "mode": "news",
-      "at": "2026-07-11T03:51:43.715Z",
+      "at": "2026-07-12T04:07:33.186Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -374,31 +200,70 @@
       "total_extracted": 4,
       "prefilter_sample": [
         {
-          "name": "Reliance Industries",
+          "name": "Zetwerk",
           "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
+          "is_listed_entity": false,
+          "snippet": "Zetwerk has an 18-month window to go public, while Tonbo Imaging must list within the next 12 months."
         },
+        {
+          "name": "Tonbo Imaging",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Zetwerk has an 18-month window to go public, while Tonbo Imaging must list within the next 12 months."
+        },
+        {
+          "name": "Functional & Innovative Foods",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO."
+        },
+        {
+          "name": "NSE",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Delhi High Court declares NSE a public authority under RTI Act."
+        }
+      ],
+      "after_filter_count": 0,
+      "dropped_counts": {
+        "not_listed": 4,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": []
+    },
+    {
+      "url": "https://www.business-standard.com/topic/sebi",
+      "label": "Business Standard — SEBI topic (news)",
+      "mode": "news",
+      "at": "2026-07-12T04:07:39.948Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 3,
+      "total_extracted": 3,
+      "prefilter_sample": [
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Osiajee Texfab for alleged manipulation."
+          "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "The National Financial Reporting Authority is investigating Rajesh Exports for revenue misstatements."
+          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
         },
         {
-          "name": "Jio Platforms",
+          "name": "Reliance",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi seeks clarification from Jio Platforms regarding its draft IPO papers."
+          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
         }
       ],
-      "after_filter_count": 4,
+      "after_filter_count": 3,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -407,24 +272,146 @@
       },
       "sample": [
         {
-          "name": "Reliance Industries",
+          "name": "Osiajee Texfab",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
+        },
+        {
+          "name": "Reliance",
           "order_type": "other",
-          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
+          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
+        }
+      ]
+    },
+    {
+      "url": "https://economictimes.indiatimes.com/topic/sebi",
+      "label": "Economic Times — SEBI topic (news)",
+      "mode": "news",
+      "at": "2026-07-12T04:07:50.332Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 10,
+      "total_extracted": 10,
+      "prefilter_sample": [
+        {
+          "name": "Reliance Industries",
+          "order_type": "sebi-warning",
+          "is_listed_entity": true,
+          "snippet": "Reliance Industries received a warning letter from market regulator Sebi. The letter cited alleged insider trading by two employees and a relative."
+        },
+        {
+          "name": "Reliance Industries",
+          "order_type": "sebi-warning",
+          "is_listed_entity": true,
+          "snippet": "Reliance Industries received an administrative warning from Sebi regarding insider trading."
         },
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars Osiajee Texfab for alleged manipulation."
+          "is_listed_entity": true,
+          "snippet": "Sebi has barred Osiajee Texfab and its managing director from the securities market."
         },
         {
-          "name": "Rajesh Exports",
+          "name": "Tonbo Imaging",
           "order_type": "other",
-          "snippet": "The National Financial Reporting Authority is investigating Rajesh Exports for revenue misstatements."
+          "is_listed_entity": true,
+          "snippet": "Sebi approved IPO proposals of Tonbo Imaging India, Marri Retail, Zetwerk and Gujarat Victory Forgings."
         },
         {
-          "name": "Jio Platforms",
+          "name": "Moneyview",
           "order_type": "other",
-          "snippet": "Sebi seeks clarification from Jio Platforms regarding its draft IPO papers."
+          "is_listed_entity": true,
+          "snippet": "The Securities and Exchange Board of India (Sebi) has granted approval for the Initial Public Offerings of fintech unicorn Moneyview and Chandan Steel"
+        },
+        {
+          "name": "Chandan Steel",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "The Securities and Exchange Board of India (Sebi) has granted approval for the Initial Public Offerings of fintech unicorn Moneyview and Chandan Steel"
+        },
+        {
+          "name": "Rentomojo",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Rentomojo, an innovative online rental platform specializing in furniture and appliances, has received approval from Sebi for its Initial Public Offer"
+        },
+        {
+          "name": "Manipal Health",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Manipal Health Enterprises has received Sebi approval for its initial public offering."
+        },
+        {
+          "name": "Pragyawan Technologies",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Pragyawan Technologies has filed its DRHP with SEBI for a Rs 400 crore IPO."
+        },
+        {
+          "name": "Zetwerk",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Founded in 2018 by Amrit Acharya, Zetwerk operates a technology-enabled manufacturing platform serving sectors such as energy, electronics, defence, a"
+        }
+      ],
+      "after_filter_count": 9,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 1,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Reliance Industries",
+          "order_type": "sebi-warning",
+          "snippet": "Reliance Industries received a warning letter from market regulator Sebi. The letter cited alleged insider trading by tw"
+        },
+        {
+          "name": "Reliance Industries",
+          "order_type": "sebi-warning",
+          "snippet": "Reliance Industries received an administrative warning from Sebi regarding insider trading."
+        },
+        {
+          "name": "Osiajee Texfab",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi has barred Osiajee Texfab and its managing director from the securities market."
+        },
+        {
+          "name": "Tonbo Imaging",
+          "order_type": "other",
+          "snippet": "Sebi approved IPO proposals of Tonbo Imaging India, Marri Retail, Zetwerk and Gujarat Victory Forgings."
+        },
+        {
+          "name": "Moneyview",
+          "order_type": "other",
+          "snippet": "The Securities and Exchange Board of India (Sebi) has granted approval for the Initial Public Offerings of fintech unico"
+        },
+        {
+          "name": "Chandan Steel",
+          "order_type": "other",
+          "snippet": "The Securities and Exchange Board of India (Sebi) has granted approval for the Initial Public Offerings of fintech unico"
+        },
+        {
+          "name": "Rentomojo",
+          "order_type": "other",
+          "snippet": "Rentomojo, an innovative online rental platform specializing in furniture and appliances, has received approval from Seb"
+        },
+        {
+          "name": "Manipal Health",
+          "order_type": "other",
+          "snippet": "Manipal Health Enterprises has received Sebi approval for its initial public offering."
+        },
+        {
+          "name": "Pragyawan Technologies",
+          "order_type": "other",
+          "snippet": "Pragyawan Technologies has filed its DRHP with SEBI for a Rs 400 crore IPO."
         }
       ]
     },
@@ -432,7 +419,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-07-11T03:51:47.838Z",
+      "at": "2026-07-12T04:08:04.967Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
