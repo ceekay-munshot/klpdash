@@ -5810,20 +5810,34 @@ function renderActiveSegmentPills(segments, selectedIdx, kind) {
   `;
 }
 
-// AI top 7 for the selected segment — name, entry → today, return %,
-// current rating chip. Row click opens the drill modal anchored at
-// the segment's start date so the drill chart's overlay levels match
-// the row's entry close.
+// Open / Closed pill shared by the AI + Manual Overview rosters. Every pick
+// is a top pick, so the rating (STRONG BUY etc.) is redundant here — it lives
+// in the click-through drill modal. Closed is coloured by outcome.
+function rosterStatusBadge(isClosed, reason) {
+  if (!isClosed) {
+    return `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-slate-100 text-slate-600 ring-slate-200" title="Position open (tap for rating & detail)">Open</span>`;
+  }
+  const green = reason === "TARGET";
+  return `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${green ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Position closed — ${green ? "target hit" : "stop-loss hit"} (tap for rating & detail)">🔒 Closed</span>`;
+}
+
+// AI top 7 for the selected segment — name, entry → exit, return %, and an
+// Open/Closed status. Honours the Booked/If-held toggle (booked freezes a hit
+// pick at its target/SL level, if-held marks to market). Row click opens the
+// drill modal (with the rating) anchored at the segment's start date so the
+// chart overlay levels match the row's entry close.
 function renderAiBasketTable(segment, view, mode) {
   if (!segment) {
     return `<div><div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">AI picks</div><div class="text-xs text-slate-500">No AI basket for this segment.</div></div>`;
   }
   const cache = state.cache.history || {};
   const todayClose = cache.todayClose || {};
-  // OPEN / CLOSED per pick comes from view.picks (target/SL hit status), keyed
-  // by ticker + entry date. The rating (STRONG BUY etc.) is redundant on the
-  // top-7 roster — every pick is a top pick — so it moves to the drill modal.
-  const statusByKey = new Map((view.picks || []).map((p) => [`${p.ticker}|${p.entryDate}`, p.status]));
+  const booked = state.manualReturnMode !== "held";
+  // Match each roster stock to its tracked pick (status + target/SL levels),
+  // keyed by ticker + entry date. Passive is a single held segment, so a hit
+  // in view.picks belongs to this roster; the return convention mirrors the
+  // Booked/If-held toggle exactly as the manual roster does.
+  const pickByKey = new Map((view.picks || []).map((p) => [`${p.ticker}|${p.entryDate}`, p]));
 
   const subLabel = mode === "passive"
     ? `Held since ${fmtDateDMY(segment.startDate)}`
@@ -5834,20 +5848,30 @@ function renderAiBasketTable(segment, view, mode) {
 
   const rows = segment.top7.map((s) => {
     const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
-    const ret = ((today / s.close) - 1) * 100;
-    const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
-    const status = statusByKey.get(`${s.ticker}|${segment.startDate}`);
-    const statusBadge = (status === "TARGET_HIT" || status === "SL_HIT")
-      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${status === "TARGET_HIT" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Position closed — ${status === "TARGET_HIT" ? "target hit" : "stop-loss hit"} (tap for rating & detail)">🔒 Closed</span>`
-      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-slate-100 text-slate-600 ring-slate-200" title="Position open (tap for rating & detail)">Open</span>`;
+    const heldRet = ((today / s.close) - 1) * 100;
+    const p = pickByKey.get(`${s.ticker}|${segment.startDate}`);
+    const hit = p && (p.status === "TARGET_HIT" || p.status === "SL_HIT");
+    const isBooked = booked && hit;
+    const reason = (p && p.status === "SL_HIT") ? "SL" : "TARGET";
+    // Booked freezes at the target/SL LEVEL — the real exit — not the live mark.
+    const exitLevel = isBooked ? (p.status === "TARGET_HIT" ? p.target : p.sl) : null;
+    const displayRet = isBooked ? ((exitLevel / s.close) - 1) * 100 : heldRet;
+    const exitPx = isBooked ? exitLevel : today;
+    const retCls = displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
+    const heldNote = isBooked
+      ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was captured at the exit level">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
+      : "";
     return `
       <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(segment.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
-          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(today)}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
         </div>
-        <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-sm font-bold ${retCls}">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
-        <div class="col-span-3 sm:col-span-4 text-right">${statusBadge}</div>
+        <div class="col-span-3 sm:col-span-3 text-right">
+          <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet >= 0 ? "+" : ""}${displayRet.toFixed(2)}%</div>
+          ${heldNote}
+        </div>
+        <div class="col-span-3 sm:col-span-4 text-right">${rosterStatusBadge(isBooked, reason)}</div>
       </button>`;
   }).join("");
 
@@ -5871,7 +5895,6 @@ function renderManualBasketTable(manualPicks) {
     return `<div><div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Manual picks</div><div class="text-xs text-slate-500">No manual basket uploaded.</div></div>`;
   }
   const todayClose = state.cache.history?.todayClose || {};
-  const byTicker = state.cache.history?.byTicker || new Map();
   const inCoverage = manualPicks.filter((p) => !p.notCovered).length;
   const booked = state.manualReturnMode !== "held";
 
@@ -5893,41 +5916,24 @@ function renderManualBasketTable(manualPicks) {
     const isBooked = booked && r.booking?.booked;
     const displayRet = isBooked ? r.bookedRet : heldRet;
     const exitPx = isBooked ? r.booking.bookPrice : today;
-    const tk = byTicker.get(r.ticker);
-    let currentRating = null;
-    if (tk?.points?.length) {
-      for (let i = tk.points.length - 1; i >= 0; i--) {
-        if (tk.points[i].rating) { currentRating = tk.points[i].rating; break; }
-      }
-    }
     const retCls = displayRet == null ? "text-slate-500" : displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
-    const ratingChip = currentRating
-      ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
-      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
-    // Closed/locked position — the pick booked at its first target (T1) or
-    // SL. Shows the exact lock price so the client sees "closed at ₹xxx",
-    // not a vague "target hit". T1 is now the exit, so there's no separate
-    // milestone badge — hitting T1 closes the position.
-    const lockBadge = isBooked
-      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${r.booking.reason === "TARGET" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Closed ${fmtDateDMY(r.booking.bookDate)} · ${r.booking.daysToBook}d after entry${r.hitToday ? " · touched intraday today" : ""}">🔒 ${r.booking.reason === "TARGET" ? "Locked" : "SL"} @ ₹${formatPrice(r.booking.bookPrice)}</span>`
-      : "";
+    // Booked picks show the exit price in the sub-line ("→ ₹xxx · locked") and
+    // the if-held mark separately; Open/Closed status sits on the right, rating
+    // moves to the drill modal — same shape as the AI roster.
     const heldNote = (isBooked && heldRet != null)
-      ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was actually captured at the close">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
+      ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was actually captured at the exit level">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
       : "";
     return `
       <button type="button" data-cohort-row data-cohort-side="manual" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-amber-50/40 hover:ring-1 hover:ring-amber-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <span class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>
-            ${lockBadge}
-          </div>
+          <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
         </div>
         <div class="col-span-3 sm:col-span-3 text-right">
           <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet == null ? "—" : (displayRet >= 0 ? "+" : "") + displayRet.toFixed(2) + "%"}</div>
           ${heldNote}
         </div>
-        <div class="col-span-3 sm:col-span-4 text-right">${ratingChip}</div>
+        <div class="col-span-3 sm:col-span-4 text-right">${rosterStatusBadge(isBooked, r.booking?.reason)}</div>
       </button>`;
   }).join("");
 
