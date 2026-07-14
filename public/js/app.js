@@ -5036,18 +5036,19 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
   }
   const hits = collectStrategyHits(view, todayDate);
   const sub = STRATEGY_SUBTABS.includes(state.strategySubTab) ? state.strategySubTab : "overview";
-  // Thin, always-visible top (header + scoreboard + return toggle) then a
-  // sub-tab bar — so the main view (chart + picks + alpha) is the first thing
-  // on screen and nothing else forces a long scroll (founder ask).
+  // Tight top: ONE command bar (title + returns + upload/alerts) then the
+  // sub-tab bar sharing a row with the Booked/If-held toggle — so the chart
+  // clears the fold instead of sitting under stacked header cards (founder ask).
   return `
-    <div id="active-strategy" class="space-y-4">
+    <div id="active-strategy" class="space-y-3">
       ${monthSelectorHtml}
       ${holdNote}
-      ${renderStrategyModeToggle(mode, hits)}
+      ${renderStrategyCommandBar(view, cadence, mode, hits)}
       ${cadenceBar}
-      ${renderActiveScoreboard(view, cadence, mode)}
-      ${renderManualReturnToggle(view)}
-      ${renderStrategySubNav(sub)}
+      <div class="flex flex-col sm:flex-row gap-2 sm:items-stretch">
+        <div class="flex-1 min-w-0">${renderStrategySubNav(sub)}</div>
+        ${renderManualReturnToggle(view)}
+      </div>
       ${renderStrategySubPanel(view, sub, mode, anchorDate)}
     </div>
   `;
@@ -5220,41 +5221,50 @@ function renderActiveCadencePills(cadence) {
   `;
 }
 
-// Compact scoreboard — replaces the old full-height hero. The founder found
-// the big returns card wasted the top of the fold; this keeps the same info
-// (AI / Manual / Nifty returns + drawdown + period) in one thin row so the
-// chart and picks sit at the top instead of below a scroll.
-function renderActiveScoreboard(view, cadence, mode) {
+// One command bar for the whole top of the Strategy tab: title + context on
+// the left, the AI / Manual / Nifty returns in the middle, upload + alerts on
+// the right. Replaces the old duplicated (mode-header + scoreboard) cards so
+// the chart clears the fold. Carries the upload/alerts IDs the wiring expects.
+function renderStrategyCommandBar(view, cadence, mode, hits) {
   const isPassive = mode === "passive";
-  const modeLabel = isPassive ? "Passive · basket frozen at upload" : `${cadence} re-lock`;
+  const modeLabel = isPassive ? "Passive · frozen at upload" : `${cadence} re-lock`;
+  const convo = view.manualFinalReturn != null
+    ? (view.manualBooked ? "Booked · locked at first target / SL" : "If held · mark-to-market")
+    : "";
   const aiDD = curveMaxDrawdown(view.equityCurve || []);
   const manualDD = view.manualFinalReturn != null ? curveMaxDrawdown(view.manualCurve || []) : null;
   const stat = (label, ret, dd, labelCls) => {
     if (ret == null) return "";
     const rc = ret >= 0 ? "text-emerald-600" : "text-rose-600";
     return `
-      <div class="text-right">
-        <div class="text-[10px] font-bold uppercase tracking-wider ${labelCls}">${label}</div>
-        <div class="${rc} text-2xl font-bold leading-none tabular-nums">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
-        ${dd != null ? `<div class="text-[9px] text-slate-400 tabular-nums mt-0.5" title="Worst peak-to-trough decline (max drawdown)">DD ${dd.toFixed(2)}%</div>` : ""}
+      <div class="text-right leading-none">
+        <div class="text-[9px] font-bold uppercase tracking-wider ${labelCls}">${label}</div>
+        <div class="${rc} text-xl font-bold tabular-nums">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
+        ${dd != null ? `<div class="text-[8px] text-slate-400 tabular-nums mt-0.5" title="Worst peak-to-trough decline (max drawdown)">DD ${dd.toFixed(2)}%</div>` : ""}
       </div>`;
   };
-  const convo = view.manualFinalReturn != null
-    ? (view.manualBooked ? "Booked · locked at first target / SL" : "If held · mark-to-market")
-    : "";
   return `
-    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-      <div class="min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <h2 class="font-display font-bold text-base text-slate-900">AI basket vs Manual basket</h2>
-          <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 px-3 sm:px-4 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-base">🎯</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-sm font-bold text-slate-900">AI basket vs Manual basket</span>
+            <span class="text-[8px] font-bold uppercase tracking-wider px-1 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
+          </div>
+          <div class="text-[10px] text-slate-500 truncate">${escapeHtml(modeLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)} · ${view.equityCurve.length}d${convo ? ` · ${convo}` : ""}</div>
         </div>
-        <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(modeLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)} · ${view.equityCurve.length} days${convo ? ` · ${convo}` : ""}</div>
       </div>
-      <div class="flex items-center gap-5">
+      <div class="flex items-center gap-4 ml-auto">
         ${stat("AI", view.finalReturn, aiDD, "text-indigo-700")}
         ${stat("Manual", view.manualFinalReturn, manualDD, "text-amber-700")}
         ${stat("Nifty", view.niftyRet, null, "text-slate-500")}
+      </div>
+      <div class="flex items-center gap-2">
+        <input id="lkp-file-input" type="file" accept=".xlsx,.xls,.csv" class="hidden" />
+        <button id="lkp-upload-btn" type="button" title="Upload the month's client basket (Excel / CSV)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ring-1 ring-slate-200 bg-white hover:bg-indigo-50 hover:ring-indigo-200 text-xs font-semibold text-slate-700">⬆ <span class="hidden sm:inline">Upload</span></button>
+        ${lkpOverride() ? `<button id="lkp-reset-upload" type="button" title="Discard the uploaded basket and use the published one" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600">Reset</button>` : ""}
+        ${hits ? renderStrategyAlertsBell(hits) : ""}
       </div>
     </div>
   `;
@@ -5268,26 +5278,15 @@ function renderActiveScoreboard(view, cadence, mode) {
 function renderManualReturnToggle(view) {
   if (view.manualFinalReturn == null) return "";
   const mode = state.manualReturnMode === "held" ? "held" : "booked";
-  const pill = (k, label, sub) => {
+  const pill = (k, label) => {
     const on = mode === k;
-    return `
-      <button type="button" data-manual-return="${k}" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-sm font-semibold transition ${on ? "bg-amber-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}">
-        <span class="block">${label}</span>
-        <span class="block text-[10px] font-normal mt-0.5 ${on ? "text-amber-50" : "text-slate-400"}">${sub}</span>
-      </button>`;
+    return `<button type="button" data-manual-return="${k}" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition ${on ? "bg-amber-500 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}">${label}</button>`;
   };
   return `
-    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center gap-2">
-      <div class="flex items-center gap-1.5 px-2">
-        <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
-        <span class="inline-block w-2 h-2 rounded-full bg-amber-500 -ml-1"></span>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Basket returns</span>
-      </div>
-      <div class="flex gap-1 flex-1 sm:flex-initial">
-        ${pill("booked", "Booked", "close at first target / SL")}
-        ${pill("held", "If held", "mark-to-market today")}
-      </div>
-      <span class="text-[11px] text-slate-500 pr-2 hidden lg:block ml-auto">Booked closes each pick (AI + manual) the day it hits its first target or SL — the real exit. "If held" is where it went after.</span>
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 px-2 py-1.5 flex items-center gap-1.5 shrink-0" title='Booked closes each pick (AI + manual) the day it hits its first target or SL — the real exit. "If held" is where it went after.'>
+      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-1 hidden md:inline">Returns</span>
+      ${pill("booked", "Booked")}
+      ${pill("held", "If held")}
     </div>
   `;
 }
