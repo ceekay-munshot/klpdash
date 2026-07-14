@@ -9380,7 +9380,11 @@ function techWindowRow(p, windowDays, label) {
   const rate = perSideChargeRate();
   const gross = runTechBacktest(ctx, p, 0);
   const net = runTechBacktest(ctx, p, rate);
-  const years = Math.max(windowDays / 252, 1e-6);
+  // Annualise over the ACTUAL trading days simulated, not the nominal window —
+  // buildTechContext clamps `start` to the available history, so net.days can
+  // be < windowDays (e.g. a shorter regenerated file). Using windowDays there
+  // would divide a ~1-year 2Y row by 2 years and understate the annual figure.
+  const years = Math.max(net.days / 252, 1e-6);
   const annualized = (Math.pow(1 + net.finalReturn / 100, 1 / years) - 1) * 100;
   return {
     label, windowDays,
