@@ -5820,7 +5820,10 @@ function renderAiBasketTable(segment, view, mode) {
   }
   const cache = state.cache.history || {};
   const todayClose = cache.todayClose || {};
-  const byTicker = cache.byTicker || new Map();
+  // OPEN / CLOSED per pick comes from view.picks (target/SL hit status), keyed
+  // by ticker + entry date. The rating (STRONG BUY etc.) is redundant on the
+  // top-7 roster — every pick is a top pick — so it moves to the drill modal.
+  const statusByKey = new Map((view.picks || []).map((p) => [`${p.ticker}|${p.entryDate}`, p.status]));
 
   const subLabel = mode === "passive"
     ? `Held since ${fmtDateDMY(segment.startDate)}`
@@ -5832,17 +5835,11 @@ function renderAiBasketTable(segment, view, mode) {
   const rows = segment.top7.map((s) => {
     const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
     const ret = ((today / s.close) - 1) * 100;
-    const tk = byTicker.get(s.ticker);
-    let currentRating = null;
-    if (tk?.points?.length) {
-      for (let i = tk.points.length - 1; i >= 0; i--) {
-        if (tk.points[i].rating) { currentRating = tk.points[i].rating; break; }
-      }
-    }
     const retCls = ret >= 0 ? "text-emerald-700" : "text-rose-700";
-    const ratingChip = currentRating
-      ? `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${composite.ratingClass(currentRating)}">${escapeHtml(currentRating)}</span>`
-      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 bg-slate-100 text-slate-500 ring-slate-200">—</span>`;
+    const status = statusByKey.get(`${s.ticker}|${segment.startDate}`);
+    const statusBadge = (status === "TARGET_HIT" || status === "SL_HIT")
+      ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap ${status === "TARGET_HIT" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-rose-50 text-rose-700 ring-rose-200"}" title="Position closed — ${status === "TARGET_HIT" ? "target hit" : "stop-loss hit"} (tap for rating & detail)">🔒 Closed</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold uppercase tracking-wider ring-1 whitespace-nowrap bg-slate-100 text-slate-600 ring-slate-200" title="Position open (tap for rating & detail)">Open</span>`;
     return `
       <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(segment.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
@@ -5850,7 +5847,7 @@ function renderAiBasketTable(segment, view, mode) {
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(today)}</div>
         </div>
         <div class="col-span-3 sm:col-span-3 text-right tabular-nums text-sm font-bold ${retCls}">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
-        <div class="col-span-3 sm:col-span-4 text-right">${ratingChip}</div>
+        <div class="col-span-3 sm:col-span-4 text-right">${statusBadge}</div>
       </button>`;
   }).join("");
 
