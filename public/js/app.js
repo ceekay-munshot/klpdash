@@ -373,6 +373,19 @@ function saveManualReturnMode(v) {
   try { localStorage.setItem(MANUAL_RETURN_KEY, v); } catch {}
 }
 
+// Strategy-tab sub-tab ("overview" | "accuracy" | "sector" | "industry" |
+// "capital"). Keeps the tab on one screen — the main view (chart + picks +
+// alpha) is the default; everything else is one click away, no long scroll.
+const STRATEGY_SUBTAB_KEY = "klpdash-strategy-subtab-v1";
+const STRATEGY_SUBTABS = ["overview", "accuracy", "sector", "industry", "capital"];
+function loadStrategySubTab() {
+  try { const v = localStorage.getItem(STRATEGY_SUBTAB_KEY); return STRATEGY_SUBTABS.includes(v) ? v : "overview"; }
+  catch { return "overview"; }
+}
+function saveStrategySubTab(v) {
+  try { localStorage.setItem(STRATEGY_SUBTAB_KEY, v); } catch {}
+}
+
 // Focus mode. Hides the rotation / rebalancing strategy views — the
 // Strategy-tab "Active" mode and the Custom-tab strategy cards — so the
 // dashboard shows only the client's core product: the held basket vs the
@@ -534,6 +547,7 @@ const state = {
   strategyMode: loadStrategyMode(),  // "active" | "passive"
   activeCadence: loadActiveCadence(), // "daily" | "weekly" | "monthly" (used when strategyMode === "active")
   manualReturnMode: loadManualReturnMode(), // "booked" | "held" — manual-basket return convention
+  strategySubTab: loadStrategySubTab(),     // Strategy-tab sub-tab (overview / accuracy / sector / industry / capital)
   manualMonth: null,                  // selected client-basket month "YYYY-MM" (null = latest)
   labWeights: loadLabWeights(),       // Weight Lab sandbox pillar mix
   labAiBest: null,                    // last AI weight-search result (in-memory)
@@ -4490,6 +4504,7 @@ async function renderActive() {
     host.innerHTML = renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml, monthSelectorHtml, holdNote);
     wireStrategyModeToggle();
     wireManualReturnToggle();
+    wireStrategySubNav();
     wireManualMonthPills();
     // Client-basket upload (Excel / CSV) — surfaced here on the Strategy tab.
     $("#lkp-upload-btn")?.addEventListener("click", () => $("#lkp-file-input")?.click());
@@ -4536,7 +4551,7 @@ async function renderActive() {
       renderActive();
     });
     // Chart hover crosshair + tooltip
-    setupActiveChartHover(view);
+    if (state.strategySubTab === "overview") setupActiveChartHover(view);
   } catch (e) {
     console.error("renderActive failed:", e);
     host.innerHTML = `
@@ -5020,24 +5035,69 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
     `;
   }
   const hits = collectStrategyHits(view, todayDate);
+  const sub = STRATEGY_SUBTABS.includes(state.strategySubTab) ? state.strategySubTab : "overview";
+  // Thin, always-visible top (header + scoreboard + return toggle) then a
+  // sub-tab bar — so the main view (chart + picks + alpha) is the first thing
+  // on screen and nothing else forces a long scroll (founder ask).
   return `
     <div id="active-strategy" class="space-y-4">
       ${monthSelectorHtml}
       ${holdNote}
       ${renderStrategyModeToggle(mode, hits)}
       ${cadenceBar}
-      ${renderTodayHitsBanner(hits, todayDate)}
-      ${renderActiveHero(view, cadence, mode)}
+      ${renderActiveScoreboard(view, cadence, mode)}
       ${renderManualReturnToggle(view)}
-      ${renderSimPanel(view)}
-      ${renderActiveCumulativeChart(view)}
-      ${renderStrategyKpis(view)}
-      ${renderActiveOverallHitsSplit(view)}
-      ${renderActiveSegmentedBaskets(view, mode)}
-      ${renderActivePickRowsSplit(view)}
-      ${renderSectorTiming(view)}
+      ${renderStrategySubNav(sub)}
+      ${renderStrategySubPanel(view, sub, mode, anchorDate)}
     </div>
   `;
+}
+
+// Strategy-tab sub-tab bar. Same pattern as the top-level tabs the founder
+// likes on the SPIP Basket page — one click, no scroll.
+function renderStrategySubNav(sub) {
+  const tabs = [
+    { k: "overview", icon: "📈", label: "Overview" },
+    { k: "accuracy", icon: "🎯", label: "Accuracy" },
+    { k: "sector",   icon: "🧭", label: "Sector" },
+    { k: "industry", icon: "🏭", label: "Industry" },
+    { k: "capital",  icon: "💰", label: "Capital" },
+  ];
+  return `
+    <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-1 flex flex-wrap gap-1">
+      ${tabs.map((t) => {
+        const on = sub === t.k;
+        return `<button type="button" data-strategy-subtab="${t.k}" class="flex-1 sm:flex-initial px-3 py-2 rounded-xl text-sm font-semibold transition ${on ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"}"><span class="mr-1">${t.icon}</span>${t.label}</button>`;
+      }).join("")}
+    </div>`;
+}
+
+// Body for the active sub-tab. Overview = the main view (chart + alpha KPIs
+// + AI/Manual picks with targets); the rest are the founder's named sub-tabs.
+// Everything from the old single-scroll layout still lives here — just gated.
+function renderStrategySubPanel(view, sub, mode, anchorDate) {
+  switch (sub) {
+    case "accuracy":
+      return `<div class="space-y-4">${renderActiveOverallHitsSplit(view)}${renderActiveSegmentedBaskets(view, mode)}</div>`;
+    case "sector":
+      return renderStrategyTimingPanel(view, "sector");
+    case "industry":
+      return renderStrategyTimingPanel(view, "industry");
+    case "capital":
+      return `<div class="space-y-4">${renderSimPanel(view)}${renderActiveBetaCaveat(view, anchorDate)}</div>`;
+    case "overview":
+    default:
+      return `<div class="space-y-4">${renderActiveCumulativeChart(view)}${renderStrategyKpis(view)}${renderActivePickRowsSplit(view)}</div>`;
+  }
+}
+
+// Sector / Industry timing sub-tab wrapper — shows a friendly empty state
+// instead of a blank panel when there's no timing data for that grouping.
+function renderStrategyTimingPanel(view, by) {
+  const html = renderSectorTiming(view, by);
+  if (html) return html;
+  const label = by === "industry" ? "Industry" : "Sector";
+  return `<div class="bg-white rounded-2xl ring-1 ring-slate-100 p-6 text-center text-sm text-slate-500">No ${label.toLowerCase()} timing data yet — needs a few AI picks carrying ${label.toLowerCase()} tags across this window.</div>`;
 }
 
 // Collects target/SL hits across AI + Manual baskets so the alerts bell
@@ -5055,23 +5115,6 @@ function collectStrategyHits(view, todayDate) {
   return { allHits, todayHits };
 }
 
-function renderTodayHitsBanner(hits, todayDate) {
-  if (!hits.todayHits.length) return "";
-  return `
-    <div class="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 ring-1 ring-amber-200 px-3 py-2">
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="text-amber-600 text-base">🔔</span>
-        <span class="font-bold text-amber-900 text-sm">${hits.todayHits.length} pick${hits.todayHits.length === 1 ? "" : "s"} just hit ${hits.todayHits.length === 1 ? "an outcome" : "outcomes"} on ${fmtDateDMY(todayDate)}</span>
-        <div class="ml-auto flex flex-wrap items-center gap-1.5">
-          ${hits.todayHits.map((h) => `
-            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded ring-1 text-[10px] font-bold ${h.status === "TARGET_HIT" ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-rose-100 text-rose-700 ring-rose-200"}">
-              ${h.status === "TARGET_HIT" ? "🎯" : "⚠"} ${escapeHtml(h.name || h.ticker)}
-            </span>`).join("")}
-        </div>
-      </div>
-    </div>
-  `;
-}
 
 // Top-level Active vs Passive toggle. Sits above the cadence pills.
 // Active = AI re-locks at chosen cadence; Passive = AI frozen at upload.
@@ -5177,60 +5220,41 @@ function renderActiveCadencePills(cadence) {
   `;
 }
 
-function renderActiveHero(view, cadence, mode) {
+// Compact scoreboard — replaces the old full-height hero. The founder found
+// the big returns card wasted the top of the fold; this keeps the same info
+// (AI / Manual / Nifty returns + drawdown + period) in one thin row so the
+// chart and picks sit at the top instead of below a scroll.
+function renderActiveScoreboard(view, cadence, mode) {
   const isPassive = mode === "passive";
-  const retCls = view.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
-  const retSign = view.finalReturn >= 0 ? "+" : "";
-  const subtitle = isPassive
-    ? `Top 7 picked once at upload and held forever — no re-locking, no rebalance. Nifty + Manual basket plotted for comparison.`
-    : cadence === "daily"
-      ? `Equal-weight, rebalanced every day. Each BUY at today's close, each SELL when the stock drops out of STRONG BUY.`
-      : cadence === "weekly"
-        ? `Top 7 picked every 7 days from upload; basket frozen for the week.`
-        : `Top 7 picked every 30 days from upload; basket frozen for the month.`;
-  const sizeStr = cadence === "daily" && view.finalValue != null
-    ? `Portfolio ₹${Math.round(view.finalValue).toLocaleString("en-IN")} from ₹${(view.startCapital).toLocaleString("en-IN")}`
-    : `${view.equityCurve.length} day${view.equityCurve.length === 1 ? "" : "s"} tracked`;
-  const titleText = isPassive ? "Passive Strategy" : "Active Strategy";
-  const modeChip = isPassive
-    ? `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 ring-1 ring-slate-300">passive</span>`
-    : `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200">${cadence}</span>`;
-  const aiLabel = isPassive ? "AI passive" : "AI active";
-  // Return and drawdown, together — Pratik: don't look at return alone, a
-  // basket that's up on average can still have hidden peak-to-trough pain.
+  const modeLabel = isPassive ? "Passive · basket frozen at upload" : `${cadence} re-lock`;
   const aiDD = curveMaxDrawdown(view.equityCurve || []);
   const manualDD = view.manualFinalReturn != null ? curveMaxDrawdown(view.manualCurve || []) : null;
-  const ddLine = (dd) => dd == null ? "" :
-    `<div class="text-[10px] mt-0.5 tabular-nums" title="Worst peak-to-trough decline in this window (max drawdown)"><span class="text-slate-400 font-semibold uppercase tracking-wider">Max DD</span> <span class="font-bold ${dd < -0.005 ? "text-rose-600" : "text-slate-500"}">${dd.toFixed(2)}%</span></div>`;
-  const manualReturnHtml = view.manualFinalReturn != null
-    ? `<div class="text-right pl-4 border-l border-indigo-100 ml-2">
-         <div class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Manual basket</div>
-         <div class="${view.manualFinalReturn >= 0 ? "text-emerald-600" : "text-rose-600"} text-2xl font-bold leading-tight tabular-nums">${view.manualFinalReturn >= 0 ? "+" : ""}${view.manualFinalReturn.toFixed(2)}%</div>
-         ${ddLine(manualDD)}
-         <div class="text-[11px] text-slate-500 mt-1">${view.manualBooked ? "Booked · locked at first target / SL" : "If held · mark-to-market"}</div>
-       </div>`
+  const stat = (label, ret, dd, labelCls) => {
+    if (ret == null) return "";
+    const rc = ret >= 0 ? "text-emerald-600" : "text-rose-600";
+    return `
+      <div class="text-right">
+        <div class="text-[10px] font-bold uppercase tracking-wider ${labelCls}">${label}</div>
+        <div class="${rc} text-2xl font-bold leading-none tabular-nums">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</div>
+        ${dd != null ? `<div class="text-[9px] text-slate-400 tabular-nums mt-0.5" title="Worst peak-to-trough decline (max drawdown)">DD ${dd.toFixed(2)}%</div>` : ""}
+      </div>`;
+  };
+  const convo = view.manualFinalReturn != null
+    ? (view.manualBooked ? "Booked · locked at first target / SL" : "If held · mark-to-market")
     : "";
   return `
-    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 p-5">
-      <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="font-display font-bold text-xl text-slate-900">${titleText}</h2>
-            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
-            ${modeChip}
-          </div>
-          <div class="text-sm text-slate-600 mt-1">${escapeHtml(subtitle)}</div>
-          <div class="text-xs text-slate-500 mt-2">${escapeHtml(view.periodLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)}</div>
+    <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-2xl ring-1 ring-indigo-100 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-display font-bold text-base text-slate-900">AI basket vs Manual basket</h2>
+          <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200">Beta</span>
         </div>
-        <div class="flex items-start gap-2">
-          <div class="text-right">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">${aiLabel}</div>
-            <div class="${retCls} text-4xl font-bold leading-tight tabular-nums">${retSign}${view.finalReturn.toFixed(2)}%</div>
-            ${ddLine(aiDD)}
-            <div class="text-[11px] text-slate-500 mt-1">${escapeHtml(sizeStr)}</div>
-          </div>
-          ${manualReturnHtml}
-        </div>
+        <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(modeLabel)} · ${fmtDateDMY(view.startDate)} → ${fmtDateDMY(view.endDate)} · ${view.equityCurve.length} days${convo ? ` · ${convo}` : ""}</div>
+      </div>
+      <div class="flex items-center gap-5">
+        ${stat("AI", view.finalReturn, aiDD, "text-indigo-700")}
+        ${stat("Manual", view.manualFinalReturn, manualDD, "text-amber-700")}
+        ${stat("Nifty", view.niftyRet, null, "text-slate-500")}
       </div>
     </div>
   `;
@@ -6073,15 +6097,19 @@ function buildSectorTiming(picks, groupBy) {
   return rows;
 }
 
-function renderSectorTiming(view) {
-  const by = sectorTimingBy === "industry" ? "industry" : "sector";
+// byOverride ("sector" | "industry") forces the grouping and hides the inline
+// toggle — used by the Strategy tab's dedicated Sector / Industry sub-tabs.
+// Without it (Custom tab), it honours the shared sectorTimingBy toggle.
+function renderSectorTiming(view, byOverride) {
+  const forced = byOverride === "sector" || byOverride === "industry";
+  const by = forced ? byOverride : (sectorTimingBy === "industry" ? "industry" : "sector");
   const rows = buildSectorTiming(view.picks, by);
   if (!rows.length) return "";
   // Only offer the Industry view if picks actually carry industry data.
   const hasIndustry = (view.picks || []).some((p) => p.industry);
   const label = by === "industry" ? "Industry" : "Sector";
   const toggleBtn = (val, text) => `<button data-sector-timing="${val}" class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition ${by === val ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-700"}">${text}</button>`;
-  const toggle = hasIndustry
+  const toggle = (!forced && hasIndustry)
     ? `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${toggleBtn("sector", "Sector")}${toggleBtn("industry", "Industry")}</div>`
     : "";
   const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
@@ -6162,6 +6190,16 @@ function wireManualReturnToggle() {
     state.manualReturnMode = v;
     saveManualReturnMode(v);
     renderActive();
+  }));
+}
+
+function wireStrategySubNav() {
+  $$("#active-content [data-strategy-subtab]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.strategySubtab;
+    if (!STRATEGY_SUBTABS.includes(v) || v === state.strategySubTab) return;
+    state.strategySubTab = v;
+    saveStrategySubTab(v);
+    rerenderKeepingScroll(renderActive);
   }));
 }
 
