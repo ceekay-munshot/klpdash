@@ -5079,7 +5079,7 @@ function renderStrategySubNav(sub) {
 function renderStrategySubPanel(view, sub, mode, anchorDate) {
   switch (sub) {
     case "accuracy":
-      return `<div class="space-y-4">${renderActiveOverallHitsSplit(view)}${renderActiveSegmentedBaskets(view, mode)}</div>`;
+      return `<div class="space-y-4">${renderActiveOverallHitsSplit(view)}${renderActivePickRowsSplit(view)}</div>`;
     case "sector":
       return renderStrategyTimingPanel(view, "sector");
     case "industry":
@@ -5088,7 +5088,7 @@ function renderStrategySubPanel(view, sub, mode, anchorDate) {
       return `<div class="space-y-4">${renderSimPanel(view)}${renderActiveBetaCaveat(view, anchorDate)}</div>`;
     case "overview":
     default:
-      return `<div class="space-y-4">${renderActiveCumulativeChart(view)}${renderStrategyKpis(view)}${renderActivePickRowsSplit(view)}</div>`;
+      return `<div class="space-y-4">${renderActiveCumulativeChart(view)}${renderStrategyKpis(view)}${renderActiveSegmentedBaskets(view, mode)}</div>`;
   }
 }
 
