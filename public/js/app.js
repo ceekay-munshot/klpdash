@@ -9326,10 +9326,13 @@ function buildTechContext(hist, windowDays) {
   return { start, dates, T, ranked, closeAt, hist };
 }
 
-function runTechBacktest(ctx, p) {
+// sideRate = per-side transaction cost fraction (brokerage + STT + exchange
+// + GST). Applied on every buy AND sell so heavy churn is penalised — pass 0
+// for the gross (frictionless) run, perSideChargeRate() for the net run.
+function runTechBacktest(ctx, p, sideRate = 0) {
   const { dates, ranked, closeAt, hist } = ctx;
   const N = Math.max(1, p.basketSize), thr = p.threshold, tgt = p.targetPct / 100, sl = p.slPct / 100, reb = Math.max(1, p.rebalanceDays);
-  let cash = 1, lastReb = 0, trades = 0;
+  let cash = 1, lastReb = 0, trades = 0, charges = 0;
   const holds = new Map();
   const curve = [];
   for (let di = 0; di < dates.length; di++) {
@@ -9340,16 +9343,20 @@ function runTechBacktest(ctx, p) {
     for (const [t, pos] of [...holds]) {
       const px = closeAt(t, di); if (px == null) continue;
       const g = px / pos.entryPrice - 1;
-      if (g >= tgt || g <= -sl || (isReb && !topN.has(t))) { cash += pos.units * px; holds.delete(t); trades++; }
+      if (g >= tgt || g <= -sl || (isReb && !topN.has(t))) {
+        const proceeds = pos.units * px, fee = proceeds * sideRate;
+        cash += proceeds - fee; charges += fee; holds.delete(t); trades++;
+      }
     }
     if (holds.size < N) {
       for (const r of qual) {
         if (holds.size >= N) break;
         if (holds.has(r.t)) continue;
         let nav = cash; for (const [tk, pos] of holds) nav += pos.units * (closeAt(tk, di) ?? pos.entryPrice);
-        const buy = Math.min(nav / N, cash);
+        const buy = Math.min(nav / N, cash / (1 + sideRate));   // leave room for the buy-side fee
         if (buy < 1e-6) break;
-        holds.set(r.t, { units: buy / r.close, entryPrice: r.close }); cash -= buy; trades++;
+        const fee = buy * sideRate;
+        holds.set(r.t, { units: buy / r.close, entryPrice: r.close }); cash -= buy + fee; charges += fee; trades++;
       }
     }
     let val = cash; for (const [t, pos] of holds) val += pos.units * (closeAt(t, di) ?? pos.entryPrice);
@@ -9361,20 +9368,46 @@ function runTechBacktest(ctx, p) {
   const last = ranked[ranked.length - 1] || [];
   const picksNow = last.filter((r) => r.score >= thr).slice(0, N)
     .map((r) => ({ ticker: r.t, score: r.score, sector: hist.tickers[r.t].sector }));
-  return { finalReturn, maxDD, curve, trades, picksNow, days: curve.length };
+  return { finalReturn, maxDD, curve, trades, picksNow, days: curve.length, chargesPct: charges * 100 };
+}
+
+// Run one window at the current params — gross (no cost) and net (with cost)
+// — and derive the founder's columns: gross / cost / net / annualized (XIRR)
+// / max drawdown. Annualized = CAGR of the NET return over the window's years
+// (= XIRR for a single-capital backtest). 252 trading days ≈ 1 year.
+function techWindowRow(p, windowDays, label) {
+  const ctx = buildTechContext(techHist, windowDays);
+  const rate = perSideChargeRate();
+  const gross = runTechBacktest(ctx, p, 0);
+  const net = runTechBacktest(ctx, p, rate);
+  // Annualise over the ACTUAL trading days simulated, not the nominal window —
+  // buildTechContext clamps `start` to the available history, so net.days can
+  // be < windowDays (e.g. a shorter regenerated file). Using windowDays there
+  // would divide a ~1-year 2Y row by 2 years and understate the annual figure.
+  const years = Math.max(net.days / 252, 1e-6);
+  const annualized = (Math.pow(1 + net.finalReturn / 100, 1 / years) - 1) * 100;
+  return {
+    label, windowDays,
+    gross: gross.finalReturn, net: net.finalReturn,
+    cost: gross.finalReturn - net.finalReturn,
+    annualized, maxDD: net.maxDD, trades: net.trades, days: net.days,
+    curve: net.curve, picksNow: net.picksNow,
+    start: ctx.dates[0], end: ctx.dates[ctx.dates.length - 1],
+  };
 }
 
 // Grid-search the strategy params for the best risk-adjusted score.
 function findBestTechStrategy(ctx) {
   const GRID = { basketSize: [5, 7, 10], rebalanceDays: [5, 10, 20], targetPct: [8, 12, 20], slPct: [5, 8, 12], threshold: [50, 55, 60] };
   let best = null, tried = 0;
+  const rate = perSideChargeRate();   // score on NET return so the optimiser can't win by churning
   for (const basketSize of GRID.basketSize)
     for (const rebalanceDays of GRID.rebalanceDays)
       for (const targetPct of GRID.targetPct)
         for (const slPct of GRID.slPct)
           for (const threshold of GRID.threshold) {
             const params = { basketSize, rebalanceDays, targetPct, slPct, threshold };
-            const r = runTechBacktest(ctx, params); tried++;
+            const r = runTechBacktest(ctx, params, rate); tried++;
             const score = r.finalReturn + 0.4 * r.maxDD;
             if (!best || score > best.score) best = { params, r, score };
           }
@@ -9397,10 +9430,12 @@ function renderTechBacktest() {
     </section>`;
   }
   const p = state.techParams;
-  const ctx = buildTechContext(techHist, p.windowDays);
-  const r = runTechBacktest(ctx, p);
-  const retCls = r.finalReturn >= 0 ? "text-emerald-600" : "text-rose-600";
-  const d0 = ctx.dates[0], dN = ctx.dates[ctx.dates.length - 1];
+  const rate = perSideChargeRate();
+  // Compute all three windows at once so the client sees 6M / 1Y / 2Y side by
+  // side (founder ask) instead of one number behind a window toggle.
+  const rows = [techWindowRow(p, 126, "6M"), techWindowRow(p, 252, "1Y"), techWindowRow(p, 504, "2Y")];
+  const sel = rows.find((x) => x.windowDays === p.windowDays) || rows[rows.length - 1];
+  const full = rows[rows.length - 1];
 
   const controls = TECH_FIELDS.map((f) => `
     <label class="flex items-center gap-2">
@@ -9409,9 +9444,23 @@ function renderTechBacktest() {
       <span class="text-xs font-bold tabular-nums text-slate-800 w-10 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
     </label>`).join("");
 
-  const winPill = (d, label) => `<button type="button" data-tech-window="${d}" class="px-3 py-1 rounded-lg text-[11px] font-semibold transition ${p.windowDays === d ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 ring-1 ring-slate-200 hover:ring-slate-400"}">${label}</button>`;
+  const sign = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const cls = (v) => v >= 0 ? "text-emerald-600" : "text-rose-600";
+  const tableRows = rows.map((x) => {
+    const on = x.windowDays === p.windowDays;
+    return `
+      <tr data-tech-window="${x.windowDays}" class="border-t border-slate-100 cursor-pointer transition ${on ? "bg-indigo-50/60" : "hover:bg-slate-50"}" title="Show this window's curve">
+        <td class="py-2.5 pl-1 text-left font-bold text-slate-800">${x.label}${on ? ` <span class="text-[9px] font-semibold text-indigo-500 align-middle">● curve</span>` : ""}</td>
+        <td class="py-2.5 px-2 text-right ${cls(x.gross)}">${sign(x.gross)}</td>
+        <td class="py-2.5 px-2 text-right text-slate-400">−${x.cost.toFixed(1)}pp</td>
+        <td class="py-2.5 px-2 text-right font-extrabold ${cls(x.net)}">${sign(x.net)}</td>
+        <td class="py-2.5 px-2 text-right ${cls(x.annualized)}">${sign(x.annualized)}<span class="text-[9px] text-slate-400">/yr</span></td>
+        <td class="py-2.5 px-2 text-right text-rose-600">${x.maxDD.toFixed(1)}%</td>
+        <td class="py-2.5 pl-2 pr-1 text-right text-slate-400 tabular-nums">${x.trades}</td>
+      </tr>`;
+  }).join("");
 
-  const picks = r.picksNow.map((x) => `
+  const picks = sel.picksNow.map((x) => `
     <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(x.ticker)}" title="Open ${escapeHtml(x.ticker)} chart" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white ring-1 ring-slate-200 hover:ring-indigo-300 hover:bg-indigo-50 hover:-translate-y-px transition text-xs">
       <span class="font-semibold text-slate-800">${escapeHtml(x.ticker)}</span>
       <span class="text-[10px] text-slate-400 tabular-nums">${x.score}</span>
@@ -9420,35 +9469,43 @@ function renderTechBacktest() {
   return `
     <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
       <div class="px-4 sm:px-5 pt-4 sm:pt-5">
-        <div class="flex items-center justify-between gap-3 flex-wrap">
-          <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3></div>
-          <div class="flex items-center gap-1">${winPill(126, "6M")}${winPill(252, "1Y")}${winPill(504, "2Y")}</div>
-        </div>
-        <div class="text-[11px] text-slate-400 mt-1 tabular-nums">Real daily prices · ${fmtDateDMY(d0)} → ${fmtDateDMY(dN)} · ${ctx.dates.length} days</div>
-        <div class="flex items-end gap-6 mt-4">
-          <div>
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Return</div>
-            <div class="${retCls} text-[2.6rem] font-display font-extrabold tabular-nums leading-none">${r.finalReturn >= 0 ? "+" : ""}${r.finalReturn.toFixed(1)}%</div>
-          </div>
-          <div class="pb-1">
-            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Max drawdown</div>
-            <div class="text-rose-600 text-2xl font-bold tabular-nums leading-none">${r.maxDD.toFixed(1)}%</div>
-          </div>
-          <div class="pb-1.5 ml-auto text-right text-[11px] text-slate-400 tabular-nums leading-tight">${r.trades} trades<br>${r.days} days held</div>
-        </div>
+        <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3></div>
+        <div class="text-[12px] text-slate-600 mt-1.5 leading-snug">Buy the top <b>${p.basketSize}</b> stocks scoring <b>≥ ${p.threshold}</b> · sell each at <b>+${p.targetPct}%</b> or <b>−${p.slPct}%</b> · rebuild every <b>${p.rebalanceDays} days</b>.</div>
+        <div class="text-[11px] text-slate-400 mt-0.5 tabular-nums">Real daily prices · ${fmtDateDMY(full.start)} → ${fmtDateDMY(full.end)} · <b>Net</b> is after <b>${(rate * 100).toFixed(2)}%/side</b> costs.</div>
       </div>
 
-      ${renderTechCurve(r.curve)}
+      <div class="px-4 sm:px-5 mt-3">
+        <div class="overflow-x-auto rounded-xl ring-1 ring-slate-100">
+          <table class="w-full text-sm tabular-nums">
+            <thead>
+              <tr class="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/70">
+                <th class="text-left py-2 pl-1">Window</th>
+                <th class="text-right py-2 px-2" title="Return before transaction costs">Gross</th>
+                <th class="text-right py-2 px-2" title="Charges drag = gross − net">Cost</th>
+                <th class="text-right py-2 px-2" title="What you actually keep after costs">Net</th>
+                <th class="text-right py-2 px-2" title="Annualised (CAGR / XIRR) of the net return">Annual</th>
+                <th class="text-right py-2 px-2" title="Worst peak-to-trough decline">Max DD</th>
+                <th class="text-right py-2 pl-2 pr-1">Trades</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1.5">Gross before costs · Cost = charges drag · <b>Net</b> = what you keep · Annual = per-year (XIRR). Tap a row to plot its curve.</div>
+      </div>
+
+      ${renderTechCurve(sel.curve)}
 
       <div class="px-4 sm:px-5 pb-4 sm:pb-5">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Adjust the strategy</div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">${controls}</div>
         <div class="flex items-center gap-2 mt-4 flex-wrap">
           <button type="button" data-tech-ai class="px-3.5 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best settings</button>
-          <button type="button" data-tech-reset class="px-3 py-2 rounded-lg text-slate-500 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
+          <button type="button" data-tech-reset class="px-3 py-2 rounded-lg text-slate-500 text-xs font-semibold hover:bg-slate-100">↺ Reset to default</button>
           <span class="text-[11px] text-slate-400 ml-auto hidden sm:inline">Tap a pick to open its chart →</span>
         </div>
         <div class="mt-4 pt-3 border-t border-slate-100">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Top picks now</div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">${sel.label} top picks now</div>
           <div class="flex flex-wrap gap-1.5">${picks || '<span class="text-xs text-slate-400">none above threshold</span>'}</div>
         </div>
       </div>
