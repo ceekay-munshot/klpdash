@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-14T02:13:08.000Z",
+  "generated_at": "2026-07-14T02:30:00.000Z",
   "source": "Per-company AR extraction (Screener.in PDFs + IR sites) — Claude.ai routine, daily batch of 20",
   "as_of": "2026-07-14",
   "companies": {
@@ -819,12 +819,50 @@
         "evidence": "Alkem operates an API/bulk-drug manufacturing arm branded 'Alkem Activa', and India's PLI (Bulk Drugs) scheme targets KSM/API/Drug Intermediate manufacturers, but no source located confirms Alkem or Alkem Activa as a selected PLI scheme beneficiary."
       },
       "confidence": "Low"
+    },
+    "SANSERA": {
+      "report_year": "FY2023-24",
+      "geography": {
+        "domestic_pct": 70.0,
+        "export_pct": 29.9,
+        "export_us_pct": 9.4,
+        "export_europe_pct": 17.6,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 2.9
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "moderate",
+        "evidence": "FY2023-24 AR contains a dedicated 'China Plus One' section framing it as an India-wide macro opportunity for auto-component/aerospace manufacturers, but does not explicitly attribute Sansera's own order wins or revenue growth to the trend — hence moderate rather than strong."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": 99.8,
+        "evidence": "Per FY2023-24 AR risk-management notes, floating-rate borrowings constitute 99.8% of total debt."
+      },
+      "crude_exposure": {
+        "raw_material_pct": 44.5,
+        "evidence": "Raw material cost is 44.5% of revenue in FY2023-24, with explicit steel and energy price-risk commentary in the MD&A (forging/machining steel inputs, energy-cost-linked rather than literally crude oil)."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": "Forex exposure hedged via forward contracts plus non-INR-denominated loans, per FY2023-24 AR risk management notes.",
+        "evidence": "Consolidated FY24 revenue ₹28,114.32mn split: India 70.0%, Europe 17.6%, USA 9.4%, other foreign 2.9% — implying ~30% non-INR revenue exposure across USD/EUR."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Auto Components PLI participation is asserted by third-party sources, not confirmed directly in the AR itself — lower confidence on this specific field than the rest of the extraction."
+      },
+      "confidence": "Medium"
     }
   },
-  "skipped": [
-    {
-      "slug": "SANSERA",
-      "reason": "extraction agent timed out (exceeded 40+ min without returning; Sansera Engineering, BSE 543358)"
-    }
-  ]
+  "skipped": []
 }
