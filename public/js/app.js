@@ -9300,8 +9300,10 @@ function wireWeightLab() {
   $(`${root} [data-lab-apply]`)?.addEventListener("click", () => {
     const w = normalizeWeights(state.labWeights || composite.PILLAR_WEIGHTS);
     state.pillarWeights = w; savePillarWeights(w);
+    state.labWeights = { ...w };   // the applied weights are now the current/live anchor
     delete state.cache.composite; delete state.cache.topPicks; state.compositeBySlug.clear();
     alert(`Applied to SPIP Basket: F${w.fundamentals} · T${w.technicals} · M${w.macro} · S${w.sentiment} · L${w.liquidity}. Open the SPIP Basket tab to see the re-scored basket.`);
+    refreshWeightLab();   // re-render so the "Current SPIP" card reflects the new live weights
   });
   $(`${root} [data-lab-reset]`)?.addEventListener("click", () => {
     state.labWeights = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
