@@ -9206,9 +9206,11 @@ function renderWeightLab() {
   if (!snaps?.length) return `<section id="weight-lab"></section>`;
   const anchor = snaps[0].date, today = snaps[snaps.length - 1].date;
   const ctx = buildLabContext(snaps, anchor);
-  const defW = { ...composite.PILLAR_WEIGHTS };
-  const yourW = state.labWeights || defW;
-  const perfDef = heldPerfCore(ctx, defW);
+  // Anchor on the CURRENT live weights (what the SPIP basket actually uses),
+  // not the framework baseline — so the Lab opens on "current" (founder ask).
+  const currentW = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
+  const yourW = state.labWeights || currentW;
+  const perfCurrent = heldPerfCore(ctx, currentW);
   const perfYour = heldPerfCore(ctx, yourW);
   const aiBest = state.labAiBest;
   const nDays = ctx.tracking.length;
@@ -9256,7 +9258,7 @@ function renderWeightLab() {
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          ${renderLabResultCard("Default SPIP", defBadge, defW, perfDef, false)}
+          ${renderLabResultCard("Current SPIP", defBadge, currentW, perfCurrent, false)}
           ${renderLabResultCard("Your weights", yourBadge, yourW, perfYour, false)}
           ${aiCard}
         </div>
@@ -9302,7 +9304,7 @@ function wireWeightLab() {
     alert(`Applied to SPIP Basket: F${w.fundamentals} · T${w.technicals} · M${w.macro} · S${w.sentiment} · L${w.liquidity}. Open the SPIP Basket tab to see the re-scored basket.`);
   });
   $(`${root} [data-lab-reset]`)?.addEventListener("click", () => {
-    state.labWeights = { ...composite.PILLAR_WEIGHTS };
+    state.labWeights = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
     saveLabWeights(state.labWeights); state.labAiBest = null; refreshWeightLab();
   });
 }
@@ -9809,6 +9811,11 @@ async function renderCustom() {
     await loadTechHistory();
     const { snapshots, benchmark, lkp } = state.cache.history;
     if (!snapshots.length) { host.innerHTML = renderHistoryEmpty("No snapshots loaded."); return; }
+    // Open the Weight Lab anchored on the CURRENT live weights each time the
+    // tab is opened (founder ask) — discard any prior sandbox tinkering so the
+    // sliders always start from what the SPIP basket actually uses.
+    state.labWeights = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
+    state.labAiBest = null;
     const anchorDate = lkpAnchorDate(lkp, snapshots);
     const todayDate = snapshots[snapshots.length - 1].date;
     const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
