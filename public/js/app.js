@@ -9407,7 +9407,7 @@ const TECH_FIELDS = [
   { key: "rebalanceDays", label: "Rebalance",     min: 1,  max: 30, step: 1, suffix: "d" },
   { key: "targetPct",     label: "Target",        min: 3,  max: 40, step: 1, suffix: "%" },
   { key: "slPct",         label: "Stop-loss",     min: 2,  max: 25, step: 1, suffix: "%" },
-  { key: "threshold",     label: "Min score",     min: 0,  max: 90, step: 5, suffix: "" },
+  { key: "threshold",     label: "Min strength",  min: 0,  max: 90, step: 5, suffix: "/100" },
 ];
 
 function renderTechBacktest() {
@@ -9429,7 +9429,7 @@ function renderTechBacktest() {
     <label class="flex items-center gap-2">
       <span class="text-[11px] font-semibold text-slate-500 w-[70px] flex-shrink-0">${f.label}</span>
       <input type="range" min="${f.min}" max="${f.max}" step="${f.step}" data-tech-p="${f.key}" value="${p[f.key]}" class="flex-1 accent-indigo-600">
-      <span class="text-xs font-bold tabular-nums text-slate-800 w-10 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
+      <span class="text-xs font-bold tabular-nums text-slate-800 w-14 text-right" data-tech-pval="${f.key}">${p[f.key]}${f.suffix}</span>
     </label>`).join("");
 
   const sign = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
@@ -9458,7 +9458,7 @@ function renderTechBacktest() {
     <section id="tech-backtest" class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 overflow-hidden">
       <div class="px-4 sm:px-5 pt-4 sm:pt-5">
         <div class="flex items-center gap-2"><span class="text-base">🧪</span><h3 class="font-display font-bold text-slate-900 text-base">Technical Back-test</h3></div>
-        <div class="text-[12px] text-slate-600 mt-1.5 leading-snug">Buy the top <b>${p.basketSize}</b> stocks scoring <b>≥ ${p.threshold}</b> · sell each at <b>+${p.targetPct}%</b> or <b>−${p.slPct}%</b> · rebuild every <b>${p.rebalanceDays} days</b>.</div>
+        <div class="text-[12px] text-slate-600 mt-1.5 leading-snug">Buy the top <b>${p.basketSize}</b> stocks with technical strength <b>≥ ${p.threshold}/100</b> · sell each at <b>+${p.targetPct}%</b> or <b>−${p.slPct}%</b> · rebuild every <b>${p.rebalanceDays} days</b>.</div>
         <div class="text-[11px] text-slate-400 mt-0.5 tabular-nums">Real daily prices · ${fmtDateDMY(full.start)} → ${fmtDateDMY(full.end)} · <b>Net</b> is after <b>${(rate * 100).toFixed(2)}%/side</b> costs.</div>
       </div>
 
