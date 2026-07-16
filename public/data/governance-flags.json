@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-15T03:44:24.996Z",
+  "generated_at": "2026-07-16T03:47:40.930Z",
   "source_count": 4,
   "curated_baseline_count": 5,
   "total_entities_seen": 16,
@@ -19,46 +19,54 @@
           "origin": "scraper",
           "order_type": "sebi-fine",
           "snippet": "Supreme Court upholds SEBI's ₹2.1 crore penalty on Kotak AMC, Nilesh Shah and others against Essel Group"
-        },
-        {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     },
     "RELIANCE": {
-      "primary_name": "Reliance",
-      "order_type": "other",
-      "snippet": "Sebi issues administrative warning to Reliance over employees' share trades",
-      "source_url": "https://www.business-standard.com/topic/sebi",
-      "source_label": "Business Standard — SEBI topic (news)",
+      "primary_name": "Reliance Industries",
+      "order_type": "sebi-warning",
+      "snippet": "Reliance Industries receives a warning letter from market regulator Sebi over alleged insider trading.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
         "scraper"
       ],
       "mentions": [
         {
-          "source": "Business Standard — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
-        },
-        {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi over alleged insider trading."
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
+    },
+    "ADANIPOWER": {
+      "primary_name": "Adani Group",
+      "order_type": "other",
+      "snippet": "Vijayan seeks SEBI, stock exchange intervention over Adani's proposed Vizhinjam port stake transfer.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "curated",
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "other",
+          "snippet": "Vijayan seeks SEBI, stock exchange intervention over Adani's proposed Vizhinjam port stake transfer."
+        },
+        {
+          "source": "SEBI status report to Supreme Court (2024-25)",
+          "origin": "curated",
+          "order_type": "sebi-investigation",
+          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
+        }
+      ],
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -77,7 +85,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -96,7 +104,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -115,26 +123,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
-    },
-    "ADANIPOWER": {
-      "primary_name": "Adani Power",
-      "order_type": "sebi-investigation",
-      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
-      "source_url": null,
-      "source_label": "SEBI status report to Supreme Court (2024-25)",
-      "origins": [
-        "curated"
-      ],
-      "mentions": [
-        {
-          "source": "SEBI status report to Supreme Court (2024-25)",
-          "origin": "curated",
-          "order_type": "sebi-investigation",
-          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
-        }
-      ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -153,13 +142,13 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-07-15T03:44:24.996Z"
+      "first_seen_at": "2026-07-16T03:47:40.930Z"
     }
   },
   "unmatched_sample": [
     {
       "name": "Functional & Innovative Foods",
-      "type": "sebi-investigation",
+      "type": "other",
       "source": "Mint — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -170,9 +159,9 @@
       "origin": "scraper"
     },
     {
-      "name": "Rajesh Exports",
-      "type": "sebi-investigation",
-      "source": "Business Standard — SEBI topic (news)",
+      "name": "Osiajee Texfab",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
@@ -182,13 +171,25 @@
       "origin": "scraper"
     },
     {
-      "name": "Osiajee Texfab",
-      "type": "sebi-ban",
+      "name": "Tonbo Imaging",
+      "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Zerodha",
+      "name": "Zetwerk",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Manipal Health",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rentomojo",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -199,7 +200,7 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-15T03:43:57.234Z",
+      "at": "2026-07-16T03:47:09.158Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -213,16 +214,16 @@
           "snippet": "Supreme Court upholds SEBI's ₹2.1 crore penalty on Kotak AMC, Nilesh Shah and others against Essel Group"
         },
         {
-          "name": "Functional & Innovative Foods",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
-        },
-        {
           "name": "SBI Funds Management",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "SBI Funds IPO to test investor appetite for ₹4.81-trillion IPO pipeline"
+        },
+        {
+          "name": "Functional & Innovative Foods",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
         }
       ],
       "after_filter_count": 2,
@@ -240,7 +241,7 @@
         },
         {
           "name": "Functional & Innovative Foods",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "snippet": "Functional & Innovative Foods files DRHP with SEBI to raise funds via IPO"
         }
       ]
@@ -249,48 +250,24 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-15T03:44:03.871Z",
+      "at": "2026-07-16T03:47:17.427Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 5,
-      "total_extracted": 5,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
       "prefilter_sample": [
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
           "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
-        },
-        {
-          "name": "Kotak AMC",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "NFRA chief says Rajesh Exports probe is underway, can't share timeline"
-        },
-        {
-          "name": "Reliance",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
         }
       ],
-      "after_filter_count": 4,
+      "after_filter_count": 1,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
+        "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -299,21 +276,6 @@
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
           "snippet": "Sebi bars 19 from trading in Osiajee Texfab for alleged market fraud"
-        },
-        {
-          "name": "Kotak AMC",
-          "order_type": "other",
-          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "NFRA begins investigation into Rajesh Exports' financial misstatement"
-        },
-        {
-          "name": "Reliance",
-          "order_type": "other",
-          "snippet": "Sebi issues administrative warning to Reliance over employees' share trades"
         }
       ]
     },
@@ -321,106 +283,127 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-15T03:44:08.272Z",
+      "at": "2026-07-16T03:47:21.444Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 10,
-      "total_extracted": 10,
+      "total_extracted_raw": 11,
+      "total_extracted": 11,
       "prefilter_sample": [
         {
-          "name": "Saurashtra Cement Ltd",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer"
-        },
-        {
-          "name": "Bombay Dyeing",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "SC says SAT order in Bombay Dyeing case not to be treated as precedent, but refuses stay"
-        },
-        {
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
           "is_listed_entity": true,
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
-        },
-        {
-          "name": "Reliance Industries",
-          "order_type": "sebi-warning",
-          "is_listed_entity": true,
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi over alleged insider trading."
         },
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Osiajee Texfab for alleged manipulation"
+          "snippet": "Sebi has barred Osiajee Texfab for alleged manipulation."
         },
         {
-          "name": "TCS",
+          "name": "Bombay Dyeing",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "TCS dividend alert! Last day to buy IT bellwether's shares for interim dividend worth Rs 12."
+          "snippet": "SC says SAT order in Bombay Dyeing case not to be treated as precedent, but refuses stay."
         },
         {
-          "name": "ICICI Prudential AMC",
+          "name": "Saurashtra Cement Ltd",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "ICICI Prudential AMC shares gain 2% after Q1 net profit rises 23% to Rs 965 crore."
+          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer."
         },
         {
-          "name": "Adani Enterprises",
+          "name": "Tonbo Imaging",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Adani Enterprises launches QIP, sets floor price at Rs 3,034.68 per share."
+          "snippet": "Sebi approves IPOs of defence electronics maker Tonbo Imaging and 3 others."
         },
         {
-          "name": "Zerodha",
+          "name": "Zetwerk",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod."
+          "snippet": "Contract manufacturer Zetwerk receives Sebi nod for IPO."
+        },
+        {
+          "name": "Manipal Health",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Manipal Health moves closer to Rs 10,000-cr IPO after Sebi nod."
+        },
+        {
+          "name": "Rentomojo",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Rentomojo gets Sebi's approval to float IPO."
         },
         {
           "name": "Rajesh Exports",
           "order_type": "other",
           "is_listed_entity": true,
           "snippet": "NFRA begins probe into Rajesh Exports revenue misstatement case."
+        },
+        {
+          "name": "Adani Group",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Vijayan seeks SEBI, stock exchange intervention over Adani's proposed Vizhinjam port stake transfer."
+        },
+        {
+          "name": "ICICI Prudential",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "ICICI Prudential AMC shares gain 2% after Q1 net profit rises 23% to Rs 965 crore."
         }
       ],
-      "after_filter_count": 5,
+      "after_filter_count": 8,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 5,
+        "no_sebi_signal_in_snippet": 3,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
-          "name": "Saurashtra Cement Ltd",
-          "order_type": "other",
-          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer"
-        },
-        {
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
-        },
-        {
-          "name": "Reliance Industries",
-          "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi over alleged insider trading."
         },
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars Osiajee Texfab for alleged manipulation"
+          "snippet": "Sebi has barred Osiajee Texfab for alleged manipulation."
         },
         {
-          "name": "Zerodha",
+          "name": "Saurashtra Cement Ltd",
           "order_type": "other",
-          "snippet": "Zerodha now wants to enter investment banking space, seeks Sebi nod."
+          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer."
+        },
+        {
+          "name": "Tonbo Imaging",
+          "order_type": "other",
+          "snippet": "Sebi approves IPOs of defence electronics maker Tonbo Imaging and 3 others."
+        },
+        {
+          "name": "Zetwerk",
+          "order_type": "other",
+          "snippet": "Contract manufacturer Zetwerk receives Sebi nod for IPO."
+        },
+        {
+          "name": "Manipal Health",
+          "order_type": "other",
+          "snippet": "Manipal Health moves closer to Rs 10,000-cr IPO after Sebi nod."
+        },
+        {
+          "name": "Rentomojo",
+          "order_type": "other",
+          "snippet": "Rentomojo gets Sebi's approval to float IPO."
+        },
+        {
+          "name": "Adani Group",
+          "order_type": "other",
+          "snippet": "Vijayan seeks SEBI, stock exchange intervention over Adani's proposed Vizhinjam port stake transfer."
         }
       ]
     },
@@ -428,7 +411,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-07-15T03:44:17.621Z",
+      "at": "2026-07-16T03:47:32.276Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
