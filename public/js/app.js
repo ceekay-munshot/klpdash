@@ -9591,7 +9591,7 @@ function renderCustomOverview(views) {
   // cards + comparison chart are hidden). Flip SHOW_ROTATION_STRATEGIES to
   // bring the full Strategy Lab back.
   if (!SHOW_ROTATION_STRATEGIES) {
-    return `<div class="space-y-5">${renderTechBacktest()}${renderWeightLab()}</div>`;
+    return `<div class="space-y-5">${renderWeightLab()}${renderTechBacktest()}</div>`;
   }
   const withColor = stratColors(views);
   const series = withColor.filter((v) => v.view).map((v) => ({ label: v.strat.name, color: v.color, curve: v.view.equityCurve }));
