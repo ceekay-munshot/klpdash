@@ -377,7 +377,7 @@ function saveManualReturnMode(v) {
 // "capital"). Keeps the tab on one screen — the main view (chart + picks +
 // alpha) is the default; everything else is one click away, no long scroll.
 const STRATEGY_SUBTAB_KEY = "klpdash-strategy-subtab-v1";
-const STRATEGY_SUBTABS = ["overview", "accuracy", "sector", "industry", "capital"];
+const STRATEGY_SUBTABS = ["overview", "accuracy", "sector", "industry"]; // "capital" parked — renderSimPanel + its case kept below for easy restore
 function loadStrategySubTab() {
   try { const v = localStorage.getItem(STRATEGY_SUBTAB_KEY); return STRATEGY_SUBTABS.includes(v) ? v : "overview"; }
   catch { return "overview"; }
@@ -2099,9 +2099,7 @@ async function renderHistory() {
       ${heroHeader}
       <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>
-          <span class="text-[11px] text-slate-500 tabular-nums">Sorted by return · click any row to see the chart</span>
-        </div>
+          <h2 class="font-display font-bold text-slate-900 text-base">Past STRONG BUYs · realized return</h2>        </div>
         <div class="space-y-1.5">${rows}</div>
       </div>
       ${lkpCard}
@@ -2773,7 +2771,6 @@ function renderManualMonthSelector(months, selectedMonth, lkp, snapshots) {
         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Report month</span>
       </div>
       <div class="flex items-center gap-1 overflow-x-auto -my-1 py-1">${pills}</div>
-      <span class="text-[11px] text-slate-500 pr-2 hidden lg:block ml-auto">Each month keeps its own basket, anchor date and track record.</span>
     </div>
   `;
 }
@@ -3674,7 +3671,6 @@ function renderAccuracyView(data) {
     <div id="accuracy-section" class="bg-white rounded-2xl ring-1 ring-slate-100 p-4 sm:p-5 scroll-mt-4">
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
         <h2 class="font-display font-bold text-slate-900 text-base">Target / Stop-loss tracker</h2>
-        <span class="text-[11px] text-slate-500">All-time hit record · AI uses +5% / −20%, Manual uses TGT1 / SL from upload</span>
       </div>
       ${todayHitsBanner}
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -5010,7 +5006,7 @@ function computeOverallHitSummary(picks) {
   const slHits = picks.filter((p) => p.status === "SL_HIT").length;
   const open = total - targetHits - slHits;
   const closed = targetHits + slHits;
-  const hitRate = closed > 0 ? (targetHits / closed) * 100 : null;
+  const hitRate = total > 0 ? (targetHits / total) * 100 : null; // share of ALL picks that hit target (open ones count until they resolve)
   const targetHitDays = picks.filter((p) => p.status === "TARGET_HIT" && p.daysToHit != null);
   const slHitDays = picks.filter((p) => p.status === "SL_HIT" && p.daysToHit != null);
   const avgDaysToTarget = targetHitDays.length
@@ -5062,7 +5058,6 @@ function renderStrategySubNav(sub) {
     { k: "accuracy", icon: "🎯", label: "Accuracy" },
     { k: "sector",   icon: "🧭", label: "Sector" },
     { k: "industry", icon: "🏭", label: "Industry" },
-    { k: "capital",  icon: "💰", label: "Capital" },
   ];
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-1 flex flex-wrap gap-1">
@@ -5138,8 +5133,7 @@ function renderStrategyModeToggle(mode, hits) {
       </div>`
     : `<div class="flex items-center gap-2 flex-1">
         <span class="text-base">🎯</span>
-        <div><div class="text-sm font-semibold text-slate-900">AI basket vs Manual basket</div>
-        <div class="text-[10px] text-slate-400">This month's AI top 7, held and tracked against the client's basket</div></div>
+        <div><div class="text-sm font-semibold text-slate-900">AI basket vs Manual basket</div></div>
       </div>`;
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-2 sm:p-3 flex flex-wrap items-center justify-between gap-2">
@@ -5215,9 +5209,7 @@ function renderActiveCadencePills(cadence) {
       <div class="flex items-baseline gap-0">
         ${pill("weekly", "Weekly", "re-lock every 7 days")}
         ${pill("monthly", "Monthly", "re-lock every 30 days")}
-      </div>
-      <div class="text-[11px] text-slate-500 pr-2">All cadences anchor at upload date</div>
-    </div>
+      </div>    </div>
   `;
 }
 
@@ -5291,7 +5283,6 @@ function renderManualReturnToggle(view) {
   };
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 px-2 py-1.5 flex items-center gap-1.5 shrink-0" title='Booked closes each pick (AI + manual) the day it hits its first target or SL — the real exit. "If held" is where it went after.'>
-      <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-1 hidden md:inline">Returns</span>
       ${pill("booked", "Booked")}
       ${pill("held", "If held")}
     </div>
@@ -5434,9 +5425,7 @@ function renderStrategyKpis(view) {
         ${row("bg-amber-500", "Manual", manualUp)}
         ${row("bg-indigo-500", "AI", aiUp)}
         ${row("bg-slate-400", "Nifty", niftyUp)}
-      </div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Highest cumulative return reached during the window</div>
-    </div>`;
+      </div>    </div>`;
 
   const cardDrawdown = `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
@@ -5448,9 +5437,7 @@ function renderStrategyKpis(view) {
         ${row("bg-amber-500", "Manual", manualDD)}
         ${row("bg-indigo-500", "AI", aiDD)}
         ${row("bg-slate-400", "Nifty", niftyDD)}
-      </div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">Worst peak-to-trough decline in the window</div>
-    </div>`;
+      </div>    </div>`;
 
   const alphaRow = (dotCls, label, value) => `
     <div class="flex items-center gap-2 text-sm">
@@ -5471,9 +5458,7 @@ function renderStrategyKpis(view) {
         ${alphaRow("bg-amber-500", "Manual − AI", manualVsAi)}
         ${alphaRow("bg-indigo-500", "AI − Nifty", aiVsNifty)}
         ${alphaRow("bg-amber-500", "Manual − Nifty", manualVsNifty)}
-      </div>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">End-of-period outperformance (in percentage points)</div>
-    </div>`;
+      </div>    </div>`;
 
   return `
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -5707,7 +5692,6 @@ function renderActiveOverallHitsSplit(view) {
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
       <div class="flex items-baseline justify-between mb-3 flex-wrap gap-2">
         <h3 class="font-display font-bold text-slate-900 text-base">Overall accuracy</h3>
-        <span class="text-[11px] text-slate-500">Across the full period · AI uses +5% / −20% · Manual uses client TGT1 / SL</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         ${renderActiveSummaryCard("AI active", "indigo", view.hitSummary)}
@@ -5753,7 +5737,7 @@ function renderActiveSummaryCard(label, palette, summary) {
         <div>
           <div class="text-base font-display font-extrabold tabular-nums text-indigo-700">${hitRateStr}</div>
           <div class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Hit rate</div>
-          <div class="text-[10px] text-slate-400 tabular-nums">${summary.closed} closed</div>
+          <div class="text-[10px] text-slate-400 tabular-nums">${summary.targetHits} of ${summary.total}</div>
         </div>
       </div>
     </div>
@@ -6142,7 +6126,7 @@ function renderSectorTiming(view, byOverride) {
           <span class="text-base">🧭</span>
           <h3 class="font-display font-bold text-slate-900 text-sm">${label} rebalance timing</h3>
         </div>
-        <div class="flex items-center gap-2">${toggle}<span class="text-[10px] text-slate-400">avg over this cadence's AI picks</span></div>
+        <div class="flex items-center gap-2">${toggle}</div>
       </div>
       <div class="text-[11px] text-slate-500 mb-2">How long each ${label.toLowerCase()}'s picks take to peak on average — the natural rebalance horizon for that ${label.toLowerCase()}. Fastest-peaking on top.</div>
       <div class="overflow-x-auto">
@@ -7909,9 +7893,7 @@ function openCompositeDrill(s) {
   const pillarCards = `
     <div class="mb-6">
       <div class="flex items-baseline justify-between mb-3">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>
-        <div class="text-[11px] text-slate-500">Sum of weighted contributions = Composite</div>
-      </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Composition</div>      </div>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         ${renderPillarCard("Fundamentals", s.pillars?.fundamentals, 40)}
         ${renderPillarCard("Technicals",   s.pillars?.technicals,   35)}
@@ -7967,9 +7949,7 @@ function openCompositeDrill(s) {
   const radarSection = (!s.hardFails.length && !s.unrated && hasPillarData) ? `
     <div class="mb-6 bg-white rounded-2xl ring-1 ring-slate-200 p-5">
       <div class="flex items-baseline justify-between mb-2">
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Shape</div>
-        <div class="text-[11px] text-slate-500">Visual read on the 5-pillar profile</div>
-      </div>
+        <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Pillar Shape</div>      </div>
       <div class="flex items-center justify-center pt-2 pb-3">
         ${renderPillarRadar(s, theme, 300)}
       </div>
@@ -7981,9 +7961,7 @@ function openCompositeDrill(s) {
   const magazineCta = (!s.hardFails.length && !s.unrated) ? `
     <div class="mb-6 flex items-center justify-between gap-4 p-4 bg-gradient-to-br from-slate-50 to-indigo-50/60 rounded-2xl ring-1 ring-slate-200">
       <div class="flex-1 min-w-0">
-        <div class="font-bold text-slate-900 text-sm">Magazine Brief</div>
-        <div class="text-xs text-slate-500 mt-0.5">Full-page presentation with hero, thesis, by-the-numbers — built for sharing.</div>
-      </div>
+        <div class="font-bold text-slate-900 text-sm">Magazine Brief</div>      </div>
       <button id="open-magazine" class="px-4 py-2 rounded-lg bg-gradient-to-r ${theme.from} ${theme.to} ${theme.textOn} text-sm font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 flex-shrink-0">
         View Full Story <span class="text-base leading-none">→</span>
       </button>
@@ -9066,9 +9044,7 @@ function renderParamPicker(strat) {
       <summary class="cursor-pointer text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">Advanced — extra parameters (${total} on) ▾</summary>
       <div class="flex items-center gap-2 mt-3 flex-wrap">
         <span class="text-[11px] font-semibold text-slate-600">Parameter type:</span>
-        <select data-param-pillar class="rounded-lg ring-1 ring-slate-200 px-2 py-1.5 text-sm font-semibold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-indigo-300">${opts}</select>
-        <span class="text-[11px] text-slate-400">switch between pillars to add any parameter</span>
-      </div>
+        <select data-param-pillar class="rounded-lg ring-1 ring-slate-200 px-2 py-1.5 text-sm font-semibold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-indigo-300">${opts}</select>      </div>
       <div class="text-[11px] text-slate-500 mt-2">Tick a parameter to require it, and <strong>tweak its value</strong>. A stock must pass <strong>all</strong> the ones you switch on (across every pillar).</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-3 mt-3">${groups}</div>
       <div class="text-[10px] text-slate-400 mt-3">Nothing on = pick purely by composite score. <strong>Pillar-score</strong> params (Fundamentals/Sentiment/Macro/Liquidity ≥ %) backtest over full history; <strong>granular</strong> tech/fundamental params bind on days that carry the data (accruing forward).</div>
@@ -9232,9 +9208,7 @@ function renderWeightLab() {
 
   const aiCard = aiBest
     ? renderLabResultCard("AI best mix", aiBadge, aiBest.weights, aiBest.perf, true)
-    : `<div class="rounded-xl p-3 ring-1 ring-dashed ring-slate-300 bg-slate-50/40 flex flex-col items-center justify-center text-center gap-2">
-         <div class="text-[11px] text-slate-500 leading-snug">Let AI search ~1,000 weight mixes for the best-performing basket.</div>
-         <button type="button" data-lab-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best weights</button>
+    : `<div class="rounded-xl p-3 ring-1 ring-dashed ring-slate-300 bg-slate-50/40 flex flex-col items-center justify-center text-center gap-2">         <button type="button" data-lab-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best weights</button>
        </div>`;
 
   return `
@@ -9515,9 +9489,7 @@ function renderTechBacktest() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5">${controls}</div>
         <div class="flex items-center gap-2 mt-4 flex-wrap">
           <button type="button" data-tech-ai class="px-3.5 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 Find best settings</button>
-          <button type="button" data-tech-reset class="px-3 py-2 rounded-lg text-slate-500 text-xs font-semibold hover:bg-slate-100">↺ Reset to default</button>
-          <span class="text-[11px] text-slate-400 ml-auto hidden sm:inline">Tap a pick to open its chart →</span>
-        </div>
+          <button type="button" data-tech-reset class="px-3 py-2 rounded-lg text-slate-500 text-xs font-semibold hover:bg-slate-100">↺ Reset to default</button>        </div>
         <div class="mt-4 pt-3 border-t border-slate-100">
           <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">${sel.label} top picks now</div>
           <div class="flex flex-wrap gap-1.5">${picks || '<span class="text-xs text-slate-400">none above threshold</span>'}</div>
@@ -9646,9 +9618,7 @@ function renderCustomOverview(views) {
       ${renderTechBacktest()}
       ${renderMultiCurveChart(series, "Which plan performed best?", "Each line is one plan's growth over time (after charges). Higher = better.")}
       <section>
-        <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>
-        <div class="text-[11px] text-slate-500 mb-3">The best performers found by backtesting ~1,000 parameter combinations on the price history. Open any to tweak, or Duplicate to make it your own.</div>
-        ${grid(aiViews)}
+        <div class="flex items-center gap-2 mb-1"><span class="text-base">🤖</span><h3 class="font-display font-bold text-slate-900 text-base">AI Generated top strategies</h3></div>        ${grid(aiViews)}
       </section>
       <section>
         <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
@@ -9674,9 +9644,7 @@ function renderCustomPerformancePage(views) {
     <div class="space-y-4">
       <button type="button" data-perf-close class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">← All strategies</button>
       <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
-        <div class="flex items-center gap-2 mb-1"><span class="text-base">📊</span><h2 class="font-display font-bold text-slate-900 text-lg">Performance comparison</h2><span class="text-[10px] text-slate-400">${withColor.length} ${withColor.length === 1 ? "strategy" : "strategies"}</span></div>
-        <div class="text-[11px] text-slate-500 mb-1">Every strategy side by side — the AI presets and the ones you add. Click a row to open it.</div>
-        ${renderCustomPerfTable(withColor)}
+        <div class="flex items-center gap-2 mb-1"><span class="text-base">📊</span><h2 class="font-display font-bold text-slate-900 text-lg">Performance comparison</h2><span class="text-[10px] text-slate-400">${withColor.length} ${withColor.length === 1 ? "strategy" : "strategies"}</span></div>        ${renderCustomPerfTable(withColor)}
       </div>
     </div>`;
 }
@@ -9737,7 +9705,7 @@ function renderCustomPerfTable(views) {
         </thead>
         <tbody>${body}</tbody>
       </table>
-      <div class="text-[10px] text-slate-400 mt-2 leading-snug">All returns are net of charges${startDate ? `, backtested from ${fmtDateDMY(startDate)}` : ""}. <strong>Since inception</strong> = total return · <strong>1D/1W/1M</strong> = trailing windows (— when history is shorter than the window) · <strong>vs Nifty</strong> = return above the Nifty 50 over the same period · <strong>Hit rate</strong> = share of closed picks that hit target. Sorted by since-inception return; click a row to open it.</div>
+      <div class="text-[10px] text-slate-400 mt-2 leading-snug">All returns are net of charges${startDate ? `, backtested from ${fmtDateDMY(startDate)}` : ""}. <strong>Since inception</strong> = total return · <strong>1D/1W/1M</strong> = trailing windows (— when history is shorter than the window) · <strong>vs Nifty</strong> = return above the Nifty 50 over the same period · <strong>Hit rate</strong> = share of all picks that hit target. Sorted by since-inception return; click a row to open it.</div>
     </div>`;
 }
 
