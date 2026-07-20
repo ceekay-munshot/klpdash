@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19T04:07:17.378Z",
+  "generated_at": "2026-07-20T04:30:12.429Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -9,9 +9,9 @@
   "cache_max_age_days": 30,
   "total_universe": 517,
   "total_cached": 517,
-  "total_live_opinion": 118,
+  "total_live_opinion": 115,
   "total_not_disclosed": 399,
-  "total_errors": 0,
+  "total_errors": 3,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -4233,16 +4233,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:31:40.145Z"
     },
-    "CUBEINVIT": {
-      "name": "Cube Highways",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:31:40.605Z"
-    },
     "CANBK": {
       "name": "Canara Bank",
       "opinion": null,
@@ -5003,16 +4993,6 @@
       "error_snippet": null,
       "fetched_at": "2026-06-30T04:43:40.575Z"
     },
-    "WABAG": {
-      "name": "Va Tech Wabag",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No company annual report provided / analysis states no successful information was gathered",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company annual report provided / analysis states no successful information was gathered |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-06-30T04:43:39.700Z"
-    },
     "CARTRADE": {
       "name": "Cartrade Tech",
       "opinion": "Disclaimer of Opinion",
@@ -5093,16 +5073,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:30:47.957Z"
     },
-    "UTIAMC": {
-      "name": "UTI AMC",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:30:47.951Z"
-    },
     "HOMEFIRST": {
       "name": "Home First Finan",
       "opinion": null,
@@ -5143,26 +5113,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-13T04:10:59.191Z"
     },
-    "TEGA": {
-      "name": "Tega Inds.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report/company details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-13T04:10:39.754Z"
-    },
-    "AMAGI": {
-      "name": "Amagi Media Labs",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Company not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-13T04:11:08.362Z"
-    },
     "UJJIVANSFB": {
       "name": "Ujjivan Small",
       "opinion": "Disclaimer of Opinion",
@@ -5182,6 +5132,56 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-13T04:10:39.952Z"
+    },
+    "CORONA": {
+      "name": "Corona Remedies",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "**Conclusion:**\n\nNo verifiable data was retrieved from the source document, making it impossible to confirm the auditor's opinion. The critical insight is that decisions cannot be made on unverified assumptions — a **Disclaimer of Opinion** should be presumed by default until the actual annual report is sourced and validated, as proceeding otherwise introduces unacceptable diligence risk.\n\n**Follow-Ups:** Provide the specific annual report (company name,",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-20T04:26:41.197Z"
+    },
+    "BALRAMCHIN": {
+      "name": "Balrampur Chini",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-20T04:30:12.428Z"
+    },
+    "PCBL": {
+      "name": "PCBL Chemical",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-20T04:30:08.431Z"
+    },
+    "GRAPHITE": {
+      "name": "Graphite India",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-20T04:30:10.428Z"
+    },
+    "INDIACEM": {
+      "name": "India Cements",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "I can't independently verify the specific FY2025-26 opinion figure cited in the prior analysis—that period appears to be a future/unreleased reporting cycle, and I have no direct access to India Cements Limited's actual filed annual report to confirm the auditor's classification.\n\n**Conclusion:** The critical strategic insight is that an **Unqualified Opinion** signals no material misstatement risk, but this classification must be verified against the actual filed report before use in investment dec",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-20T04:27:10.186Z"
     }
   }
 }
