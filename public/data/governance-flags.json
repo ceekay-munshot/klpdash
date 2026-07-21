@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-20T04:24:42.503Z",
+  "generated_at": "2026-07-21T04:02:17.460Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 17,
+  "total_entities_seen": 11,
   "flagged_companies": {
     "KOTAKBANK": {
-      "primary_name": "Kotak AMC",
+      "primary_name": "Kotak Mahindra AMC",
       "order_type": "sebi-fine",
       "snippet": "Supreme Court upholds SEBI's ₹2.1 crore penalty on Kotak AMC, Nilesh Shah and others against Essel Group.",
       "source_url": "https://www.livemint.com/topic/sebi",
@@ -23,16 +23,16 @@
         {
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "enforcement-order",
-          "snippet": "Supreme Court upholds Sebi's action against Kotak AMC in the Essel FMP case, citing regulatory lapses and compliance failures."
+          "order_type": "sebi-investigation",
+          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.502Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "RELIANCE": {
       "primary_name": "Reliance Industries",
       "order_type": "sebi-warning",
-      "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading",
+      "snippet": "Reliance Industries receives a warning letter from market regulator Sebi.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -43,22 +43,16 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
         },
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over employee trades during UPSI period"
+          "snippet": "Reliance Industries gets Sebi warning over insider trades."
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -77,7 +71,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -96,7 +90,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -115,7 +109,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -134,7 +128,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -153,16 +147,10 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-07-20T04:24:42.503Z"
+      "first_seen_at": "2026-07-21T04:02:17.460Z"
     }
   },
   "unmatched_sample": [
-    {
-      "name": "Saurashtra Cement Ltd",
-      "type": "show-cause",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
     {
       "name": "Osiajee Texfab",
       "type": "sebi-ban",
@@ -170,32 +158,8 @@
       "origin": "scraper"
     },
     {
-      "name": "Manipal Health Enterprises",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "JioBlackRock Mutual Fund",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Zetwerk",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Epoch Initiative",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rentomojo",
-      "type": "other",
+      "name": "Saurashtra Cement Ltd",
+      "type": "settlement",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -205,30 +169,36 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-20T04:24:09.506Z",
+      "at": "2026-07-21T04:01:31.112Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 1,
-      "total_extracted": 1,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
-          "name": "Kotak AMC",
+          "name": "Kotak Mahindra AMC",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Supreme Court upholds SEBI's ₹2.1 crore penalty on Kotak AMC, Nilesh Shah and others against Essel Group."
+        },
+        {
+          "name": "SBI Funds",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "SBI Funds IPO to test investor appetite for ₹4.81-trillion IPO pipeline."
         }
       ],
       "after_filter_count": 1,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
-          "name": "Kotak AMC",
+          "name": "Kotak Mahindra AMC",
           "order_type": "sebi-fine",
           "snippet": "Supreme Court upholds SEBI's ₹2.1 crore penalty on Kotak AMC, Nilesh Shah and others against Essel Group."
         }
@@ -238,44 +208,80 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-20T04:24:15.395Z",
+      "at": "2026-07-21T04:01:41.694Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 9,
+      "total_extracted": 9,
       "prefilter_sample": [
         {
-          "name": "Kotak AMC",
-          "order_type": "enforcement-order",
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi empanels 18 additional forensic auditors for listed company audits"
+        },
+        {
+          "name": "MakeMyTrip",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Supreme Court upholds Sebi's action against Kotak AMC in the Essel FMP case, citing regulatory lapses and compliance failures."
+          "snippet": "MakeMyTrip India files DRHP for India IPO through confidential route"
         },
         {
           "name": "Sebi",
           "order_type": "other",
           "is_listed_entity": false,
-          "snippet": "Sebi flags 'Boss Scam', cautions companies against CEO impersonation fraud."
+          "snippet": "Sebi extends SWP, STP facility to demat-held mutual fund units"
         },
         {
           "name": "Sebi",
-          "order_type": "settlement",
+          "order_type": "other",
           "is_listed_entity": false,
-          "snippet": "Sebi tightens code of conduct for board members on conflict of interest."
+          "snippet": "Sebi flags 'Boss Scam', cautions companies against CEO impersonation fraud"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi resolves over 5,000 investors' complaints in June via SCORES platform"
+        },
+        {
+          "name": "Jana Small Finance Bank",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Jana SFB posts 52% jump in Q1 profit supported by healthy asset growth"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi tightens code of conduct for board members on conflict of interest"
+        },
+        {
+          "name": "Kotak AMC",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
+        },
+        {
+          "name": "Finolex Industries",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Complaints involving entities such as Aditya Birla Money Ltd, Finolex Industries, and HBL Power Systems."
         }
       ],
       "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 2,
-        "no_sebi_signal_in_snippet": 0,
+        "not_listed": 5,
+        "no_sebi_signal_in_snippet": 3,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
           "name": "Kotak AMC",
-          "order_type": "enforcement-order",
-          "snippet": "Supreme Court upholds Sebi's action against Kotak AMC in the Essel FMP case, citing regulatory lapses and compliance fai"
+          "order_type": "sebi-investigation",
+          "snippet": "SC upholds Sebi action against Kotak AMC, MD Nilesh Shah, and others"
         }
       ]
     },
@@ -283,19 +289,13 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-20T04:24:23.162Z",
+      "at": "2026-07-21T04:01:55.998Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 13,
-      "total_extracted": 13,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
-        {
-          "name": "Saurashtra Cement Ltd",
-          "order_type": "show-cause",
-          "is_listed_entity": true,
-          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer"
-        },
         {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
@@ -306,83 +306,42 @@
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
           "is_listed_entity": true,
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
         },
         {
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
           "is_listed_entity": true,
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
+          "snippet": "Reliance Industries gets Sebi warning over insider trades."
         },
         {
-          "name": "Reliance Industries",
-          "order_type": "sebi-warning",
+          "name": "Saurashtra Cement Ltd",
+          "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "Reliance Industries gets Sebi warning over employee trades during UPSI period"
+          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer."
         },
         {
           "name": "Bombay Dyeing",
-          "order_type": "other",
+          "order_type": "settlement",
           "is_listed_entity": true,
-          "snippet": "SC says SAT order in Bombay Dyeing case not to be treated as precedent, but refuses stay"
+          "snippet": "SC says SAT order in Bombay Dyeing case not to be treated as precedent, but refuses stay."
         },
         {
-          "name": "Manipal Health Enterprises",
-          "order_type": "other",
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Manipal Health moves closer to Rs 10,000-cr IPO after Sebi nod"
-        },
-        {
-          "name": "JioBlackRock Mutual Fund",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "JioBlackRock Mutual Fund files draft papers with Sebi for 2 new schemes"
-        },
-        {
-          "name": "Zetwerk",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Zetwerk receives Sebi nod for IPO"
-        },
-        {
-          "name": "TCS",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "TCS dividend alert! Last day to buy IT bellwether's shares for interim dividend worth Rs 12"
-        },
-        {
-          "name": "Epoch Initiative",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Epoch Initiative files DRHP with Sebi for IPO worth Rs 650 crore"
-        },
-        {
-          "name": "Rentomojo",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Rentomojo gets Sebi nod for IPO; Accel, Chiratae among investors selling stakes"
-        },
-        {
-          "name": "IDEAFORGE",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Ideaforge raises Rs 500 crore via QIP to fund next phase of growth"
+          "snippet": "NFRA begins probe into Rajesh Exports revenue misstatement case."
         }
       ],
-      "after_filter_count": 10,
+      "after_filter_count": 4,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 3,
+        "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
-          "name": "Saurashtra Cement Ltd",
-          "order_type": "show-cause",
-          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer"
-        },
-        {
           "name": "Osiajee Texfab",
           "order_type": "sebi-ban",
           "snippet": "Sebi bars Osiajee Texfab for alleged manipulation"
@@ -390,42 +349,17 @@
         {
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries shares in focus as company gets Sebi's warning over alleged insider trading"
+          "snippet": "Reliance Industries receives a warning letter from market regulator Sebi."
         },
         {
           "name": "Reliance Industries",
           "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over insider trades"
+          "snippet": "Reliance Industries gets Sebi warning over insider trades."
         },
         {
-          "name": "Reliance Industries",
-          "order_type": "sebi-warning",
-          "snippet": "Reliance Industries gets Sebi warning over employee trades during UPSI period"
-        },
-        {
-          "name": "Manipal Health Enterprises",
-          "order_type": "other",
-          "snippet": "Manipal Health moves closer to Rs 10,000-cr IPO after Sebi nod"
-        },
-        {
-          "name": "JioBlackRock Mutual Fund",
-          "order_type": "other",
-          "snippet": "JioBlackRock Mutual Fund files draft papers with Sebi for 2 new schemes"
-        },
-        {
-          "name": "Zetwerk",
-          "order_type": "other",
-          "snippet": "Zetwerk receives Sebi nod for IPO"
-        },
-        {
-          "name": "Epoch Initiative",
-          "order_type": "other",
-          "snippet": "Epoch Initiative files DRHP with Sebi for IPO worth Rs 650 crore"
-        },
-        {
-          "name": "Rentomojo",
-          "order_type": "other",
-          "snippet": "Rentomojo gets Sebi nod for IPO; Accel, Chiratae among investors selling stakes"
+          "name": "Saurashtra Cement Ltd",
+          "order_type": "settlement",
+          "snippet": "Sebi exempts Juhi Chawla-owned Mehta Family Trust from Saurashtra Cement open offer."
         }
       ]
     },
@@ -433,7 +367,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-07-20T04:24:33.114Z",
+      "at": "2026-07-21T04:02:09.623Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
