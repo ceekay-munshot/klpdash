@@ -40,9 +40,9 @@
         "evidence": null
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No PLI-scheme disclosure was found for Divi's Laboratories in available sources; participation status is unconfirmed rather than confirmed non-participation."
       },
       "confidence": "Low"
     },
@@ -156,8 +156,8 @@
         "evidence": null
       },
       "rate_sensitive": {
-        "floating_rate_liability_pct": 100,
-        "evidence": "Consolidated Notes to Financial Statements, Exposure to Interest Rate Risk (FY25): Borrowing bearing fixed rate of interest - Nil; Borrowing bearing variable rate of interest ₹818.43 Lakhs; Total ₹818.43 Lakhs — i.e., 100% of borrowings are floating-rate."
+        "floating_rate_liability_pct": null,
+        "evidence": "Consolidated Notes to Financial Statements (FY25): Borrowing bearing variable rate of interest Rs 818.43 Lakhs; fixed-rate borrowings Nil — i.e. 100% of borrowings are floating-rate, but this is a small borrowings balance. Total liabilities figure needed to compute floating-rate share of total liabilities is not available in reviewed sources."
       },
       "crude_exposure": {
         "raw_material_pct": null,
@@ -203,8 +203,8 @@
         "evidence": "The Company/Group is mainly exposed to interest rate risk due to its variable interest rate borrowings. Borrowings bearing floating rate of interest: ₹1,339.94 crore (consolidated, FY24) vs ₹848.65 crore (FY23); no fixed-rate borrowings category disclosed separately."
       },
       "crude_exposure": {
-        "raw_material_pct": 45,
-        "evidence": "Raw material costs, accounting for a 45% share of the Company's revenues, increased by 4% from ₹896 crores in FY 2022-23 to ₹935 crores in FY 2023-24 due to the change in business mix and decline in prices of refrigerant gases."
+        "raw_material_pct": null,
+        "evidence": "Raw material costs (all inputs combined) were 45% of the Company's revenues in FY2023-24, but no crude-oil-linked share of that raw material bill is separately disclosed; this total raw-material-cost figure should not be used as a crude-exposure proxy."
       },
       "inr_exposure": {
         "usd_revenue_pct": null,
@@ -315,9 +315,9 @@
         "export_other_pct": 0.3
       },
       "china_plus_one": {
-        "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "As global supply chains continue to diversify, our strong alignment with India's industrial growth becomes increasingly evident. ... Amid geopolitical instability and global trade restrictions...the Company swiftly activated contingency plans...It diversified sourcing and logistics strategies, established alternative shipping routes."
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "Evidence describes Sona BLW's own sourcing, logistics, and shipping-route diversification in response to geopolitical instability and trade restrictions — this is supply-chain risk mitigation, not a narrative attributing customer demand or supply-chain movement to diversification away from China. Not evidence for the China+1 thesis."
       },
       "rural": {
         "revenue_pct": null,
@@ -611,9 +611,9 @@
         "domestic_pct": 96,
         "export_pct": 4,
         "export_us_pct": null,
-        "export_europe_pct": 27,
-        "export_asia_ex_china_pct": 28,
-        "export_other_pct": 46
+        "export_europe_pct": 1.08,
+        "export_asia_ex_china_pct": 1.12,
+        "export_other_pct": 1.84
       },
       "china_plus_one": {
         "narrative_present": true,
@@ -719,8 +719,8 @@
         "evidence": null
       },
       "crude_exposure": {
-        "raw_material_pct": 37.5,
-        "evidence": "VAM (vinyl acetate monomer), a crude oil derivative, accounts for approximately 35-40% of Pidilite's raw material costs; company has flagged crude-linked input cost inflation (geopolitical tensions in West Asia) as a margin risk."
+        "raw_material_pct": null,
+        "evidence": "VAM (vinyl acetate monomer), a crude oil derivative, accounts for approximately 35-40% of Pidilite's raw-material COSTS (not of total revenue); total raw-material cost as a share of revenue is not disclosed in available sources, so a revenue-basis crude-exposure percentage cannot be derived."
       },
       "inr_exposure": {
         "usd_revenue_pct": 7,
@@ -852,9 +852,9 @@
         "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 42,
+        "usd_revenue_pct": null,
         "hedging_policy": "Company adopted a conservative approach to protect the bottom line in view of political developments in Russia/Ukraine and sharp depreciation of the Russian ruble against the US dollar.",
-        "evidence": "JB Chemicals recorded a mark-to-market (MTM) forex impact of INR 4 crores due to ruble depreciation; exports for Russia-CIS region amounted to ~INR 69.26 crores (lower YoY as sales shifted through a wholly-owned Dubai subsidiary)."
+        "evidence": "Exports are 42% of revenue but span multiple currencies, including material Russia-CIS (ruble-exposed) and South Africa business alongside US dollar-denominated sales; no USD-only breakdown is disclosed, so the full export share should not be treated as USD exposure."
       },
       "pli_scheme": {
         "is_beneficiary": false,
