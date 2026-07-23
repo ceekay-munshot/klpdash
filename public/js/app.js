@@ -5522,7 +5522,7 @@ function renderStrategyKpis(view) {
   const cardNet = `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-indigo-200 p-4">
       <div class="flex items-center justify-between mb-2">
-        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Net performance · as of today</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Net performance · as of ${view.endDate ? fmtDateDMY(view.endDate) : "today"}</div>
         <div class="text-indigo-500 text-base">≡</div>
       </div>
       <div class="space-y-1.5">
@@ -6298,7 +6298,12 @@ function balancingPicks(view) {
     ticker: p.ticker, name: p.name, side: "AI",
     sector: p.sector || metaByTicker.get(p.ticker)?.sector || null,
     industry: p.industry || metaByTicker.get(p.ticker)?.industry || null,
-    ret: p.currentReturnPct, peak: p.peak, entryDate: p.entryDate,
+    // Booked mode: a closed AI pick returns its target/SL level (like the
+    // frozen basket + chart), not the drifting mark-to-market close.
+    ret: (booked && p.status === "TARGET_HIT") ? p.targetPct
+       : (booked && p.status === "SL_HIT") ? p.slPct
+       : p.currentReturnPct,
+    peak: p.peak, entryDate: p.entryDate,
   }));
   const manual = (view.manualPicks || []).filter((p) => !p.notCovered && p.peak && p.ticker).map((p) => {
     const isBooked = booked && p.booking?.booked;
@@ -9407,17 +9412,22 @@ const LAB_PILLARS = [
   { key: "liquidity",    label: "Liquidity",   dot: "bg-rose-500" },
 ];
 
-// Normalise a raw weight mix to integers summing to 100 (last pillar absorbs
-// rounding). Falls back to the framework default if the mix is all-zero.
+// Normalise a raw weight mix to NON-NEGATIVE integers summing to 100, via the
+// largest-remainder (Hamilton) method — floor each share, then hand the leftover
+// units to the largest fractional parts. Avoids the old "last pillar absorbs the
+// remainder" trick, which could push a pillar negative (e.g. 0/0/45/75/0).
+// Falls back to the framework default if the mix is all-zero.
 function normalizeWeights(w) {
   const keys = LAB_PILLARS.map((p) => p.key);
-  const sum = keys.reduce((a, k) => a + (Number(w[k]) || 0), 0);
+  const raw = keys.map((k) => Math.max(0, Number(w[k]) || 0));
+  const sum = raw.reduce((a, v) => a + v, 0);
   if (sum <= 0) return { ...composite.PILLAR_WEIGHTS };
-  const out = {}; let acc = 0;
-  keys.forEach((k, i) => {
-    if (i === keys.length - 1) out[k] = 100 - acc;
-    else { out[k] = Math.round((Number(w[k]) || 0) / sum * 100); acc += out[k]; }
-  });
+  const exact = raw.map((v) => (v / sum) * 100);
+  const out = {};
+  keys.forEach((k, i) => { out[k] = Math.floor(exact[i]); });
+  let rem = 100 - keys.reduce((a, k) => a + out[k], 0);
+  const order = exact.map((v, i) => ({ i, frac: v - Math.floor(v) })).sort((a, b) => b.frac - a.frac);
+  for (let j = 0; j < order.length && rem > 0; j++) { out[keys[order[j].i]]++; rem--; }
   return out;
 }
 
