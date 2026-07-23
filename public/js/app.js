@@ -256,7 +256,12 @@ const LAB_WEIGHTS_KEY = "klpdash-lab-weights-v1";
 function loadLabWeights() {
   try {
     const s = JSON.parse(localStorage.getItem(LAB_WEIGHTS_KEY) || "null");
-    if (s && ["fundamentals", "technicals", "macro", "sentiment", "liquidity"].every((k) => typeof s[k] === "number")) return s;
+    if (s && ["fundamentals", "technicals", "macro", "sentiment", "liquidity"].every((k) => typeof s[k] === "number")) {
+      // Migrate mixes saved before the sum-to-100 cap (old sliders let each
+      // pillar reach 100 independently) so a restored total never exceeds 100.
+      const total = s.fundamentals + s.technicals + s.macro + s.sentiment + s.liquidity;
+      return total > 100 ? normalizeWeights(s) : s;
+    }
   } catch {}
   return { ...composite.PILLAR_WEIGHTS };
 }
@@ -4611,7 +4616,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     const segments = buildActiveSegmentChain(snapshots, anchorDate, 1);
     const nifty500Curve = buildNiftyCurve(dates, nifty500On);
     const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
-    const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates);
+    const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows);
     return {
       kind: "daily",
       sim, picks, hitSummary, segments,
@@ -4654,7 +4659,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
   const nifty500Curve = buildNiftyCurve(dates, nifty500On);
   const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
-  const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates);
+  const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows);
   const capital = simPrefs.capital ?? ACTIVE_INITIAL_CAPITAL;
   const finalValue = capital * (1 + finalReturn / 100);
   // Charges in ₹ ≈ the gap the costs opened between gross and net pots.
@@ -4933,16 +4938,26 @@ function buildNiftyCurve(dates, niftyOn) {
 // mode (client ask: toggle basket ↔ stocks → one line per holding, for both
 // AI and Manual baskets). entryCloses = { ticker: entryClose }; forward-fills
 // a missing daily close so an illiquid day doesn't punch a hole in the line.
-function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates) {
+function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookingByTicker = null, booked = false) {
   if (!dates?.length) return [];
   const snapByDate = new Map(snapshots.map((s) => [s.date, s]));
   return Object.keys(entryCloses).map((ticker) => {
     let last = entryCloses[ticker];
+    // Booked mode: once a name hits its target / SL it exits — freeze the line
+    // at that exit level from the exit date so the per-stock lines decompose
+    // the (also-booked) basket line instead of drifting past the real exit.
+    const bk = (booked && bookingByTicker) ? bookingByTicker.get(ticker) : null;
     const curve = dates.map((date) => {
-      const snap = snapByDate.get(date);
-      const s = snap ? snap.stocks.find((x) => x.ticker === ticker) : null;
-      if (s && typeof s.close === "number") last = s.close;
-      return { date, retPct: (last / entryCloses[ticker] - 1) * 100 };
+      let close;
+      if (bk && bk.bookPrice != null && date >= bk.bookDate) {
+        close = bk.bookPrice;
+      } else {
+        const snap = snapByDate.get(date);
+        const s = snap ? snap.stocks.find((x) => x.ticker === ticker) : null;
+        if (s && typeof s.close === "number") last = s.close;
+        close = last;
+      }
+      return { date, retPct: (close / entryCloses[ticker] - 1) * 100 };
     });
     return { ticker, name: nameByTicker[ticker] || ticker, curve };
   });
@@ -4951,11 +4966,22 @@ function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates) {
 // Both baskets' per-stock line curves for the chart's "Stocks" mode. AI names
 // = the latest segment's top-7 (entry at that segment's close); Manual names =
 // the in-coverage client picks (entry at the anchor snapshot close).
-function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates) {
+function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, aiPicks, manualRows) {
+  const booked = state.manualReturnMode !== "held";
   const lastSeg = (segments || [])[(segments || []).length - 1];
   const aiEntry = {}, aiName = {};
   for (const s of (lastSeg?.top7 || [])) if (s.ticker && typeof s.close === "number") { aiEntry[s.ticker] = s.close; aiName[s.ticker] = s.name || s.ticker; }
-  const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates);
+  // AI names book at their uniform +5% / −20% level the day they first hit it —
+  // mirror the basket's booked convention so the two curves stay compatible.
+  const aiBooking = new Map();
+  for (const p of (aiPicks || [])) {
+    if (!p || !p.ticker || aiEntry[p.ticker] == null || aiBooking.has(p.ticker)) continue;
+    if ((p.status === "TARGET_HIT" || p.status === "SL_HIT") && p.hitDate) {
+      const bookPrice = p.status === "TARGET_HIT" ? p.target : p.sl;
+      if (bookPrice != null) aiBooking.set(p.ticker, { bookDate: p.hitDate, bookPrice });
+    }
+  }
+  const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates, aiBooking, booked);
   const manualEntry = {}, manualName = {};
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   for (const p of (manualPicks || [])) {
@@ -4963,7 +4989,12 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
     const s = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker);
     if (s && typeof s.close === "number") { manualEntry[p.ticker] = s.close; manualName[p.ticker] = p.selection || p.ticker; }
   }
-  const manualStockCurves = buildPerStockCurves(manualEntry, manualName, snapshots, dates);
+  // Manual names book at the client's Target 1 / SL price.
+  const manualBooking = new Map();
+  for (const r of (manualRows || [])) {
+    if (r?.ticker && r.booking?.booked && r.booking.bookDate && r.booking.bookPrice != null) manualBooking.set(r.ticker, { bookDate: r.booking.bookDate, bookPrice: r.booking.bookPrice });
+  }
+  const manualStockCurves = buildPerStockCurves(manualEntry, manualName, snapshots, dates, manualBooking, booked);
   return { aiStockCurves, manualStockCurves };
 }
 
@@ -5733,7 +5764,7 @@ function renderPerStockChartBody(view) {
         <span class="inline-flex items-center gap-1 text-[10px] text-slate-500"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty}"></span>Nifty 50</span>
         ${legendChips}
       </div>
-      <div class="mt-1 text-[10px] text-slate-400">Solid = AI basket names · dashed = Manual basket names.</div>`;
+      <div class="mt-1 text-[10px] text-slate-400">Solid = AI basket names · dashed = Manual basket names · honours the Booked / If-held toggle.</div>`;
 }
 
 function wireStrategyChartMode() {

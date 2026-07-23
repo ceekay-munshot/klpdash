@@ -21,7 +21,9 @@ const INDICES = [
   { symbol: "^CRSLDX",  label: "Nifty 500" },
   { symbol: "^NSEBANK", label: "Bank Nifty" },
 ];
-const DAYS = 120;          // ~4 months; covers any backfill window comfortably
+const DAYS = 180;          // ~6 months — comfortably covers the full 4-month hold
+                           // window of the OLDEST retained report month, so the
+                           // benchmark line/cards still render for older baskets
 
 run().catch((err) => {
   console.error("Fatal:", err.stack || err.message);
