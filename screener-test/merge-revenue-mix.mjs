@@ -55,8 +55,8 @@ function validate(slug, entry) {
   // but a few (e.g. subsidiaries of foreign parents like ABB India, approved under Companies
   // Act 2013 s.2(41) to align with the overseas parent) report on a calendar year (CYyyyy).
   const yStr = String(entry.report_year || "");
-  const fyMatch = yStr.match(/FY(\d{4})-(\d{2}|\d{4})/);
-  const cyMatch = yStr.match(/CY(\d{4})/);
+  const fyMatch = yStr.match(/^FY(\d{4})-(\d{2}|\d{4})$/);
+  const cyMatch = yStr.match(/^CY(\d{4})$/);
   if (!fyMatch && !cyMatch) {
     errs.push("report_year missing or unparseable");
   } else {
