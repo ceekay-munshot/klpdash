@@ -90,7 +90,7 @@
       "confidence": "Low"
     },
     "ABB": {
-      "report_year": "CY2024 (Annual Report 2024)",
+      "report_year": "FY2024-24",
       "geography": {
         "domestic_pct": 90,
         "export_pct": 10,
@@ -328,8 +328,8 @@
         "evidence": null
       },
       "rate_sensitive": {
-        "floating_rate_liability_pct": 100,
-        "evidence": "Variable rate borrowings 134.63; Fixed rate borrowings – nil; Total borrowings 134.63 (as at 31st March 2025, standalone, INR crore)."
+        "floating_rate_liability_pct": null,
+        "evidence": "Variable rate borrowings Rs 134.63 crore; fixed-rate borrowings nil (standalone, as at 31 March 2025) — i.e. 100% of borrowings are floating-rate, but this is measured against a small standalone borrowings balance, not total consolidated liabilities."
       },
       "crude_exposure": {
         "raw_material_pct": null,
@@ -470,7 +470,7 @@
         "evidence": "Sun Pharma holds foreign currency-denominated debt and incurs operating expenses abroad, making it vulnerable to USD/INR and JPY/INR exchange rate fluctuations; the U.S. contributes approximately 30-35% of revenue and Japan around 5-10%."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
         "evidence": "Sun Pharma is referenced generally among large pharma companies operating within India's PLI ecosystem, but no company-specific confirmation of PLI beneficiary status, incentive amount, or revenue impact was found in available sources."
       },
@@ -551,9 +551,9 @@
         "evidence": "Primary raw material is steel/alloy inputs for forging, not crude-linked; no direct crude-oil cost exposure disclosed."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 30,
+        "usd_revenue_pct": null,
         "hedging_policy": "Reported to actively hedge a portion of anticipated FX exposure (analyst estimate ~45% of exposure in 2024); no precise AR-disclosed hedge ratio confirmed.",
-        "evidence": "~30% of consolidated revenue from exports; a 10% INR depreciation was noted to raise import costs of technology/inputs, offsetting some export competitiveness gains."
+        "evidence": "~30% of consolidated revenue is from exports, spanning both US and Europe operations; no USD-only breakdown is disclosed, so the full export share should not be treated as USD exposure. A 10% INR depreciation was noted to raise import costs of technology/inputs, offsetting some export competitiveness gains."
       },
       "pli_scheme": {
         "is_beneficiary": true,
@@ -599,9 +599,9 @@
         "evidence": null
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No PLI-scheme disclosure was found for this company in available sources; participation status is unconfirmed rather than confirmed non-participation."
       },
       "confidence": "Low"
     },
@@ -642,9 +642,9 @@
         "evidence": "Direct exports account for only 3-4% of revenue; geographic export mix cited as Asia 28%, Americas 28%, Europe 27%, Africa 14%, Australia 4% (from a recent investor presentation)."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No PLI-scheme disclosure was found for this company in available sources; participation status is unconfirmed rather than confirmed non-participation."
       },
       "confidence": "Low"
     },
@@ -685,9 +685,9 @@
         "evidence": "In FY25, Radico's export segment contributed approximately 8-9% of revenue and 4-5% of volume, with a footprint in 100+ countries across six continents; a new 50% US tariff on Indian goods was noted as a headwind for export brands like Rampur Jugalbandi."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No PLI-scheme disclosure was found for this company in available sources; participation status is unconfirmed rather than confirmed non-participation."
       },
       "confidence": "Low"
     },
@@ -788,9 +788,9 @@
         "export_other_pct": null
       },
       "china_plus_one": {
-        "narrative_present": true,
-        "strength": "strong",
-        "evidence": "Industry/analyst commentary on Sai Life: 'The China+1 supply chain strategy — where Western pharma companies deliberately diversify away from China-only sourcing — is creating a multi-year demand wave for Indian CRDMOs... Sai Life Sciences is directly positioned to capture that wave, with 280+ global clients already embedded in its programs.' Note: sourced from secondary market commentary, not a direct AR quote (primary AR PDF was not accessible)."
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "Only secondary industry/analyst commentary was found ('China+1 supply chain strategy...is creating a multi-year demand wave for Indian CRDMOs...Sai Life Sciences is directly positioned to capture that wave') — the primary annual report was inaccessible, so there is no company-attributed China+1 narrative confirming this from Sai Life itself."
       },
       "rural": {
         "revenue_pct": null,
@@ -857,9 +857,9 @@
         "evidence": "Exports are 42% of revenue but span multiple currencies, including material Russia-CIS (ruble-exposed) and South Africa business alongside US dollar-denominated sales; no USD-only breakdown is disclosed, so the full export share should not be treated as USD exposure."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": null,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No PLI-scheme disclosure was found for this company in available sources; participation status is unconfirmed rather than confirmed non-participation."
       },
       "confidence": "Medium"
     }
