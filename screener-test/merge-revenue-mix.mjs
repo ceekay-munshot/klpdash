@@ -51,14 +51,20 @@ function inPctRange(v) {
 function validate(slug, entry) {
   const errs = [];
 
-  // report_year
-  const yMatch = String(entry.report_year || "").match(/FY(\d{4})-(\d{2}|\d{4})/);
-  if (!yMatch) {
+  // report_year — most companies report on the Indian April-March fiscal year (FYyyyy-yy),
+  // but a few (e.g. subsidiaries of foreign parents like ABB India, approved under Companies
+  // Act 2013 s.2(41) to align with the overseas parent) report on a calendar year (CYyyyy).
+  const yStr = String(entry.report_year || "");
+  const fyMatch = yStr.match(/FY(\d{4})-(\d{2}|\d{4})/);
+  const cyMatch = yStr.match(/CY(\d{4})/);
+  if (!fyMatch && !cyMatch) {
     errs.push("report_year missing or unparseable");
   } else {
-    const endYear = Number(yMatch[2].length === 2 ? `20${yMatch[2]}` : yMatch[2]);
+    const endYear = fyMatch
+      ? Number(fyMatch[2].length === 2 ? `20${fyMatch[2]}` : fyMatch[2])
+      : Number(cyMatch[1]);
     const ageYears = new Date().getFullYear() - endYear;
-    if (ageYears > MAX_REPORT_AGE_YEARS) errs.push(`report_year FY ending ${endYear} is >${MAX_REPORT_AGE_YEARS}y old`);
+    if (ageYears > MAX_REPORT_AGE_YEARS) errs.push(`report_year ending ${endYear} is >${MAX_REPORT_AGE_YEARS}y old`);
   }
 
   // confidence
