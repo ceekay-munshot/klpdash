@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Benchmark history scraper. Pulls daily close prices for the indices
-// we want to compare per-stock returns against — Nifty 50 to start, plus
-// Bank Nifty as a sector reference. Output is read by the History tab
-// to compute alpha (pick return − benchmark return) over the same
-// window as each STRONG BUY pick.
+// we want to compare per-stock returns against — Nifty 50, plus Nifty 500
+// (^CRSLDX — the client's ideal benchmark, since it IS our stock universe),
+// plus Bank Nifty as a sector reference. Output is read by the Strategy /
+// History tab to compute alpha (pick return − benchmark return) over the
+// same window as each STRONG BUY pick.
 //
 // Cheap: one Yahoo chart endpoint call per index, gets the full 90-day
 // series in one go. No paid APIs.
@@ -17,6 +18,7 @@ const OUT_PATH = resolve(__dirname, "../public/data/benchmark-history.json");
 
 const INDICES = [
   { symbol: "^NSEI",    label: "Nifty 50" },
+  { symbol: "^CRSLDX",  label: "Nifty 500" },
   { symbol: "^NSEBANK", label: "Bank Nifty" },
 ];
 const DAYS = 120;          // ~4 months; covers any backfill window comfortably

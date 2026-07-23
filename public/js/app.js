@@ -377,9 +377,13 @@ function saveManualReturnMode(v) {
 // "capital"). Keeps the tab on one screen — the main view (chart + picks +
 // alpha) is the default; everything else is one click away, no long scroll.
 const STRATEGY_SUBTAB_KEY = "klpdash-strategy-subtab-v1";
-const STRATEGY_SUBTABS = ["overview", "accuracy", "sector", "industry"]; // "capital" parked — renderSimPanel + its case kept below for easy restore
+const STRATEGY_SUBTABS = ["overview", "accuracy", "balancing"]; // Sector + Industry merged into "balancing" (client ask); "capital" parked — renderSimPanel + its case kept below for easy restore
 function loadStrategySubTab() {
-  try { const v = localStorage.getItem(STRATEGY_SUBTAB_KEY); return STRATEGY_SUBTABS.includes(v) ? v : "overview"; }
+  try {
+    let v = localStorage.getItem(STRATEGY_SUBTAB_KEY);
+    if (v === "sector" || v === "industry") v = "balancing";   // migrate the old split sub-tabs
+    return STRATEGY_SUBTABS.includes(v) ? v : "overview";
+  }
   catch { return "overview"; }
 }
 function saveStrategySubTab(v) {
@@ -4468,6 +4472,16 @@ async function renderActive() {
       for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; }
       return last;
     }
+    // Nifty 500 — the client's ideal benchmark (it IS our stock universe).
+    const nifty500ClosesByDate = benchmark?.indices?.["^CRSLDX"]?.closes || null;
+    const nifty500DatesSorted = nifty500ClosesByDate ? Object.keys(nifty500ClosesByDate).sort() : null;
+    function nifty500On(date) {
+      if (!nifty500ClosesByDate) return null;
+      if (nifty500ClosesByDate[date] != null) return nifty500ClosesByDate[date];
+      let last = null;
+      for (const d of nifty500DatesSorted) { if (d <= date) last = nifty500ClosesByDate[d]; else break; }
+      return last;
+    }
 
     // Strategy mode (top-level: active vs passive) decides the buildView
     // contract. Active mode passes the user-chosen cadence; Passive mode
@@ -4484,7 +4498,7 @@ async function renderActive() {
       ? lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []
       : [];
 
-    const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks);
+    const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On);
 
     // Alerts section (lives inside the Strategy tab, not a separate tab).
     if (!customTechByTicker) {
@@ -4509,6 +4523,7 @@ async function renderActive() {
     wireActiveCadenceToggle();
     wireStrategySegmentPills();
     wireSectorTimingToggle("#active-content", renderActive);
+    wireStrategyBalanceToggle();
     wireStrategyAlertsDropdown();
     wireAlertsInputs("#active-content", renderActive);
     // Cohort-style row clicks open the same drill modal everywhere else uses.
@@ -4546,8 +4561,10 @@ async function renderActive() {
       saveSimPrefs(simPrefs);
       renderActive();
     });
-    // Chart hover crosshair + tooltip
-    if (state.strategySubTab === "overview") setupActiveChartHover(view);
+    wireStrategyChartMode();
+    // Chart hover crosshair + tooltip — basket mode only (the per-stock
+    // "Stocks" view draws static lines with its own legend).
+    if (state.strategySubTab === "overview" && (state.strategyChartMode || "basket") !== "stocks") setupActiveChartHover(view);
   } catch (e) {
     console.error("renderActive failed:", e);
     host.innerHTML = `
@@ -4568,7 +4585,7 @@ async function renderActive() {
 // Build everything the Active shell needs for a given cadence. Returns
 // { kind, sim?, segments?, picks, hitSummary, equityCurve, niftyCurve,
 //   manualCurve, manualPicks, manualSummary, periodLabel, ... }.
-function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks) {
+function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On = () => null) {
   if (cadence === "daily") {
     const sim = simulateActiveBasket(snapshots, anchorDate, simPrefs);
     if (!sim || !sim.equity.length) return null;
@@ -4592,10 +4609,14 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     // day's top 7 (founder ask — same affordance the History tab used
     // to give for weekly baskets, just at 1-day granularity here).
     const segments = buildActiveSegmentChain(snapshots, anchorDate, 1);
+    const nifty500Curve = buildNiftyCurve(dates, nifty500On);
+    const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
+    const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates);
     return {
       kind: "daily",
       sim, picks, hitSummary, segments,
       equityCurve, niftyCurve, manualCurve,
+      nifty500Curve, nifty500Ret, aiStockCurves, manualStockCurves,
       manualPicks: manualRows, manualSummary, manualBooked,
       periodLabel: `Daily rebalance from ${fmtDateDMY(anchorDate)}`,
       finalReturn, niftyRet,
@@ -4631,6 +4652,9 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
   const grossFinalReturn = grossCurve.length ? grossCurve[grossCurve.length - 1].retPct : finalReturn;
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
+  const nifty500Curve = buildNiftyCurve(dates, nifty500On);
+  const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
+  const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates);
   const capital = simPrefs.capital ?? ACTIVE_INITIAL_CAPITAL;
   const finalValue = capital * (1 + finalReturn / 100);
   // Charges in ₹ ≈ the gap the costs opened between gross and net pots.
@@ -4640,6 +4664,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     kind: cadence,
     segments, picks, hitSummary,
     equityCurve, niftyCurve, manualCurve,
+    nifty500Curve, nifty500Ret, aiStockCurves, manualStockCurves,
     manualPicks: manualRows, manualSummary, manualBooked,
     periodLabel: `${cadenceLabel} from ${fmtDateDMY(anchorDate)}${cadence === "passive" ? "" : ` · ${segments.length} segment${segments.length === 1 ? "" : "s"}`}`,
     finalReturn, niftyRet,
@@ -4904,6 +4929,44 @@ function buildNiftyCurve(dates, niftyOn) {
   });
 }
 
+// Per-stock cumulative-return curves over `dates` for the chart's "Stocks"
+// mode (client ask: toggle basket ↔ stocks → one line per holding, for both
+// AI and Manual baskets). entryCloses = { ticker: entryClose }; forward-fills
+// a missing daily close so an illiquid day doesn't punch a hole in the line.
+function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates) {
+  if (!dates?.length) return [];
+  const snapByDate = new Map(snapshots.map((s) => [s.date, s]));
+  return Object.keys(entryCloses).map((ticker) => {
+    let last = entryCloses[ticker];
+    const curve = dates.map((date) => {
+      const snap = snapByDate.get(date);
+      const s = snap ? snap.stocks.find((x) => x.ticker === ticker) : null;
+      if (s && typeof s.close === "number") last = s.close;
+      return { date, retPct: (last / entryCloses[ticker] - 1) * 100 };
+    });
+    return { ticker, name: nameByTicker[ticker] || ticker, curve };
+  });
+}
+
+// Both baskets' per-stock line curves for the chart's "Stocks" mode. AI names
+// = the latest segment's top-7 (entry at that segment's close); Manual names =
+// the in-coverage client picks (entry at the anchor snapshot close).
+function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates) {
+  const lastSeg = (segments || [])[(segments || []).length - 1];
+  const aiEntry = {}, aiName = {};
+  for (const s of (lastSeg?.top7 || [])) if (s.ticker && typeof s.close === "number") { aiEntry[s.ticker] = s.close; aiName[s.ticker] = s.name || s.ticker; }
+  const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates);
+  const manualEntry = {}, manualName = {};
+  const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
+  for (const p of (manualPicks || [])) {
+    if (!p.in_universe || !p.ticker) continue;
+    const s = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker);
+    if (s && typeof s.close === "number") { manualEntry[p.ticker] = s.close; manualName[p.ticker] = p.selection || p.ticker; }
+  }
+  const manualStockCurves = buildPerStockCurves(manualEntry, manualName, snapshots, dates);
+  return { aiStockCurves, manualStockCurves };
+}
+
 // Daily picks: every BUY event in the simulator's trade log becomes a
 // fresh accuracy-tracked pick. If the same stock re-enters multiple
 // times, each entry is tracked separately (per founder confirmation —
@@ -5054,10 +5117,9 @@ function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtm
 // likes on the SPIP Basket page — one click, no scroll.
 function renderStrategySubNav(sub) {
   const tabs = [
-    { k: "overview", icon: "📈", label: "Overview" },
-    { k: "accuracy", icon: "🎯", label: "Accuracy" },
-    { k: "sector",   icon: "🧭", label: "Sector" },
-    { k: "industry", icon: "🏭", label: "Industry" },
+    { k: "overview",  icon: "📈", label: "Overview" },
+    { k: "accuracy",  icon: "🎯", label: "Accuracy" },
+    { k: "balancing", icon: "🧭", label: "Balancing" },
   ];
   return `
     <div class="bg-white rounded-2xl ring-1 ring-slate-100 p-1 flex flex-wrap gap-1">
@@ -5075,10 +5137,8 @@ function renderStrategySubPanel(view, sub, mode, anchorDate) {
   switch (sub) {
     case "accuracy":
       return `<div class="space-y-4">${renderActiveOverallHitsSplit(view)}${renderActivePickRowsSplit(view)}</div>`;
-    case "sector":
-      return renderStrategyTimingPanel(view, "sector");
-    case "industry":
-      return renderStrategyTimingPanel(view, "industry");
+    case "balancing":
+      return renderStrategyBalancing(view);
     case "capital":
       return `<div class="space-y-4">${renderSimPanel(view)}${renderActiveBetaCaveat(view, anchorDate)}</div>`;
     case "overview":
@@ -5223,6 +5283,7 @@ function renderStrategyCommandBar(view, cadence, mode, hits) {
   const aiDD = curveMaxDrawdown(view.equityCurve || []);
   const manualDD = view.manualFinalReturn != null ? curveMaxDrawdown(view.manualCurve || []) : null;
   const niftyDD = (view.niftyCurve && view.niftyCurve.length) ? curveMaxDrawdown(view.niftyCurve) : null;
+  const nifty500DD = (view.nifty500Curve && view.nifty500Curve.length) ? curveMaxDrawdown(view.nifty500Curve) : null;
   const stat = (label, ret, dd, labelCls) => {
     if (ret == null) return "";
     const rc = ret >= 0 ? "text-emerald-600" : "text-rose-600";
@@ -5255,7 +5316,8 @@ function renderStrategyCommandBar(view, cadence, mode, hits) {
         <div class="flex items-stretch rounded-xl ring-1 ring-slate-200 bg-slate-50/40 divide-x divide-slate-200/70">
           ${stat("AI", view.finalReturn, aiDD, "text-indigo-700")}
           ${stat("Manual", view.manualFinalReturn, manualDD, "text-amber-700")}
-          ${stat("Nifty", view.niftyRet, niftyDD, "text-slate-500")}
+          ${stat("Nifty 50", view.niftyRet, niftyDD, "text-slate-500")}
+          ${stat("Nifty 500", view.nifty500Ret, nifty500DD, "text-sky-600")}
         </div>
         <div class="h-9 w-px bg-slate-200 hidden sm:block"></div>
         <div class="flex items-center gap-2">
@@ -5351,8 +5413,13 @@ function renderSimPanel(view) {
 const ACTIVE_CHART = {
   W: 820, H: 240,
   M: { left: 50, right: 18, top: 16, bottom: 32 },
-  color: { ai: "#6366f1", manual: "#f59e0b", nifty: "#94a3b8" },
+  color: { ai: "#6366f1", manual: "#f59e0b", nifty: "#94a3b8", nifty500: "#0ea5e9" },
 };
+// Categorical palette for the per-stock ("Stocks") chart mode — AI names get
+// indigo/violet family tones, Manual names get amber/orange, so the two
+// baskets stay visually grouped even with 14 lines on screen.
+const STOCK_PALETTE_AI = ["#6366f1", "#8b5cf6", "#4f46e5", "#7c3aed", "#3b82f6", "#6d28d9", "#2563eb"];
+const STOCK_PALETTE_MANUAL = ["#f59e0b", "#ea580c", "#d97706", "#f97316", "#b45309", "#fb923c", "#c2410c"];
 
 // Max-upside on a cumulative-return curve = the highest retPct point
 // ever reached during the window. Tells the analyst "how far did this
@@ -5393,18 +5460,22 @@ function renderStrategyKpis(view) {
   const aiCurve = view.equityCurve || [];
   const manualCurve = view.manualCurve || [];
   const niftyCurve = view.niftyCurve || [];
+  const nifty500Curve = view.nifty500Curve || [];
   const aiUp = curveMaxUpside(aiCurve);
   const manualUp = curveMaxUpside(manualCurve);
   const niftyUp = curveMaxUpside(niftyCurve);
+  const nifty500Up = curveMaxUpside(nifty500Curve);
   const aiDD = curveMaxDrawdown(aiCurve);
   const manualDD = curveMaxDrawdown(manualCurve);
   const niftyDD = curveMaxDrawdown(niftyCurve);
+  const nifty500DD = curveMaxDrawdown(nifty500Curve);
   const aiFinal = view.finalReturn;
   const manualFinal = view.manualFinalReturn;
   const niftyFinal = view.niftyRet;
+  const nifty500Final = view.nifty500Ret;
   const manualVsAi = (manualFinal != null && aiFinal != null) ? manualFinal - aiFinal : null;
   const aiVsNifty = (aiFinal != null && niftyFinal != null) ? aiFinal - niftyFinal : null;
-  const manualVsNifty = (manualFinal != null && niftyFinal != null) ? manualFinal - niftyFinal : null;
+  const aiVsNifty500 = (aiFinal != null && nifty500Final != null) ? aiFinal - nifty500Final : null;
 
   const fmtPct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
   const cls = (v) => v == null ? "text-slate-500" : v >= 0 ? "text-emerald-700" : "text-rose-700";
@@ -5415,6 +5486,21 @@ function renderStrategyKpis(view) {
       <span class="ml-auto font-bold tabular-nums ${cls(value)}">${fmtPct(value)}</span>
     </div>`;
 
+  // Net performance as of today — the headline "where do we stand" the client
+  // asked to see up front: both baskets against both benchmarks.
+  const cardNet = `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-indigo-200 p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Net performance · as of today</div>
+        <div class="text-indigo-500 text-base">≡</div>
+      </div>
+      <div class="space-y-1.5">
+        ${row("bg-indigo-500", "AI basket", aiFinal)}
+        ${row("bg-amber-500", "Manual basket", manualFinal)}
+        ${row("bg-slate-400", "Nifty 50", niftyFinal)}
+        ${row("bg-sky-500", "Nifty 500", nifty500Final)}
+      </div>    </div>`;
+
   const cardUpside = `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
       <div class="flex items-center justify-between mb-2">
@@ -5424,7 +5510,8 @@ function renderStrategyKpis(view) {
       <div class="space-y-1.5">
         ${row("bg-amber-500", "Manual", manualUp)}
         ${row("bg-indigo-500", "AI", aiUp)}
-        ${row("bg-slate-400", "Nifty", niftyUp)}
+        ${row("bg-slate-400", "Nifty 50", niftyUp)}
+        ${row("bg-sky-500", "Nifty 500", nifty500Up)}
       </div>    </div>`;
 
   const cardDrawdown = `
@@ -5436,7 +5523,8 @@ function renderStrategyKpis(view) {
       <div class="space-y-1.5">
         ${row("bg-amber-500", "Manual", manualDD)}
         ${row("bg-indigo-500", "AI", aiDD)}
-        ${row("bg-slate-400", "Nifty", niftyDD)}
+        ${row("bg-slate-400", "Nifty 50", niftyDD)}
+        ${row("bg-sky-500", "Nifty 500", nifty500DD)}
       </div>    </div>`;
 
   const alphaRow = (dotCls, label, value) => `
@@ -5456,12 +5544,13 @@ function renderStrategyKpis(view) {
       </div>
       <div class="space-y-1.5">
         ${alphaRow("bg-amber-500", "Manual − AI", manualVsAi)}
-        ${alphaRow("bg-indigo-500", "AI − Nifty", aiVsNifty)}
-        ${alphaRow("bg-amber-500", "Manual − Nifty", manualVsNifty)}
+        ${alphaRow("bg-slate-400", "AI − Nifty 50", aiVsNifty)}
+        ${alphaRow("bg-sky-500", "AI − Nifty 500", aiVsNifty500)}
       </div>    </div>`;
 
   return `
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      ${cardNet}
       ${cardUpside}
       ${cardDrawdown}
       ${cardAlpha}
@@ -5469,25 +5558,47 @@ function renderStrategyKpis(view) {
   `;
 }
 
+// Chart mode toggle — Basket line vs one line per stock (client ask).
+function renderChartModeToggle(mode) {
+  const btn = (k, label) => `<button type="button" data-chart-mode="${k}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${mode === k ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}">${label}</button>`;
+  return `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${btn("basket", "Basket")}${btn("stocks", "Stocks")}</div>`;
+}
+
 function renderActiveCumulativeChart(view) {
   const { W, H, M, color } = ACTIVE_CHART;
   const innerW = W - M.left - M.right;
   const innerH = H - M.top - M.bottom;
+  const mode = (state.strategyChartMode === "stocks") ? "stocks" : "basket";
+  const toggle = renderChartModeToggle(mode);
+  const shell = (legend, bodyHtml) => `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
+      <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <h3 class="font-semibold text-slate-900 text-sm">Cumulative return</h3>
+          ${toggle}
+        </div>
+        <div class="flex items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 flex-wrap justify-end">${legend}</div>
+      </div>
+      ${bodyHtml}`;
+  // "Stocks" mode — one line per holding, for both baskets.
+  if (mode === "stocks") {
+    return shell(`<span class="text-slate-400">One line per holding · both baskets</span>`, renderPerStockChartBody(view)) + `</div>`;
+  }
+
   const pts = view.equityCurve;
   if (pts.length < 2) {
-    return `
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
-        <h3 class="font-semibold text-slate-900 text-sm mb-2">Cumulative return</h3>
-        <div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot yet.</div>
-      </div>`;
+    return shell("", `<div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot yet.</div>`) + `</div>`;
   }
   const niftyByDate = new Map((view.niftyCurve || []).map((p) => [p.date, p.retPct]));
+  const nifty500ByDate = new Map((view.nifty500Curve || []).map((p) => [p.date, p.retPct]));
   const manualByDate = new Map((view.manualCurve || []).map((p) => [p.date, p.retPct]));
   const hasManual = view.manualCurve && view.manualCurve.some((p) => p.retPct != null);
+  const hasN500 = view.nifty500Curve && view.nifty500Curve.some((p) => p.retPct != null);
   const allVals = [];
   for (const p of pts) {
     allVals.push(p.retPct);
     const n = niftyByDate.get(p.date); if (n != null) allVals.push(n);
+    const n5 = nifty500ByDate.get(p.date); if (n5 != null) allVals.push(n5);
     const m = manualByDate.get(p.date); if (m != null) allVals.push(m);
   }
   const yMin = Math.min(0, ...allVals);
@@ -5509,6 +5620,7 @@ function renderActiveCumulativeChart(view) {
   };
   const activePath = buildLine((p) => p.retPct);
   const niftyPath = buildLine((p) => niftyByDate.get(p.date));
+  const nifty500Path = buildLine((p) => nifty500ByDate.get(p.date));
   const manualPath = buildLine((p) => manualByDate.get(p.date));
 
   const first = [xAt(0), yAt(pts[0].retPct)];
@@ -5530,20 +5642,13 @@ function renderActiveCumulativeChart(view) {
     : `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(p.date)}</text>`
   ).join("");
 
-  const manualLegend = hasManual
-    ? `<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5" style="background:${color.manual}"></span>Manual basket</span>`
-    : "";
+  const legend = `
+    <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5" style="background:${color.ai}"></span>AI basket</span>
+    ${hasManual ? `<span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5" style="background:${color.manual}"></span>Manual basket</span>` : ""}
+    <span class="inline-flex items-center gap-1.5" title="Benchmark"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty}"></span>Nifty 50</span>
+    ${hasN500 ? `<span class="inline-flex items-center gap-1.5" title="Benchmark — the NSE 500 universe">​<span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty500}"></span>Nifty 500</span>` : ""}`;
 
-  return `
-    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-5">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-semibold text-slate-900 text-sm">Cumulative return</h3>
-        <div class="flex items-center gap-3 text-[11px] text-slate-500">
-          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5" style="background:${color.ai}"></span>AI active</span>
-          ${manualLegend}
-          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty}"></span>Nifty 50</span>
-        </div>
-      </div>
+  const body = `
       <div id="active-chart-container" class="relative">
         <svg id="active-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:280px">
           <defs>
@@ -5555,6 +5660,7 @@ function renderActiveCumulativeChart(view) {
           ${yTicks}
           <path d="${areaPath}" fill="url(#activeStrategyArea)" />
           ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="${color.nifty}" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
+          ${nifty500Path ? `<path d="${nifty500Path}" fill="none" stroke="${color.nifty500}" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
           ${manualPath ? `<path d="${manualPath}" fill="none" stroke="${color.manual}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" />` : ""}
           <path d="${activePath}" fill="none" stroke="${color.ai}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" />
           ${xTicks}
@@ -5562,12 +5668,81 @@ function renderActiveCumulativeChart(view) {
           <circle id="active-chart-dot-ai" cx="0" cy="0" r="4.5" fill="#fff" stroke="${color.ai}" stroke-width="2.2" opacity="0" />
           <circle id="active-chart-dot-manual" cx="0" cy="0" r="3.5" fill="#fff" stroke="${color.manual}" stroke-width="2" opacity="0" />
           <circle id="active-chart-dot-nifty" cx="0" cy="0" r="3.5" fill="#fff" stroke="${color.nifty}" stroke-width="2" opacity="0" />
+          <circle id="active-chart-dot-nifty500" cx="0" cy="0" r="3.5" fill="#fff" stroke="${color.nifty500}" stroke-width="2" opacity="0" />
           <rect id="active-chart-capture" x="0" y="0" width="${W}" height="${H}" fill="transparent" />
         </svg>
         <div id="active-chart-tooltip" class="hidden absolute z-10 pointer-events-none -translate-x-1/2 -translate-y-[calc(100%+10px)] bg-slate-900/95 backdrop-blur text-white text-[11px] rounded-xl shadow-2xl ring-1 ring-slate-700/60 px-3 py-2 whitespace-nowrap"></div>
+      </div>`;
+  return shell(legend, body) + `</div>`;
+}
+
+// Per-stock ("Stocks" mode) chart body — one cumulative-return line per
+// holding for BOTH baskets (solid = AI names, dashed = Manual names), with the
+// Nifty 50 benchmark for reference and a ticker legend. Static (no crosshair).
+function renderPerStockChartBody(view) {
+  const { W, H, M, color } = ACTIVE_CHART;
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const ai = view.aiStockCurves || [];
+  const manual = view.manualStockCurves || [];
+  const nifty = view.niftyCurve || [];
+  const dates = ((ai[0]?.curve) || (manual[0]?.curve) || nifty || []).map((p) => p.date);
+  if (dates.length < 2) return `<div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot per-stock lines yet.</div>`;
+  const lines = [];
+  ai.forEach((s, i) => lines.push({ ticker: s.ticker, color: STOCK_PALETTE_AI[i % STOCK_PALETTE_AI.length], curve: s.curve, dash: "" }));
+  manual.forEach((s, i) => lines.push({ ticker: s.ticker, color: STOCK_PALETTE_MANUAL[i % STOCK_PALETTE_MANUAL.length], curve: s.curve, dash: "3 3" }));
+  const allVals = [];
+  for (const l of lines) for (const p of l.curve) if (p.retPct != null) allVals.push(p.retPct);
+  for (const p of nifty) if (p.retPct != null) allVals.push(p.retPct);
+  if (!allVals.length) return `<div class="text-xs text-slate-500 py-6 text-center">No per-stock data for these baskets yet.</div>`;
+  const yMin = Math.min(0, ...allVals), yMax = Math.max(0, ...allVals);
+  const ySpan = Math.max(yMax - yMin, 0.5);
+  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
+  const xAt = (i) => M.left + (dates.length <= 1 ? 0 : (i / (dates.length - 1)) * innerW);
+  const yAt = (v) => M.top + (1 - (v - yLo) / (yHi - yLo)) * innerH;
+  const dateIdx = new Map(dates.map((d, i) => [d, i]));
+  const pathFor = (curve) => {
+    const segs = []; let cur = [];
+    (curve || []).forEach((p) => {
+      const i = dateIdx.get(p.date);
+      if (i == null || p.retPct == null) { if (cur.length) { segs.push(cur); cur = []; } return; }
+      cur.push(`${cur.length === 0 ? "M" : "L"} ${xAt(i).toFixed(2)} ${yAt(p.retPct).toFixed(2)}`);
+    });
+    if (cur.length) segs.push(cur);
+    return segs.map((s) => s.join(" ")).join(" ");
+  };
+  const yTicks = [0, 1, 2, 3, 4].map((step) => {
+    const v = yLo + (yHi - yLo) * (step / 4);
+    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
+    const isZero = Math.abs(v) < 0.05;
+    return `<line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" /><text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
+  }).join("");
+  const tickEvery = Math.max(1, Math.ceil(dates.length / 6));
+  const xTicks = dates.map((d, i) => (i % tickEvery !== 0 && i !== dates.length - 1) ? "" : `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(d)}</text>`).join("");
+  const niftyPath = pathFor(nifty);
+  const stockPaths = lines.map((l) => { const d = pathFor(l.curve); return d ? `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="1.6"${l.dash ? ` stroke-dasharray="${l.dash}"` : ""} stroke-linejoin="round" stroke-linecap="round" opacity="0.9" />` : ""; }).join("");
+  const legendChips = lines.map((l) => `<span class="inline-flex items-center gap-1 text-[10px] text-slate-600"><span class="w-2.5 h-0.5" style="background:${l.color}"></span>${escapeHtml(l.ticker)}</span>`).join(" ");
+  return `
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:280px">
+        ${yTicks}
+        ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="${color.nifty}" stroke-width="1.8" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
+        ${stockPaths}
+        ${xTicks}
+      </svg>
+      <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 items-center">
+        <span class="inline-flex items-center gap-1 text-[10px] text-slate-500"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty}"></span>Nifty 50</span>
+        ${legendChips}
       </div>
-    </div>
-  `;
+      <div class="mt-1 text-[10px] text-slate-400">Solid = AI basket names · dashed = Manual basket names.</div>`;
+}
+
+function wireStrategyChartMode() {
+  $$("#active-content [data-chart-mode]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.chartMode === "stocks" ? "stocks" : "basket";
+    if (v === (state.strategyChartMode || "basket")) return;
+    state.strategyChartMode = v;
+    rerenderKeepingScroll(renderActive);
+  }));
 }
 
 function setupActiveChartHover(view) {
@@ -5579,6 +5754,7 @@ function setupActiveChartHover(view) {
   const dotAi = document.getElementById("active-chart-dot-ai");
   const dotManual = document.getElementById("active-chart-dot-manual");
   const dotNifty = document.getElementById("active-chart-dot-nifty");
+  const dotNifty500 = document.getElementById("active-chart-dot-nifty500");
   const tip = document.getElementById("active-chart-tooltip");
   if (!container || !svg || !capture || !tip) return;
 
@@ -5588,11 +5764,13 @@ function setupActiveChartHover(view) {
   const pts = view.equityCurve;
   if (pts.length < 2) return;
   const niftyByDate = new Map((view.niftyCurve || []).map((p) => [p.date, p.retPct]));
+  const nifty500ByDate = new Map((view.nifty500Curve || []).map((p) => [p.date, p.retPct]));
   const manualByDate = new Map((view.manualCurve || []).map((p) => [p.date, p.retPct]));
   const allVals = [];
   for (const p of pts) {
     allVals.push(p.retPct);
     const n = niftyByDate.get(p.date); if (n != null) allVals.push(n);
+    const n5 = nifty500ByDate.get(p.date); if (n5 != null) allVals.push(n5);
     const m = manualByDate.get(p.date); if (m != null) allVals.push(m);
   }
   const yMin = Math.min(0, ...allVals);
@@ -5614,6 +5792,9 @@ function setupActiveChartHover(view) {
     const nVal = niftyByDate.get(p.date);
     if (nVal != null) { dotNifty.setAttribute("cx", aiPx); dotNifty.setAttribute("cy", yAt(nVal)); dotNifty.setAttribute("opacity", "1"); }
     else dotNifty.setAttribute("opacity", "0");
+    const n5Val = nifty500ByDate.get(p.date);
+    if (n5Val != null && dotNifty500) { dotNifty500.setAttribute("cx", aiPx); dotNifty500.setAttribute("cy", yAt(n5Val)); dotNifty500.setAttribute("opacity", "1"); }
+    else if (dotNifty500) dotNifty500.setAttribute("opacity", "0");
 
     // Position the tooltip at the point's ACTUAL screen location using the
     // SVG's live coordinate matrix. Deriving it from rect.width / W breaks
@@ -5637,7 +5818,8 @@ function setupActiveChartHover(view) {
       <div class="font-bold text-sm leading-tight">${fmtDateDMY(p.date)}</div>
       <div class="mt-1 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.ai}"></span><span class="text-slate-300">AI active</span><span class="ml-auto font-bold tabular-nums ${cls(p.retPct)}">${fmt(p.retPct)}</span></div>
       ${mVal != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.manual}"></span><span class="text-slate-300">Manual</span><span class="ml-auto font-bold tabular-nums ${cls(mVal)}">${fmt(mVal)}</span></div>` : ""}
-      ${nVal != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.nifty}"></span><span class="text-slate-300">Nifty</span><span class="ml-auto font-bold tabular-nums ${cls(nVal)}">${fmt(nVal)}</span></div>` : ""}
+      ${nVal != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.nifty}"></span><span class="text-slate-300">Nifty 50</span><span class="ml-auto font-bold tabular-nums ${cls(nVal)}">${fmt(nVal)}</span></div>` : ""}
+      ${n5Val != null ? `<div class="mt-0.5 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full" style="background:${color.nifty500}"></span><span class="text-slate-300">Nifty 500</span><span class="ml-auto font-bold tabular-nums ${cls(n5Val)}">${fmt(n5Val)}</span></div>` : ""}
     `;
     tip.classList.remove("hidden");
     tip.style.left = tipX + "px";
@@ -5658,6 +5840,7 @@ function setupActiveChartHover(view) {
     dotAi.setAttribute("opacity", "0");
     dotManual.setAttribute("opacity", "0");
     dotNifty.setAttribute("opacity", "0");
+    if (dotNifty500) dotNifty500.setAttribute("opacity", "0");
     tip.classList.add("hidden");
   }
   // Pointer x → nearest snapshot index, via the SVG's inverse CTM so
@@ -6064,6 +6247,133 @@ function renderActivePickColumn(title, palette, picks, side) {
 // Sector (broad) vs Industry (GICS sub-industry, finer) grouping for the
 // rebalance-timing table — toggled in the UI via `sectorTimingBy`.
 let sectorTimingBy = "sector";
+// Strategy-tab "Balancing" sub-tab grouping — Sector / Industry / Stock. Stock
+// is the default (client: "for us stocks are more important than the sector or
+// industry"). Merges the old separate Sector + Industry sub-tabs into one.
+let strategyBalanceBy = "stock";
+
+// Flatten BOTH baskets (AI + Manual) into one list of tracked picks the
+// balancing view groups/lists. AI picks already carry sector/industry; manual
+// picks get theirs looked up from the latest snapshot. Only in-coverage picks
+// with excursion (peak) data qualify. Client ask: "add your AI stock as well,
+// not just the manual stocks."
+function balancingPicks(view) {
+  const snaps = state.cache.history?.snapshots || [];
+  const lastSnap = snaps[snaps.length - 1];
+  const metaByTicker = new Map();
+  if (lastSnap) for (const s of lastSnap.stocks) if (s.ticker) metaByTicker.set(s.ticker, { sector: s.sector || null, industry: s.industry || null });
+  const booked = state.manualReturnMode !== "held";
+  const ai = (view.picks || []).filter((p) => !p.notCovered && p.peak && p.ticker).map((p) => ({
+    ticker: p.ticker, name: p.name, side: "AI",
+    sector: p.sector || metaByTicker.get(p.ticker)?.sector || null,
+    industry: p.industry || metaByTicker.get(p.ticker)?.industry || null,
+    ret: p.currentReturnPct, peak: p.peak, entryDate: p.entryDate,
+  }));
+  const manual = (view.manualPicks || []).filter((p) => !p.notCovered && p.peak && p.ticker).map((p) => {
+    const isBooked = booked && p.booking?.booked;
+    const meta = metaByTicker.get(p.ticker) || {};
+    return {
+      ticker: p.ticker, name: p.name, side: "Manual",
+      sector: p.sector || meta.sector || null,
+      industry: p.industry || meta.industry || null,
+      ret: isBooked ? p.bookedRet : p.heldRet, peak: p.peak, entryDate: p.entryDate,
+    };
+  });
+  return [...ai, ...manual];
+}
+
+// The merged Sector / Industry / Stock balancing panel (replaces the two
+// separate Sector and Industry sub-tabs). One toggle switches the grouping;
+// "Stocks" gives the per-stock table the client asked for.
+function renderStrategyBalancing(view) {
+  const by = ["sector", "industry", "stock"].includes(strategyBalanceBy) ? strategyBalanceBy : "sector";
+  const picks = balancingPicks(view);
+  const nAI = picks.filter((p) => p.side === "AI").length;
+  const nMan = picks.filter((p) => p.side === "Manual").length;
+  const toggleBtn = (val, text) => `<button data-balance-by="${val}" class="px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider transition ${by === val ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}">${text}</button>`;
+  const toggle = `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-xl p-0.5">${toggleBtn("sector", "Sector")}${toggleBtn("industry", "Industry")}${toggleBtn("stock", "Stocks")}</div>`;
+  const body = picks.length
+    ? (by === "stock" ? renderBalancingStockTable(picks) : renderBalancingGroupTable(picks, by))
+    : `<div class="text-center text-sm text-slate-500 py-6">No picks with tracking data yet — needs a few AI / manual picks carrying excursion data across this window.</div>`;
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🧭</span>
+          <h3 class="font-display font-bold text-slate-900 text-sm">Sector · Industry · Stock balancing</h3>
+        </div>
+        ${toggle}
+      </div>
+      <div class="text-[11px] text-slate-500 mb-3">Covers <strong>both baskets</strong> — ${nAI} AI + ${nMan} Manual pick${nMan === 1 ? "" : "s"}. ${by === "stock" ? "Every pick, stock by stock — click a row to drill in." : `Grouped by ${by}, fastest-peaking first — the natural rebalance horizon.`}</div>
+      ${body}
+    </div>`;
+}
+
+// Grouped roll-up (Sector or Industry) built from the COMBINED AI + Manual
+// picks — same shape as the old sector-timing table, now covering both baskets.
+function renderBalancingGroupTable(picks, by) {
+  const rows = buildSectorTiming(picks, by);
+  const label = by === "industry" ? "Industry" : "Sector";
+  if (!rows.length) return `<div class="text-center text-sm text-slate-500 py-6">No ${label.toLowerCase()} data on these picks yet.</div>`;
+  const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const body = rows.map((r) => `
+    <tr class="border-t border-slate-100">
+      <td class="py-2 pr-2 min-w-0"><div class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(r.sector)}">${escapeHtml(r.sector)}</div><div class="text-[10px] text-slate-400">${r.n} pick${r.n === 1 ? "" : "s"}</div></td>
+      <td class="py-2 px-2 text-right tabular-nums text-emerald-700 font-semibold">${pct(r.avgUpside)}</td>
+      <td class="py-2 px-2 text-right tabular-nums text-slate-700 font-semibold">${r.avgDaysToPeak.toFixed(1)}d</td>
+      <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(r.avgDownside)}</td>
+      <td class="py-2 pl-2 text-right"><span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[11px] font-bold tabular-nums">~${r.suggestedRebalance}d</span></td>
+    </tr>`).join("");
+  return `
+    <div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <th class="text-left pb-1 pr-2">${label}</th><th class="text-right pb-1 px-2">Avg peak</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Avg drawdown</th><th class="text-right pb-1 pl-2">Rebalance</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+}
+
+// The per-stock table (client ask): Stock · Sector · Manual/AI · Return ·
+// Days-to-peak · Max drawdown · Rebalance. Fastest-peaking first; rows drill
+// into the same modal the rest of the strategy tab uses.
+function renderBalancingStockTable(picks) {
+  const sorted = [...picks].sort((a, b) => (a.peak?.daysToMaxUpside ?? 999) - (b.peak?.daysToMaxUpside ?? 999));
+  const pct = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+  const body = sorted.map((p) => {
+    const sideBadge = p.side === "AI"
+      ? `<span class="inline-flex items-center px-1.5 py-0 rounded bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200 text-[9px] font-bold uppercase tracking-wider">AI</span>`
+      : `<span class="inline-flex items-center px-1.5 py-0 rounded bg-amber-100 text-amber-700 ring-1 ring-amber-200 text-[9px] font-bold uppercase tracking-wider">Manual</span>`;
+    const retCls = p.ret == null ? "text-slate-500" : p.ret >= 0 ? "text-emerald-700" : "text-rose-700";
+    const reb = Math.max(1, Math.round(p.peak?.daysToMaxUpside || 0));
+    return `
+      <tr data-cohort-row data-cohort-side="${p.side === "AI" ? "ai" : "manual"}" data-ticker="${escapeHtml(p.ticker)}" data-seg-anchor="${escapeHtml(p.entryDate || "")}" class="border-t border-slate-100 cursor-pointer hover:bg-indigo-50/40 transition">
+        <td class="py-2 pr-2 min-w-0"><div class="font-semibold text-slate-800 text-xs truncate" title="${escapeHtml(p.name || p.ticker)}">${escapeHtml(p.name || p.ticker)}</div><div class="text-[10px] text-slate-400 truncate">${escapeHtml(p.ticker)}</div></td>
+        <td class="py-2 px-2 text-[11px] text-slate-600"><div class="truncate max-w-[130px]" title="${escapeHtml(p.sector || "")}">${escapeHtml(p.sector || "—")}</div></td>
+        <td class="py-2 px-2 text-center">${sideBadge}</td>
+        <td class="py-2 px-2 text-right tabular-nums font-bold ${retCls}">${pct(p.ret)}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-slate-700">${p.peak?.daysToMaxUpside ?? "—"}d</td>
+        <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(p.peak?.maxDownsidePct)}</td>
+        <td class="py-2 pl-2 text-right"><span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[11px] font-bold tabular-nums">~${reb}d</span></td>
+      </tr>`;
+  }).join("");
+  return `
+    <div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <th class="text-left pb-1 pr-2">Stock</th><th class="text-left pb-1 px-2">Sector</th><th class="text-center pb-1 px-2">Basket</th><th class="text-right pb-1 px-2">Return</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Max drawdown</th><th class="text-right pb-1 pl-2">Rebalance</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
+    </table></div>`;
+}
+
+// Toggle handler for the Balancing sub-tab's Sector / Industry / Stock switch.
+function wireStrategyBalanceToggle() {
+  $$("#active-content [data-balance-by]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.balanceBy;
+    if (!["sector", "industry", "stock"].includes(v) || v === strategyBalanceBy) return;
+    strategyBalanceBy = v;
+    rerenderKeepingScroll(renderActive);
+  }));
+}
 function buildSectorTiming(picks, groupBy) {
   const by = groupBy === "industry" ? "industry" : "sector";
   const groups = new Map();
@@ -9116,14 +9426,19 @@ function heldPerfCore(ctx, weights, N = 7) {
   const entry = {}; const picks = [];
   for (const { c, sc } of ranked) { entry[c.ticker] = c.close; picks.push({ ticker: c.ticker, name: c.name, composite: sc }); }
   const last = { ...entry };
+  // Per-stock return series over the hold window — so a basket can be
+  // expanded to show each name's own max upside / drawdown (client ask:
+  // "click a basket and see the seven stocks with max drawdown / upside").
+  const stockCurves = {}; for (const tk of Object.keys(entry)) stockCurves[tk] = [];
   const curve = ctx.trackMaps.map((m, i) => {
     let sum = 0, n = 0;
     for (const tk of Object.keys(entry)) {
       const cl = m.has(tk) ? m.get(tk) : last[tk];
-      if (typeof cl === "number") { last[tk] = cl; sum += cl / entry[tk]; n++; }
+      if (typeof cl === "number") { last[tk] = cl; sum += cl / entry[tk]; n++; stockCurves[tk].push({ date: ctx.tracking[i].date, retPct: (cl / entry[tk] - 1) * 100 }); }
     }
     return { date: ctx.tracking[i].date, retPct: n ? (sum / n - 1) * 100 : null };
   });
+  for (const p of picks) { const sc = stockCurves[p.ticker] || []; p.up = curveMaxUpside(sc); p.dd = curveMaxDrawdown(sc); p.ret = lastRet(sc); }
   return { finalReturn: lastRet(curve), maxDD: curveMaxDrawdown(curve), picks, curve };
 }
 
@@ -9157,11 +9472,26 @@ function labWeightChips(w) {
 
 // One result card: a weight mix + its held-basket return, drawdown and picks.
 function renderLabResultCard(title, badge, weights, perf, highlight) {
-  const nW = normalizeWeights(weights);
+  const keys = LAB_PILLARS.map((p) => p.key);
+  const wsum = keys.reduce((a, k) => a + (Number(weights[k]) || 0), 0);
+  // Show the weights EXACTLY as set — no silent rescaling — so the chips on
+  // the card match the sliders (fixes "I set 50 but it shows 30"). Only a
+  // genuinely empty mix falls back to the framework default.
+  const nW = wsum > 0 ? weights : composite.PILLAR_WEIGHTS;
   const ret = perf?.finalReturn;
   const dd = perf?.maxDD;
   const retCls = ret == null ? "text-slate-400" : ret >= 0 ? "text-emerald-600" : "text-rose-600";
-  const picks = (perf?.picks || []).map((p) => p.ticker).slice(0, 7);
+  const picks = (perf?.picks || []).slice(0, 7);
+  const sign = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  // Per-stock rows revealed when the analyst clicks the basket — each name's
+  // own return, max upside and max drawdown over the hold window.
+  const stockRows = picks.map((p) => `
+    <div class="flex items-center gap-2 py-0.5 text-[10px] tabular-nums">
+      <span class="font-semibold text-slate-700 truncate flex-1 min-w-0" title="${escapeHtml(p.name || p.ticker)}">${escapeHtml(p.ticker)}</span>
+      <span class="${(p.ret ?? 0) >= 0 ? "text-emerald-600" : "text-rose-600"} w-12 text-right font-semibold">${sign(p.ret)}</span>
+      <span class="text-emerald-600 w-14 text-right" title="Max upside since entry">▲ ${sign(p.up)}</span>
+      <span class="text-rose-600 w-14 text-right" title="Max drawdown since entry">▼ ${sign(p.dd)}</span>
+    </div>`).join("");
   return `
     <div class="rounded-xl p-3 ring-1 ${highlight ? "ring-emerald-300 bg-emerald-50/40" : "ring-slate-200 bg-white"}">
       <div class="flex items-center justify-between gap-2 mb-1">
@@ -9173,7 +9503,13 @@ function renderLabResultCard(title, badge, weights, perf, highlight) {
         <div class="text-[10px] tabular-nums ${dd < -0.005 ? "text-rose-600" : "text-slate-400"}"><span class="uppercase tracking-wider font-semibold text-slate-400">DD</span> ${dd == null ? "—" : dd.toFixed(2) + "%"}</div>
       </div>
       <div class="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5">${labWeightChips(nW)}</div>
-      <div class="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-500 leading-snug"><span class="font-semibold text-slate-400">Basket:</span> ${picks.length ? picks.map((t) => escapeHtml(t)).join(" · ") : "—"}</div>
+      ${picks.length ? `
+      <details class="mt-2 pt-2 border-t border-slate-100 group">
+        <summary class="cursor-pointer list-none flex items-center gap-1 text-[10px] font-semibold text-indigo-600 hover:text-indigo-700 select-none">
+          <span class="transition-transform group-open:rotate-90">▸</span> Basket · ${picks.length} stock${picks.length === 1 ? "" : "s"} <span class="text-slate-400 font-normal">(ret · max ▲ / ▼)</span>
+        </summary>
+        <div class="mt-1.5 space-y-0">${stockRows}</div>
+      </details>` : `<div class="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400">Basket: —</div>`}
     </div>`;
 }
 
@@ -9186,6 +9522,8 @@ function renderWeightLab() {
   // not the framework baseline — so the Lab opens on "current" (founder ask).
   const currentW = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
   const yourW = state.labWeights || currentW;
+  const defW = composite.PILLAR_WEIGHTS;   // framework baseline — the "Reset to default" target
+  const yourTotal = LAB_PILLARS.reduce((a, p) => a + (Number(yourW[p.key]) || 0), 0);
   const perfCurrent = heldPerfCore(ctx, currentW);
   const perfYour = heldPerfCore(ctx, yourW);
   const aiBest = state.labAiBest;
@@ -9197,7 +9535,7 @@ function renderWeightLab() {
       <div class="flex items-center gap-2">
         <span class="inline-block w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0"></span>
         <span class="text-[11px] font-semibold text-slate-600 w-20 flex-shrink-0">${p.label}</span>
-        <input type="range" min="0" max="100" step="5" data-lab-w="${p.key}" value="${val}" class="flex-1 accent-indigo-600">
+        <input type="range" min="0" max="100" step="1" data-lab-w="${p.key}" value="${val}" class="flex-1 accent-indigo-600">
         <span class="text-xs font-bold tabular-nums text-slate-800 w-8 text-right" data-lab-wval="${p.key}">${val}</span>
       </div>`;
   }).join("");
@@ -9225,10 +9563,14 @@ function renderWeightLab() {
         <div>
           <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Your weights</div>
           <div class="space-y-2.5">${sliders}</div>
-          <div class="flex items-center gap-2 mt-4 flex-wrap">
+          <div class="flex items-center justify-between gap-2 mt-3">
+            <span class="text-[11px] text-slate-400">Weights can't exceed 100 — the total is capped as you drag.</span>
+            <span data-lab-total class="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-lg ring-1 ${yourTotal === 100 ? "text-emerald-700 bg-emerald-50 ring-emerald-200" : "text-amber-700 bg-amber-50 ring-amber-200"}">Total ${yourTotal} / 100</span>
+          </div>
+          <div class="flex items-center gap-2 mt-3 flex-wrap">
             <button type="button" data-lab-ai class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800">🤖 AI find best weights</button>
             <button type="button" data-lab-apply class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">Apply to SPIP Basket</button>
-            <button type="button" data-lab-reset class="px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100">↺ Reset</button>
+            <button type="button" data-lab-reset title="Reset to the framework default — F${defW.fundamentals} · T${defW.technicals} · M${defW.macro} · S${defW.sentiment} · L${defW.liquidity}" class="px-3 py-1.5 rounded-lg text-slate-600 text-xs font-semibold hover:bg-slate-100">↺ Reset to default</button>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -9249,14 +9591,32 @@ function refreshWeightLab() {
 
 function wireWeightLab() {
   const root = "#custom-content";
-  $$(`${root} [data-lab-w]`).forEach((inp) => {
+  const sliders = () => Array.from($$(`${root} [data-lab-w]`));   // Array, not NodeList — need .filter/.reduce
+  const readAll = () => { const w = {}; sliders().forEach((s) => { w[s.dataset.labW] = Math.max(0, Math.min(100, Number(s.value) || 0)); }); return w; };
+  const updateTotal = () => {
+    const total = sliders().reduce((a, s) => a + (Number(s.value) || 0), 0);
+    const chip = $(`${root} [data-lab-total]`);
+    if (!chip) return;
+    chip.textContent = `Total ${total} / 100`;
+    const ok = total === 100;
+    chip.className = `text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-lg ring-1 ${ok ? "text-emerald-700 bg-emerald-50 ring-emerald-200" : "text-amber-700 bg-amber-50 ring-amber-200"}`;
+  };
+  sliders().forEach((inp) => {
     inp.addEventListener("input", () => {
-      const s = $(`${root} [data-lab-wval="${inp.dataset.labW}"]`);
-      if (s) s.textContent = inp.value;
+      // Cap this pillar so the five weights can never sum past 100 (client:
+      // "don't let me go beyond 100"). Each pillar is set directly — no silent
+      // rescaling — so the number shown always equals the number set.
+      const key = inp.dataset.labW;
+      const others = sliders().filter((s) => s.dataset.labW !== key).reduce((a, s) => a + (Number(s.value) || 0), 0);
+      const maxAllowed = Math.max(0, 100 - others);
+      let v = Math.max(0, Math.min(100, Number(inp.value) || 0));
+      if (v > maxAllowed) { v = maxAllowed; inp.value = String(v); }
+      const lbl = $(`${root} [data-lab-wval="${key}"]`);
+      if (lbl) lbl.textContent = v;
+      updateTotal();
     });
     inp.addEventListener("change", () => {
-      const w = { ...(state.labWeights || composite.PILLAR_WEIGHTS) };
-      w[inp.dataset.labW] = Math.max(0, Math.min(100, Number(inp.value) || 0));
+      const w = readAll();
       state.labWeights = w; saveLabWeights(w); refreshWeightLab();
     });
   });
@@ -9267,7 +9627,10 @@ function wireWeightLab() {
       if (!snaps?.length) return;
       const ctx = buildLabContext(snaps, snaps[0].date);
       const best = findBestWeights(ctx);
-      if (best) { state.labAiBest = best; state.labWeights = { ...best.weights }; saveLabWeights(state.labWeights); }
+      // AI's mix lands in its OWN card only — the analyst's sliders stay put
+      // (client: "when I hit AI find best weights, MY weights also changed —
+      // keep my original weights").
+      if (best) state.labAiBest = best;
       refreshWeightLab();
     }, 30);
   }));
@@ -9280,7 +9643,9 @@ function wireWeightLab() {
     refreshWeightLab();   // re-render so the "Current SPIP" card reflects the new live weights
   });
   $(`${root} [data-lab-reset]`)?.addEventListener("click", () => {
-    state.labWeights = { ...(state.pillarWeights || composite.PILLAR_WEIGHTS) };
+    // Reset = the framework default (F40/T35/M15/S5/L5), not whatever the live
+    // SPIP weights may have drifted to (client: "reset to default").
+    state.labWeights = { ...composite.PILLAR_WEIGHTS };
     saveLabWeights(state.labWeights); state.labAiBest = null; refreshWeightLab();
   });
 }
