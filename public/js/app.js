@@ -4567,6 +4567,7 @@ async function renderActive() {
       renderActive();
     });
     wireStrategyChartMode();
+    wireStrategyStockBasket();
     // Chart hover crosshair + tooltip — basket mode only (the per-stock
     // "Stocks" view draws static lines with its own legend).
     if (state.strategySubTab === "overview" && (state.strategyChartMode || "basket") !== "stocks") setupActiveChartHover(view);
@@ -5611,9 +5612,15 @@ function renderActiveCumulativeChart(view) {
         <div class="flex items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 flex-wrap justify-end">${legend}</div>
       </div>
       ${bodyHtml}`;
-  // "Stocks" mode — one line per holding, for both baskets.
+  // "Stocks" mode — small multiples: one mini-graph per holding (the client's
+  // literal "seven graphs"), shown a basket at a time so 14 overlaid lines
+  // never fight for the same axis. "Both" still shows every holding — as 14
+  // separate, individually-readable tiles, so nothing is lost.
   if (mode === "stocks") {
-    return shell(`<span class="text-slate-400">One line per holding · both baskets</span>`, renderPerStockChartBody(view)) + `</div>`;
+    const basket = ["ai", "manual", "both"].includes(state.strategyStockBasket) ? state.strategyStockBasket : "ai";
+    const bBtn = (k, label) => `<button type="button" data-stock-basket="${k}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${basket === k ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}">${label}</button>`;
+    const basketToggle = `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${bBtn("ai", "AI")}${bBtn("manual", "Manual")}${bBtn("both", "Both")}</div>`;
+    return shell(basketToggle, renderPerStockSmallMultiples(view, basket)) + `</div>`;
   }
 
   const pts = view.equityCurve;
@@ -5707,64 +5714,87 @@ function renderActiveCumulativeChart(view) {
   return shell(legend, body) + `</div>`;
 }
 
-// Per-stock ("Stocks" mode) chart body — one cumulative-return line per
-// holding for BOTH baskets (solid = AI names, dashed = Manual names), with the
-// Nifty 50 benchmark for reference and a ticker legend. Static (no crosshair).
-function renderPerStockChartBody(view) {
-  const { W, H, M, color } = ACTIVE_CHART;
-  const innerW = W - M.left - M.right;
-  const innerH = H - M.top - M.bottom;
-  const ai = view.aiStockCurves || [];
-  const manual = view.manualStockCurves || [];
+// Per-stock ("Stocks" mode) small multiples — one mini cumulative-return graph
+// per holding (the client's "seven graphs"), instead of layering 14 near-
+// identical lines on one axis. Color encodes OUTCOME (green up / red down,
+// redundantly backed by the signed % and ▲/▼ so it reads under CVD); the ticker
+// title carries identity; a shared vertical scale keeps tiles comparable; a
+// faint Nifty 50 line sits behind each for a market reference. Booked/held aware
+// (the curves already freeze at the exit level); each tile drills into the modal.
+function renderPerStockSmallMultiples(view, basket) {
   const nifty = view.niftyCurve || [];
-  const dates = ((ai[0]?.curve) || (manual[0]?.curve) || nifty || []).map((p) => p.date);
-  if (dates.length < 2) return `<div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot per-stock lines yet.</div>`;
-  const lines = [];
-  ai.forEach((s, i) => lines.push({ ticker: s.ticker, color: STOCK_PALETTE_AI[i % STOCK_PALETTE_AI.length], curve: s.curve, dash: "" }));
-  manual.forEach((s, i) => lines.push({ ticker: s.ticker, color: STOCK_PALETTE_MANUAL[i % STOCK_PALETTE_MANUAL.length], curve: s.curve, dash: "3 3" }));
+  const aiStocks = (view.aiStockCurves || []).map((s) => ({ ...s, side: "ai" }));
+  const manualStocks = (view.manualStockCurves || []).map((s) => ({ ...s, side: "manual" }));
+  const stocks = basket === "ai" ? aiStocks : basket === "manual" ? manualStocks : [...aiStocks, ...manualStocks];
+  if (!stocks.length) {
+    const which = basket === "manual" ? "manual" : basket === "ai" ? "AI" : "";
+    return `<div class="text-xs text-slate-500 py-6 text-center">No ${which} holdings with tracking data yet.</div>`;
+  }
+  const dates = (stocks[0].curve || []).map((p) => p.date);
+  if (dates.length < 2) return `<div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot yet.</div>`;
+  // One shared vertical scale across every tile (+ Nifty) so a +8% runner
+  // visibly towers over a +1% name — panels are directly comparable.
   const allVals = [];
-  for (const l of lines) for (const p of l.curve) if (p.retPct != null) allVals.push(p.retPct);
+  for (const s of stocks) for (const p of s.curve) if (p.retPct != null) allVals.push(p.retPct);
   for (const p of nifty) if (p.retPct != null) allVals.push(p.retPct);
-  if (!allVals.length) return `<div class="text-xs text-slate-500 py-6 text-center">No per-stock data for these baskets yet.</div>`;
   const yMin = Math.min(0, ...allVals), yMax = Math.max(0, ...allVals);
   const ySpan = Math.max(yMax - yMin, 0.5);
-  const yLo = yMin - ySpan * 0.12, yHi = yMax + ySpan * 0.12;
-  const xAt = (i) => M.left + (dates.length <= 1 ? 0 : (i / (dates.length - 1)) * innerW);
-  const yAt = (v) => M.top + (1 - (v - yLo) / (yHi - yLo)) * innerH;
+  const yLo = yMin - ySpan * 0.1, yHi = yMax + ySpan * 0.1;
+  const W = 150, H = 56, PADX = 3, PADT = 4, PADB = 4;
+  const innerW = W - 2 * PADX, innerH = H - PADT - PADB;
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
+  const xAt = (i) => PADX + (dates.length <= 1 ? 0 : (i / (dates.length - 1)) * innerW);
+  const yAt = (v) => PADT + (1 - (v - yLo) / (yHi - yLo)) * innerH;
   const pathFor = (curve) => {
     const segs = []; let cur = [];
     (curve || []).forEach((p) => {
       const i = dateIdx.get(p.date);
       if (i == null || p.retPct == null) { if (cur.length) { segs.push(cur); cur = []; } return; }
-      cur.push(`${cur.length === 0 ? "M" : "L"} ${xAt(i).toFixed(2)} ${yAt(p.retPct).toFixed(2)}`);
+      cur.push(`${cur.length === 0 ? "M" : "L"} ${xAt(i).toFixed(1)} ${yAt(p.retPct).toFixed(1)}`);
     });
     if (cur.length) segs.push(cur);
     return segs.map((s) => s.join(" ")).join(" ");
   };
-  const yTicks = [0, 1, 2, 3, 4].map((step) => {
-    const v = yLo + (yHi - yLo) * (step / 4);
-    const yy = (M.top + innerH - (step / 4) * innerH).toFixed(2);
-    const isZero = Math.abs(v) < 0.05;
-    return `<line x1="${M.left}" x2="${(W - M.right).toFixed(2)}" y1="${yy}" y2="${yy}" stroke="${isZero ? "#94a3b8" : "#e2e8f0"}" stroke-width="${isZero ? 0.9 : 0.6}" stroke-dasharray="${isZero ? "0" : "3 4"}" /><text x="${(M.left - 8).toFixed(2)}" y="${yy}" text-anchor="end" dominant-baseline="middle" font-size="10" font-weight="500" fill="#94a3b8">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</text>`;
-  }).join("");
-  const tickEvery = Math.max(1, Math.ceil(dates.length / 6));
-  const xTicks = dates.map((d, i) => (i % tickEvery !== 0 && i !== dates.length - 1) ? "" : `<text x="${xAt(i).toFixed(2)}" y="${(M.top + innerH + 16).toFixed(2)}" text-anchor="middle" font-size="10" fill="#64748b">${fmtDateDM(d)}</text>`).join("");
   const niftyPath = pathFor(nifty);
-  const stockPaths = lines.map((l) => { const d = pathFor(l.curve); return d ? `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="1.6"${l.dash ? ` stroke-dasharray="${l.dash}"` : ""} stroke-linejoin="round" stroke-linecap="round" opacity="0.9" />` : ""; }).join("");
-  const legendChips = lines.map((l) => `<span class="inline-flex items-center gap-1 text-[10px] text-slate-600"><span class="w-2.5 h-0.5" style="background:${l.color}"></span>${escapeHtml(l.ticker)}</span>`).join(" ");
+  const zeroY = yAt(0).toFixed(1);
+  const sign = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const showBadge = basket === "both";
+  const UP = "#059669", DOWN = "#e11d48";
+  const tiles = stocks.map((s) => {
+    const finalRet = lastRet(s.curve);
+    const up = curveMaxUpside(s.curve), dd = curveMaxDrawdown(s.curve);
+    const col = (finalRet ?? 0) >= 0 ? UP : DOWN;
+    const d = pathFor(s.curve);
+    const badge = showBadge
+      ? (s.side === "ai"
+          ? `<span class="inline-flex items-center px-1 py-0 rounded bg-indigo-100 text-indigo-700 text-[8px] font-bold uppercase tracking-wider">AI</span>`
+          : `<span class="inline-flex items-center px-1 py-0 rounded bg-amber-100 text-amber-700 text-[8px] font-bold uppercase tracking-wider">Man</span>`)
+      : "";
+    return `
+      <button type="button" data-cohort-row data-cohort-side="${s.side}" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(dates[0] || "")}" class="text-left rounded-xl ring-1 ring-slate-200 bg-white hover:ring-indigo-300 hover:shadow-sm transition p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+        <div class="flex items-center justify-between gap-1">
+          <span class="text-[11px] font-bold text-slate-800 truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.ticker)}</span>
+          <span class="flex items-center gap-1 flex-shrink-0">${badge}<span class="text-[11px] font-bold tabular-nums" style="color:${col}">${sign(finalRet)}</span></span>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="w-full mt-1 block" style="height:50px">
+          <line x1="${PADX}" x2="${W - PADX}" y1="${zeroY}" y2="${zeroY}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" />
+          ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 2" vector-effect="non-scaling-stroke" />` : ""}
+          ${d ? `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />` : ""}
+        </svg>
+        <div class="flex items-center justify-between mt-1 text-[9px] tabular-nums">
+          <span class="text-emerald-600" title="Max upside since entry">▲ ${sign(up)}</span>
+          <span class="text-rose-600" title="Max drawdown since entry">▼ ${sign(dd)}</span>
+        </div>
+      </button>`;
+  }).join("");
   return `
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="w-full select-none" style="max-height:280px">
-        ${yTicks}
-        ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="${color.nifty}" stroke-width="1.8" stroke-dasharray="5 4" stroke-linecap="round" stroke-linejoin="round" />` : ""}
-        ${stockPaths}
-        ${xTicks}
-      </svg>
-      <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 items-center">
-        <span class="inline-flex items-center gap-1 text-[10px] text-slate-500"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:${color.nifty}"></span>Nifty 50</span>
-        ${legendChips}
-      </div>
-      <div class="mt-1 text-[10px] text-slate-400">Solid = AI basket names · dashed = Manual basket names · honours the Booked / If-held toggle.</div>`;
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">${tiles}</div>
+      <div class="mt-3 flex items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 flex-wrap">
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${UP}"></span>up</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${DOWN}"></span>down</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:#cbd5e1"></span>Nifty 50</span>
+        <span>· shared scale · honours the Booked / If-held toggle · click a tile to drill in.</span>
+      </div>`;
 }
 
 function wireStrategyChartMode() {
@@ -5772,6 +5802,15 @@ function wireStrategyChartMode() {
     const v = btn.dataset.chartMode === "stocks" ? "stocks" : "basket";
     if (v === (state.strategyChartMode || "basket")) return;
     state.strategyChartMode = v;
+    rerenderKeepingScroll(renderActive);
+  }));
+}
+
+function wireStrategyStockBasket() {
+  $$("#active-content [data-stock-basket]").forEach((btn) => btn.addEventListener("click", () => {
+    const v = btn.dataset.stockBasket;
+    if (!["ai", "manual", "both"].includes(v) || v === (state.strategyStockBasket || "ai")) return;
+    state.strategyStockBasket = v;
     rerenderKeepingScroll(renderActive);
   }));
 }
