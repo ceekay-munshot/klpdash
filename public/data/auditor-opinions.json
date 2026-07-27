@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-26T04:12:45.440Z",
+  "generated_at": "2026-07-27T04:18:34.960Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -7,11 +7,11 @@
     "label": "Muns Auditor Opinion agent"
   },
   "cache_max_age_days": 30,
-  "total_universe": 517,
-  "total_cached": 517,
-  "total_live_opinion": 115,
-  "total_not_disclosed": 399,
-  "total_errors": 3,
+  "total_universe": 520,
+  "total_cached": 519,
+  "total_live_opinion": 114,
+  "total_not_disclosed": 400,
+  "total_errors": 5,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -272,16 +272,6 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-03T04:19:17.276Z"
-    },
-    "ATLANTAELE": {
-      "name": "Atlanta Electric",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided does not identify a company or annual report section/page",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided does not identify a company or annual report section/page |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-02T04:40:33.308Z"
     },
     "ABBOTINDIA": {
       "name": "Abbott India",
@@ -4873,16 +4863,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:31:53.726Z"
     },
-    "NSLNISP": {
-      "name": "NMDC Steel",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:31:52.677Z"
-    },
     "OLAELEC": {
       "name": "Ola Electric",
       "opinion": null,
@@ -5073,26 +5053,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:30:47.957Z"
     },
-    "HOMEFIRST": {
-      "name": "Home First Finan",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:31:14.323Z"
-    },
-    "VISL": {
-      "name": "Vedanta Iron & Steel",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:31:56.746Z"
-    },
     "ID": {
       "name": "SBI Funds Mgt.",
       "opinion": "Disclaimer of Opinion",
@@ -5151,7 +5111,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-26T04:12:41.941Z"
+      "fetched_at": "2026-07-27T04:18:34.959Z"
     },
     "PCBL": {
       "name": "PCBL Chemical",
@@ -5161,7 +5121,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-26T04:12:45.439Z"
+      "fetched_at": "2026-07-27T04:18:30.459Z"
     },
     "GRAPHITE": {
       "name": "Graphite India",
@@ -5171,7 +5131,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-26T04:12:44.439Z"
+      "fetched_at": "2026-07-27T04:18:34.458Z"
     },
     "INDIACEM": {
       "name": "India Cements",
@@ -5182,6 +5142,66 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-20T04:27:10.186Z"
+    },
+    "SBIFUNDS": {
+      "name": "SBI Funds Mgt.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "## Conclusion\n\nNo verifiable data was retrieved to confirm the auditor's opinion, making this the critical finding itself: absence of a confirmed **Unqualified Opinion** status introduces unquantified audit risk into any investment thesis. Until source documentation is obtained directly from the company's most recent annual report (Independent Auditor's Report section), no capital allocation decision should assume clean audit standing.\n\n**Follow-Ups:** Provide the specific",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:14:00.489Z"
+    },
+    "DIACABS": {
+      "name": "Diamond Power",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "**Conclusion:**\n\nNo auditor's opinion could be verified due to insufficient source data—the company name and annual report were not provided or retrievable. The critical strategic insight: without a specified filing, **auditor opinion classification** cannot proceed, as this requires direct access to the Independent Auditor's Report section of a specific fiscal year's annual report. Analysis integrity depends on precise source identification before opinion extraction can occur.\n\n**Follow-Ups:",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:14:33.508Z"
+    },
+    "WABAG": {
+      "name": "Va Tech Wabag",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:18:29.959Z"
+    },
+    "AMAGI": {
+      "name": "Amagi Media Labs",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "I'm unable to provide the requested table because no company name or annual report document was provided for analysis, and no data was successfully retrieved in the prior research step.\n\n**Conclusion:** Without access to the specific annual report, the auditor's opinion cannot be verified — and this represents the critical risk: never assume **Unqualified Opinion** status on an unaudited data gap, as misclassification could materially misinform investment due diligence.\n\n**Follow-Ups:** Please share the",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:13:53.405Z"
+    },
+    "NUVOCO": {
+      "name": "Nuvoco Vistas",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:18:33.957Z"
+    },
+    "SWANDEF": {
+      "name": "Swan Defence",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "## Conclusion\n\nSwan Defence Heavy Industries' **Unqualified Opinion** across both standalone and consolidated FY2024-25 financials signals strong financial reporting integrity and governance discipline, reinforcing credibility with investors, lenders, and defence-sector stakeholders. This clean audit trail removes a key risk overhang, allowing capital allocation and valuation assessments to focus on operational and growth fundamentals rather than financial stat",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-07-27T04:15:11.810Z"
     }
   }
 }
