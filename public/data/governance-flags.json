@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-29T03:50:02.395Z",
+  "generated_at": "2026-07-30T03:41:43.435Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 12,
+  "total_entities_seen": 13,
   "flagged_companies": {
     "AXISBANK": {
       "primary_name": "Axis Mutual Fund",
@@ -30,21 +30,21 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case."
+          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case"
         },
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi fines Axis MF former dealer for front-running."
+          "snippet": "Sebi fines Axis MF former dealer for front-running"
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "CDSL": {
       "primary_name": "CDSL",
       "order_type": "sebi-fine",
-      "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack.",
+      "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -55,16 +55,16 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack."
+          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack"
         },
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "sebi-cancel-registration",
-          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees."
+          "order_type": "sebi-cancel",
+          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees"
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -83,7 +83,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -102,7 +102,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -121,7 +121,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -140,7 +140,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -159,13 +159,19 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-07-29T03:50:02.395Z"
+      "first_seen_at": "2026-07-30T03:41:43.435Z"
     }
   },
   "unmatched_sample": [
     {
       "name": "Stark Investments",
       "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "MakeMyTrip",
+      "type": "sebi-other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -175,7 +181,7 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-29T03:49:22.954Z",
+      "at": "2026-07-30T03:41:22.141Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -208,7 +214,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-29T03:49:35.860Z",
+      "at": "2026-07-30T03:41:26.032Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -241,48 +247,84 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-07-29T03:49:42.126Z",
+      "at": "2026-07-30T03:41:33.741Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 5,
-      "total_extracted": 5,
+      "total_extracted_raw": 11,
+      "total_extracted": 11,
       "prefilter_sample": [
         {
           "name": "Axis Mutual Fund",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case."
-        },
-        {
-          "name": "Axis MF",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi fines Axis MF former dealer for front-running."
+          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case"
         },
         {
           "name": "Stark Investments",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Stark Investments for allegedly mobilising funds via unregistered operations."
+          "snippet": "Sebi bars Stark Investments for allegedly mobilising funds via unregistered operations"
         },
         {
           "name": "CDSL",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack."
+          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack"
+        },
+        {
+          "name": "Axis MF",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Sebi fines Axis MF former dealer for front-running"
         },
         {
           "name": "CDSL",
-          "order_type": "sebi-cancel-registration",
+          "order_type": "sebi-cancel",
           "is_listed_entity": true,
-          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees."
+          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees"
+        },
+        {
+          "name": "Adani Energy Solutions",
+          "order_type": "sebi-enforcement-order",
+          "is_listed_entity": true,
+          "snippet": "Adani Energy launches Rs 3,500 crore QIP, sets floor price at Rs 1,698 per share"
+        },
+        {
+          "name": "Triveni Engineering",
+          "order_type": "sebi-other",
+          "is_listed_entity": true,
+          "snippet": "Triveni Engineering shares adjust 38.5% as stock turns ex-demerger. What lies ahead for 95,000 shareholders"
+        },
+        {
+          "name": "Hindustan Zinc",
+          "order_type": "sebi-other",
+          "is_listed_entity": true,
+          "snippet": "Hindustan Zinc Q1 Results: Net profit spikes 145% YoY to Rs 5,469 crore, revenue jumps 77%"
+        },
+        {
+          "name": "MakeMyTrip",
+          "order_type": "sebi-other",
+          "is_listed_entity": true,
+          "snippet": "MakeMyTrip India files confidential IPO DRHP with Sebi. Check details"
+        },
+        {
+          "name": "Infosys",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Infosys fined around ₹2 crore in France over employee time-tracking system"
+        },
+        {
+          "name": "Zetwerk",
+          "order_type": "sebi-other",
+          "is_listed_entity": true,
+          "snippet": "IPO-bound Zetwerk faces counterclaims in escalating US trade secret dispute"
         }
       ],
-      "after_filter_count": 5,
+      "after_filter_count": 6,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
+        "no_sebi_signal_in_snippet": 5,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -290,27 +332,32 @@
         {
           "name": "Axis Mutual Fund",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case."
-        },
-        {
-          "name": "Axis MF",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi fines Axis MF former dealer for front-running."
+          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case"
         },
         {
           "name": "Stark Investments",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars Stark Investments for allegedly mobilising funds via unregistered operations."
+          "snippet": "Sebi bars Stark Investments for allegedly mobilising funds via unregistered operations"
         },
         {
           "name": "CDSL",
           "order_type": "sebi-fine",
-          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack."
+          "snippet": "Sebi imposes Rs 1 crore penalty on CDSL over 2022 malware attack"
+        },
+        {
+          "name": "Axis MF",
+          "order_type": "sebi-fine",
+          "snippet": "Sebi fines Axis MF former dealer for front-running"
         },
         {
           "name": "CDSL",
-          "order_type": "sebi-cancel-registration",
-          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees."
+          "order_type": "sebi-cancel",
+          "snippet": "Sebi cancels registration of 12 research analysts over unpaid renewal fees"
+        },
+        {
+          "name": "MakeMyTrip",
+          "order_type": "sebi-other",
+          "snippet": "MakeMyTrip India files confidential IPO DRHP with Sebi. Check details"
         }
       ]
     },
@@ -318,7 +365,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-07-29T03:49:53.772Z",
+      "at": "2026-07-30T03:41:40.846Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
