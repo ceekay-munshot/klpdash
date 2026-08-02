@@ -3381,25 +3381,30 @@ function computeManualMilestones(ticker, entryDate, entryPrice, target, sl, snap
 // itself counts as 0% at day 0, so maxUpside ≥ 0 and maxDownside ≤ 0.
 function computePeakStats(ticker, entryDate, entryPrice, snapshots, todayDate) {
   if (!ticker || entryPrice == null || !entryDate) return null;
-  let maxUpPct = null, maxUpDate = null;
-  let maxDownPct = null, maxDownDate = null;
+  let bestPct = null, bestDate = null;    // highest the stock traded since entry
+  let worstPct = null, worstDate = null;  // lowest the stock traded since entry
   for (const snap of snapshots) {
     if (snap.date < entryDate) continue;
     if (todayDate && snap.date > todayDate) break;
     const s = snap.stocks.find((x) => x.ticker === ticker);
     if (!s || s.close == null) continue;
     const pct = (s.close / entryPrice - 1) * 100;
-    if (maxUpPct == null || pct > maxUpPct) { maxUpPct = pct; maxUpDate = snap.date; }
-    if (maxDownPct == null || pct < maxDownPct) { maxDownPct = pct; maxDownDate = snap.date; }
+    if (bestPct == null || pct > bestPct) { bestPct = pct; bestDate = snap.date; }
+    if (worstPct == null || pct < worstPct) { worstPct = pct; worstDate = snap.date; }
   }
-  if (maxUpPct == null) return null;
+  if (bestPct == null) return null;
+  // Max upside = best gain vs entry; max downside = worst loss vs entry. Clamp
+  // so upside is never negative and downside never positive — a stock that
+  // never traded below entry shows 0% drawdown, not a red "drawdown" that's
+  // actually a gain (client flagged this on the review call).
   return {
-    maxUpsidePct: maxUpPct,
-    daysToMaxUpside: daysBetween(entryDate, maxUpDate),
-    maxUpsideDate: maxUpDate,
-    maxDownsidePct: maxDownPct,
-    daysToMaxDownside: daysBetween(entryDate, maxDownDate),
-    maxDownsideDate: maxDownDate,
+    maxUpsidePct: Math.max(0, bestPct),
+    daysToMaxUpside: daysBetween(entryDate, bestDate),
+    maxUpsideDate: bestDate,
+    daysSincePeak: todayDate ? daysBetween(bestDate, todayDate) : null,
+    maxDownsidePct: Math.min(0, worstPct),
+    daysToMaxDownside: daysBetween(entryDate, worstDate),
+    maxDownsideDate: worstDate,
   };
 }
 
@@ -6265,11 +6270,19 @@ function renderActivePickColumn(title, palette, picks, side) {
     // each with the day count to reach it. Founder ask: judge the
     // optimal rebalance horizon from where picks actually peak.
     const peak = r.peak;
+    // #3 momentum flag — in profit AND made a fresh high within the last few
+    // days = still climbing, so it may have room to run past the +5% target.
+    const climbing = peak && r.currentReturnPct != null && r.currentReturnPct > 0
+      && peak.daysSincePeak != null && peak.daysSincePeak <= 4;
+    const momoHtml = climbing
+      ? `<span title="Made a fresh high within the last few days — momentum intact, may have room to run past target" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-amber-100 text-amber-800 ring-1 ring-amber-200 text-[9px] font-bold">🔥 still climbing</span>`
+      : "";
     const peakHtml = peak ? `
         <div class="col-span-12 flex items-center gap-1.5 flex-wrap pt-1 mt-0.5 border-t border-slate-100">
           <span class="text-[8px] uppercase tracking-wider text-slate-400 font-bold">Excursion</span>
           <span title="Peak upside since entry and days taken to reach it" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 text-[9px] font-semibold tabular-nums">▲ ${fmtPct(peak.maxUpsidePct)} · ${peak.daysToMaxUpside}d</span>
           <span title="Worst drawdown since entry and days taken to reach it" class="inline-flex items-center gap-1 px-1.5 py-0 rounded bg-rose-50 text-rose-700 ring-1 ring-rose-200 text-[9px] font-semibold tabular-nums">▼ ${fmtPct(peak.maxDownsidePct)} · ${peak.daysToMaxDownside}d</span>
+          ${momoHtml}
         </div>` : "";
     return `
       <button type="button"${extraStyle} data-cohort-row data-cohort-side="${side}" data-ticker="${escapeHtml(r.ticker)}" data-seg-anchor="${escapeHtml(r.entryDate || "")}" class="w-full text-left grid grid-cols-12 items-center gap-x-2 gap-y-0 py-1.5 px-2 rounded-lg cursor-pointer transition ${rowTint}${extraCls} hover:ring-1 hover:ring-indigo-200">
@@ -6397,12 +6410,13 @@ function renderBalancingGroupTable(picks, by) {
       <td class="py-2 px-2 text-right tabular-nums text-emerald-700 font-semibold">${pct(r.avgUpside)}</td>
       <td class="py-2 px-2 text-right tabular-nums text-slate-700 font-semibold">${r.avgDaysToPeak.toFixed(1)}d</td>
       <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(r.avgDownside)}</td>
+      <td class="py-2 px-2 text-right tabular-nums text-slate-700 font-semibold">${r.avgDaysToTrough.toFixed(1)}d</td>
       <td class="py-2 pl-2 text-right"><span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[11px] font-bold tabular-nums">~${r.suggestedRebalance}d</span></td>
     </tr>`).join("");
   return `
     <div class="overflow-x-auto"><table class="w-full text-sm">
       <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <th class="text-left pb-1 pr-2">${label}</th><th class="text-right pb-1 px-2">Avg peak</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Avg drawdown</th><th class="text-right pb-1 pl-2">Rebalance</th>
+        <th class="text-left pb-1 pr-2">${label}</th><th class="text-right pb-1 px-2">Avg peak</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Avg drawdown</th><th class="text-right pb-1 px-2">Days to trough</th><th class="text-right pb-1 pl-2">Rebalance</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
@@ -6428,13 +6442,14 @@ function renderBalancingStockTable(picks) {
         <td class="py-2 px-2 text-right tabular-nums font-bold ${retCls}">${pct(p.ret)}</td>
         <td class="py-2 px-2 text-right tabular-nums text-slate-700">${p.peak?.daysToMaxUpside ?? "—"}d</td>
         <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(p.peak?.maxDownsidePct)}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-slate-700">${p.peak?.daysToMaxDownside ?? "—"}d</td>
         <td class="py-2 pl-2 text-right"><span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[11px] font-bold tabular-nums">~${reb}d</span></td>
       </tr>`;
   }).join("");
   return `
     <div class="overflow-x-auto"><table class="w-full text-sm">
       <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <th class="text-left pb-1 pr-2">Stock</th><th class="text-left pb-1 px-2">Sector</th><th class="text-center pb-1 px-2">Basket</th><th class="text-right pb-1 px-2">Return</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Max drawdown</th><th class="text-right pb-1 pl-2">Rebalance</th>
+        <th class="text-left pb-1 pr-2">Stock</th><th class="text-left pb-1 px-2">Sector</th><th class="text-center pb-1 px-2">Basket</th><th class="text-right pb-1 px-2">Return</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Max drawdown</th><th class="text-right pb-1 px-2">Days to trough</th><th class="text-right pb-1 pl-2">Rebalance</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
