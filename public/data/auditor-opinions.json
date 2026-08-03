@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-02T04:13:02.055Z",
+  "generated_at": "2026-08-03T04:12:10.990Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -7,11 +7,11 @@
     "label": "Muns Auditor Opinion agent"
   },
   "cache_max_age_days": 30,
-  "total_universe": 520,
-  "total_cached": 519,
-  "total_live_opinion": 95,
-  "total_not_disclosed": 413,
-  "total_errors": 11,
+  "total_universe": 522,
+  "total_cached": 521,
+  "total_live_opinion": 75,
+  "total_not_disclosed": 417,
+  "total_errors": 29,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -65,13 +65,13 @@
     },
     "COLPAL": {
       "name": "Colgate-Palmoliv",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Most recent annual report not provided",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Most recent annual report not provided |",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "**Conclusion:**\n\nNo auditor's opinion could be extracted, as the required annual report data was not accessible for this analysis. The critical strategic insight: without verified access to the **Independent Auditor's Report**, no reliable classification of audit opinion can be made, and any assumption risks material misrepresentation to investment decision-making. Direct source verification is mandatory before proceeding.\n\n| Company Name   | Auditor's Opinion | Source            |\n|----------",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:18:59.870Z"
+      "fetched_at": "2026-08-03T04:08:31.084Z"
     },
     "GILLETTE": {
       "name": "Gillette India",
@@ -85,23 +85,23 @@
     },
     "NESTLEIND": {
       "name": "Nestle India",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:10.209Z"
+      "fetched_at": "2026-08-03T04:11:55.865Z"
     },
     "GVT&D": {
       "name": "GE Vernova T&D",
       "opinion": null,
       "source": null,
-      "conclusion_block": null,
-      "error": "timeout",
+      "conclusion_block": "**Conclusion:**\n\nNo auditor's opinion could be extracted, as the required company name and annual report document were not provided. The critical strategic insight: without access to the **Independent Auditor's Report** section of a specific company's most recent annual filing, no verifiable audit classification can be determined. Proceeding on assumptions would compromise analytical integrity.\n\n**Follow-Ups:** Please provide the company name and the annual report (PDF/link) to proceed with extra",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:13:02.049Z"
+      "fetched_at": "2026-08-03T04:07:52.540Z"
     },
     "MCX": {
       "name": "Multi Comm. Exc.",
@@ -135,13 +135,13 @@
     },
     "GLAXO": {
       "name": "Glaxosmi. Pharma",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis states: “No successful information was gathered to generate a final summary.”",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states: “No successful information was gathered to generate a final summary.” |",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "## Conclusion\n\nNo auditor's opinion could be extracted, as the required company name and annual report source document were not provided in this session. The critical insight: without a specified **company identifier**, no financial statement analysis can proceed. To move forward, please supply the company name and, ideally, the specific annual report (year/filing) for review.\n\n**Follow-Ups:** Provide the target company name and fiscal year of the annual report to initiate extraction of the Independent Auditor's Report",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:15.071Z"
+      "fetched_at": "2026-08-03T04:10:22.490Z"
     },
     "PAGEIND": {
       "name": "Page Industries",
@@ -155,13 +155,13 @@
     },
     "TCS": {
       "name": "TCS",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no company name or annual report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Unknown | Disclaimer of Opinion | Analysis provided no company name or annual report reference |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:18:57.074Z"
+      "fetched_at": "2026-08-03T04:11:48.371Z"
     },
     "CASTROLIND": {
       "name": "Castrol India",
@@ -215,23 +215,23 @@
     },
     "BRITANNIA": {
       "name": "Britannia Inds.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report/company details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "I'm unable to provide the requested table or analysis because no company name, ticker, or annual report document was provided or successfully retrieved. The audit opinion extraction requires access to the specific company's most recent annual report filing.\n\n**Conclusion:** Without verified source data, any auditor's opinion classification would be fabricated — a critical risk in investment due diligence, where **audit opinion integrity** directly impacts credit and valuation confidence. Please provide the company name/",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:17.276Z"
+      "fetched_at": "2026-08-03T04:08:51.461Z"
     },
     "3MINDIA": {
       "name": "3M India",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report or auditor report details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report or auditor report details |",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "The analysis could not be completed because the required source document—the company's most recent annual report—was not provided or accessible. The critical strategic insight is that auditor opinion classification depends entirely on **primary source verification**; without direct access to the Independent Auditor's Report section, no reliable extraction can occur. Proceeding without this would risk misrepresenting audit findings, a material risk for investment decision-making.\n\n**Follow-Ups:** Please provide the annual report (PD",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:45.805Z"
+      "fetched_at": "2026-08-03T04:10:17.735Z"
     },
     "CAMS": {
       "name": "Cams Services",
@@ -245,33 +245,33 @@
     },
     "MARICO": {
       "name": "Marico",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No annual report/company identified",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | No annual report/company identified |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:18:54.916Z"
+      "fetched_at": "2026-08-03T04:12:08.354Z"
     },
     "IRCTC": {
       "name": "I R C T C",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details; source not identifiable",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details; source not identifiable |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:26.088Z"
+      "fetched_at": "2026-08-03T04:12:06.356Z"
     },
     "OFSS": {
       "name": "Oracle Fin.Serv.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided contains no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided contains no annual report details or auditor’s report reference |",
+      "opinion": "Not Available",
+      "source": "Not Available",
+      "conclusion_block": "## Final Report\n\nNo successful information was gathered to generate a final summary.\n\n| Company Name   | Auditor's Opinion                    | Source                                     |\n| Not Available  | Not Available                        | Not Available                              |\n\n**Conclusion:** The absence of source data prevents extraction of the auditor's opinion, representing a critical **information gap** that blocks investment due diligence. Without the annual report, no assessment of financial statement reliability or audit risk can be made.",
       "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:17.276Z"
+      "fetched_at": "2026-08-03T04:08:53.719Z"
     },
     "ABBOTINDIA": {
       "name": "Abbott India",
@@ -325,13 +325,13 @@
     },
     "HINDCOPPER": {
       "name": "Hindustan Copper",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis: “No successful information was gathered to generate a final summary.”",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Analysis: “No successful information was gathered to generate a final summary.” |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:48.143Z"
+      "fetched_at": "2026-08-03T04:12:10.979Z"
     },
     "TRAVELFOOD": {
       "name": "Travel Food",
@@ -365,13 +365,13 @@
     },
     "GLENMARK": {
       "name": "Glenmark Pharma.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No company annual report provided / analysis states no successful information was gathered",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company annual report provided / analysis states no successful information was gathered |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:22.802Z"
+      "fetched_at": "2026-08-03T04:11:57.862Z"
     },
     "NATIONALUM": {
       "name": "Natl. Aluminium",
@@ -411,27 +411,27 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:13:02.052Z"
+      "fetched_at": "2026-08-03T04:12:10.979Z"
     },
     "WAAREEENER": {
       "name": "Waaree Energies",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "**Conclusion:** Waaree Energies' **Unqualified Opinion** for FY 2024-25 confirms clean, reliable financial reporting with no auditor-flagged concerns—a necessary but not sufficient signal for investment quality. This clears a baseline governance hurdle, allowing strategic focus to shift toward fundamental performance drivers: margin trajectory, order book strength, and capital allocation discipline, rather than accounting integrity ris",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:09:07.467Z"
+    },
+    "HYUNDAI": {
+      "name": "Hyundai Motor I",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:30.317Z"
-    },
-    "HYUNDAI": {
-      "name": "Hyundai Motor I",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details; source not available",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details; source not available |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:16.564Z"
+      "fetched_at": "2026-08-03T04:12:08.853Z"
     },
     "JSWDULUX": {
       "name": "JSW Dulux",
@@ -451,7 +451,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:13:02.054Z"
+      "fetched_at": "2026-08-03T04:12:10.979Z"
     },
     "NETWEB": {
       "name": "Netweb Technol.",
@@ -471,7 +471,7 @@
       "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:26.819Z"
+      "fetched_at": "2026-08-03T04:12:07.355Z"
     },
     "IKS": {
       "name": "Inventurus Knowl",
@@ -495,23 +495,23 @@
     },
     "BEL": {
       "name": "Bharat Electron",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no company annual report details or auditor’s report source",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no company annual report details or auditor’s report source |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:11.930Z"
+      "fetched_at": "2026-08-03T04:12:10.982Z"
     },
     "FORCEMOT": {
       "name": "Force Motors",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No company annual report provided / Analysis states no successful information was gathered",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company annual report provided / Analysis states no successful information was gathered |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:05.851Z"
+      "fetched_at": "2026-08-03T04:11:48.371Z"
     },
     "MAZDOCK": {
       "name": "Mazagon Dock",
@@ -535,13 +535,13 @@
     },
     "TRITURBINE": {
       "name": "Triveni Turbine",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis section states: \"No successful information was gathered to generate a final summary.\"",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Analysis section states: \"No successful information was gathered to generate a final summary.\" |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:15.870Z"
+      "fetched_at": "2026-08-03T04:12:10.982Z"
     },
     "HEROMOTOCO": {
       "name": "Hero Motocorp",
@@ -555,13 +555,13 @@
     },
     "COALINDIA": {
       "name": "Coal India",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No annual report/company identified in the provided material",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | No annual report/company identified in the provided material |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:17.742Z"
+      "fetched_at": "2026-08-03T04:11:48.372Z"
     },
     "LICI": {
       "name": "Life Insurance",
@@ -575,13 +575,13 @@
     },
     "CHENNPETRO": {
       "name": "C P C L",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis states: “No successful information was gathered to generate a final summary.”",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states: “No successful information was gathered to generate a final summary.” |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:56.725Z"
+      "fetched_at": "2026-08-03T04:12:10.982Z"
     },
     "SUZLON": {
       "name": "Suzlon Energy",
@@ -605,13 +605,13 @@
     },
     "PERSISTENT": {
       "name": "Persistent Systems",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No annual report/company provided in prompt",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No annual report/company provided in prompt |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:14.466Z"
+      "fetched_at": "2026-08-03T04:12:10.983Z"
     },
     "POLYCAB": {
       "name": "Polycab India",
@@ -655,13 +655,13 @@
     },
     "TDPOWERSYS": {
       "name": "TD Power Systems",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided contains no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided contains no annual report details or auditor’s report reference |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-03T04:19:04.317Z"
+      "fetched_at": "2026-08-03T04:12:10.983Z"
     },
     "PREMIERENE": {
       "name": "Premier Energies",
@@ -812,16 +812,6 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-06T04:52:03.891Z"
-    },
-    "ENGINERSIN": {
-      "name": "Engineers India",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details; source not identified",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report details; source not identified |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-07T04:34:39.114Z"
     },
     "HCLTECH": {
       "name": "HCL Technologies",
@@ -1132,16 +1122,6 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-07T04:34:35.614Z"
-    },
-    "AVANTIFEED": {
-      "name": "Avanti Feeds",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided contains no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided contains no annual report details or auditor’s report reference |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-08T03:56:38.751Z"
     },
     "JBCHEPHARM": {
       "name": "J B Chemicals &",
@@ -2702,16 +2682,6 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:31:00.184Z"
-    },
-    "KEC": {
-      "name": "KEC International",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:31:00.225Z"
     },
     "APOLLO": {
       "name": "Apollo Micro Sys",
@@ -4968,10 +4938,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:33.815Z"
+      "fetched_at": "2026-08-03T04:12:10.983Z"
     },
     "CARTRADE": {
       "name": "Cartrade Tech",
@@ -5043,16 +5013,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-09T04:30:34.649Z"
     },
-    "GRAVITA": {
-      "name": "Gravita India",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-09T04:30:47.957Z"
-    },
     "ID": {
       "name": "SBI Funds Mgt.",
       "opinion": "Disclaimer of Opinion",
@@ -5103,45 +5063,25 @@
       "error_snippet": null,
       "fetched_at": "2026-07-20T04:26:41.197Z"
     },
-    "BALRAMCHIN": {
-      "name": "Balrampur Chini",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:30.317Z"
-    },
     "PCBL": {
       "name": "PCBL Chemical",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:30.317Z"
+      "fetched_at": "2026-08-03T04:12:10.988Z"
     },
     "GRAPHITE": {
       "name": "Graphite India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:26.320Z"
-    },
-    "INDIACEM": {
-      "name": "India Cements",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": "I can't independently verify the specific FY2025-26 opinion figure cited in the prior analysis—that period appears to be a future/unreleased reporting cycle, and I have no direct access to India Cements Limited's actual filed annual report to confirm the auditor's classification.\n\n**Conclusion:** The critical strategic insight is that an **Unqualified Opinion** signals no material misstatement risk, but this classification must be verified against the actual filed report before use in investment dec",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-20T04:27:10.186Z"
+      "fetched_at": "2026-08-03T04:12:10.989Z"
     },
     "SBIFUNDS": {
       "name": "SBI Funds Mgt.",
@@ -5163,16 +5103,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-27T04:14:33.508Z"
     },
-    "WABAG": {
-      "name": "Va Tech Wabag",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:31.317Z"
-    },
     "AMAGI": {
       "name": "Amagi Media Labs",
       "opinion": null,
@@ -5183,16 +5113,6 @@
       "error_snippet": null,
       "fetched_at": "2026-07-27T04:13:53.405Z"
     },
-    "NUVOCO": {
-      "name": "Nuvoco Vistas",
-      "opinion": null,
-      "source": null,
-      "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-02T04:12:31.317Z"
-    },
     "SWANDEF": {
       "name": "Swan Defence",
       "opinion": null,
@@ -5202,6 +5122,106 @@
       "http_status": null,
       "error_snippet": null,
       "fetched_at": "2026-07-27T04:15:11.810Z"
+    },
+    "PRUDENT": {
+      "name": "Prudent Corp.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.981Z"
+    },
+    "ACE": {
+      "name": "Action Const.Eq.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.983Z"
+    },
+    "NAZARA": {
+      "name": "Nazara Technolo.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.984Z"
+    },
+    "INDOMIM": {
+      "name": "Indo-MIM",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.984Z"
+    },
+    "PARKHOSPS": {
+      "name": "Park Medi World",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.984Z"
+    },
+    "HEG": {
+      "name": "HEG",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.988Z"
+    },
+    "JPPOWER": {
+      "name": "JP Power Ven.",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.989Z"
+    },
+    "CUBEINVIT": {
+      "name": "Cube Highways",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": "I can't complete this request as specified. The \"Analysis\" section provided contains fabricated financial data — specifically, it references a \"FY2026 Annual Report\" and a July 2026 AGM date, which describe future events that haven't occurred and cannot be verified. I have no actual access to Cube Highways Trust's annual reports or filings to extract a genuine auditor's opinion.\n\nTo proceed properly, I'd need:\n- The actual annual report document (PDF/text)",
+      "error": null,
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:08:01.792Z"
+    },
+    "NSLNISP": {
+      "name": "NMDC Steel",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.989Z"
+    },
+    "VISL": {
+      "name": "Vedanta Iron & Steel",
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-03T04:12:10.989Z"
     }
   }
 }
