@@ -1064,6 +1064,17 @@ function relativeTimeFrom(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
 }
 
+// Absolute IST stamp ("04 Aug, 02:45 pm") for the live-price freshness caption.
+// Returns null on a missing/bad timestamp so callers can hide the label.
+function formatLiveStamp(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return null;
+  return d.toLocaleString("en-IN", {
+    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata",
+  });
+}
+
 function sourceFriendly(c, m) {
   if (c.label === "Fundamentals") return "Screener.in saved screen · NSE 500";
   if (c.label === "Technicals") return "Yahoo Finance EOD · NSE 500";
@@ -1734,10 +1745,10 @@ async function ensureHistoryCache() {
     .catch(() => null);
   // Live intraday feed (Munshot) — current price + day high/low per basket
   // ticker. Powers live prices and intraday target/SL touch detection.
-  const livePrices = await fetch("data/live-prices.json")
+  const liveFeed = await fetch("data/live-prices.json")
     .then((r) => (r.ok ? r.json() : null))
-    .then((j) => j?.prices || {})
-    .catch(() => ({}));
+    .catch(() => null);
+  const livePrices = liveFeed?.prices || {};
 
   // Inject synthetic stock entries for out-of-coverage tickers (LKP picks
   // below our ~Rs 12,500 Cr universe, e.g. ELECON). Once they look like
@@ -1812,6 +1823,10 @@ async function ensureHistoryCache() {
     if (p && typeof p.current === "number") todayClose[t] = p.current;
   }
   state.cache.history.livePrices = livePrices;
+  // When the intraday cron last wrote the feed (its generated_at), so the UI
+  // can show "Live prices as of …". Prices only refresh on that 30-min
+  // market-hours schedule, not when the dashboard is opened.
+  state.cache.history.livePricesAt = liveFeed?.generated_at || null;
   // LKP picks indexed by ticker so manual-row clicks resolve to the
   // client-entry framing (with targets/SL) rather than the snapshot trail.
   const lkpForCache = lkpOverride() || lkp;
@@ -6146,6 +6161,9 @@ function renderManualBasketTable(manualPicks) {
   const todayClose = state.cache.history?.todayClose || {};
   const inCoverage = manualPicks.filter((p) => !p.notCovered).length;
   const booked = state.manualReturnMode !== "held";
+  // Live-price freshness: the feed refreshes on a 30-min market-hours cron,
+  // not on page open, so surface when it was last updated.
+  const liveStamp = formatLiveStamp(state.cache.history?.livePricesAt);
 
   const rows = manualPicks.map((r) => {
     if (r.notCovered) {
@@ -6193,6 +6211,7 @@ function renderManualBasketTable(manualPicks) {
         <div class="text-[11px] font-bold uppercase tracking-wider text-slate-700">Manual picks</div>
         <span class="text-[10px] text-slate-400 truncate">· ${manualPicks.length} stocks · ${inCoverage} in coverage</span>
       </div>
+      ${liveStamp ? `<div class="text-[10px] text-slate-400 -mt-1 mb-2" title="Live prices refresh automatically every 30 min during market hours (Mon–Fri, 9:15am–3:30pm IST), not when the page is opened.">Live prices as of ${liveStamp} IST</div>` : ""}
       <div class="rounded-lg bg-slate-50/60 ring-1 ring-slate-100 p-1 space-y-0.5">${rows}</div>
     </div>
   `;
