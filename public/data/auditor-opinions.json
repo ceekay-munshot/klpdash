@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-05T03:50:32.968Z",
+  "generated_at": "2026-08-06T03:51:35.903Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -9,9 +9,9 @@
   "cache_max_age_days": 30,
   "total_universe": 522,
   "total_cached": 521,
-  "total_live_opinion": 60,
+  "total_live_opinion": 46,
   "total_not_disclosed": 419,
-  "total_errors": 42,
+  "total_errors": 56,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -48,10 +48,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.929Z"
+      "fetched_at": "2026-08-06T03:51:35.053Z"
     },
     "ICICIAMC": {
       "name": "ICICI AMC",
@@ -88,10 +88,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.948Z"
+      "fetched_at": "2026-08-06T03:51:35.054Z"
     },
     "GVT&D": {
       "name": "GE Vernova T&D",
@@ -108,20 +108,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.949Z"
+      "fetched_at": "2026-08-06T03:51:35.053Z"
     },
     "HINDZINC": {
       "name": "Hindustan Zinc",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis: \"No successful information was gathered to generate a final summary.\"",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Analysis: \"No successful information was gathered to generate a final summary.\" |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:50.683Z"
+      "fetched_at": "2026-08-06T03:51:35.063Z"
     },
     "ENRIN": {
       "name": "Siemens Ener.Ind",
@@ -158,20 +158,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.949Z"
+      "fetched_at": "2026-08-06T03:51:35.060Z"
     },
     "CASTROLIND": {
       "name": "Castrol India",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Company not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:56.195Z"
+      "fetched_at": "2026-08-06T03:51:35.053Z"
     },
     "HBLENGINE": {
       "name": "HBL Engineering",
@@ -235,33 +235,33 @@
     },
     "CAMS": {
       "name": "Cams Services",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis states: “No successful information was gathered to generate a final summary.”",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis states: “No successful information was gathered to generate a final summary.” |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:56.753Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.054Z"
     },
     "MARICO": {
       "name": "Marico",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.949Z"
+      "fetched_at": "2026-08-06T03:51:35.060Z"
     },
     "IRCTC": {
       "name": "I R C T C",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:16.691Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.060Z"
     },
     "OFSS": {
       "name": "Oracle Fin.Serv.",
@@ -278,10 +278,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.952Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.054Z"
     },
     "EMMVEE": {
       "name": "Emmvee Photovol.",
@@ -308,30 +308,30 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.952Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.056Z"
     },
     "HDFCAMC": {
       "name": "HDFC AMC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.952Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.055Z"
     },
     "HINDCOPPER": {
       "name": "Hindustan Copper",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.952Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.057Z"
     },
     "TRAVELFOOD": {
       "name": "Travel Food",
@@ -345,33 +345,33 @@
     },
     "DIXON": {
       "name": "Dixon Technolog.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report or auditor’s report source",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report or auditor’s report source |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:50.654Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.061Z"
     },
     "INFY": {
       "name": "Infosys",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.952Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.061Z"
     },
     "GLENMARK": {
       "name": "Glenmark Pharma.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:20.189Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.061Z"
     },
     "NATIONALUM": {
       "name": "Natl. Aluminium",
@@ -388,30 +388,30 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.953Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.061Z"
     },
     "ITC": {
       "name": "ITC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.953Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.061Z"
     },
     "MSUMI": {
       "name": "Motherson Wiring",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.955Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.062Z"
     },
     "WAAREEENER": {
       "name": "Waaree Energies",
@@ -428,10 +428,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.955Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.063Z"
     },
     "JSWDULUX": {
       "name": "JSW Dulux",
@@ -468,10 +468,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "IKS": {
       "name": "Inventurus Knowl",
@@ -498,50 +498,50 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.063Z"
     },
     "FORCEMOT": {
       "name": "Force Motors",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "MAZDOCK": {
       "name": "Mazagon Dock",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No annual report/company provided",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No annual report/company provided |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:50.679Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.063Z"
     },
     "LLOYDSME": {
       "name": "Lloyds Metals",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.049Z"
     },
     "TRITURBINE": {
       "name": "Triveni Turbine",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "HEROMOTOCO": {
       "name": "Hero Motocorp",
@@ -558,10 +558,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "LICI": {
       "name": "Life Insurance",
@@ -578,10 +578,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.057Z"
     },
     "SUZLON": {
       "name": "Suzlon Energy",
@@ -595,23 +595,23 @@
     },
     "ECLERX": {
       "name": "eClerx Services",
-      "opinion": "Unqualified Opinion",
-      "source": "Annual Report 2024–25, Independent Auditor’s Report – “Opinion” section",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| eClerx Services Limited | Unqualified Opinion | Annual Report 2024–25, Independent Auditor’s Report – “Opinion” section |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:52:37.853Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.055Z"
     },
     "PERSISTENT": {
       "name": "Persistent Systems",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.058Z"
     },
     "POLYCAB": {
       "name": "Polycab India",
@@ -628,10 +628,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.065Z"
     },
     "INOXINDIA": {
       "name": "Inox India",
@@ -645,23 +645,23 @@
     },
     "CUPID": {
       "name": "Cupid",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details or auditor’s report reference",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Company not specified | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report reference |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:54.696Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.057Z"
     },
     "TDPOWERSYS": {
       "name": "TD Power Systems",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.056Z"
     },
     "PREMIERENE": {
       "name": "Premier Energies",
@@ -675,13 +675,13 @@
     },
     "BAGMANE": {
       "name": "Bagmane Prime REIT",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No company annual report provided / Analysis states no successful information was gathered",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | No company annual report provided / Analysis states no successful information was gathered |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:52:03.634Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.065Z"
     },
     "GODFRYPHLP": {
       "name": "Godfrey Phillips",
@@ -718,20 +718,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:19.689Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "LGEINDIA": {
       "name": "LG Electronics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.058Z"
     },
     "CDSL": {
       "name": "C D S L",
@@ -775,23 +775,23 @@
     },
     "APARINDS": {
       "name": "Apar Inds.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report/company details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report/company details |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:56.758Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.059Z"
     },
     "PIDILITIND": {
       "name": "Pidilite Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.058Z"
     },
     "NBCC": {
       "name": "NBCC",
@@ -805,33 +805,33 @@
     },
     "IGIL": {
       "name": "International Gemological Instit",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report details or auditor’s report section/page",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Analysis provided no annual report details or auditor’s report section/page |",
-      "error": null,
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "terminated",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-07-06T04:52:03.891Z"
+      "fetched_at": "2026-08-06T03:51:35.053Z"
     },
     "HCLTECH": {
       "name": "HCL Technologies",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.058Z"
     },
     "EICHERMOT": {
       "name": "Eicher Motors",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.046Z"
     },
     "KFINTECH": {
       "name": "KFin Technolog.",
@@ -845,13 +845,13 @@
     },
     "ANTHEM": {
       "name": "Anthem Bioscienc",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report or company identification",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not specified | Disclaimer of Opinion | Analysis provided no annual report or company identification |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:52:03.640Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.064Z"
     },
     "LUPIN": {
       "name": "Lupin",
@@ -905,13 +905,13 @@
     },
     "SCHNEIDER": {
       "name": "Schneider Elect.",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided; annual report not identified",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Unknown | Disclaimer of Opinion | Analysis provided; annual report not identified |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:56.164Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.059Z"
     },
     "CPPLUS": {
       "name": "Aditya Infotech",
@@ -925,23 +925,23 @@
     },
     "LTM": {
       "name": "LTM",
-      "opinion": "Disclaimer of Opinion",
-      "source": "No annual report retrieved / company not identifiable",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not identified | Disclaimer of Opinion | No annual report retrieved / company not identifiable |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:55.974Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.065Z"
     },
     "EMAMILTD": {
       "name": "Emami",
-      "opinion": "Disclaimer of Opinion",
-      "source": "Analysis provided no annual report/company details",
-      "conclusion_block": "| Company Name | Auditor's Opinion | Source |\n|---|---|---|\n| Not provided | Disclaimer of Opinion | Analysis provided no annual report/company details |",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-06T04:51:58.337Z"
+      "opinion": null,
+      "source": null,
+      "conclusion_block": null,
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.065Z"
     },
     "ASTRAZEN": {
       "name": "Astrazeneca Phar",
@@ -4938,10 +4938,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.059Z"
     },
     "CARTRADE": {
       "name": "Cartrade Tech",
@@ -5068,20 +5068,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.958Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.901Z"
     },
     "GRAPHITE": {
       "name": "Graphite India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.958Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.902Z"
     },
     "SBIFUNDS": {
       "name": "SBI Funds Mgt.",
@@ -5128,70 +5128,70 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.956Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.062Z"
     },
     "ACE": {
       "name": "Action Const.Eq.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.065Z"
     },
     "NAZARA": {
       "name": "Nazara Technolo.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.045Z"
     },
     "INDOMIM": {
       "name": "Indo-MIM",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.058Z"
     },
     "PARKHOSPS": {
       "name": "Park Medi World",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.957Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.902Z"
     },
     "HEG": {
       "name": "HEG",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.958Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.902Z"
     },
     "JPPOWER": {
       "name": "JP Power Ven.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:21.688Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.902Z"
     },
     "CUBEINVIT": {
       "name": "Cube Highways",
@@ -5208,10 +5208,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "timeout",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-05T03:50:32.967Z"
+      "error": "HTTP 502",
+      "http_status": 502,
+      "error_snippet": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx/1.24.0 (Ubuntu)</center>\r\n</body>\r\n</html>\r\n",
+      "fetched_at": "2026-08-06T03:51:35.902Z"
     },
     "VISL": {
       "name": "Vedanta Iron & Steel",
