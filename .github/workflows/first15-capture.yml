@@ -1,0 +1,64 @@
+name: First-15-min entry capture
+
+# From August 2026 the client's rule is that a basket's entry price for each
+# stock is the HIGH of its first 15-minute candle (09:15-09:30 IST) on the
+# basket's start day — the same rule for the AI top-7 — so the two baskets
+# compare like-to-like. This job runs on the start morning, captures those
+# highs (the in-coverage manual picks + the AI top-7 from that day's snapshot)
+# and writes them into lkp-manual-picks.json -> entryByMonth[month]; the
+# dashboard then anchors both baskets on them.
+#
+# scrape-first15-high.mjs is a no-op on any day that is NOT a basket start day
+# (anchorByMonth date != today IST), and it only fills tickers still missing —
+# so running it every weekday morning is safe and idempotent, and the second
+# slot mops up any quotes that lagged at 09:35.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 04:05 and 04:20 UTC = 09:35 and 09:50 IST, Mon-Fri (just after the first
+    # 15-min candle closes at 09:30 IST).
+    - cron: "5 4 * * 1-5"
+    - cron: "20 4 * * 1-5"
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Capture first-15-min highs
+        run: node screener-test/scrape-first15-high.mjs
+
+      - name: Commit entry highs to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/lkp-manual-picks.json || true
+          if git diff --cached --quiet; then
+            echo "No entry-high changes this run (not a start day, or already captured)."
+            exit 0
+          fi
+          git commit -m "Capture first-15-min entry highs ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push still failing after 4 attempts."
+          exit 1
