@@ -1724,34 +1724,23 @@ async function ensureHistoryCache() {
     fetch(`data/snapshots/${d}.json`).then((r) => r.json())
   ));
 
-  // ---- Fold weekend re-captures onto the trading day they belong to ----
-  // Snapshots are dated by RUN date (the daily job fires ~05:53 IST, and used
-  // to run 7 days a week), but each holds the latest close Yahoo had
-  // finalised, which lags ~a day. So a Saturday/Sunday run just re-captures
-  // the previous Friday's close — and the Sunday copy is often the finalised
-  // one while Friday's own pre-market run still held a stale number (e.g.
-  // BOSCHLTD: Friday file 42000, Sunday file 42950 = Friday's real NSE close).
-  // Left alone these draw phantom weekend points that "move" while the market
-  // is shut. Fold each weekend run onto its Friday and keep the FRESHEST
-  // capture: every plotted point is then a real trading day carrying its
-  // finalised close, with no value lost. Weekdays pass through untouched.
-  // (The daily job no longer writes weekend snapshots at all — this also
-  // cleans up the ones already on disk without deleting the correct closes.)
-  const tradingDayOf = (dateStr) => {
-    const d = new Date(dateStr + "T00:00:00Z");
-    const dow = d.getUTCDay();                                 // 0=Sun … 6=Sat
-    if (dow === 6) d.setUTCDate(d.getUTCDate() - 1);           // Sat → Fri
-    else if (dow === 0) d.setUTCDate(d.getUTCDate() - 2);      // Sun → Fri
-    else return dateStr;                                       // weekday: keep
-    return d.toISOString().slice(0, 10);
+  // ---- Show trading days only: hide the weekend re-captures ----
+  // The daily job used to run 7 days a week. A Saturday/Sunday run just
+  // re-captures the previous session with the market shut, so those snapshots
+  // drew phantom weekend points that appeared to "move" over the weekend.
+  // We simply DROP the weekend-dated snapshots from the trail — every real
+  // Mon–Fri snapshot is kept exactly as written (no scores, ratings, picks or
+  // closes are touched or merged), so nothing is lost and there is no
+  // look-ahead: a Friday-anchored basket still locks on Friday's own scores,
+  // never a later weekend re-score. "Today's" price stays correct because it
+  // comes from the live feed, not the weekend snapshot. (Going forward the
+  // daily job no longer writes weekend snapshots at all.)
+  const isWeekday = (dateStr) => {
+    const dow = new Date(dateStr + "T00:00:00Z").getUTCDay();  // 0=Sun … 6=Sat
+    return dow >= 1 && dow <= 5;
   };
-  const byTradingDay = new Map();                              // day → freshest snap
-  for (const snap of [...snapshots].sort((a, b) => a.date.localeCompare(b.date))) {
-    snap.date = tradingDayOf(snap.date);                       // relabel weekend runs
-    byTradingDay.set(snap.date, snap);                         // later (fresher) run wins
-  }
-  snapshots = [...byTradingDay.values()].sort((a, b) => a.date.localeCompare(b.date));
-  idx.dates = snapshots.map((s) => s.date);                    // keep the manifest in step
+  snapshots = snapshots.filter((s) => isWeekday(s.date));
+  idx.dates = idx.dates.filter(isWeekday);                     // keep the manifest in step
 
   const benchmark = await fetch("data/benchmark-history.json")
     .then((r) => (r.ok ? r.json() : null))
@@ -1763,11 +1752,17 @@ async function ensureHistoryCache() {
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
   // Live intraday feed (Munshot) — current price + day high/low per basket
-  // ticker. Powers live prices and intraday target/SL touch detection.
-  const livePrices = await fetch("data/live-prices.json")
+  // ticker. Powers live prices and intraday target/SL touch detection. We also
+  // keep the feed's IST date so live marks can be gated to a FRESH feed — a
+  // stale file must never be stamped onto today's point (see liveMarkDate in
+  // renderActive).
+  const liveFeed = await fetch("data/live-prices.json")
     .then((r) => (r.ok ? r.json() : null))
-    .then((j) => j?.prices || {})
-    .catch(() => ({}));
+    .catch(() => null);
+  const livePrices = liveFeed?.prices || {};
+  const livePricesDate = liveFeed?.generated_at
+    ? new Date(new Date(liveFeed.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10)
+    : null;
 
   // Inject synthetic stock entries for out-of-coverage tickers (LKP picks
   // below our ~Rs 12,500 Cr universe, e.g. ELECON). Once they look like
@@ -1842,6 +1837,7 @@ async function ensureHistoryCache() {
     if (p && typeof p.current === "number") todayClose[t] = p.current;
   }
   state.cache.history.livePrices = livePrices;
+  state.cache.history.livePricesDate = livePricesDate;
   // LKP picks indexed by ticker so manual-row clicks resolve to the
   // client-entry framing (with targets/SL) rather than the snapshot trail.
   const lkpForCache = lkpOverride() || lkp;
@@ -4511,6 +4507,13 @@ async function renderActive() {
     const capDate = anchorDate ? addMonthsStr(anchorDate, HOLD_MONTHS) : fullToday;
     const capped = capDate < fullToday;
     const todayDate = capped ? capDate : fullToday;
+    // Live marks are valid ONLY on the true latest snapshot (never a capped
+    // basket's historical end date) AND only when the live feed is at least as
+    // fresh as that day — otherwise a stale quote would silently rewrite an old
+    // point or report a target/SL hit on the wrong date. A capped view never
+    // contains fullToday, so live simply doesn't apply to it. null = off.
+    const feedFresh = state.cache.history.livePricesDate && state.cache.history.livePricesDate >= fullToday;
+    const liveMarkDate = feedFresh ? fullToday : null;
     const viewSnaps = capped ? snapshots.filter((s) => s.date <= todayDate) : snapshots;
     const holdNote = capped
       ? `<div class="bg-slate-50 rounded-2xl ring-1 ring-slate-200 px-3 py-2 text-[11px] text-slate-600 flex items-center gap-2"><span>🔒</span><span>This basket completed its <strong>4-month hold</strong> — tracking closed on ${fmtDateDMY(todayDate)}. Open positions were marked at that day's close.</span></div>`
@@ -4563,7 +4566,7 @@ async function renderActive() {
       return;
     }
 
-    const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On);
+    const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On, liveMarkDate);
 
     // Alerts section (lives inside the Strategy tab, not a separate tab).
     if (!customTechByTicker) {
@@ -4665,7 +4668,7 @@ function resolveEntryOverride(anchorDate) {
   return (map && typeof map === "object") ? map : {};
 }
 
-function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On = () => null) {
+function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On = () => null, liveMarkDate = null) {
   cohortEntryOverride = resolveEntryOverride(anchorDate);
   if (cadence === "daily") {
     const sim = simulateActiveBasket(snapshots, anchorDate, simPrefs);
@@ -4673,7 +4676,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     // Frictionless twin — same allocation, zero charges — so we can show
     // how much the charges actually cost (gross vs net).
     const simGross = simulateActiveBasket(snapshots, anchorDate, zeroChargePrefs(simPrefs));
-    const picks = buildActiveDailyPicks(sim, snapshots, todayDate);
+    const picks = buildActiveDailyPicks(sim, snapshots, todayDate, liveMarkDate);
     const hitSummary = computeOverallHitSummary(picks);
     const start = sim.equity[0];
     const end = sim.equity[sim.equity.length - 1];
@@ -4685,14 +4688,14 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
     const niftyRet = (nStart && nEnd) ? (nEnd / nStart - 1) * 100 : null;
     const dates = equityCurve.map((e) => e.date);
     const niftyCurve = buildNiftyCurve(dates, niftyOn);
-    const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
+    const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates, liveMarkDate);
     // Per-day segment chain so the basket roster panel can show each
     // day's top 7 (founder ask — same affordance the History tab used
     // to give for weekly baskets, just at 1-day granularity here).
     const segments = buildActiveSegmentChain(snapshots, anchorDate, 1);
     const nifty500Curve = buildNiftyCurve(dates, nifty500On);
     const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
-    const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows);
+    const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows, liveMarkDate);
     return {
       kind: "daily",
       sim, picks, hitSummary, segments,
@@ -4719,23 +4722,25 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
   const periodDays = cadence === "weekly" ? 7 : cadence === "monthly" ? 30 : 99999;
   const segments = buildActiveSegmentChain(snapshots, anchorDate, periodDays);
   if (!segments.length) return null;
-  const picks = buildActiveSegmentedPicks(segments, snapshots, todayDate);
+  const picks = buildActiveSegmentedPicks(segments, snapshots, todayDate, liveMarkDate);
   const hitSummary = computeOverallHitSummary(picks);
   const sideRate = perSideChargeRate(simPrefs);
   // Same booked/held convention as the manual basket, so AI and Manual are a
   // like-to-like comparison: booked freezes each name at its first target / SL.
-  const curveOpts = { booked: state.manualReturnMode !== "held", todayDate, livePrices: state.cache.history?.livePrices || {} };
+  // liveMarkDate (not todayDate) gates the live mark — null on a capped basket
+  // or a stale feed, so live never rewrites a historical endpoint.
+  const curveOpts = { booked: state.manualReturnMode !== "held", liveMarkDate, livePrices: state.cache.history?.livePrices || {} };
   const equityCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate, curveOpts);
   const grossCurve = buildSegmentedEquityCurve(segments, snapshots, anchorDate, 0, curveOpts);
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
-  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
+  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates, liveMarkDate);
   const finalReturn = equityCurve.length ? equityCurve[equityCurve.length - 1].retPct : 0;
   const grossFinalReturn = grossCurve.length ? grossCurve[grossCurve.length - 1].retPct : finalReturn;
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
   const nifty500Curve = buildNiftyCurve(dates, nifty500On);
   const nifty500Ret = nifty500Curve.length ? (nifty500Curve[nifty500Curve.length - 1].retPct ?? null) : null;
-  const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows);
+  const { aiStockCurves, manualStockCurves } = buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, picks, manualRows, liveMarkDate);
   const capital = simPrefs.capital ?? ACTIVE_INITIAL_CAPITAL;
   const finalValue = capital * (1 + finalReturn / 100);
   // Charges in ₹ ≈ the gap the costs opened between gross and net pots.
@@ -4766,7 +4771,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
 // supplied (Booked mode), a pick's price freezes at bookPrice from its
 // bookDate onward — modelling the real exit at the first target (T1) / SL so
 // a winner that kept running past target doesn't keep inflating the basket.
-function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, todayDate = null, livePrices = {}) {
+function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, liveMarkDate = null, livePrices = {}) {
   if (!manualPicks?.length || !dates?.length) return [];
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   if (!anchorSnap) return [];
@@ -4785,7 +4790,7 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
   return dates.map((date) => {
     const snap = snapByDate.get(date);
     if (!snap) return { date, retPct: null };
-    const isToday = todayDate && date === todayDate;
+    const isToday = liveMarkDate && date === liveMarkDate;
     let sum = 0, n = 0;
     for (const ticker of Object.keys(entryCloses)) {
       const bk = bookingMap?.get(ticker);
@@ -4822,10 +4827,14 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
 // covered row also carries its booking (frozen at Target 1 / SL when hit),
 // its booked return and its mark-to-market "if held" return so the UI can
 // flip between the two without recomputing.
-function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
+function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate, liveMarkDate = null) {
   const result = { manualPicks: [], manualSummary: null };
   if (!manualPicks?.length) return result;
-  const livePrices = state.cache.history?.livePrices || {};
+  // Live only when this view's "today" IS the true latest day and the feed is
+  // fresh (liveMarkDate === todayDate). On a capped basket todayDate is a past
+  // cap date, so live must NOT rewrite it — fall back to the snapshot close.
+  const liveEligible = liveMarkDate && liveMarkDate === todayDate;
+  const livePrices = liveEligible ? (state.cache.history?.livePrices || {}) : {};
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   const lastSnap = snapshots[snapshots.length - 1];
   const rows = [];
@@ -4897,14 +4906,14 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
 // the day it hits; Held marks to market. Shared by the Active, Passive and
 // Custom views so every manual figure agrees. Returns manualBooked so the
 // render layer knows which convention produced the numbers.
-function buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates) {
+function buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates, liveMarkDate = null) {
   const manualBooked = state.manualReturnMode !== "held";
   const livePrices = state.cache.history?.livePrices || {};
-  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
+  const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate, liveMarkDate);
   const bookingMap = manualBooked
     ? new Map(manualRows.filter((r) => r.booking?.booked && r.ticker).map((r) => [r.ticker, r.booking]))
     : null;
-  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, todayDate, livePrices);
+  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, liveMarkDate, livePrices);
   return { manualRows, manualSummary, manualCurve, manualBooked };
 }
 
@@ -4961,7 +4970,7 @@ function buildActiveSegmentChain(snapshots, anchorDate, periodDays) {
 // are a true like-to-like comparison. Detection is on the daily close; for
 // today it widens to the live intraday high/low (client's "hit = touched").
 function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0, opts = {}) {
-  const { booked = false, todayDate = null, livePrices = {} } = opts;
+  const { booked = false, liveMarkDate = null, livePrices = {} } = opts;
   if (!segments.length) return [];
   const curve = [];
   let prevFactor = 1.0;
@@ -4977,7 +4986,9 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0
     let lastFactor = 1.0;
     for (const day of seg.tracking) {
       if (day.date === anchorDate) continue;
-      const isToday = todayDate && day.date === todayDate;
+      // Live only on the true latest day (liveMarkDate) — never a capped
+      // basket's historical endpoint, which this view never contains.
+      const isToday = liveMarkDate && day.date === liveMarkDate;
       let sum = 0, n = 0;
       for (const ticker of Object.keys(entryCloses)) {
         if (booked && frozenFactor[ticker] != null) { sum += frozenFactor[ticker]; n++; continue; }
@@ -5030,7 +5041,7 @@ function buildNiftyCurve(dates, niftyOn) {
 // mode (client ask: toggle basket ↔ stocks → one line per holding, for both
 // AI and Manual baskets). entryCloses = { ticker: entryClose }; forward-fills
 // a missing daily close so an illiquid day doesn't punch a hole in the line.
-function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookingByTicker = null, booked = false) {
+function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookingByTicker = null, booked = false, liveMarkDate = null, livePrices = {}) {
   if (!dates?.length) return [];
   const snapByDate = new Map(snapshots.map((s) => [s.date, s]));
   return Object.keys(entryCloses).map((ticker) => {
@@ -5044,9 +5055,17 @@ function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookin
       if (bk && bk.bookPrice != null && date >= bk.bookDate) {
         close = bk.bookPrice;
       } else {
-        const snap = snapByDate.get(date);
-        const s = snap ? snap.stocks.find((x) => x.ticker === ticker) : null;
-        if (s && typeof s.close === "number") last = s.close;
+        // On the true latest day, mark to the live traded price so a stock's
+        // mini-chart ends at the same current mark as its live row and the
+        // aggregate basket line (not yesterday's close).
+        const live = (liveMarkDate && date === liveMarkDate) ? livePrices[ticker] : null;
+        if (live && typeof live.current === "number") {
+          last = live.current;
+        } else {
+          const snap = snapByDate.get(date);
+          const s = snap ? snap.stocks.find((x) => x.ticker === ticker) : null;
+          if (s && typeof s.close === "number") last = s.close;
+        }
         close = last;
       }
       return { date, retPct: (close / entryCloses[ticker] - 1) * 100 };
@@ -5058,8 +5077,9 @@ function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookin
 // Both baskets' per-stock line curves for the chart's "Stocks" mode. AI names
 // = the latest segment's top-7 (entry at that segment's close); Manual names =
 // the in-coverage client picks (entry at the anchor snapshot close).
-function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, aiPicks, manualRows) {
+function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, aiPicks, manualRows, liveMarkDate = null) {
   const booked = state.manualReturnMode !== "held";
+  const livePrices = state.cache.history?.livePrices || {};
   const lastSeg = (segments || [])[(segments || []).length - 1];
   const aiEntry = {}, aiName = {};
   for (const s of (lastSeg?.top7 || [])) if (s.ticker && typeof s.close === "number") { aiEntry[s.ticker] = cohortEntryOverride[s.ticker] ?? s.close; aiName[s.ticker] = s.name || s.ticker; }
@@ -5073,7 +5093,7 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
       if (bookPrice != null) aiBooking.set(p.ticker, { bookDate: p.hitDate, bookPrice });
     }
   }
-  const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates, aiBooking, booked);
+  const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates, aiBooking, booked, liveMarkDate, livePrices);
   const manualEntry = {}, manualName = {};
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   for (const p of (manualPicks || [])) {
@@ -5086,7 +5106,7 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
   for (const r of (manualRows || [])) {
     if (r?.ticker && r.booking?.booked && r.booking.bookDate && r.booking.bookPrice != null) manualBooking.set(r.ticker, { bookDate: r.booking.bookDate, bookPrice: r.booking.bookPrice });
   }
-  const manualStockCurves = buildPerStockCurves(manualEntry, manualName, snapshots, dates, manualBooking, booked);
+  const manualStockCurves = buildPerStockCurves(manualEntry, manualName, snapshots, dates, manualBooking, booked, liveMarkDate, livePrices);
   return { aiStockCurves, manualStockCurves };
 }
 
@@ -5114,8 +5134,10 @@ function attachIndustry(picks, snapshots) {
   return picks;
 }
 
-function buildActiveDailyPicks(sim, snapshots, todayDate) {
-  const livePrices = state.cache.history?.livePrices || {};
+function buildActiveDailyPicks(sim, snapshots, todayDate, liveMarkDate = null) {
+  // Live only when this view's "today" IS the true latest day and the feed is
+  // fresh — never on a capped basket (todayDate would be a past cap date).
+  const livePrices = (liveMarkDate && liveMarkDate === todayDate) ? (state.cache.history?.livePrices || {}) : {};
   const picks = [];
   for (const t of sim.trades) {
     if (t.action !== "BUY") continue;
@@ -5142,8 +5164,10 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
 // Weekly / Monthly picks: each segment's top 7 contribute 7 picks
 // anchored at the segment's start date and close. Different segments
 // can repeat the same ticker — each is a fresh pick.
-function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
-  const livePrices = state.cache.history?.livePrices || {};
+function buildActiveSegmentedPicks(segments, snapshots, todayDate, liveMarkDate = null) {
+  // Live only when this view's "today" IS the true latest day and the feed is
+  // fresh — never on a capped basket (todayDate would be a past cap date).
+  const livePrices = (liveMarkDate && liveMarkDate === todayDate) ? (state.cache.history?.livePrices || {}) : {};
   const picks = [];
   for (const seg of segments) {
     for (const s of seg.top7) {
@@ -9251,7 +9275,7 @@ function buildCustomPicks(sim, snapshots, todayDate, strat) {
 // Produces a view object compatible with the Strategy tab renderers
 // (renderStrategyKpis / renderActivePickRowsSplit / renderSectorTiming /
 // renderSimPanel), so a custom strategy's deep-dive reuses all of them.
-function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks) {
+function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks, liveMarkDate = null) {
   cohortEntryOverride = resolveEntryOverride(anchorDate);
   const sim = simulateCustomStrategy(snapshots, anchorDate, strat, simPrefs);
   if (!sim || !sim.equity.length) return null;
@@ -9264,7 +9288,7 @@ function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manua
   const grossFinalReturn = (grossEnd.value / simGross.startCapital - 1) * 100;
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
-  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
+  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates, liveMarkDate);
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
   return {
     kind: "custom", strat, sim, picks, hitSummary,
@@ -10378,6 +10402,10 @@ async function renderCustom() {
     state.labAiBest = null;
     const anchorDate = lkpAnchorDate(lkp, snapshots);
     const todayDate = snapshots[snapshots.length - 1].date;
+    // Custom/backtest view is never capped, so today IS the latest day; still
+    // gate live marks to a fresh feed (see renderActive).
+    const feedFresh = state.cache.history.livePricesDate && state.cache.history.livePricesDate >= todayDate;
+    const liveMarkDate = feedFresh ? todayDate : null;
     const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
     const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
     const niftyOn = (date) => { if (!niftyClosesByDate) return null; if (niftyClosesByDate[date] != null) return niftyClosesByDate[date]; let last = null; for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; } return last; };
@@ -10395,7 +10423,7 @@ async function renderCustom() {
       } catch { customTechByTicker = new Map(); }
     }
 
-    const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
+    const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks, liveMarkDate) }));
     if (customPerfOpen) {
       host.innerHTML = renderCustomPerformancePage(views);
     } else if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {

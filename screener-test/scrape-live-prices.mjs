@@ -106,7 +106,10 @@ function collectAiTickers(picks) {
   }
   try {
     const idx = JSON.parse(readFileSync(resolve(SNAP_DIR, "index.json"), "utf8"));
-    const latest = (idx.dates || []).slice(-1)[0];
+    // Last WEEKDAY snapshot — the dashboard shows trading days only (it drops
+    // weekend re-captures), so match that here for the "today's top-7" hedge.
+    const isWeekday = (d) => { const g = new Date(d + "T00:00:00Z").getUTCDay(); return g >= 1 && g <= 5; };
+    const latest = (idx.dates || []).filter(isWeekday).slice(-1)[0];
     if (latest) for (const t of top7FromSnapshot(latest)) out.add(t);
   } catch { /* no manifest — anchors alone still cover the tracked baskets */ }
   return out;
