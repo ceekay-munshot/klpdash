@@ -3418,7 +3418,7 @@ function computeManualMilestones(ticker, entryDate, entryPrice, target, sl, snap
 // so the desk can judge the optimal rebalance horizon (founder ask:
 // max upside + max downside + days-to-peak, stockwise). The entry day
 // itself counts as 0% at day 0, so maxUpside ≥ 0 and maxDownside ≤ 0.
-function computePeakStats(ticker, entryDate, entryPrice, snapshots, todayDate) {
+function computePeakStats(ticker, entryDate, entryPrice, snapshots, todayDate, live = null) {
   if (!ticker || entryPrice == null || !entryDate) return null;
   let bestPct = null, bestDate = null;    // highest the stock traded since entry
   let worstPct = null, worstDate = null;  // lowest the stock traded since entry
@@ -3427,9 +3427,20 @@ function computePeakStats(ticker, entryDate, entryPrice, snapshots, todayDate) {
     if (todayDate && snap.date > todayDate) break;
     const s = snap.stocks.find((x) => x.ticker === ticker);
     if (!s || s.close == null) continue;
-    const pct = (s.close / entryPrice - 1) * 100;
-    if (bestPct == null || pct > bestPct) { bestPct = pct; bestDate = snap.date; }
-    if (worstPct == null || pct < worstPct) { worstPct = pct; worstDate = snap.date; }
+    // Excursion for the day is the close; on TODAY (with a fresh live quote)
+    // widen to the live intraday high/low/current so the peak upside and
+    // drawdown include today's live move — otherwise a row's live current
+    // return could read higher than its own reported peak.
+    let hi = s.close, lo = s.close;
+    if (live && snap.date === todayDate) {
+      if (live.dayHigh != null) hi = Math.max(hi, live.dayHigh);
+      if (live.dayLow  != null) lo = Math.min(lo, live.dayLow);
+      if (live.current != null) { hi = Math.max(hi, live.current); lo = Math.min(lo, live.current); }
+    }
+    const hiPct = (hi / entryPrice - 1) * 100;
+    const loPct = (lo / entryPrice - 1) * 100;
+    if (bestPct == null || hiPct > bestPct) { bestPct = hiPct; bestDate = snap.date; }
+    if (worstPct == null || loPct < worstPct) { worstPct = loPct; worstDate = snap.date; }
   }
   if (bestPct == null) return null;
   // Max upside = best gain vs entry; max downside = worst loss vs entry. Clamp
@@ -4490,6 +4501,20 @@ async function renderActive() {
       return;
     }
 
+    // Live prices refresh ~every 30 min server-side, but the history cache is
+    // filled once and reused. Refetch JUST the live feed on each Strategy
+    // render (the static history stays cached) so an open dashboard picks up
+    // new intraday quotes on any interaction, without a full page reload.
+    try {
+      const lf = await fetch("data/live-prices.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+      if (lf) {
+        state.cache.history.livePrices = lf.prices || {};
+        state.cache.history.livePricesDate = lf.generated_at
+          ? new Date(new Date(lf.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10)
+          : null;
+      }
+    } catch { /* keep the last-known live feed */ }
+
     // Report-month selection — June stays reachable after July is uploaded.
     // Default = latest month; each month anchors at its own report date.
     const lkpForMonths = lkpOverride() || lkp;
@@ -4508,11 +4533,13 @@ async function renderActive() {
     const capped = capDate < fullToday;
     const todayDate = capped ? capDate : fullToday;
     // Live marks are valid ONLY on the true latest snapshot (never a capped
-    // basket's historical end date) AND only when the live feed is at least as
-    // fresh as that day — otherwise a stale quote would silently rewrite an old
-    // point or report a target/SL hit on the wrong date. A capped view never
-    // contains fullToday, so live simply doesn't apply to it. null = off.
-    const feedFresh = state.cache.history.livePricesDate && state.cache.history.livePricesDate >= fullToday;
+    // basket's historical end date) AND only when the live feed's own trading
+    // date EQUALS that day. Exact match, not >=: if the snapshot pipeline
+    // stalls while the independent live-prices job publishes a later day, a
+    // "newer" feed must NOT be stamped onto the older snapshot point (that
+    // would rewrite its return / record a hit on the wrong date). A capped view
+    // never contains fullToday, so live simply doesn't apply to it. null = off.
+    const feedFresh = state.cache.history.livePricesDate === fullToday;
     const liveMarkDate = feedFresh ? fullToday : null;
     const viewSnaps = capped ? snapshots.filter((s) => s.date <= todayDate) : snapshots;
     const holdNote = capped
@@ -4865,7 +4892,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate, li
     }
     const live = livePrices[p.ticker] || livePrices[(p.selection || "").toUpperCase()] || null;
     const status = computeManualMilestones(p.ticker, entryDate, entryPrice, target, sl, snapshots, todayDate, live);
-    const peak = computePeakStats(p.ticker, entryDate, entryPrice, snapshots, todayDate);
+    const peak = computePeakStats(p.ticker, entryDate, entryPrice, snapshots, todayDate, live);
     // Booking = the real exit at the first target (T1) or SL. Freeze at the
     // LEVEL, not the overshooting close — a pick that ran to +22% but had
     // T1 = +12% books at +12%. Held return marks to market, so the UI can
@@ -5145,7 +5172,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate, liveMarkDate = null) {
     const target = entryPrice * (1 + AI_TARGET_PCT);
     const sl = entryPrice * (1 - AI_SL_PCT);
     const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate, livePrices[t.ticker] || null);
-    const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate);
+    const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate, livePrices[t.ticker] || null);
     picks.push({
       ticker: t.ticker,
       name: t.name || t.ticker,
@@ -5176,7 +5203,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate, liveMarkDate 
       const target = entry * (1 + AI_TARGET_PCT);
       const sl = entry * (1 - AI_SL_PCT);
       const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate, livePrices[s.ticker] || null);
-      const peak = computePeakStats(s.ticker, seg.startDate, entry, snapshots, todayDate);
+      const peak = computePeakStats(s.ticker, seg.startDate, entry, snapshots, todayDate, livePrices[s.ticker] || null);
       picks.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
