@@ -4508,6 +4508,18 @@ async function renderActive() {
       ? lkpPicksForMonth(lkpResolved, anchorMonth, mostRecentMonth) || lkpResolved.picks || []
       : [];
 
+    // A basket's start day (anchor) can be in the FUTURE — e.g. the client's
+    // picks are set up on Sunday for a Monday start. Until the start-day
+    // snapshot exists there's nothing to track, so show a "starts <date>"
+    // preview of the roster + the client's levels instead of an empty panel.
+    // Tracking begins automatically once that day's close is captured.
+    const lastSnapDate = snapshots[snapshots.length - 1].date;
+    if (anchorDate && anchorDate > lastSnapDate) {
+      host.innerHTML = `<div class="space-y-3">${monthSelectorHtml}${renderPendingBasketCard(manualPicks, anchorDate)}</div>`;
+      wireManualMonthPills();
+      return;
+    }
+
     const view = buildActiveView(viewSnaps, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On);
 
     // Alerts section (lives inside the Strategy tab, not a separate tab).
@@ -5114,6 +5126,46 @@ function computeOverallHitSummary(picks) {
   const avgDaysToSL = slHitDays.length
     ? slHitDays.reduce((a, p) => a + p.daysToHit, 0) / slHitDays.length : null;
   return { total, targetHits, slHits, open, closed, hitRate, avgDaysToTarget, avgDaysToSL };
+}
+
+// Preview card for a basket whose start day hasn't arrived yet (anchor in the
+// future). Shows the client's roster + levels with a clear "tracking starts
+// <date>" note; the entry price will be each stock's first-15-min high on that
+// day. Returns/charts appear once the start-day close lands.
+function renderPendingBasketCard(manualPicks, anchorDate) {
+  const covered = (manualPicks || []).filter((p) => p.ticker && p.in_universe !== false);
+  const rows = (manualPicks || []).map((p) => {
+    if (!p.ticker || p.in_universe === false) {
+      return `<tr class="border-t border-slate-100"><td class="py-2 pr-2"><div class="font-semibold text-slate-500 text-sm">${escapeHtml(p.selection || "—")}</div><div class="text-[10px] text-slate-400">${escapeHtml(p.out_reason || "Not covered")}</div></td><td class="py-2 px-2 text-right tabular-nums text-slate-400">${p.entry_low != null ? `₹${p.entry_low} – ₹${p.entry_high}` : "—"}</td><td class="py-2 px-2 text-right text-[10px] text-slate-400">Not covered</td><td class="py-2 pl-2"></td></tr>`;
+    }
+    const rng = (p.entry_low != null && p.entry_high != null) ? `₹${p.entry_low} – ₹${p.entry_high}` : (p.entry != null ? `₹${p.entry}` : "—");
+    return `
+      <tr class="border-t border-slate-100">
+        <td class="py-2 pr-2 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">${escapeHtml(p.selection || p.ticker)}</div><div class="text-[10px] text-slate-400">${escapeHtml(p.ticker)}</div></td>
+        <td class="py-2 px-2 text-right tabular-nums text-slate-700">${rng}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-emerald-700 font-semibold">₹${p.tgt1}${p.tgt2 != null ? ` / ${p.tgt2}` : ""}</td>
+        <td class="py-2 pl-2 text-right tabular-nums text-rose-700 font-semibold">₹${p.sl}</td>
+      </tr>`;
+  }).join("");
+  return `
+    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-indigo-200 p-4 sm:p-5">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-1">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⏳</span>
+          <h3 class="font-display font-bold text-slate-900 text-base">New basket — tracking starts ${fmtDateDMY(anchorDate)}</h3>
+        </div>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[10px] font-bold uppercase tracking-wider">Entry = first 15-min high</span>
+      </div>
+      <div class="text-[12px] text-slate-600 mb-3 max-w-2xl leading-relaxed">The client's ${covered.length} picks for this month. Each stock's <strong>entry price is the high of its first 15-minute candle (09:15–09:30 IST) on ${fmtDateDMY(anchorDate)}</strong>, captured automatically that morning. The AI top-7 locks the same day under the same rule, so the two baskets compare like-to-like. Returns, target/SL hits and the charts go live once that day's close is in.</div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <th class="text-left pb-1 pr-2">Stock</th><th class="text-right pb-1 px-2">Buy zone (client)</th><th class="text-right pb-1 px-2">Targets (T1 / T2)</th><th class="text-right pb-1 pl-2">Stop-loss</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 function renderActiveShell(view, cadence, anchorDate, todayDate, mode, alertsHtml = "", monthSelectorHtml = "", holdNote = "") {

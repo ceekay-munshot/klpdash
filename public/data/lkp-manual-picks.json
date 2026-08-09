@@ -1,11 +1,15 @@
 {
   "label": "LKP Manual picks",
-  "note": "Client's manually-recommended SPIP baskets, one per monthly report. Each month is a static basket keyed under picksByMonth['YYYY-MM'] and anchored at that report's date (see anchorByMonth); the basket is tracked for ~4 months. Top-level generated_at / picks mirror the MOST RECENT month (July 2026) so the default view opens on the latest basket. Entry is a price RANGE; midpoint is shown for reference, but the tracked cost basis is the anchor-date snapshot close. Two targets (TGT1, TGT2) plus a stop-loss (SL). 'ticker' is our NSE symbol for data lookup; in_universe false means the stock sits below our ~Rs 12,500 Cr market-cap coverage floor, so we show the client's levels but cannot track it live yet.",
-  "generated_at": "2026-07-02T00:00:00.000Z",
+  "note": "Client's manually-recommended SPIP baskets, one per monthly report. Each month is a static basket keyed under picksByMonth['YYYY-MM'] and anchored at that report's start date (see anchorByMonth); the basket is tracked for ~4 months. Top-level generated_at / picks mirror the MOST RECENT month (August 2026) so the default view opens on the latest basket. Entry is a price RANGE; the midpoint is shown for reference. From August 2026 the client's rule is: the tracked ENTRY PRICE for each stock is the HIGH of the first 15-minute candle (09:15-09:30 IST) on the basket's start day, captured into entryByMonth['YYYY-MM'] by scrape-first15-high.mjs on that morning (the same rule is applied to the AI top-7). When no entry override is present the tracker falls back to the anchor-date snapshot close (June/July behaviour). Two targets (TGT1, TGT2) plus a stop-loss (SL). 'ticker' is our NSE symbol for data lookup; in_universe false means the stock sits below our ~Rs 12,500 Cr market-cap coverage floor, so we show the client's levels but cannot track it live yet.",
+  "generated_at": "2026-08-10T00:00:00.000Z",
   "source": "LKP SPIP monthly report (client-provided)",
   "anchorByMonth": {
     "2026-06": "2026-06-05",
-    "2026-07": "2026-07-02"
+    "2026-07": "2026-07-02",
+    "2026-08": "2026-08-10"
+  },
+  "entryByMonth": {
+    "2026-08": {}
   },
   "picksByMonth": {
     "2026-06": [
@@ -25,15 +29,24 @@
       { "selection": "PAYTM",       "ticker": "PAYTM",      "in_universe": true,  "entry_low": 1205,  "entry_high": 1219, "entry": 1212,    "tgt1": 1296, "tgt2": 1350, "sl": 968,  "cmp_at_reco": 1209.8 },
       { "selection": "PHOENIXLTD",  "ticker": "PHOENIXLTD", "in_universe": true,  "entry_low": 1999,  "entry_high": 2021, "entry": 2010,    "tgt1": 2145, "tgt2": 2240, "sl": 1606, "cmp_at_reco": 1991.6 },
       { "selection": "TMCV",        "ticker": "TMCV",       "in_universe": true,  "entry_low": 437,   "entry_high": 444,  "entry": 440.5,   "tgt1": 471,  "tgt2": 491,  "sl": 352,  "cmp_at_reco": 437.8 }
+    ],
+    "2026-08": [
+      { "selection": "Gland Pharma",     "ticker": "GLAND",      "in_universe": true, "entry_low": 2570, "entry_high": 2630, "entry": 2600,   "tgt1": 2735, "tgt2": 2800, "sl": 2080.8, "cmp_at_reco": 2601 },
+      { "selection": "HAL",              "ticker": "HAL",        "in_universe": true, "entry_low": 4860, "entry_high": 4940, "entry": 4900,   "tgt1": 5198, "tgt2": 5400, "sl": 3928,   "cmp_at_reco": 4910 },
+      { "selection": "JSW Steel",        "ticker": "JSWSTEEL",   "in_universe": true, "entry_low": 1290, "entry_high": 1310, "entry": 1300,   "tgt1": 1365, "tgt2": 1400, "sl": 1040,   "cmp_at_reco": 1299.5 },
+      { "selection": "Kalyan Jewellers", "ticker": "KALYANKJIL", "in_universe": true, "entry_low": 598,  "entry_high": 612,  "entry": 605,    "tgt1": 650,  "tgt2": 675,  "sl": 485.04, "cmp_at_reco": 606.3 },
+      { "selection": "Info Edge",        "ticker": "NAUKRI",     "in_universe": true, "entry_low": 1215, "entry_high": 1235, "entry": 1225,   "tgt1": 1310, "tgt2": 1350, "sl": 980,    "cmp_at_reco": 1225.3 },
+      { "selection": "Sona BLW",         "ticker": "SONACOMS",   "in_universe": true, "entry_low": 808,  "entry_high": 828,  "entry": 818,    "tgt1": 860,  "tgt2": 880,  "sl": 654.4,  "cmp_at_reco": 818.05 },
+      { "selection": "Union Bank",       "ticker": "UNIONBANK",  "in_universe": true, "entry_low": 182,  "entry_high": 185,  "entry": 183.5,  "tgt1": 194,  "tgt2": 200,  "sl": 146.88, "cmp_at_reco": 183.6 }
     ]
   },
   "picks": [
-    { "selection": "ABCAPITAL",   "ticker": "ABCAPITAL",  "in_universe": true,  "entry_low": 390,   "entry_high": 396,  "entry": 393,     "tgt1": 419,  "tgt2": 438,  "sl": 314,  "cmp_at_reco": 390.35 },
-    { "selection": "BALRAMCHIN",  "ticker": null,         "in_universe": false, "out_reason": "Below our ~Rs 12,500 Cr market-cap coverage floor", "entry_low": 564, "entry_high": 572, "entry": 568, "tgt1": 607, "tgt2": 632, "sl": 453, "cmp_at_reco": 568 },
-    { "selection": "DELHIVERY",   "ticker": "DELHIVERY",  "in_universe": true,  "entry_low": 505,   "entry_high": 513,  "entry": 509,     "tgt1": 544,  "tgt2": 567,  "sl": 406,  "cmp_at_reco": 507.05 },
-    { "selection": "JAMNAAUTO",   "ticker": null,         "in_universe": false, "out_reason": "Below our ~Rs 12,500 Cr market-cap coverage floor", "entry_low": 138.5, "entry_high": 141, "entry": 139.75, "tgt1": 149, "tgt2": 156, "sl": 111, "cmp_at_reco": 139.75 },
-    { "selection": "PAYTM",       "ticker": "PAYTM",      "in_universe": true,  "entry_low": 1205,  "entry_high": 1219, "entry": 1212,    "tgt1": 1296, "tgt2": 1350, "sl": 968,  "cmp_at_reco": 1209.8 },
-    { "selection": "PHOENIXLTD",  "ticker": "PHOENIXLTD", "in_universe": true,  "entry_low": 1999,  "entry_high": 2021, "entry": 2010,    "tgt1": 2145, "tgt2": 2240, "sl": 1606, "cmp_at_reco": 1991.6 },
-    { "selection": "TMCV",        "ticker": "TMCV",       "in_universe": true,  "entry_low": 437,   "entry_high": 444,  "entry": 440.5,   "tgt1": 471,  "tgt2": 491,  "sl": 352,  "cmp_at_reco": 437.8 }
+    { "selection": "Gland Pharma",     "ticker": "GLAND",      "in_universe": true, "entry_low": 2570, "entry_high": 2630, "entry": 2600,   "tgt1": 2735, "tgt2": 2800, "sl": 2080.8, "cmp_at_reco": 2601 },
+    { "selection": "HAL",              "ticker": "HAL",        "in_universe": true, "entry_low": 4860, "entry_high": 4940, "entry": 4900,   "tgt1": 5198, "tgt2": 5400, "sl": 3928,   "cmp_at_reco": 4910 },
+    { "selection": "JSW Steel",        "ticker": "JSWSTEEL",   "in_universe": true, "entry_low": 1290, "entry_high": 1310, "entry": 1300,   "tgt1": 1365, "tgt2": 1400, "sl": 1040,   "cmp_at_reco": 1299.5 },
+    { "selection": "Kalyan Jewellers", "ticker": "KALYANKJIL", "in_universe": true, "entry_low": 598,  "entry_high": 612,  "entry": 605,    "tgt1": 650,  "tgt2": 675,  "sl": 485.04, "cmp_at_reco": 606.3 },
+    { "selection": "Info Edge",        "ticker": "NAUKRI",     "in_universe": true, "entry_low": 1215, "entry_high": 1235, "entry": 1225,   "tgt1": 1310, "tgt2": 1350, "sl": 980,    "cmp_at_reco": 1225.3 },
+    { "selection": "Sona BLW",         "ticker": "SONACOMS",   "in_universe": true, "entry_low": 808,  "entry_high": 828,  "entry": 818,    "tgt1": 860,  "tgt2": 880,  "sl": 654.4,  "cmp_at_reco": 818.05 },
+    { "selection": "Union Bank",       "ticker": "UNIONBANK",  "in_universe": true, "entry_low": 182,  "entry_high": 185,  "entry": 183.5,  "tgt1": 194,  "tgt2": 200,  "sl": 146.88, "cmp_at_reco": 183.6 }
   ]
 }
