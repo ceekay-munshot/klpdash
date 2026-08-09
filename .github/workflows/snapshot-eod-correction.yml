@@ -1,0 +1,76 @@
+name: Snapshot EOD close correction
+
+# The daily SPIP snapshot is written pre-market (05:53 IST) so its SCORES have
+# no look-ahead — composite / rating / AI top-7 use only data known before the
+# session opens. The cost of that timing is that each stock's `close` starts as
+# the PREVIOUS session's price (a Friday snapshot written Friday morning holds
+# Thursday's close), so the dashboard reads a day-old price.
+#
+# This job runs AFTER market close and finalises the day's REAL close in that
+# same snapshot — from the live Munshot feed (a real-time quote, so it carries
+# the finalized NSE close even when Yahoo lags, e.g. BOSCHLTD 42,950 vs Yahoo's
+# stale 42,000) for the tracked baskets, and a fresh Yahoo scrape for the rest.
+# It overwrites ONLY the `close` field; every score, rating and pick stays
+# morning-based, so selection still has no look-ahead. The stored record and
+# the charts stop being a day behind.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 12:35 UTC == 18:05 IST — ~2.5h after the 15:30 close (so Yahoo has caught
+    # up for most names) and well after the final live-prices run (10:00 UTC).
+    # Mon–Fri: trading days only.
+    - cron: "35 12 * * 1-5"
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      # Fresh Yahoo closes for the whole universe (today's close is finalized by
+      # evening for most names). Used ONLY as input to the correction below —
+      # technicals.json is deliberately NOT committed, so the live screener's
+      # indicators keep their once-a-day (morning) cadence and nothing else on
+      # the dashboard shifts.
+      - name: Re-scrape technicals (today's closes)
+        continue-on-error: true
+        run: node screener-test/scrape-technicals.mjs
+
+      - name: Finalise today's snapshot closes
+        run: node screener-test/correct-snapshot-closes.mjs
+
+      - name: Commit corrected snapshot to main
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Commit ONLY the corrected snapshot — never technicals.json.
+          today=$(TZ=Asia/Kolkata date +%Y-%m-%d)
+          git add "public/data/snapshots/${today}.json" 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No close corrections to commit (weekend, or nothing changed)."
+            exit 0
+          fi
+          git commit -m "Finalise EOD closes for ${today}"
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — fetching + rebasing onto fresh main..."
+            git fetch origin main
+            git rebase origin/main || { echo "Rebase failed — aborting."; git rebase --abort; exit 1; }
+            sleep $((attempt * 2))
+          done
+          echo "Push still failing after 4 attempts."
+          exit 1
