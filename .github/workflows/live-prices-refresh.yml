@@ -1,13 +1,14 @@
 name: Live prices refresh (intraday)
 
-# Refreshes public/data/live-prices.json from the Munshot quote API for the
-# manual (client) basket tickers — current price + intraday day high/low.
-# The dashboard uses this for live prices and intraday target/SL touch
-# detection (a target counts as hit the moment price touches it, e.g. Paytm
-# spiking over Target 2 intraday even though it closed below).
+# Refreshes public/data/live-prices.json from the Munshot quote API for BOTH
+# baskets — the manual (client) picks AND the AI top-7 — so the two ride the
+# same live feed (current price + intraday day high/low). The dashboard uses
+# this for live prices and intraday target/SL touch detection (a target counts
+# as hit the moment price touches it, e.g. Paytm spiking over Target 2 intraday
+# even though it closed below).
 #
 # Runs every 30 min during NSE market hours (09:15–15:30 IST = 03:45–10:00
-# UTC), Mon–Fri, plus on demand. Cheap (~14 API calls, <1 min).
+# UTC), Mon–Fri, plus on demand. Cheap (~40 API calls, <1 min).
 
 on:
   workflow_dispatch:

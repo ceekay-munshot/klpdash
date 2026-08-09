@@ -1720,9 +1720,39 @@ async function ensureHistoryCache() {
     return r.json();
   });
   if (!idx.dates?.length) throw new Error("no snapshot dates");
-  const snapshots = await Promise.all(idx.dates.map((d) =>
+  let snapshots = await Promise.all(idx.dates.map((d) =>
     fetch(`data/snapshots/${d}.json`).then((r) => r.json())
   ));
+
+  // ---- Fold weekend re-captures onto the trading day they belong to ----
+  // Snapshots are dated by RUN date (the daily job fires ~05:53 IST, and used
+  // to run 7 days a week), but each holds the latest close Yahoo had
+  // finalised, which lags ~a day. So a Saturday/Sunday run just re-captures
+  // the previous Friday's close — and the Sunday copy is often the finalised
+  // one while Friday's own pre-market run still held a stale number (e.g.
+  // BOSCHLTD: Friday file 42000, Sunday file 42950 = Friday's real NSE close).
+  // Left alone these draw phantom weekend points that "move" while the market
+  // is shut. Fold each weekend run onto its Friday and keep the FRESHEST
+  // capture: every plotted point is then a real trading day carrying its
+  // finalised close, with no value lost. Weekdays pass through untouched.
+  // (The daily job no longer writes weekend snapshots at all — this also
+  // cleans up the ones already on disk without deleting the correct closes.)
+  const tradingDayOf = (dateStr) => {
+    const d = new Date(dateStr + "T00:00:00Z");
+    const dow = d.getUTCDay();                                 // 0=Sun … 6=Sat
+    if (dow === 6) d.setUTCDate(d.getUTCDate() - 1);           // Sat → Fri
+    else if (dow === 0) d.setUTCDate(d.getUTCDate() - 2);      // Sun → Fri
+    else return dateStr;                                       // weekday: keep
+    return d.toISOString().slice(0, 10);
+  };
+  const byTradingDay = new Map();                              // day → freshest snap
+  for (const snap of [...snapshots].sort((a, b) => a.date.localeCompare(b.date))) {
+    snap.date = tradingDayOf(snap.date);                       // relabel weekend runs
+    byTradingDay.set(snap.date, snap);                         // later (fresher) run wins
+  }
+  snapshots = [...byTradingDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+  idx.dates = snapshots.map((s) => s.date);                    // keep the manifest in step
+
   const benchmark = await fetch("data/benchmark-history.json")
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
@@ -3290,38 +3320,51 @@ function wireHistorySubViewSwitch() {
 const AI_TARGET_PCT = 0.05;      // +5%
 const AI_SL_PCT     = 0.20;      // −20%
 
-function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, todayDate) {
+function computeHitStatus(ticker, entryDate, entryPrice, target, sl, snapshots, todayDate, live = null) {
   if (!ticker || entryPrice == null || target == null || sl == null) {
     return { status: "OPEN", currentClose: null };
   }
   // Walk forward from entry day onwards looking for the first close
   // that hits either side.
   let lastClose = null;
-  let prevDateBeforeToday = null;
   for (const snap of snapshots) {
     if (snap.date < entryDate) continue;
     const s = snap.stocks.find((x) => x.ticker === ticker);
-    if (!s || s.close == null) continue;
-    lastClose = s.close;
-    if (s.close >= target) {
+    const isToday = snap.date === todayDate;
+    // Past days: the stored close is all we have. TODAY: mark to the live
+    // traded price when we have one, so the AI basket's current price tracks
+    // the SAME live feed the manual basket uses (client ask: "AI should be
+    // same as manual"). Falls back to the snapshot close if no live quote.
+    let close = (s && s.close != null) ? s.close : null;
+    if (isToday && live?.current != null) close = live.current;
+    if (close == null) continue;
+    lastClose = close;
+    // Reach range for the day: historically only the close (hi = lo = close);
+    // for TODAY widen to the live intraday high / low so a level only TOUCHED
+    // intraday still counts as a hit — the same rule as the manual basket.
+    let hi = close, lo = close;
+    if (isToday && live) {
+      if (live.dayHigh != null) hi = Math.max(hi, live.dayHigh);
+      if (live.dayLow  != null) lo = Math.min(lo, live.dayLow);
+    }
+    if (hi >= target) {
       return {
         status: "TARGET_HIT",
         hitDate: snap.date,
         daysToHit: daysBetween(entryDate, snap.date),
-        exitPrice: s.close,
-        hitToday: snap.date === todayDate,
+        exitPrice: isToday ? target : close,   // today freezes at the level touched
+        hitToday: isToday,
       };
     }
-    if (s.close <= sl) {
+    if (lo <= sl) {
       return {
         status: "SL_HIT",
         hitDate: snap.date,
         daysToHit: daysBetween(entryDate, snap.date),
-        exitPrice: s.close,
-        hitToday: snap.date === todayDate,
+        exitPrice: isToday ? sl : close,
+        hitToday: isToday,
       };
     }
-    if (snap.date < todayDate) prevDateBeforeToday = snap.date;
   }
   return { status: "OPEN", currentClose: lastClose };
 }
@@ -4723,7 +4766,7 @@ function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, man
 // supplied (Booked mode), a pick's price freezes at bookPrice from its
 // bookDate onward — modelling the real exit at the first target (T1) / SL so
 // a winner that kept running past target doesn't keep inflating the basket.
-function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap) {
+function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, todayDate = null, livePrices = {}) {
   if (!manualPicks?.length || !dates?.length) return [];
   const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   if (!anchorSnap) return [];
@@ -4742,6 +4785,7 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
   return dates.map((date) => {
     const snap = snapByDate.get(date);
     if (!snap) return { date, retPct: null };
+    const isToday = todayDate && date === todayDate;
     let sum = 0, n = 0;
     for (const ticker of Object.keys(entryCloses)) {
       const bk = bookingMap?.get(ticker);
@@ -4750,8 +4794,16 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
       if (frozen) {
         close = bk.bookPrice;               // sold here — price locked
       } else {
-        const s = snap.stocks.find((x) => x.ticker === ticker);
-        close = (s && typeof s.close === "number") ? s.close : lastClose[ticker];
+        // Today marks to the live traded price when we have one (so the manual
+        // curve's last point agrees with its own live per-pick rows AND the
+        // now-live AI curve); past days use the snapshot close, forward-filled.
+        const live = isToday ? livePrices[ticker] : null;
+        if (isToday && live && typeof live.current === "number") {
+          close = live.current;
+        } else {
+          const s = snap.stocks.find((x) => x.ticker === ticker);
+          close = (s && typeof s.close === "number") ? s.close : lastClose[ticker];
+        }
       }
       if (typeof close === "number") {
         if (!frozen) lastClose[ticker] = close;
@@ -4847,11 +4899,12 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
 // render layer knows which convention produced the numbers.
 function buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates) {
   const manualBooked = state.manualReturnMode !== "held";
+  const livePrices = state.cache.history?.livePrices || {};
   const { manualPicks: manualRows, manualSummary } = buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate);
   const bookingMap = manualBooked
     ? new Map(manualRows.filter((r) => r.booking?.booked && r.ticker).map((r) => [r.ticker, r.booking]))
     : null;
-  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap);
+  const manualCurve = buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, bookingMap, todayDate, livePrices);
   return { manualRows, manualSummary, manualCurve, manualBooked };
 }
 
@@ -4924,21 +4977,25 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0
     let lastFactor = 1.0;
     for (const day of seg.tracking) {
       if (day.date === anchorDate) continue;
+      const isToday = todayDate && day.date === todayDate;
       let sum = 0, n = 0;
       for (const ticker of Object.keys(entryCloses)) {
         if (booked && frozenFactor[ticker] != null) { sum += frozenFactor[ticker]; n++; continue; }
         const s = day.stocks.find((x) => x.ticker === ticker);
-        if (!s || s.close == null) continue;
-        let f = s.close / entryCloses[ticker];
+        const live = isToday ? livePrices[ticker] : null;
+        // Today marks to the live traded price when we have it — the SAME live
+        // feed the manual basket rides — so the AI "today" point isn't stuck at
+        // yesterday's close. Past days and missing quotes use the snapshot close.
+        let markClose = (s && s.close != null) ? s.close : null;
+        if (isToday && live && live.current != null) markClose = live.current;
+        if (markClose == null) continue;
+        let f = markClose / entryCloses[ticker];
         if (booked) {
           let hiF = f, loF = f;
-          if (todayDate && day.date === todayDate) {
-            const live = livePrices[ticker];
-            if (live) {
-              if (live.dayHigh != null) hiF = Math.max(hiF, live.dayHigh / entryCloses[ticker]);
-              if (live.dayLow  != null) loF = Math.min(loF, live.dayLow  / entryCloses[ticker]);
-              if (live.current != null) { const cf = live.current / entryCloses[ticker]; hiF = Math.max(hiF, cf); loF = Math.min(loF, cf); }
-            }
+          if (isToday && live) {
+            if (live.dayHigh != null) hiF = Math.max(hiF, live.dayHigh / entryCloses[ticker]);
+            if (live.dayLow  != null) loF = Math.min(loF, live.dayLow  / entryCloses[ticker]);
+            if (live.current != null) { const cf = live.current / entryCloses[ticker]; hiF = Math.max(hiF, cf); loF = Math.min(loF, cf); }
           }
           if (hiF >= TGT) { frozenFactor[ticker] = TGT; f = TGT; }
           else if (loF <= SLF) { frozenFactor[ticker] = SLF; f = SLF; }
@@ -5058,13 +5115,14 @@ function attachIndustry(picks, snapshots) {
 }
 
 function buildActiveDailyPicks(sim, snapshots, todayDate) {
+  const livePrices = state.cache.history?.livePrices || {};
   const picks = [];
   for (const t of sim.trades) {
     if (t.action !== "BUY") continue;
     const entryPrice = t.price;
     const target = entryPrice * (1 + AI_TARGET_PCT);
     const sl = entryPrice * (1 - AI_SL_PCT);
-    const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate);
+    const status = computeHitStatus(t.ticker, t.date, entryPrice, target, sl, snapshots, todayDate, livePrices[t.ticker] || null);
     const peak = computePeakStats(t.ticker, t.date, entryPrice, snapshots, todayDate);
     picks.push({
       ticker: t.ticker,
@@ -5085,6 +5143,7 @@ function buildActiveDailyPicks(sim, snapshots, todayDate) {
 // anchored at the segment's start date and close. Different segments
 // can repeat the same ticker — each is a fresh pick.
 function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
+  const livePrices = state.cache.history?.livePrices || {};
   const picks = [];
   for (const seg of segments) {
     for (const s of seg.top7) {
@@ -5092,7 +5151,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
       const entry = cohortEntryOverride[s.ticker] ?? s.close;   // first-15-min high override
       const target = entry * (1 + AI_TARGET_PCT);
       const sl = entry * (1 - AI_SL_PCT);
-      const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate);
+      const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate, livePrices[s.ticker] || null);
       const peak = computePeakStats(s.ticker, seg.startDate, entry, snapshots, todayDate);
       picks.push({
         ticker: s.ticker,

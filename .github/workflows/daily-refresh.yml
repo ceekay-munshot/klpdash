@@ -101,7 +101,18 @@ jobs:
       # STRONG BUY pick. Cheap (~1s), idempotent (same input → same output).
       - name: Write today's SPIP snapshot
         if: always()
-        run: node screener-test/write-snapshot.mjs
+        run: |
+          # Skip Saturday/Sunday: the market is shut, so a weekend run only
+          # re-captures Friday's close and used to litter the History charts
+          # with phantom weekend points that "move" while nothing is trading.
+          # At 00:23 UTC (05:53 IST) the UTC and IST weekday are the same day,
+          # so `date -u +%u` (1=Mon … 7=Sun) is the correct IST weekday.
+          dow=$(date -u +%u)
+          if [ "$dow" -ge 6 ]; then
+            echo "Weekend (ISO dow=$dow) — market shut, skipping snapshot."
+            exit 0
+          fi
+          node screener-test/write-snapshot.mjs
 
       # ---- Artifacts (always upload, even on partial failure) ----
       - name: Upload all data artifacts
