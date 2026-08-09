@@ -17,13 +17,14 @@
 //
 // Usage: node screener-test/scrape-live-prices.mjs [EXTRA,TICKERS]
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR  = resolve(__dirname, "../public/data");
 const PICKS     = resolve(DATA_DIR, "lkp-manual-picks.json");
+const SNAP_DIR  = resolve(DATA_DIR, "snapshots");
 const OUT_PATH  = resolve(DATA_DIR, "live-prices.json");
 const API       = "https://fastapi.muns.io/stock-data";
 
@@ -39,12 +40,22 @@ async function run() {
       if (t) tickers.add(t);
     }
   }
+  const manualCount = tickers.size;
+
+  // AI top-7 too, so BOTH baskets ride the same live feed (client ask: the AI
+  // basket should show live prices exactly like the manual one). We add the
+  // frozen top-7 from each tracked month's anchor snapshot — the same set the
+  // dashboard's passive AI basket locks — plus today's top-7 as a hedge so the
+  // current cohort is covered even before its own anchor snapshot lands.
+  const aiTickers = collectAiTickers(picks);
+  for (const t of aiTickers) tickers.add(t);
+
   for (const t of (process.argv[2] || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean)) {
     tickers.add(t);
   }
 
   const list = [...tickers];
-  console.log(`Fetching live quotes for ${list.length} tickers: ${list.join(", ")}`);
+  console.log(`Fetching live quotes for ${list.length} tickers (${manualCount} manual + ${aiTickers.size} AI top-7, union): ${list.join(", ")}`);
 
   const prices = {};
   let ok = 0, fail = 0;
@@ -65,6 +76,43 @@ async function run() {
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(payload, null, 2) + "\n");
   console.log(`\nWrote ${OUT_PATH} — ${ok} ok, ${fail} failed.`);
+}
+
+// Top-7 tickers by composite from a day's snapshot — the exact selection the
+// dashboard's AI basket uses (dataComplete, not hard-failed). [] if the file
+// is missing / unreadable so a gap never aborts the run.
+function top7FromSnapshot(dateStr) {
+  const p = resolve(SNAP_DIR, `${dateStr}.json`);
+  if (!existsSync(p)) return [];
+  let snap;
+  try { snap = JSON.parse(readFileSync(p, "utf8")); } catch { return []; }
+  return (snap.stocks || [])
+    .filter((s) => s.ticker && typeof s.composite === "number" && s.dataComplete && !s.hardFailed)
+    .sort((a, b) => b.composite - a.composite)
+    .slice(0, 7)
+    .map((s) => String(s.ticker).trim().toUpperCase());
+}
+
+// Union of the AI top-7 the dashboard tracks: the frozen top-7 at each month's
+// anchor snapshot (the passive basket's locked roster) + today's top-7 (latest
+// snapshot) as a forward hedge for a cohort whose anchor snapshot hasn't landed
+// yet. Over-fetching a couple of extra names is harmless — they simply appear
+// in live-prices.json and get used only if the dashboard references them.
+function collectAiTickers(picks) {
+  const out = new Set();
+  for (const anchor of Object.values(picks.anchorByMonth || {})) {
+    if (!anchor) continue;
+    for (const t of top7FromSnapshot(anchor)) out.add(t);
+  }
+  try {
+    const idx = JSON.parse(readFileSync(resolve(SNAP_DIR, "index.json"), "utf8"));
+    // Last WEEKDAY snapshot — the dashboard shows trading days only (it drops
+    // weekend re-captures), so match that here for the "today's top-7" hedge.
+    const isWeekday = (d) => { const g = new Date(d + "T00:00:00Z").getUTCDay(); return g >= 1 && g <= 5; };
+    const latest = (idx.dates || []).filter(isWeekday).slice(-1)[0];
+    if (latest) for (const t of top7FromSnapshot(latest)) out.add(t);
+  } catch { /* no manifest — anchors alone still cover the tracked baskets */ }
+  return out;
 }
 
 // One quote → { current, open, prevClose, dayHigh, dayLow, week52High,
