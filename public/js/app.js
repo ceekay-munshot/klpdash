@@ -9275,7 +9275,7 @@ function buildCustomPicks(sim, snapshots, todayDate, strat) {
 // Produces a view object compatible with the Strategy tab renderers
 // (renderStrategyKpis / renderActivePickRowsSplit / renderSectorTiming /
 // renderSimPanel), so a custom strategy's deep-dive reuses all of them.
-function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks, liveMarkDate = null) {
+function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks) {
   cohortEntryOverride = resolveEntryOverride(anchorDate);
   const sim = simulateCustomStrategy(snapshots, anchorDate, strat, simPrefs);
   if (!sim || !sim.equity.length) return null;
@@ -9288,7 +9288,10 @@ function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manua
   const grossFinalReturn = (grossEnd.value / simGross.startCapital - 1) * 100;
   const dates = equityCurve.map((e) => e.date);
   const niftyCurve = buildNiftyCurve(dates, niftyOn);
-  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates, liveMarkDate);
+  // Snapshot-only (liveMarkDate omitted → null): backtest sandbox values both
+  // baskets on closes so the custom AI curve and manual reference stay
+  // like-to-like (no live/snapshot mix).
+  const { manualRows, manualSummary, manualCurve, manualBooked } = buildManualBundle(manualPicks, snapshots, anchorDate, todayDate, dates);
   const niftyRet = niftyCurve.length ? niftyCurve[niftyCurve.length - 1].retPct : null;
   return {
     kind: "custom", strat, sim, picks, hitSummary,
@@ -10402,10 +10405,10 @@ async function renderCustom() {
     state.labAiBest = null;
     const anchorDate = lkpAnchorDate(lkp, snapshots);
     const todayDate = snapshots[snapshots.length - 1].date;
-    // Custom/backtest view is never capped, so today IS the latest day; still
-    // gate live marks to a fresh feed (see renderActive).
-    const feedFresh = state.cache.history.livePricesDate && state.cache.history.livePricesDate >= todayDate;
-    const liveMarkDate = feedFresh ? todayDate : null;
+    // Backtesting / Weight-Lab is a reproducible sandbox: BOTH baskets are
+    // valued on snapshot closes (no live marking), so a custom strategy and the
+    // manual reference always compare like-to-like. Live "today" marking is a
+    // Strategy-tab feature — a backtest shouldn't jitter with intraday quotes.
     const niftyClosesByDate = benchmark?.indices?.["^NSEI"]?.closes || null;
     const niftyDatesSorted = niftyClosesByDate ? Object.keys(niftyClosesByDate).sort() : null;
     const niftyOn = (date) => { if (!niftyClosesByDate) return null; if (niftyClosesByDate[date] != null) return niftyClosesByDate[date]; let last = null; for (const d of niftyDatesSorted) { if (d <= date) last = niftyClosesByDate[d]; else break; } return last; };
@@ -10423,7 +10426,7 @@ async function renderCustom() {
       } catch { customTechByTicker = new Map(); }
     }
 
-    const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks, liveMarkDate) }));
+    const views = customStrategies.map((s) => ({ strat: s, view: buildCustomView(snapshots, anchorDate, todayDate, s, niftyOn, manualPicks) }));
     if (customPerfOpen) {
       host.innerHTML = renderCustomPerformancePage(views);
     } else if (customSelectedId && views.some((v) => v.strat.id === customSelectedId)) {
