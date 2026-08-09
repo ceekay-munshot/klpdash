@@ -4608,7 +4608,22 @@ async function renderActive() {
 // Build everything the Active shell needs for a given cadence. Returns
 // { kind, sim?, segments?, picks, hitSummary, equityCurve, niftyCurve,
 //   manualCurve, manualPicks, manualSummary, periodLabel, ... }.
+// Entry-price override for the current cohort. From Aug 2026 the client's rule
+// is that a basket's entry price is the captured first-15-min high (stored in
+// lkp-manual-picks.json -> entryByMonth[month]), NOT the anchor-day close — the
+// same rule for the AI top-7, so both baskets compare like-to-like. This map is
+// (re)set by buildActiveView / buildCustomView from the resolved anchor month
+// and read at every entry-derivation point below. Empty (June/July, or before
+// the morning capture) => fall back to the anchor-day close, unchanged.
+let cohortEntryOverride = {};
+function resolveEntryOverride(anchorDate) {
+  const lkp = (typeof lkpOverride === "function" ? lkpOverride() : null) || state.cache.history?.lkp;
+  const map = lkp?.entryByMonth?.[(anchorDate || "").slice(0, 7)];
+  return (map && typeof map === "object") ? map : {};
+}
+
 function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On = () => null) {
+  cohortEntryOverride = resolveEntryOverride(anchorDate);
   if (cadence === "daily") {
     const sim = simulateActiveBasket(snapshots, anchorDate, simPrefs);
     if (!sim || !sim.equity.length) return null;
@@ -4716,6 +4731,8 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
   if (!inUni.length) return [];
   const entryCloses = {};
   for (const p of inUni) {
+    const ov = cohortEntryOverride[p.ticker];
+    if (ov != null) { entryCloses[p.ticker] = ov; continue; }   // first-15-min high override
     const s = anchorSnap.stocks.find((x) => x.ticker === p.ticker);
     if (s && typeof s.close === "number") entryCloses[p.ticker] = s.close;
   }
@@ -4771,7 +4788,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate) {
       continue;
     }
     const entryFromSnap = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
-    const entryPrice = entryFromSnap ?? p.entry ?? null;
+    const entryPrice = cohortEntryOverride[p.ticker] ?? entryFromSnap ?? p.entry ?? null;
     const entryDate = anchorSnap?.date || anchorDate;
     const target = p.tgt1 ?? null;   // book/close at Target 1 — the desk exits at the first target (T2 is "if held" territory)
     const sl = p.sl ?? null;
@@ -4902,7 +4919,7 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0
     // round-trip (sell previous + buy current) on every re-lock after.
     prevFactor *= (1 - (si === 0 ? sideRate : 2 * sideRate));
     const entryCloses = {};
-    for (const s of seg.top7) entryCloses[s.ticker] = s.close;
+    for (const s of seg.top7) entryCloses[s.ticker] = cohortEntryOverride[s.ticker] ?? s.close;
     const frozenFactor = {};   // ticker -> locked factor (target / SL level)
     let lastFactor = 1.0;
     for (const day of seg.tracking) {
@@ -4988,7 +5005,7 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
   const booked = state.manualReturnMode !== "held";
   const lastSeg = (segments || [])[(segments || []).length - 1];
   const aiEntry = {}, aiName = {};
-  for (const s of (lastSeg?.top7 || [])) if (s.ticker && typeof s.close === "number") { aiEntry[s.ticker] = s.close; aiName[s.ticker] = s.name || s.ticker; }
+  for (const s of (lastSeg?.top7 || [])) if (s.ticker && typeof s.close === "number") { aiEntry[s.ticker] = cohortEntryOverride[s.ticker] ?? s.close; aiName[s.ticker] = s.name || s.ticker; }
   // AI names book at their uniform +5% / −20% level the day they first hit it —
   // mirror the basket's booked convention so the two curves stay compatible.
   const aiBooking = new Map();
@@ -5005,7 +5022,7 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
   for (const p of (manualPicks || [])) {
     if (!p.in_universe || !p.ticker) continue;
     const s = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker);
-    if (s && typeof s.close === "number") { manualEntry[p.ticker] = s.close; manualName[p.ticker] = p.selection || p.ticker; }
+    if (s && typeof s.close === "number") { manualEntry[p.ticker] = cohortEntryOverride[p.ticker] ?? s.close; manualName[p.ticker] = p.selection || p.ticker; }
   }
   // Manual names book at the client's Target 1 / SL price.
   const manualBooking = new Map();
@@ -5072,16 +5089,17 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate) {
   for (const seg of segments) {
     for (const s of seg.top7) {
       if (!s.ticker || s.close == null) continue;
-      const target = s.close * (1 + AI_TARGET_PCT);
-      const sl = s.close * (1 - AI_SL_PCT);
-      const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
-      const peak = computePeakStats(s.ticker, seg.startDate, s.close, snapshots, todayDate);
+      const entry = cohortEntryOverride[s.ticker] ?? s.close;   // first-15-min high override
+      const target = entry * (1 + AI_TARGET_PCT);
+      const sl = entry * (1 - AI_SL_PCT);
+      const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate);
+      const peak = computePeakStats(s.ticker, seg.startDate, entry, snapshots, todayDate);
       picks.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
         sector: s.sector || null,
         entryDate: seg.startDate,
-        entryPrice: s.close,
+        entryPrice: entry,
         target, sl,
         targetPct: AI_TARGET_PCT * 100,
         slPct: -AI_SL_PCT * 100,
@@ -9175,6 +9193,7 @@ function buildCustomPicks(sim, snapshots, todayDate, strat) {
 // (renderStrategyKpis / renderActivePickRowsSplit / renderSectorTiming /
 // renderSimPanel), so a custom strategy's deep-dive reuses all of them.
 function buildCustomView(snapshots, anchorDate, todayDate, strat, niftyOn, manualPicks) {
+  cohortEntryOverride = resolveEntryOverride(anchorDate);
   const sim = simulateCustomStrategy(snapshots, anchorDate, strat, simPrefs);
   if (!sim || !sim.equity.length) return null;
   const simGross = simulateCustomStrategy(snapshots, anchorDate, strat, zeroChargePrefs(simPrefs));
