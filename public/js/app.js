@@ -1838,6 +1838,9 @@ async function ensureHistoryCache() {
   }
   state.cache.history.livePrices = livePrices;
   state.cache.history.livePricesDate = livePricesDate;
+  // Full feed timestamp (not just the IST date) so the dashboard can show
+  // exactly when live prices were last refreshed.
+  state.cache.history.livePricesGeneratedAt = liveFeed?.generated_at || null;
   // LKP picks indexed by ticker so manual-row clicks resolve to the
   // client-entry framing (with targets/SL) rather than the snapshot trail.
   const lkpForCache = lkpOverride() || lkp;
@@ -4512,6 +4515,7 @@ async function renderActive() {
         state.cache.history.livePricesDate = lf.generated_at
           ? new Date(new Date(lf.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10)
           : null;
+        state.cache.history.livePricesGeneratedAt = lf.generated_at || null;
       }
     } catch { /* keep the last-known live feed */ }
 
@@ -5012,7 +5016,13 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0
     const frozenFactor = {};   // ticker -> locked factor (target / SL level)
     let lastFactor = 1.0;
     for (const day of seg.tracking) {
-      if (day.date === anchorDate) continue;
+      // Skip the anchor day only when it's a pure entry point (day 0 = 0% by
+      // definition). But on the basket's FIRST trading day the anchor day IS
+      // liveMarkDate, and the live mark below is what shows the intraday move
+      // from the first-15-min entry -- skipping it left a new basket stuck at
+      // 0% all launch day (the manual curve, which never skips, showed its live
+      // move fine). Process the anchor day when it carries today's live mark.
+      if (day.date === anchorDate && day.date !== liveMarkDate) continue;
       // Live only on the true latest day (liveMarkDate) — never a capped
       // basket's historical endpoint, which this view never contains.
       const isToday = liveMarkDate && day.date === liveMarkDate;
@@ -5673,6 +5683,13 @@ function curveMaxDrawdown(curve) {
 //   3. Alpha matrix — pairwise outperformance (Manual−AI, AI−Nifty, Manual−Nifty)
 // The "AI vs Nifty" alpha used to live in the hero card; moved here so
 // every relative comparison is in one place.
+// Absolute IST clock time for a feed timestamp, e.g. "10 Aug, 11:16 AM".
+function fmtIstDateTime(iso) {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
+}
+
 function renderStrategyKpis(view) {
   const aiCurve = view.equityCurve || [];
   const manualCurve = view.manualCurve || [];
@@ -5703,6 +5720,21 @@ function renderStrategyKpis(view) {
       <span class="ml-auto font-bold tabular-nums ${cls(value)}">${fmtPct(value)}</span>
     </div>`;
 
+  // When were the live prices last refreshed? Both baskets above mark to this
+  // feed, so surface its timestamp — and whether it's today's session (green)
+  // or an older one (amber) — right beside the numbers it drives.
+  const liveGen = state.cache.history?.livePricesGeneratedAt || null;
+  const snaps = state.cache.history?.snapshots || [];
+  const fullToday = snaps.length ? snaps[snaps.length - 1].date : null;
+  const liveFresh = !!liveGen && state.cache.history?.livePricesDate === fullToday;
+  const liveStamp = liveGen ? `
+      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] ${liveFresh ? "text-slate-500" : "text-amber-600"}" title="Live prices are captured through the trading day; this is the last capture the dashboard has.">
+        <span class="inline-block w-1.5 h-1.5 rounded-full ${liveFresh ? "bg-emerald-500" : "bg-amber-500"}"></span>
+        <span>Live prices refreshed <span class="font-semibold">${fmtIstDateTime(liveGen)}</span> · ${relativeTimeFrom(liveGen)}</span>
+        ${liveFresh ? "" : `<span class="ml-auto font-semibold whitespace-nowrap">last session</span>`}
+      </div>` : `
+      <div class="mt-2.5 pt-2 border-t border-slate-100 text-[10px] text-slate-400">Live price feed unavailable — showing the last snapshot close.</div>`;
+
   // Net performance as of today — the headline "where do we stand" the client
   // asked to see up front: both baskets against both benchmarks.
   const cardNet = `
@@ -5716,7 +5748,9 @@ function renderStrategyKpis(view) {
         ${row("bg-amber-500", "Manual basket", manualFinal)}
         ${row("bg-slate-400", "Nifty 50", niftyFinal)}
         ${row("bg-sky-500", "Nifty 500", nifty500Final)}
-      </div>    </div>`;
+      </div>
+      ${liveStamp}
+    </div>`;
 
   const cardUpside = `
     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200 p-4">
