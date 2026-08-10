@@ -5012,7 +5012,13 @@ function buildSegmentedEquityCurve(segments, snapshots, anchorDate, sideRate = 0
     const frozenFactor = {};   // ticker -> locked factor (target / SL level)
     let lastFactor = 1.0;
     for (const day of seg.tracking) {
-      if (day.date === anchorDate) continue;
+      // Skip the anchor day only when it's a pure entry point (day 0 = 0% by
+      // definition). But on the basket's FIRST trading day the anchor day IS
+      // liveMarkDate, and the live mark below is what shows the intraday move
+      // from the first-15-min entry -- skipping it left a new basket stuck at
+      // 0% all launch day (the manual curve, which never skips, showed its live
+      // move fine). Process the anchor day when it carries today's live mark.
+      if (day.date === anchorDate && day.date !== liveMarkDate) continue;
       // Live only on the true latest day (liveMarkDate) — never a capped
       // basket's historical endpoint, which this view never contains.
       const isToday = liveMarkDate && day.date === liveMarkDate;
