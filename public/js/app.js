@@ -4510,12 +4510,17 @@ async function renderActive() {
     // new intraday quotes on any interaction, without a full page reload.
     try {
       const lf = await fetch("data/live-prices.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
-      if (lf) {
-        state.cache.history.livePrices = lf.prices || {};
-        state.cache.history.livePricesDate = lf.generated_at
-          ? new Date(new Date(lf.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10)
-          : null;
-        state.cache.history.livePricesGeneratedAt = lf.generated_at || null;
+      if (lf?.generated_at) {
+        // Adopt the committed feed only when it is at least as new as what we
+        // already hold. An on-demand "Refresh" pulls quotes newer than the last
+        // 30-min commit; without this guard, the next re-render would refetch
+        // the older committed file and silently overwrite that manual refresh.
+        const haveGen = state.cache.history.livePricesGeneratedAt;
+        if (!haveGen || new Date(lf.generated_at).getTime() >= new Date(haveGen).getTime()) {
+          state.cache.history.livePrices = lf.prices || {};
+          state.cache.history.livePricesDate = new Date(new Date(lf.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+          state.cache.history.livePricesGeneratedAt = lf.generated_at;
+        }
       }
     } catch { /* keep the last-known live feed */ }
 
@@ -4615,6 +4620,7 @@ async function renderActive() {
     wireManualReturnToggle();
     wireStrategySubNav();
     wireManualMonthPills();
+    $("#live-refresh-btn")?.addEventListener("click", handleLiveRefresh);
     // Client-basket upload (Excel / CSV) — surfaced here on the Strategy tab.
     $("#lkp-upload-btn")?.addEventListener("click", () => $("#lkp-file-input")?.click());
     $("#lkp-file-input")?.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handleLkpExcelUpload(f); e.target.value = ""; });
@@ -5690,6 +5696,89 @@ function fmtIstDateTime(iso) {
   return d.toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
 }
 
+// On-demand live-price refresh (THIS SESSION ONLY). The 30-min GitHub cron still
+// writes the committed baseline; this pulls the latest quotes right now from the
+// Worker's /api/live-prices proxy for the tickers the dashboard is tracking,
+// overlays them onto the in-memory feed with a fresh timestamp (so a re-render's
+// committed-file refetch won't overwrite it — see the guard in renderActive),
+// and re-renders so every live-price-driven number updates. Nothing is written
+// back to the repo.
+async function handleLiveRefresh() {
+  const btn = document.getElementById("live-refresh-btn");
+  if (btn?.dataset.busy === "1") return;                 // ignore double-clicks
+  if (btn) { btn.dataset.busy = "1"; btn.disabled = true; }
+  showLiveRefreshModal("loading");
+
+  const cache = state.cache.history || {};
+  let tickers = Object.keys(cache.livePrices || {});
+  if (!tickers.length) {
+    const last = (cache.snapshots || [])[(cache.snapshots || []).length - 1];
+    tickers = (last?.stocks || [])
+      .filter((s) => s.composite != null && s.dataComplete && !s.hardFailed)
+      .sort((a, b) => b.composite - a.composite).slice(0, 12).map((s) => s.ticker).filter(Boolean);
+  }
+  if (!tickers.length) { showLiveRefreshModal("error", "No basket to refresh yet."); if (btn) { btn.dataset.busy = "0"; btn.disabled = false; } return; }
+
+  try {
+    const res = await fetch("/api/live-prices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tickers }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const feed = await res.json();
+    const prices = feed?.prices || {};
+    const n = Object.keys(prices).length;
+    if (!n || !feed.generated_at) throw new Error("empty feed");
+
+    // Overlay onto the in-memory feed (keep any tickers this call didn't cover).
+    cache.livePrices = { ...(cache.livePrices || {}), ...prices };
+    cache.livePricesGeneratedAt = feed.generated_at;
+    cache.livePricesDate = new Date(new Date(feed.generated_at).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+    // Live overlay on todayClose so every close-based display reads the new price.
+    cache.todayClose = cache.todayClose || {};
+    for (const [t, p] of Object.entries(prices)) {
+      if (p && typeof p.current === "number") cache.todayClose[t] = p.current;
+    }
+
+    showLiveRefreshModal("done", `${n} price${n === 1 ? "" : "s"} updated · as of ${fmtIstDateTime(feed.generated_at)}`);
+    // Re-render so the AI + Manual numbers, per-pick rows, chart marks and the
+    // stamp all reflect the new prices. (btn is replaced by this re-render.)
+    if (state.activeTab === "active") renderActive();
+  } catch (e) {
+    const have = cache.livePricesGeneratedAt;
+    showLiveRefreshModal("error", have ? `Couldn't refresh — still showing ${fmtIstDateTime(have)}.` : "Couldn't refresh live prices right now.");
+    if (btn) { btn.dataset.busy = "0"; btn.disabled = false; }
+  }
+}
+
+// Tiny body-level overlay so it survives the re-render of #active-content.
+function showLiveRefreshModal(kind, msg) {
+  let el = document.getElementById("live-refresh-modal");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "live-refresh-modal";
+    el.className = "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm";
+    el.addEventListener("click", (e) => { if (e.target === el) closeLiveRefreshModal(); });
+    document.body.appendChild(el);
+  }
+  const card = (ring, icon, title, sub) => `
+    <div class="bg-white rounded-2xl shadow-xl ring-1 ${ring} px-6 py-5 flex items-center gap-3 max-w-sm mx-4">
+      ${icon}
+      <div><div class="text-sm font-semibold text-slate-800">${title}</div>${sub ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(sub)}</div>` : ""}</div>
+    </div>`;
+  if (kind === "loading") {
+    el.innerHTML = card("ring-slate-200", `<span class="inline-block w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>`, "Refreshing live prices…", "Fetching the latest quotes");
+  } else if (kind === "done") {
+    el.innerHTML = card("ring-emerald-200", `<span class="text-emerald-500 text-xl leading-none">✓</span>`, "Prices refreshed", msg);
+    setTimeout(closeLiveRefreshModal, 1800);
+  } else {
+    el.innerHTML = card("ring-rose-200", `<span class="text-rose-500 text-xl leading-none">!</span>`, "Refresh failed", msg);
+    setTimeout(closeLiveRefreshModal, 2800);
+  }
+}
+function closeLiveRefreshModal() { document.getElementById("live-refresh-modal")?.remove(); }
+
 function renderStrategyKpis(view) {
   const aiCurve = view.equityCurve || [];
   const manualCurve = view.manualCurve || [];
@@ -5727,13 +5816,20 @@ function renderStrategyKpis(view) {
   const snaps = state.cache.history?.snapshots || [];
   const fullToday = snaps.length ? snaps[snaps.length - 1].date : null;
   const liveFresh = !!liveGen && state.cache.history?.livePricesDate === fullToday;
+  // On-demand refresh: pulls the latest quotes straight from the price API for
+  // THIS session (the 30-min cron still writes the committed baseline). Handler
+  // wired in renderActive.
+  const refreshBtn = `<button id="live-refresh-btn" type="button" class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md ring-1 ring-slate-200 bg-white hover:bg-indigo-50 hover:ring-indigo-200 text-indigo-600 font-semibold text-[10px] whitespace-nowrap transition" title="Fetch the latest prices right now (this session only)">↻ Refresh</button>`;
   const liveStamp = liveGen ? `
       <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] ${liveFresh ? "text-slate-500" : "text-amber-600"}" title="Live prices are captured through the trading day; this is the last capture the dashboard has.">
         <span class="inline-block w-1.5 h-1.5 rounded-full ${liveFresh ? "bg-emerald-500" : "bg-amber-500"}"></span>
-        <span>Live prices refreshed <span class="font-semibold">${fmtIstDateTime(liveGen)}</span> · ${relativeTimeFrom(liveGen)}</span>
-        ${liveFresh ? "" : `<span class="ml-auto font-semibold whitespace-nowrap">last session</span>`}
+        <span>Live prices refreshed <span class="font-semibold">${fmtIstDateTime(liveGen)}</span> · ${relativeTimeFrom(liveGen)}${liveFresh ? "" : " · last session"}</span>
+        ${refreshBtn}
       </div>` : `
-      <div class="mt-2.5 pt-2 border-t border-slate-100 text-[10px] text-slate-400">Live price feed unavailable — showing the last snapshot close.</div>`;
+      <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-slate-400">
+        <span>Live price feed unavailable — showing the last snapshot close.</span>
+        ${refreshBtn}
+      </div>`;
 
   // Net performance as of today — the headline "where do we stand" the client
   // asked to see up front: both baskets against both benchmarks.
