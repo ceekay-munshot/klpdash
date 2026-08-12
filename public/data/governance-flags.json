@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-11T02:35:03.158Z",
+  "generated_at": "2026-08-12T03:04:31.099Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 11,
+  "total_entities_seen": 12,
   "flagged_companies": {
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -21,7 +21,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-08-11T02:35:03.157Z"
+      "first_seen_at": "2026-08-12T03:04:31.099Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -40,7 +40,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-08-11T02:35:03.157Z"
+      "first_seen_at": "2026-08-12T03:04:31.099Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -59,7 +59,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-11T02:35:03.157Z"
+      "first_seen_at": "2026-08-12T03:04:31.099Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -78,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-11T02:35:03.157Z"
+      "first_seen_at": "2026-08-12T03:04:31.099Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -97,26 +97,26 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-08-11T02:35:03.157Z"
+      "first_seen_at": "2026-08-12T03:04:31.099Z"
     }
   },
   "unmatched_sample": [
     {
+      "name": "HCLTech",
+      "type": "sebi-investigation",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
       "name": "Zee",
-      "type": "sebi-fine",
+      "type": "sebi-investigation",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Ardee Industries",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Assetz",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
+      "name": "Zee Entertainment",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
@@ -136,6 +136,12 @@
       "type": "sebi-fine",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
+    },
+    {
+      "name": "Zee Entertainment",
+      "type": "sebi-fine",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
     }
   ],
   "sources": [
@@ -143,105 +149,101 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-11T02:34:44.872Z",
+      "at": "2026-08-12T03:04:14.766Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
         {
-          "name": "SEBI",
-          "order_type": "sebi-fine",
-          "is_listed_entity": false,
-          "snippet": "SEBI reveals ₹3,811 crore unclaimed in mutual funds in FY26; all FAQs answered on how you can check and recover it"
+          "name": "Tata Capital",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Less than 5% of Tata Capital book in revolving credit, says CEO Sabharwal"
         },
         {
-          "name": "SEBI",
+          "name": "Air India",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "India Govt summons Air India CEO Campbell Wilson over Phuket-Delhi flight altitude loss that injured 17"
+        },
+        {
+          "name": "Diageo India",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Unmarked recycled bottles, artificial flavouring, scotch maturation claims: Why Diageo India brands are facing scrutiny"
+        },
+        {
+          "name": "HCLTech",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "HCLTech hacking claims: IT major says no evidence of systems or client breach, further investigation underway"
+        },
+        {
+          "name": "Penny stock",
           "order_type": "sebi-investigation",
           "is_listed_entity": false,
-          "snippet": "SEBI’s Project Sudarsan flags 20,000 fraudulent posts as 62% of investors are influenced by finfluencers"
+          "snippet": "Penny stock under ₹1 hits 5% upper circuit after provisional Q1 results"
         },
         {
-          "name": "SEBI",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": false,
-          "snippet": "Sebi sees fewer SAT appeals, sharp fall in settlement collections in FY26"
-        },
-        {
-          "name": "SEBI",
-          "order_type": "sebi-other",
-          "is_listed_entity": false,
-          "snippet": "Sebi releases consultation paper on separate rulebook for clearing corporations; seeks public comments till Aug 27"
+          "name": "Intel",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Intel raises $20 billion from upsized share sale: Where the money will go?"
         }
       ],
-      "after_filter_count": 0,
+      "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 4,
-        "no_sebi_signal_in_snippet": 0,
+        "not_listed": 1,
+        "no_sebi_signal_in_snippet": 4,
         "resolved_in_favour": 0,
         "no_name": 0
       },
-      "sample": []
+      "sample": [
+        {
+          "name": "HCLTech",
+          "order_type": "sebi-investigation",
+          "snippet": "HCLTech hacking claims: IT major says no evidence of systems or client breach, further investigation underway"
+        }
+      ]
     },
     {
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-11T02:34:51.605Z",
+      "at": "2026-08-12T03:04:19.482Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
+          "name": "Oyo",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Zostel withdraws plea seeking Sebi action over claimed 7% stake in Oyo"
+        },
+        {
           "name": "Zee",
-          "order_type": "sebi-fine",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Punit Goenka, Chandra for a year; fines Zee ₹1.48 crore"
-        },
-        {
-          "name": "Ardee Industries",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi approves nine IPOs; Ardee Industries IPO booked 133.66x on Day 3"
-        },
-        {
-          "name": "Shiprocket",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Shiprocket's ₹1,617.5-crore IPO to open Aug 12; price band fixed at ₹92-97"
-        },
-        {
-          "name": "Assetz",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Assetz files confidential IPO papers with Sebi to raise ₹1,200 crore"
+          "snippet": "Zee, CEO Goenka approach SAT against Sebi order restricting market access"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 1,
+        "not_listed": 1,
+        "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
           "name": "Zee",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi bars Punit Goenka, Chandra for a year; fines Zee ₹1.48 crore"
-        },
-        {
-          "name": "Ardee Industries",
-          "order_type": "other",
-          "snippet": "Sebi approves nine IPOs; Ardee Industries IPO booked 133.66x on Day 3"
-        },
-        {
-          "name": "Assetz",
-          "order_type": "other",
-          "snippet": "Assetz files confidential IPO papers with Sebi to raise ₹1,200 crore"
+          "order_type": "sebi-investigation",
+          "snippet": "Zee, CEO Goenka approach SAT against Sebi order restricting market access"
         }
       ]
     },
@@ -249,18 +251,24 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-11T02:34:56.936Z",
+      "at": "2026-08-12T03:04:22.795Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 7,
+      "total_extracted": 7,
       "prefilter_sample": [
         {
           "name": "Zee Entertainment",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
           "snippet": "Zee shares tumble 12% after Sebi action against Subhash Chandra, Punit Goenka"
+        },
+        {
+          "name": "Zee Entertainment",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "ZEE promoter fundraise plan faces uncertainty after Sebi's market ban"
         },
         {
           "name": "India Power Corporation",
@@ -273,11 +281,29 @@
           "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures"
+        },
+        {
+          "name": "Zee Entertainment",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Sebi imposes penalty of Rs 1.48 crore on Zee Entertainment"
+        },
+        {
+          "name": "Stark Investments",
+          "order_type": "sebi-ban",
+          "is_listed_entity": false,
+          "snippet": "Sebi bars Stark Investments for allegedly mobilising funds via unregistered operations"
+        },
+        {
+          "name": "Viresh Joshi",
+          "order_type": "sebi-ban",
+          "is_listed_entity": false,
+          "snippet": "Sebi bars former Axis MF dealer Viresh Joshi from securities markets for 7 years front-running case"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 5,
       "dropped_counts": {
-        "not_listed": 0,
+        "not_listed": 2,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -289,6 +315,11 @@
           "snippet": "Zee shares tumble 12% after Sebi action against Subhash Chandra, Punit Goenka"
         },
         {
+          "name": "Zee Entertainment",
+          "order_type": "sebi-ban",
+          "snippet": "ZEE promoter fundraise plan faces uncertainty after Sebi's market ban"
+        },
+        {
           "name": "India Power Corporation",
           "order_type": "settlement",
           "snippet": "Sebi settles case against India Power Corp's Raghav Raj Kanoria for Rs 24.7 lakh"
@@ -297,6 +328,11 @@
           "name": "Kalahridhaan Trendz",
           "order_type": "sebi-fine",
           "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures"
+        },
+        {
+          "name": "Zee Entertainment",
+          "order_type": "sebi-fine",
+          "snippet": "Sebi imposes penalty of Rs 1.48 crore on Zee Entertainment"
         }
       ]
     },
@@ -304,17 +340,24 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-08-11T02:35:01.406Z",
+      "at": "2026-08-12T03:04:28.737Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 0,
-      "total_extracted": 0,
-      "prefilter_sample": [],
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
+      "prefilter_sample": [
+        {
+          "name": "CITRUS CHECK INNS LIMITD",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
+        }
+      ],
       "after_filter_count": 0,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
