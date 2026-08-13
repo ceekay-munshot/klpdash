@@ -6750,6 +6750,7 @@ function renderBalancingStockTable(picks) {
         <td class="py-2 px-2 text-[11px] text-slate-600"><div class="truncate max-w-[130px]" title="${escapeHtml(p.sector || "")}">${escapeHtml(p.sector || "—")}</div></td>
         <td class="py-2 px-2 text-center">${sideBadge}</td>
         <td class="py-2 px-2 text-right tabular-nums font-bold ${retCls}">${pct(p.ret)}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-emerald-700 font-semibold" title="Best gain reached vs entry over the hold (peak upside)">${pct(p.peak?.maxUpsidePct)}</td>
         <td class="py-2 px-2 text-right tabular-nums text-slate-700">${p.peak?.daysToMaxUpside ?? "—"}d</td>
         <td class="py-2 px-2 text-right tabular-nums text-rose-700 font-semibold">${pct(p.peak?.maxDownsidePct)}</td>
         <td class="py-2 px-2 text-right tabular-nums text-slate-700">${p.peak?.daysToMaxDownside ?? "—"}d</td>
@@ -6759,7 +6760,7 @@ function renderBalancingStockTable(picks) {
   return `
     <div class="overflow-x-auto"><table class="w-full text-sm">
       <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <th class="text-left pb-1 pr-2">Stock</th><th class="text-left pb-1 px-2">Sector</th><th class="text-center pb-1 px-2">Basket</th><th class="text-right pb-1 px-2">Return</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Max drawdown</th><th class="text-right pb-1 px-2">Days to trough</th><th class="text-right pb-1 pl-2">Rebalance</th>
+        <th class="text-left pb-1 pr-2">Stock</th><th class="text-left pb-1 px-2">Sector</th><th class="text-center pb-1 px-2">Basket</th><th class="text-right pb-1 px-2">Return</th><th class="text-right pb-1 px-2">Max upside</th><th class="text-right pb-1 px-2">Days to peak</th><th class="text-right pb-1 px-2">Max drawdown</th><th class="text-right pb-1 px-2">Days to trough</th><th class="text-right pb-1 pl-2">Rebalance</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table></div>`;
