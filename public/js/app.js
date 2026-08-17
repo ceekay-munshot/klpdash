@@ -6436,17 +6436,25 @@ function renderAiBasketTable(segment, view, mode) {
     : `Held since ${fmtDateDMY(segment.startDate)}`;
 
   const rows = segment.top7.map((s) => {
-    const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
-    const heldRet = ((today / s.close) - 1) * 100;
     const p = pickByKey.get(`${s.ticker}|${segment.startDate}`);
+    // Entry = the tracked first-15-min midpoint (from view.picks), NOT the raw
+    // snapshot close, so the roster's buy price + return agree with the rest of
+    // the dashboard.
+    const entry = (p && typeof p.entryPrice === "number") ? p.entryPrice : s.close;
+    const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
+    const heldRet = ((today / entry) - 1) * 100;
     const hit = p && (p.status === "TARGET_HIT" || p.status === "SL_HIT");
     const isBooked = booked && hit;
     const reason = (p && p.status === "SL_HIT") ? "SL" : "TARGET";
     // Booked freezes at the target/SL LEVEL — the real exit — not the live mark.
     const exitLevel = isBooked ? (p.status === "TARGET_HIT" ? p.target : p.sl) : null;
-    const displayRet = isBooked ? ((exitLevel / s.close) - 1) * 100 : heldRet;
+    const displayRet = isBooked ? ((exitLevel / entry) - 1) * 100 : heldRet;
     const exitPx = isBooked ? exitLevel : today;
     const retCls = displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
+    // Client ask: show target + stop right under the buy/current price.
+    const tslLine = (p && p.target != null && p.sl != null)
+      ? `<div class="text-[9px] tabular-nums mt-0.5 flex items-center gap-1"><span class="text-emerald-600 font-semibold" title="Target (+5%)">T ₹${formatPrice(p.target)}</span><span class="text-slate-300">·</span><span class="text-rose-600 font-semibold" title="Stop-loss (−20%)">SL ₹${formatPrice(p.sl)}</span></div>`
+      : "";
     const heldNote = isBooked
       ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was captured at the exit level">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
       : "";
@@ -6454,7 +6462,8 @@ function renderAiBasketTable(segment, view, mode) {
       <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(segment.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
-          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(entry)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          ${tslLine}
         </div>
         <div class="col-span-3 sm:col-span-3 text-right">
           <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet >= 0 ? "+" : ""}${displayRet.toFixed(2)}%</div>
@@ -6506,6 +6515,11 @@ function renderManualBasketTable(manualPicks) {
     const displayRet = isBooked ? r.bookedRet : heldRet;
     const exitPx = isBooked ? r.booking.bookPrice : today;
     const retCls = displayRet == null ? "text-slate-500" : displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
+    // Client ask: show the client's target + stop right under the buy/current
+    // price (T = Target 1, the book/exit level; T2 sits in the drill modal).
+    const tslLine = (r.target != null && r.sl != null)
+      ? `<div class="text-[9px] tabular-nums mt-0.5 flex items-center gap-1"><span class="text-emerald-600 font-semibold" title="Target 1 (client)">T ₹${formatPrice(r.target)}</span><span class="text-slate-300">·</span><span class="text-rose-600 font-semibold" title="Stop-loss (client)">SL ₹${formatPrice(r.sl)}</span></div>`
+      : "";
     // Booked picks show the exit price in the sub-line ("→ ₹xxx · locked") and
     // the if-held mark separately; Open/Closed status sits on the right, rating
     // moves to the drill modal — same shape as the AI roster.
@@ -6517,6 +6531,7 @@ function renderManualBasketTable(manualPicks) {
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          ${tslLine}
         </div>
         <div class="col-span-3 sm:col-span-3 text-right">
           <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet == null ? "—" : (displayRet >= 0 ? "+" : "") + displayRet.toFixed(2) + "%"}</div>
