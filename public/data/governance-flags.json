@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-16T02:03:47.286Z",
+  "generated_at": "2026-08-17T02:01:58.384Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 16,
+  "total_entities_seen": 14,
   "flagged_companies": {
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -21,7 +21,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-08-16T02:03:47.286Z"
+      "first_seen_at": "2026-08-17T02:01:58.383Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -40,7 +40,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-08-16T02:03:47.286Z"
+      "first_seen_at": "2026-08-17T02:01:58.383Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -59,7 +59,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-16T02:03:47.286Z"
+      "first_seen_at": "2026-08-17T02:01:58.383Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -78,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-16T02:03:47.286Z"
+      "first_seen_at": "2026-08-17T02:01:58.383Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -97,7 +97,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-08-16T02:03:47.286Z"
+      "first_seen_at": "2026-08-17T02:01:58.383Z"
     }
   },
   "unmatched_sample": [
@@ -109,13 +109,7 @@
     },
     {
       "name": "Zee Entertainment",
-      "type": "sebi-investigation",
-      "source": "Mint — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Zee Entertainment",
-      "type": "sebi-fine",
+      "type": "other",
       "source": "Mint — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -138,8 +132,8 @@
       "origin": "scraper"
     },
     {
-      "name": "Zee Entertainment",
-      "type": "sebi-fine",
+      "name": "Paytm",
+      "type": "show-cause",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -150,20 +144,14 @@
       "origin": "scraper"
     },
     {
-      "name": "Paytm",
-      "type": "show-cause",
+      "name": "MCX",
+      "type": "sebi-fine",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Kalahridhaan Trendz",
       "type": "sebi-fine",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Zee Entertainment",
-      "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -173,65 +161,29 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-16T02:03:29.126Z",
+      "at": "2026-08-17T02:01:20.190Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 8,
-      "total_extracted": 8,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
           "name": "Zee Entertainment",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Tribunal allows Zee to proceed with fundraise, but keeps market ban intact."
+          "snippet": "Tribunal allows Zee to proceed with fundraise, but keeps market ban intact"
         },
         {
           "name": "Zee Entertainment",
-          "order_type": "sebi-investigation",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi said to have examined Deloitte’s role in Zee Entertainment case, given clean chit."
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Zee Entertainment seeks Sebi relief to unlock ₹1,200 crore mutual fund investments."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi proposes overhaul of settlement rules to cut amounts, speed enforcement."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi proposes easier digital KYC for Indians living abroad."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi proposes colour-coded risk meter for bonds."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi proposes easier accreditation, wider pool of accredited investors."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Closing stock auctions show no signs of manipulation yet, says Sebi chief."
+          "snippet": "Sebi said to have examined Deloitte’s role in Zee Entertainment case, given clean chit"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 2,
       "dropped_counts": {
-        "not_listed": 5,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -240,17 +192,12 @@
         {
           "name": "Zee Entertainment",
           "order_type": "sebi-ban",
-          "snippet": "Tribunal allows Zee to proceed with fundraise, but keeps market ban intact."
+          "snippet": "Tribunal allows Zee to proceed with fundraise, but keeps market ban intact"
         },
         {
           "name": "Zee Entertainment",
-          "order_type": "sebi-investigation",
-          "snippet": "Sebi said to have examined Deloitte’s role in Zee Entertainment case, given clean chit."
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "sebi-fine",
-          "snippet": "Zee Entertainment seeks Sebi relief to unlock ₹1,200 crore mutual fund investments."
+          "order_type": "other",
+          "snippet": "Sebi said to have examined Deloitte’s role in Zee Entertainment case, given clean chit"
         }
       ]
     },
@@ -258,7 +205,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-16T02:03:35.988Z",
+      "at": "2026-08-17T02:01:35.955Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -269,13 +216,13 @@
           "name": "Paytm",
           "order_type": "show-cause",
           "is_listed_entity": true,
-          "snippet": "Sebi issues show-cause notice to Paytm officials over Dec 2023 disclosure"
+          "snippet": "Sebi issues show-cause notice to Paytm officials over Dec 2023 disclosure."
         },
         {
           "name": "Paytm",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Paytm CEO, CFO get Sebi notice over 2023 disclosure curbing small loans"
+          "snippet": "Paytm CEO, CFO get Sebi notice over 2023 disclosure curbing small loans."
         }
       ],
       "after_filter_count": 2,
@@ -289,12 +236,12 @@
         {
           "name": "Paytm",
           "order_type": "show-cause",
-          "snippet": "Sebi issues show-cause notice to Paytm officials over Dec 2023 disclosure"
+          "snippet": "Sebi issues show-cause notice to Paytm officials over Dec 2023 disclosure."
         },
         {
           "name": "Paytm",
           "order_type": "other",
-          "snippet": "Paytm CEO, CFO get Sebi notice over 2023 disclosure curbing small loans"
+          "snippet": "Paytm CEO, CFO get Sebi notice over 2023 disclosure curbing small loans."
         }
       ]
     },
@@ -302,51 +249,45 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-16T02:03:38.435Z",
+      "at": "2026-08-17T02:01:48.740Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
       "prefilter_sample": [
         {
           "name": "Zee Entertainment",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Zee Entertainment shares tumble 12% after Sebi action against Subhash Chandra, Punit Goenka"
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi imposes penalty of Rs 1.48 crore on Zee Entertainment"
-        },
-        {
-          "name": "India Power Corporation",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Sebi settles case against India Power Corp's Raghav Raj Kanoria for Rs 24.7 lakh"
+          "snippet": "Sebi bans Zee's Subhash Chandra, Punit Goenka from markets for a year."
         },
         {
           "name": "Paytm",
           "order_type": "show-cause",
           "is_listed_entity": true,
-          "snippet": "Paytm management gets Sebi show cause notice over timing of 2023 loan disclosure announcement"
+          "snippet": "Paytm management gets Sebi show cause notice over timing of 2023 loan disclosure announcement."
+        },
+        {
+          "name": "India Power Corporation",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Sebi settles case against India Power Corp's Raghav Raj Kanoria for Rs 24.7 lakh."
+        },
+        {
+          "name": "MCX",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "MCX shares rise 2% as JPMorgan upgrades, raises target price after this Sebi proposal."
         },
         {
           "name": "Kalahridhaan Trendz",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures"
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Seeking legal advise on SEBI order in land pledge case, no bearing on ongoing fundraising: Zee"
+          "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures."
         }
       ],
-      "after_filter_count": 6,
+      "after_filter_count": 5,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -357,32 +298,27 @@
         {
           "name": "Zee Entertainment",
           "order_type": "sebi-ban",
-          "snippet": "Zee Entertainment shares tumble 12% after Sebi action against Subhash Chandra, Punit Goenka"
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi imposes penalty of Rs 1.48 crore on Zee Entertainment"
-        },
-        {
-          "name": "India Power Corporation",
-          "order_type": "settlement",
-          "snippet": "Sebi settles case against India Power Corp's Raghav Raj Kanoria for Rs 24.7 lakh"
+          "snippet": "Sebi bans Zee's Subhash Chandra, Punit Goenka from markets for a year."
         },
         {
           "name": "Paytm",
           "order_type": "show-cause",
-          "snippet": "Paytm management gets Sebi show cause notice over timing of 2023 loan disclosure announcement"
+          "snippet": "Paytm management gets Sebi show cause notice over timing of 2023 loan disclosure announcement."
+        },
+        {
+          "name": "India Power Corporation",
+          "order_type": "settlement",
+          "snippet": "Sebi settles case against India Power Corp's Raghav Raj Kanoria for Rs 24.7 lakh."
+        },
+        {
+          "name": "MCX",
+          "order_type": "sebi-fine",
+          "snippet": "MCX shares rise 2% as JPMorgan upgrades, raises target price after this Sebi proposal."
         },
         {
           "name": "Kalahridhaan Trendz",
           "order_type": "sebi-fine",
-          "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures"
-        },
-        {
-          "name": "Zee Entertainment",
-          "order_type": "other",
-          "snippet": "Seeking legal advise on SEBI order in land pledge case, no bearing on ongoing fundraising: Zee"
+          "snippet": "Sebi penalises SME firm Kalahridhaan Trendz, promoters for misleading disclosures."
         }
       ]
     },
@@ -390,7 +326,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-08-16T02:03:44.271Z",
+      "at": "2026-08-17T02:01:56.262Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
