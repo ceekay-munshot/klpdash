@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// First-15-minute-high entry capture. From August 2026 the client's rule is:
-// a basket's entry price for each stock is the HIGH of its first 15-minute
-// candle (09:15-09:30 IST) on the basket's start day — the SAME rule applied to
-// the AI top-7 — so the two baskets compare like-to-like. This script captures
-// those highs on the start morning and writes them into lkp-manual-picks.json
-// under entryByMonth[month]; the dashboard then anchors both baskets on them
-// (falling back to the start-day close when an override is absent).
-//
-// Which stocks: the month's in-coverage manual picks + the AI top-7 (highest
-// composite among dataComplete && !hardFailed) from that day's snapshot.
+// First-15-minute-MIDPOINT entry capture for the AI top-7. The client's rule
+// (from Aug 2026, applied to all baskets):
+//   AI entry = MIDPOINT of the first 15-minute candle (09:15-09:30 IST) on the
+//              basket's start day = (high + low) / 2.
+// Manual (client) picks do NOT need a capture — their tracked entry is the
+// report's given range high (entry_high), read straight from picksByMonth by
+// the dashboard. So this script captures ONLY the AI top-7 (highest composite
+// among dataComplete && !hardFailed from that morning's snapshot) and writes the
+// midpoints into lkp-manual-picks.json under entryByMonth[month]; the dashboard
+// anchors the AI basket on them (falling back to the start-day close if absent).
 //
 // Usage:
 //   node scrape-first15-high.mjs                 # auto: any month whose anchor == today (IST), missing entries only
@@ -56,29 +56,26 @@ async function run() {
   const anchorDate = forceAnchor || anchorByMonth[month];
   if (!anchorDate) { console.log(`No anchor date for ${month}; skipping.`); return; }
 
-  const monthPicks = (picks.picksByMonth?.[month] || []).filter((p) => p.ticker && p.in_universe !== false);
-  const manualTickers = monthPicks.map((p) => p.ticker);
-
-  // AI top-7 from the anchor-day snapshot (same selection the passive basket uses).
+  // AI top-7 from the anchor-day snapshot (same selection the passive basket
+  // uses). Manual picks are NOT captured — they use the report's entry_high.
   const aiTickers = readAiTop7(anchorDate);
 
-  const wanted = [...new Set([...manualTickers, ...aiTickers])];
+  const wanted = [...new Set(aiTickers)];
   const existing = picks.entryByMonth[month] || {};
   const todo = wanted.filter((t) => existing[t] == null);
   console.log(`Month ${month} · anchor ${anchorDate}`);
-  console.log(`  manual (${manualTickers.length}): ${manualTickers.join(", ")}`);
   console.log(`  AI top-7: ${aiTickers.join(", ") || "(snapshot not found yet)"}`);
-  console.log(`  to capture: ${todo.length}${todo.length ? "" : " (all present)"}`);
+  console.log(`  to capture (midpoints): ${todo.length}${todo.length ? "" : " (all present)"}`);
   if (!todo.length) return;
 
   const out = { ...existing };
   for (const t of todo) {
     process.stdout.write(`  ${t}... `);
     try {
-      const high = await first15High(`${t}.NS`, anchorDate);
-      if (high == null) { console.log("no bar yet"); continue; }
-      out[t] = high;
-      console.log(high);
+      const mid = await first15Mid(`${t}.NS`, anchorDate);
+      if (mid == null) { console.log("no bar yet"); continue; }
+      out[t] = mid;
+      console.log(mid);
     } catch (e) { console.log(`FAILED: ${e.message}`); }
   }
 
@@ -104,8 +101,8 @@ function readAiTop7(dateStr) {
     .map((s) => s.ticker);
 }
 
-// High of the FIRST 15-min candle (09:15-09:30 IST) on dateStr, from Yahoo.
-async function first15High(symbol, dateStr) {
+// Midpoint (high+low)/2 of the FIRST 15-min candle (09:15-09:30 IST) on dateStr.
+async function first15Mid(symbol, dateStr) {
   const dayStartUTC = Math.floor(Date.UTC(+dateStr.slice(0, 4), +dateStr.slice(5, 7) - 1, +dateStr.slice(8, 10)) / 1000) - IST_OFFSET;
   const period1 = dayStartUTC - 2 * 86400, period2 = dayStartUTC + 2 * 86400;
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=15m`;
@@ -117,16 +114,17 @@ async function first15High(symbol, dateStr) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
       const res = j?.chart?.result?.[0];
-      const ts = res?.timestamp || [], highs = res?.indicators?.quote?.[0]?.high || [];
+      const ts = res?.timestamp || [], q = res?.indicators?.quote?.[0] || {};
+      const highs = q.high || [], lows = q.low || [];
       // First bar whose IST date matches dateStr = the 09:15 candle.
       let best = null;
       for (let i = 0; i < ts.length; i++) {
-        if (highs[i] == null) continue;
+        if (highs[i] == null || lows[i] == null) continue;
         const istDate = new Date((ts[i] + IST_OFFSET) * 1000).toISOString().slice(0, 10);
         if (istDate !== dateStr) continue;
-        if (best == null || ts[i] < best.ts) best = { ts: ts[i], high: highs[i] };
+        if (best == null || ts[i] < best.ts) best = { ts: ts[i], high: highs[i], low: lows[i] };
       }
-      return best ? Number(best.high.toFixed(2)) : null;
+      return best ? Number((((best.high + best.low) / 2)).toFixed(2)) : null;
     } catch (e) { lastErr = e; attempt++; await new Promise((r) => setTimeout(r, 800 * attempt)); }
   }
   throw lastErr || new Error("fetch failed");

@@ -9,21 +9,32 @@
     "2026-08": "2026-08-10"
   },
   "entryByMonth": {
+    "2026-06": {
+      "ABB": 7162.75,
+      "CUMMINSIND": 5809.5,
+      "CGPOWER": 940.3,
+      "TRAVELFOOD": 1280.25,
+      "RRKABEL": 2210.95,
+      "POLYCAB": 9744.5,
+      "IPCALAB": 1630.45
+    },
+    "2026-07": {
+      "SUNPHARMA": 1874.35,
+      "BOSCHLTD": 41035,
+      "SONACOMS": 624.4,
+      "APOLLOHOSP": 8628.25,
+      "LUPIN": 2403.45,
+      "NEULANDLAB": 18787.5,
+      "IKS": 1816.85
+    },
     "2026-08": {
-      "GLAND": 2674.8,
-      "HAL": 4930,
-      "JSWSTEEL": 1305,
-      "KALYANKJIL": 616.7,
-      "NAUKRI": 1270.2,
-      "SONACOMS": 836.75,
-      "UNIONBANK": 185.69,
-      "AUROPHARMA": 1669.7,
-      "ABB": 7626.5,
-      "UNITDSPR": 1528,
-      "TRAVELFOOD": 1437.9,
-      "NETWEB": 5060,
-      "NEULANDLAB": 22987,
-      "MEDANTA": 1485
+      "AUROPHARMA": 1663.1,
+      "ABB": 7589.5,
+      "UNITDSPR": 1517.2,
+      "TRAVELFOOD": 1421.55,
+      "NETWEB": 5009,
+      "NEULANDLAB": 22638.5,
+      "MEDANTA": 1472.95
     }
   },
   "picksByMonth": {
@@ -374,5 +385,13 @@
       "sl": 146.88,
       "cmp_at_reco": 183.6
     }
-  ]
+  ],
+  "entryBasis": {
+    "manual": "Report entry_high (upper bound of the client's given buy range), always — even if price never traded up to it that day.",
+    "ai": "Midpoint of the first 15-minute candle (09:15-30 IST) on the basket start day = (high+low)/2.",
+    "aiProxyMonths": [
+      "2026-06"
+    ],
+    "aiProxyNote": "Months listed used that day's DAILY high/low midpoint because the 15-minute intraday candle is past Yahoo's ~60-day window."
+  }
 }
