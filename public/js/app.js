@@ -2285,7 +2285,8 @@ function buildLkpPickList(picks, byTicker, todayClose) {
     }
     const close = t ? (todayClose[t] ?? null) : null;
     const covered = !!pk.in_universe && close != null;
-    const ret = covered ? (close / pk.entry - 1) * 100 : null;
+    const entryPx = manualEntryPrice(pk);   // client rule: entry = report range high
+    const ret = covered && entryPx ? (close / entryPx - 1) * 100 : null;
     return { ...pk, isLkp: true, name, sector, ticker: t, points, close, todayClose: close, currentRating: rating, covered, ret };
   });
 }
@@ -2960,17 +2961,21 @@ function buildCohortSeries(cohort, manualPicksInput, niftyOn) {
   if (!anchorSnap) return null;
   const anchorDate = anchorSnap.date;
 
-  // Manual basket: in-universe picks only count for the average. Cost
-  // basis = anchor snapshot close (NOT the LKP file's entry range).
+  // Manual basket: in-universe picks only count for the average. Cost basis =
+  // the report's range high (entry_high), per the client's rule — NOT the
+  // anchor-day close. AI cost basis = this month's captured first-15-min
+  // midpoints (aiOv), resolved per-cohort so multi-month comparisons stay right.
   const manualAll = manualPicksInput || [];
   const manualInUni = manualAll.filter((p) => p && p.in_universe && p.ticker);
+  const aiOv = resolveEntryOverride(anchorDate);
   const manualEntry = {};
   const manualLastRating = {};
   for (const p of manualInUni) {
     const s = anchorSnap.stocks.find((x) => x.ticker === p.ticker);
-    if (s && s.close != null) {
-      manualEntry[p.ticker] = s.close;
-      manualLastRating[p.ticker] = s.rating || null;
+    const ep = manualEntryPrice(p);
+    if (ep != null || (s && s.close != null)) {
+      manualEntry[p.ticker] = ep != null ? ep : s.close;
+      manualLastRating[p.ticker] = s?.rating || null;
     }
   }
   const manualLastClose = { ...manualEntry };
@@ -2980,10 +2985,13 @@ function buildCohortSeries(cohort, manualPicksInput, niftyOn) {
   // Pre-compute each segment's per-day per-stock detail (with forward
   // fill) AND the segment's end-factor for the cumulative AI math.
   for (const seg of cohort.segments) {
+    // AI midpoints anchor only the first (start-day) segment; weekly re-locks
+    // enter at their own segment close.
+    const useOv = seg === cohort.segments[0];
     seg.entryCloses = {};
     seg.entryRatings = {};
     for (const s of seg.top7) {
-      seg.entryCloses[s.ticker] = s.close;
+      seg.entryCloses[s.ticker] = (useOv && aiOv[s.ticker] != null) ? aiOv[s.ticker] : s.close;
       seg.entryRatings[s.ticker] = s.rating || null;
     }
     seg.lastClose = { ...seg.entryCloses };
@@ -3493,19 +3501,23 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
     return { ...row, currentReturnPct: curRet, proximity };
   }
 
-  // -- AI picks --
+  // -- AI picks -- entry = this month's first-15-min midpoint (anchor segment
+  // only); weekly re-locks enter at their own segment close.
+  const aiOv = resolveEntryOverride(cohort?.anchorDate);
   const aiRowsRaw = [];
   for (const seg of (cohort?.segments || [])) {
+    const useOv = seg === cohort?.segments?.[0];
     for (const s of seg.top7) {
       if (!s.ticker || s.close == null) continue;
-      const target = s.close * (1 + AI_TARGET_PCT);
-      const sl = s.close * (1 - AI_SL_PCT);
-      const status = computeHitStatus(s.ticker, seg.startDate, s.close, target, sl, snapshots, todayDate);
+      const entry = (useOv && aiOv[s.ticker] != null) ? aiOv[s.ticker] : s.close;
+      const target = entry * (1 + AI_TARGET_PCT);
+      const sl = entry * (1 - AI_SL_PCT);
+      const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate);
       aiRowsRaw.push({
         ticker: s.ticker,
         name: s.name || s.ticker,
         entryDate: seg.startDate,
-        entryPrice: s.close,
+        entryPrice: entry,
         target, sl,
         targetPct: AI_TARGET_PCT * 100,
         slPct: -AI_SL_PCT * 100,
@@ -3529,7 +3541,7 @@ function buildAccuracyData(cohort, manualPicks, snapshots) {
     }
     const cohortEntrySnap = cohort?.segments?.[0]?.entrySnap;
     const entryFromSnap = cohortEntrySnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
-    const entryPrice = entryFromSnap ?? p.entry ?? null;
+    const entryPrice = manualEntryPrice(p) ?? entryFromSnap ?? null;   // client rule: entry = report range high
     const entryDate = cohortEntrySnap?.date || cohort?.anchorDate || todayDate;
     const target = p.tgt1 ?? null;
     const sl = p.sl ?? null;
@@ -4691,18 +4703,35 @@ async function renderActive() {
 // Build everything the Active shell needs for a given cadence. Returns
 // { kind, sim?, segments?, picks, hitSummary, equityCurve, niftyCurve,
 //   manualCurve, manualPicks, manualSummary, periodLabel, ... }.
-// Entry-price override for the current cohort. From Aug 2026 the client's rule
-// is that a basket's entry price is the captured first-15-min high (stored in
-// lkp-manual-picks.json -> entryByMonth[month]), NOT the anchor-day close — the
-// same rule for the AI top-7, so both baskets compare like-to-like. This map is
-// (re)set by buildActiveView / buildCustomView from the resolved anchor month
-// and read at every entry-derivation point below. Empty (June/July, or before
-// the morning capture) => fall back to the anchor-day close, unchanged.
+// Entry-price rules (the client's, from Aug 2026, applied to ALL baskets):
+//   MANUAL = the report's given range high (entry_high), ALWAYS — even if the
+//            price never traded up to it that day (client's explicit call). Read
+//            straight off each pick via manualEntryPrice(); no capture needed.
+//   AI     = midpoint of the first-15-min candle (09:15–09:30 IST) on the basket
+//            start day = (high+low)/2, captured into lkp-manual-picks.json ->
+//            entryByMonth[month] by scrape-first15-high.mjs. Older months whose
+//            intraday candle is past Yahoo's ~60-day window fall back to that
+//            day's DAILY midpoint (see backfill-ai-midpoints.mjs); absent any
+//            capture, AI falls back to the anchor-day close.
+// cohortEntryOverride holds the ACTIVE month's AI midpoints; (re)set by
+// buildActiveView / buildCustomView and read at each AI entry-derivation point.
+// The History tab compares several months at once, so it resolves each cohort's
+// own map via resolveEntryOverride(anchorDate) rather than this global.
 let cohortEntryOverride = {};
 function resolveEntryOverride(anchorDate) {
   const lkp = (typeof lkpOverride === "function" ? lkpOverride() : null) || state.cache.history?.lkp;
   const map = lkp?.entryByMonth?.[(anchorDate || "").slice(0, 7)];
   return (map && typeof map === "object") ? map : {};
+}
+
+// Tracked entry for a MANUAL (client) pick = the upper bound of the report's
+// given buy range (entry_high), always. Falls back to the range midpoint only
+// if a pick somehow lacks entry_high.
+function manualEntryPrice(p) {
+  if (!p) return null;
+  if (typeof p.entry_high === "number") return p.entry_high;
+  if (typeof p.entry === "number") return p.entry;
+  return null;
 }
 
 function buildActiveView(snapshots, anchorDate, todayDate, cadence, niftyOn, manualPicks, nifty500On = () => null, liveMarkDate = null) {
@@ -4816,8 +4845,8 @@ function buildActiveManualCurve(snapshots, anchorDate, manualPicks, dates, booki
   if (!inUni.length) return [];
   const entryCloses = {};
   for (const p of inUni) {
-    const ov = cohortEntryOverride[p.ticker];
-    if (ov != null) { entryCloses[p.ticker] = ov; continue; }   // first-15-min high override
+    const ep = manualEntryPrice(p);   // client rule: manual entry = report range high (entry_high)
+    if (ep != null) { entryCloses[p.ticker] = ep; continue; }
     const s = anchorSnap.stocks.find((x) => x.ticker === p.ticker);
     if (s && typeof s.close === "number") entryCloses[p.ticker] = s.close;
   }
@@ -4886,7 +4915,7 @@ function buildActiveManualData(manualPicks, snapshots, anchorDate, todayDate, li
       continue;
     }
     const entryFromSnap = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker)?.close;
-    const entryPrice = cohortEntryOverride[p.ticker] ?? entryFromSnap ?? p.entry ?? null;
+    const entryPrice = manualEntryPrice(p) ?? entryFromSnap ?? null;   // client rule: entry = report range high
     const entryDate = anchorSnap?.date || anchorDate;
     const target = p.tgt1 ?? null;   // book/close at Target 1 — the desk exits at the first target (T2 is "if held" territory)
     const sl = p.sl ?? null;
@@ -5118,8 +5147,9 @@ function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookin
 }
 
 // Both baskets' per-stock line curves for the chart's "Stocks" mode. AI names
-// = the latest segment's top-7 (entry at that segment's close); Manual names =
-// the in-coverage client picks (entry at the anchor snapshot close).
+// = the latest segment's top-7 (entry at that segment's first-15-min midpoint,
+// via cohortEntryOverride); Manual names = the in-coverage client picks (entry
+// at the report's range high).
 function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, dates, aiPicks, manualRows, liveMarkDate = null) {
   const booked = state.manualReturnMode !== "held";
   const livePrices = state.cache.history?.livePrices || {};
@@ -5138,11 +5168,11 @@ function buildBasketStockCurves(segments, manualPicks, snapshots, anchorDate, da
   }
   const aiStockCurves = buildPerStockCurves(aiEntry, aiName, snapshots, dates, aiBooking, booked, liveMarkDate, livePrices);
   const manualEntry = {}, manualName = {};
-  const anchorSnap = snapshots.find((s) => s.date >= anchorDate);
   for (const p of (manualPicks || [])) {
     if (!p.in_universe || !p.ticker) continue;
-    const s = anchorSnap?.stocks?.find((x) => x.ticker === p.ticker);
-    if (s && typeof s.close === "number") { manualEntry[p.ticker] = cohortEntryOverride[p.ticker] ?? s.close; manualName[p.ticker] = p.selection || p.ticker; }
+    const ep = manualEntryPrice(p);   // client rule: entry = report range high
+    if (ep == null) continue;
+    manualEntry[p.ticker] = ep; manualName[p.ticker] = p.selection || p.ticker;
   }
   // Manual names book at the client's Target 1 / SL price.
   const manualBooking = new Map();
@@ -5215,7 +5245,7 @@ function buildActiveSegmentedPicks(segments, snapshots, todayDate, liveMarkDate 
   for (const seg of segments) {
     for (const s of seg.top7) {
       if (!s.ticker || s.close == null) continue;
-      const entry = cohortEntryOverride[s.ticker] ?? s.close;   // first-15-min high override
+      const entry = cohortEntryOverride[s.ticker] ?? s.close;   // AI first-15-min midpoint (falls back to close)
       const target = entry * (1 + AI_TARGET_PCT);
       const sl = entry * (1 - AI_SL_PCT);
       const status = computeHitStatus(s.ticker, seg.startDate, entry, target, sl, snapshots, todayDate, livePrices[s.ticker] || null);
@@ -5298,9 +5328,9 @@ function renderPendingBasketCard(manualPicks, anchorDate) {
           <span class="text-base">⏳</span>
           <h3 class="font-display font-bold text-slate-900 text-base">New basket — tracking starts ${fmtDateDMY(anchorDate)}</h3>
         </div>
-        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[10px] font-bold uppercase tracking-wider">Entry = first 15-min high</span>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 text-[10px] font-bold uppercase tracking-wider">Entry: range high · AI 15-min mid</span>
       </div>
-      <div class="text-[12px] text-slate-600 mb-3 max-w-2xl leading-relaxed">The client's ${covered.length} picks for this month. Each stock's <strong>entry price is the high of its first 15-minute candle (09:15–09:30 IST) on ${fmtDateDMY(anchorDate)}</strong>, captured automatically that morning. The AI top-7 locks the same day under the same rule, so the two baskets compare like-to-like. Returns, target/SL hits and the charts go live once that day's close is in.</div>
+      <div class="text-[12px] text-slate-600 mb-3 max-w-2xl leading-relaxed">The client's ${covered.length} picks for this month. Each manual stock's <strong>entry is the upper end of its given buy range (the report's range high)</strong> — the tracked entry regardless of where it opened on ${fmtDateDMY(anchorDate)}. The <strong>AI top-7</strong> instead enters at the <strong>midpoint of its first 15-minute candle</strong> (09:15–09:30 IST) that morning. Returns, target/SL hits and the charts go live once that day's close is in.</div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead><tr class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -6406,17 +6436,25 @@ function renderAiBasketTable(segment, view, mode) {
     : `Held since ${fmtDateDMY(segment.startDate)}`;
 
   const rows = segment.top7.map((s) => {
-    const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
-    const heldRet = ((today / s.close) - 1) * 100;
     const p = pickByKey.get(`${s.ticker}|${segment.startDate}`);
+    // Entry = the tracked first-15-min midpoint (from view.picks), NOT the raw
+    // snapshot close, so the roster's buy price + return agree with the rest of
+    // the dashboard.
+    const entry = (p && typeof p.entryPrice === "number") ? p.entryPrice : s.close;
+    const today = (typeof todayClose[s.ticker] === "number") ? todayClose[s.ticker] : s.close;
+    const heldRet = ((today / entry) - 1) * 100;
     const hit = p && (p.status === "TARGET_HIT" || p.status === "SL_HIT");
     const isBooked = booked && hit;
     const reason = (p && p.status === "SL_HIT") ? "SL" : "TARGET";
     // Booked freezes at the target/SL LEVEL — the real exit — not the live mark.
     const exitLevel = isBooked ? (p.status === "TARGET_HIT" ? p.target : p.sl) : null;
-    const displayRet = isBooked ? ((exitLevel / s.close) - 1) * 100 : heldRet;
+    const displayRet = isBooked ? ((exitLevel / entry) - 1) * 100 : heldRet;
     const exitPx = isBooked ? exitLevel : today;
     const retCls = displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
+    // Client ask: show target + stop right under the buy/current price.
+    const tslLine = (p && p.target != null && p.sl != null)
+      ? `<div class="text-[9px] tabular-nums mt-0.5 flex items-center gap-1"><span class="text-emerald-600 font-semibold" title="Target (+5%)">T ₹${formatPrice(p.target)}</span><span class="text-slate-300">·</span><span class="text-rose-600 font-semibold" title="Stop-loss (−20%)">SL ₹${formatPrice(p.sl)}</span></div>`
+      : "";
     const heldNote = isBooked
       ? `<div class="text-[9px] text-slate-400 tabular-nums" title="Where the stock is now — booked return is what was captured at the exit level">if held ${heldRet >= 0 ? "+" : ""}${heldRet.toFixed(1)}%</div>`
       : "";
@@ -6424,7 +6462,8 @@ function renderAiBasketTable(segment, view, mode) {
       <button type="button" data-cohort-row data-cohort-side="ai" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(segment.startDate)}" class="w-full text-left grid grid-cols-12 items-center gap-2 py-2 px-2 rounded-lg cursor-pointer transition hover:bg-indigo-50/40 hover:ring-1 hover:ring-indigo-200">
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.name || s.ticker)}</div>
-          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(s.close)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(entry)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          ${tslLine}
         </div>
         <div class="col-span-3 sm:col-span-3 text-right">
           <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet >= 0 ? "+" : ""}${displayRet.toFixed(2)}%</div>
@@ -6476,6 +6515,11 @@ function renderManualBasketTable(manualPicks) {
     const displayRet = isBooked ? r.bookedRet : heldRet;
     const exitPx = isBooked ? r.booking.bookPrice : today;
     const retCls = displayRet == null ? "text-slate-500" : displayRet >= 0 ? "text-emerald-700" : "text-rose-700";
+    // Client ask: show the client's target + stop right under the buy/current
+    // price (T = Target 1, the book/exit level; T2 sits in the drill modal).
+    const tslLine = (r.target != null && r.sl != null)
+      ? `<div class="text-[9px] tabular-nums mt-0.5 flex items-center gap-1"><span class="text-emerald-600 font-semibold" title="Target 1 (client)">T ₹${formatPrice(r.target)}</span><span class="text-slate-300">·</span><span class="text-rose-600 font-semibold" title="Stop-loss (client)">SL ₹${formatPrice(r.sl)}</span></div>`
+      : "";
     // Booked picks show the exit price in the sub-line ("→ ₹xxx · locked") and
     // the if-held mark separately; Open/Closed status sits on the right, rating
     // moves to the drill modal — same shape as the AI roster.
@@ -6487,6 +6531,7 @@ function renderManualBasketTable(manualPicks) {
         <div class="col-span-6 sm:col-span-5 min-w-0">
           <div class="font-semibold text-slate-900 text-sm truncate" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</div>
           <div class="text-[10px] text-slate-500 tabular-nums">₹${formatPrice(r.entryPrice)} → ₹${formatPrice(exitPx)}${isBooked ? " · locked" : ""}</div>
+          ${tslLine}
         </div>
         <div class="col-span-3 sm:col-span-3 text-right">
           <div class="tabular-nums text-sm font-bold ${retCls}">${displayRet == null ? "—" : (displayRet >= 0 ? "+" : "") + displayRet.toFixed(2) + "%"}</div>
@@ -7284,17 +7329,10 @@ function openHistoryDrill(pick) {
   if (pick.isLkp) {
     targetPrice = typeof pick.tgt1 === "number" ? pick.tgt1 : null;
     slPrice = typeof pick.sl === "number" ? pick.sl : null;
-    // Match the Accuracy row's entry reference: snapshot close at the
-    // cohort anchor date (the same close buildAccuracyData uses for
-    // computing targetPct / slPct). Falls back to the LKP entry midpoint
-    // when the cohort anchor isn't in this ticker's snapshot trail.
-    const cohortAnchor = state.cache.history?.cohortAnchor;
-    if (cohortAnchor && Array.isArray(pick.points)) {
-      const anchorPt = pick.points.find((p) => p.date === cohortAnchor && typeof p.close === "number")
-        || pick.points.find((p) => p.date >= cohortAnchor && typeof p.close === "number");
-      if (anchorPt) levelAnchor = anchorPt.close;
-    }
-    if (levelAnchor == null && typeof pick.entry === "number") levelAnchor = pick.entry;
+    // Match the Accuracy row's entry reference: the report's range high
+    // (entry_high) — the client's tracked manual entry — so the drill's target
+    // / SL % agree with the targetPct / slPct buildAccuracyData shows.
+    levelAnchor = manualEntryPrice(pick);
   } else if (typeof pick.firstSBClose === "number") {
     targetPrice = pick.firstSBClose * (1 + AI_TARGET_PCT);
     slPrice = pick.firstSBClose * (1 - AI_SL_PCT);
