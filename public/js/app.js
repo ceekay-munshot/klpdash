@@ -4680,6 +4680,7 @@ async function renderActive() {
     });
     wireStrategyChartMode();
     wireStrategyStockBasket();
+    wireStrategyStockWindow();
     // Chart hover crosshair + tooltip — basket mode only (the per-stock
     // "Stocks" view draws static lines with its own legend).
     if (state.strategySubTab === "overview" && (state.strategyChartMode || "basket") !== "stocks") setupActiveChartHover(view);
@@ -5142,7 +5143,7 @@ function buildPerStockCurves(entryCloses, nameByTicker, snapshots, dates, bookin
       }
       return { date, retPct: (close / entryCloses[ticker] - 1) * 100 };
     });
-    return { ticker, name: nameByTicker[ticker] || ticker, curve };
+    return { ticker, name: nameByTicker[ticker] || ticker, curve, entryPrice: entryCloses[ticker], entryDate: dates[0] };
   });
 }
 
@@ -5965,7 +5966,13 @@ function renderActiveCumulativeChart(view) {
     const basket = ["ai", "manual", "both"].includes(state.strategyStockBasket) ? state.strategyStockBasket : "ai";
     const bBtn = (k, label) => `<button type="button" data-stock-basket="${k}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${basket === k ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}">${label}</button>`;
     const basketToggle = `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${bBtn("ai", "AI")}${bBtn("manual", "Manual")}${bBtn("both", "Both")}</div>`;
-    return shell(basketToggle, renderPerStockSmallMultiples(view, basket)) + `</div>`;
+    // Window toggle — "Since entry" (the holding period) vs "6M" (the last ~6
+    // months of real closes from history-technical), so the desk can see each
+    // name's behaviour into and out of the entry, not just the days since the buy.
+    const win = state.strategyStockWindow === "6m" ? "6m" : "entry";
+    const wBtn = (k, label) => `<button type="button" data-stock-window="${k}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${win === k ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}">${label}</button>`;
+    const windowToggle = `<div class="inline-flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">${wBtn("entry", "Since entry")}${wBtn("6m", "6M")}</div>`;
+    return shell(`${basketToggle}${windowToggle}`, renderPerStockSmallMultiples(view, basket)) + `</div>`;
   }
 
   const pts = view.equityCurve;
@@ -6059,14 +6066,45 @@ function renderActiveCumulativeChart(view) {
   return shell(legend, body) + `</div>`;
 }
 
-// Per-stock ("Stocks" mode) small multiples — one mini cumulative-return graph
-// per holding (the client's "seven graphs"), instead of layering 14 near-
-// identical lines on one axis. Color encodes OUTCOME (green up / red down,
-// redundantly backed by the signed % and ▲/▼ so it reads under CVD); the ticker
-// title carries identity; a shared vertical scale keeps tiles comparable; a
-// faint Nifty 50 line sits behind each for a market reference. Booked/held aware
-// (the curves already freeze at the exit level); each tile drills into the modal.
+// ~6 months of NSE trading days — the "6M" window length for the per-stock chart.
+const SIX_MONTH_TD = 126;
+
+// Build one stock's line over the last ~6 months of real daily closes
+// (history-technical.json), rebased so the client's entry price reads 0%. Lets
+// the desk see how the name behaved into and out of the buy, not just the handful
+// of days since entry. Returns null when we have no usable series for the ticker.
+function buildSixMonthCurve(ticker, entryPrice, hist) {
+  const rec = hist?.tickers?.[ticker];
+  const allDates = hist?.dates;
+  if (!rec || !Array.isArray(rec.close) || !Array.isArray(allDates) || !allDates.length || !(entryPrice > 0)) return null;
+  const start = Math.max(0, allDates.length - SIX_MONTH_TD);
+  const curve = [];
+  for (let i = start; i < allDates.length; i++) {
+    const close = rec.close[i];
+    if (close == null) continue;
+    curve.push({ date: allDates[i], retPct: (close / entryPrice - 1) * 100 });
+  }
+  return curve.length > 1 ? curve : null;
+}
+
+// Per-stock ("Stocks" mode) small multiples — one mini graph per holding (the
+// client's "seven graphs"), instead of layering 14 near-identical lines on one
+// axis. Color encodes OUTCOME (green up / red down, redundantly backed by the
+// signed % and ▲/▼ so it reads under CVD); the ticker title carries identity;
+// each tile drills into the modal.
+//
+// Two windows via the "Since entry / 6M" toggle (state.strategyStockWindow):
+//   entry → the holding period (snapshot dates since the buy). One SHARED
+//           vertical scale so tiles are directly comparable; faint Nifty 50
+//           reference behind each; honours the Booked / If-held toggle.
+//   6m    → the last ~126 trading days of real closes (history-technical),
+//           rebased so entry = 0%, with the entry day marked. Scaled PER TILE
+//           (the point is each name's own shape, not cross-stock magnitude).
+// The headline % and ▲/▼ ALWAYS come from the since-entry curve, so the position
+// stats never change when the window flips — only the drawn path + its x-window.
 function renderPerStockSmallMultiples(view, basket) {
+  const use6m = state.strategyStockWindow === "6m" && techHist && typeof techHist === "object" && techHist.dates && techHist.tickers;
+
   const nifty = view.niftyCurve || [];
   const aiStocks = (view.aiStockCurves || []).map((s) => ({ ...s, side: "ai" }));
   const manualStocks = (view.manualStockCurves || []).map((s) => ({ ...s, side: "manual" }));
@@ -6075,55 +6113,87 @@ function renderPerStockSmallMultiples(view, basket) {
     const which = basket === "manual" ? "manual" : basket === "ai" ? "AI" : "";
     return `<div class="text-xs text-slate-500 py-6 text-center">No ${which} holdings with tracking data yet.</div>`;
   }
-  const dates = (stocks[0].curve || []).map((p) => p.date);
+
+  // Shared x-axis. Entry mode → the basket's snapshot dates. 6M mode → the last
+  // ~126 trading days from history-technical, one axis every ticker shares by index.
+  const dates = use6m
+    ? techHist.dates.slice(Math.max(0, techHist.dates.length - SIX_MONTH_TD))
+    : (stocks[0].curve || []).map((p) => p.date);
   if (dates.length < 2) return `<div class="text-xs text-slate-500 py-6 text-center">Not enough days to plot yet.</div>`;
-  // One shared vertical scale across every tile (+ Nifty) so a +8% runner
-  // visibly towers over a +1% name — panels are directly comparable.
-  const allVals = [];
-  for (const s of stocks) for (const p of s.curve) if (p.retPct != null) allVals.push(p.retPct);
-  for (const p of nifty) if (p.retPct != null) allVals.push(p.retPct);
-  const yMin = Math.min(0, ...allVals), yMax = Math.max(0, ...allVals);
-  const ySpan = Math.max(yMax - yMin, 0.5);
-  const yLo = yMin - ySpan * 0.1, yHi = yMax + ySpan * 0.1;
+
+  // The line each tile draws in the active window (falls back to since-entry if
+  // a ticker has no 6M history).
+  const rows = stocks.map((s) => ({ s, plot: use6m ? (buildSixMonthCurve(s.ticker, s.entryPrice, techHist) || s.curve) : s.curve }));
+
   const W = 150, H = 56, PADX = 3, PADT = 4, PADB = 4;
   const innerW = W - 2 * PADX, innerH = H - PADT - PADB;
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
   const xAt = (i) => PADX + (dates.length <= 1 ? 0 : (i / (dates.length - 1)) * innerW);
-  const yAt = (v) => PADT + (1 - (v - yLo) / (yHi - yLo)) * innerH;
-  const pathFor = (curve) => {
+  const scaleFor = (vals) => {
+    const yMin = Math.min(0, ...vals), yMax = Math.max(0, ...vals);
+    const ySpan = Math.max(yMax - yMin, 0.5);
+    return { yLo: yMin - ySpan * 0.1, yHi: yMax + ySpan * 0.1 };
+  };
+  const yAtWith = (v, sc) => PADT + (1 - (v - sc.yLo) / (sc.yHi - sc.yLo)) * innerH;
+  const pathFor = (curve, sc) => {
     const segs = []; let cur = [];
     (curve || []).forEach((p) => {
       const i = dateIdx.get(p.date);
       if (i == null || p.retPct == null) { if (cur.length) { segs.push(cur); cur = []; } return; }
-      cur.push(`${cur.length === 0 ? "M" : "L"} ${xAt(i).toFixed(1)} ${yAt(p.retPct).toFixed(1)}`);
+      cur.push(`${cur.length === 0 ? "M" : "L"} ${xAt(i).toFixed(1)} ${yAtWith(p.retPct, sc).toFixed(1)}`);
     });
     if (cur.length) segs.push(cur);
     return segs.map((s) => s.join(" ")).join(" ");
   };
-  const niftyPath = pathFor(nifty);
-  const zeroY = yAt(0).toFixed(1);
+
+  // Entry mode → ONE shared scale across every tile (+ Nifty). 6M mode scales
+  // each tile to its own window.
+  let sharedScale = null;
+  if (!use6m) {
+    const allVals = [];
+    for (const { plot } of rows) for (const p of plot) if (p.retPct != null) allVals.push(p.retPct);
+    for (const p of nifty) if (p.retPct != null) allVals.push(p.retPct);
+    sharedScale = scaleFor(allVals.length ? allVals : [0]);
+  }
+
   const sign = (v) => v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   const showBadge = basket === "both";
   const UP = "#059669", DOWN = "#e11d48";
-  const tiles = stocks.map((s) => {
-    const finalRet = lastRet(s.curve);
+  const tiles = rows.map(({ s, plot }) => {
+    const finalRet = lastRet(s.curve);                       // since-entry — stable across the toggle
     const up = curveMaxUpside(s.curve), dd = curveMaxDrawdown(s.curve);
     const col = (finalRet ?? 0) >= 0 ? UP : DOWN;
-    const d = pathFor(s.curve);
+    const sc = use6m ? scaleFor(plot.filter((p) => p.retPct != null).map((p) => p.retPct).concat(0)) : sharedScale;
+    const zeroY = yAtWith(0, sc).toFixed(1);
+    const d = pathFor(plot, sc);
+    const niftyLine = (!use6m && nifty.length) ? `<path d="${pathFor(nifty, sc)}" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 2" vector-effect="non-scaling-stroke" />` : "";
+    // 6M mode → mark where the client actually entered: a vertical guide at the
+    // entry day + a dot sitting on the price line at that point.
+    let entryMark = "";
+    if (use6m && s.entryDate != null) {
+      const ei = dateIdx.get(s.entryDate);
+      if (ei != null) {
+        const ex = xAt(ei).toFixed(1);
+        const eRet = plot.find((p) => p.date === s.entryDate)?.retPct;
+        const ey = yAtWith(eRet != null ? eRet : 0, sc).toFixed(1);
+        entryMark = `<line x1="${ex}" x2="${ex}" y1="${PADT}" y2="${(H - PADB).toFixed(1)}" stroke="#6366f1" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" opacity="0.55" /><circle cx="${ex}" cy="${ey}" r="2.3" fill="#6366f1" vector-effect="non-scaling-stroke" />`;
+      }
+    }
     const badge = showBadge
       ? (s.side === "ai"
           ? `<span class="inline-flex items-center px-1 py-0 rounded bg-indigo-100 text-indigo-700 text-[8px] font-bold uppercase tracking-wider">AI</span>`
           : `<span class="inline-flex items-center px-1 py-0 rounded bg-amber-100 text-amber-700 text-[8px] font-bold uppercase tracking-wider">Man</span>`)
       : "";
     return `
-      <button type="button" data-cohort-row data-cohort-side="${s.side}" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(dates[0] || "")}" class="text-left rounded-xl ring-1 ring-slate-200 bg-white hover:ring-indigo-300 hover:shadow-sm transition p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      <button type="button" data-cohort-row data-cohort-side="${s.side}" data-ticker="${escapeHtml(s.ticker)}" data-seg-anchor="${escapeHtml(s.entryDate || dates[0] || "")}" class="text-left rounded-xl ring-1 ring-slate-200 bg-white hover:ring-indigo-300 hover:shadow-sm transition p-2 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         <div class="flex items-center justify-between gap-1">
           <span class="text-[11px] font-bold text-slate-800 truncate" title="${escapeHtml(s.name || s.ticker)}">${escapeHtml(s.ticker)}</span>
           <span class="flex items-center gap-1 flex-shrink-0">${badge}<span class="text-[11px] font-bold tabular-nums" style="color:${col}">${sign(finalRet)}</span></span>
         </div>
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="w-full mt-1 block" style="height:50px">
           <line x1="${PADX}" x2="${W - PADX}" y1="${zeroY}" y2="${zeroY}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" />
-          ${niftyPath ? `<path d="${niftyPath}" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 2" vector-effect="non-scaling-stroke" />` : ""}
+          ${niftyLine}
+          ${entryMark}
           ${d ? `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />` : ""}
         </svg>
         <div class="flex items-center justify-between mt-1 text-[9px] tabular-nums">
@@ -6132,14 +6202,18 @@ function renderPerStockSmallMultiples(view, basket) {
         </div>
       </button>`;
   }).join("");
-  return `
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">${tiles}</div>
-      <div class="mt-3 flex items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 flex-wrap">
+  const legend = use6m
+    ? `<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:#6366f1"></span>entry day</span>
         <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${UP}"></span>up</span>
         <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${DOWN}"></span>down</span>
+        <span>· ~6-month price path, rebased to each name's entry (● = entry day) · ▲/▼ still measured since entry · per-tile scale · click a tile to drill in.</span>`
+    : `<span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${UP}"></span>up</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5" style="background:${DOWN}"></span>down</span>
         <span class="inline-flex items-center gap-1"><span class="w-2.5 h-0.5 border-t border-dashed" style="border-color:#cbd5e1"></span>Nifty 50</span>
-        <span>· shared scale · honours the Booked / If-held toggle · click a tile to drill in.</span>
-      </div>`;
+        <span>· shared scale · honours the Booked / If-held toggle · click a tile to drill in.</span>`;
+  return `
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">${tiles}</div>
+      <div class="mt-3 flex items-center gap-x-3 gap-y-1 text-[10px] text-slate-400 flex-wrap">${legend}</div>`;
 }
 
 function wireStrategyChartMode() {
@@ -6156,6 +6230,18 @@ function wireStrategyStockBasket() {
     const v = btn.dataset.stockBasket;
     if (!["ai", "manual", "both"].includes(v) || v === (state.strategyStockBasket || "ai")) return;
     state.strategyStockBasket = v;
+    rerenderKeepingScroll(renderActive);
+  }));
+}
+
+function wireStrategyStockWindow() {
+  $$("#active-content [data-stock-window]").forEach((btn) => btn.addEventListener("click", async () => {
+    const v = btn.dataset.stockWindow === "6m" ? "6m" : "entry";
+    if (v === (state.strategyStockWindow || "entry")) return;
+    state.strategyStockWindow = v;
+    // Lazily pull the 2-yr daily closes the first time 6M is opened — reuses the
+    // Back-test tab's loader + cache, so it's fetched at most once per session.
+    if (v === "6m" && !techHist) await loadTechHistory();
     rerenderKeepingScroll(renderActive);
   }));
 }
