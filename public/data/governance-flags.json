@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-08-29T07:14:50.031Z",
+  "generated_at": "2026-08-30T05:36:36.882Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 17,
+  "total_entities_seen": 20,
   "flagged_companies": {
     "MFSL": {
       "primary_name": "Max Financial",
@@ -21,26 +21,7 @@
           "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
-    },
-    "AXISBANK": {
-      "primary_name": "Axis Bank",
-      "order_type": "other",
-      "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses",
-      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
-      "source_label": "Economic Times — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
-        }
-      ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.881Z"
     },
     "CGCL": {
       "primary_name": "Capri Global",
@@ -59,7 +40,7 @@
           "snippet": "Capri Global faces Rs 74,000 penalty from NSE, BSE over compliance lapses"
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -78,7 +59,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -97,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -116,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -135,7 +116,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -154,7 +135,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-08-29T07:14:50.030Z"
+      "first_seen_at": "2026-08-30T05:36:36.882Z"
     }
   },
   "unmatched_sample": [
@@ -165,8 +146,8 @@
       "origin": "scraper"
     },
     {
-      "name": "NSE",
-      "type": "sebi-investigation",
+      "name": "Jio Platforms",
+      "type": "sebi-enforcement-order",
       "source": "Mint — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -201,6 +182,12 @@
       "origin": "scraper"
     },
     {
+      "name": "Jio Platforms",
+      "type": "sebi-approval",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
       "name": "Corporate Capital Ventures",
       "type": "sebi-ban",
       "source": "Economic Times — SEBI topic (news)",
@@ -208,7 +195,25 @@
     },
     {
       "name": "Dhenu Buildcon",
-      "type": "sebi-investigation",
+      "type": "sebi-interim-order",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Copthall Mauritius",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Mansi Share and Stock Broking",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Jane Street",
+      "type": "sebi-ban",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -218,42 +223,36 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-29T07:14:35.252Z",
+      "at": "2026-08-30T05:36:22.246Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 3,
+      "total_extracted": 3,
       "prefilter_sample": [
         {
           "name": "Varanium Cloud",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Varanium Cloud, promoter for 7 years, orders ₹128.8 crore disgorgement"
-        },
-        {
-          "name": "NSE",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Sebi ‘close’ to approving NSE IPO: Tuhin Kanta Pandey"
+          "snippet": "Sebi bars Varanium Cloud, promoter for 7 years, orders ₹128.8 crore disgorgement."
         },
         {
           "name": "Sembcorp Green Infra",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Temasek-backed Sembcorp Green Infra files for ₹3,750 cr IPO"
+          "snippet": "Temasek-backed Sembcorp Green Infra files for ₹3,750 cr IPO."
         },
         {
-          "name": "Avaada Electro",
-          "order_type": "sebi-investigation",
+          "name": "Jio Platforms",
+          "order_type": "sebi-enforcement-order",
           "is_listed_entity": true,
-          "snippet": "Avaada Electro cuts IPO size to ₹7,600 crore amid valuation, concentration concerns"
+          "snippet": "Jio Platforms gets Sebi nod for ₹35,000 crore IPO."
         }
       ],
       "after_filter_count": 2,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 2,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -261,12 +260,12 @@
         {
           "name": "Varanium Cloud",
           "order_type": "sebi-ban",
-          "snippet": "Sebi bars Varanium Cloud, promoter for 7 years, orders ₹128.8 crore disgorgement"
+          "snippet": "Sebi bars Varanium Cloud, promoter for 7 years, orders ₹128.8 crore disgorgement."
         },
         {
-          "name": "NSE",
-          "order_type": "sebi-investigation",
-          "snippet": "Sebi ‘close’ to approving NSE IPO: Tuhin Kanta Pandey"
+          "name": "Jio Platforms",
+          "order_type": "sebi-enforcement-order",
+          "snippet": "Jio Platforms gets Sebi nod for ₹35,000 crore IPO."
         }
       ]
     },
@@ -274,7 +273,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-29T07:14:38.855Z",
+      "at": "2026-08-30T05:36:25.472Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -329,7 +328,7 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-08-29T07:14:42.076Z",
+      "at": "2026-08-30T05:36:29.274Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -349,13 +348,13 @@
           "snippet": "IPO fund diversion: Sebi bars Varanium Cloud, promoter for 7 years from markets"
         },
         {
-          "name": "Max Financial",
-          "order_type": "other",
+          "name": "Jio Platforms",
+          "order_type": "sebi-approval",
           "is_listed_entity": true,
-          "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
+          "snippet": "Jio Platform gets Sebi's nod for Rs 37,000 crore IPO"
         },
         {
-          "name": "Axis Bank",
+          "name": "Max Financial",
           "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
@@ -374,32 +373,32 @@
         },
         {
           "name": "Dhenu Buildcon",
-          "order_type": "sebi-investigation",
+          "order_type": "sebi-interim-order",
           "is_listed_entity": true,
           "snippet": "Rs 3 crore to Rs 4,925 crore: Sebi order gives details on Dhenu Buildcon market cap surge"
         },
         {
           "name": "Copthall Mauritius",
           "order_type": "sebi-ban",
-          "is_listed_entity": false,
+          "is_listed_entity": true,
           "snippet": "Sebi bars two entities for 'manipulating' CAS"
         },
         {
           "name": "Mansi Share and Stock Broking",
           "order_type": "sebi-ban",
-          "is_listed_entity": false,
+          "is_listed_entity": true,
           "snippet": "Sebi bars two entities for 'manipulating' CAS"
         },
         {
-          "name": "Adani-linked FPIs",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi turns down Adani-linked FPIs' settlement applications"
+          "name": "Jane Street",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Sebi bars Jane Street from accessing its securities market"
         }
       ],
-      "after_filter_count": 7,
+      "after_filter_count": 10,
       "dropped_counts": {
-        "not_listed": 3,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -416,12 +415,12 @@
           "snippet": "IPO fund diversion: Sebi bars Varanium Cloud, promoter for 7 years from markets"
         },
         {
-          "name": "Max Financial",
-          "order_type": "other",
-          "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
+          "name": "Jio Platforms",
+          "order_type": "sebi-approval",
+          "snippet": "Jio Platform gets Sebi's nod for Rs 37,000 crore IPO"
         },
         {
-          "name": "Axis Bank",
+          "name": "Max Financial",
           "order_type": "other",
           "snippet": "Sebi drops Rs 3,912 crore probe against Max Financial, Axis Bank over disclosure lapses"
         },
@@ -437,8 +436,23 @@
         },
         {
           "name": "Dhenu Buildcon",
-          "order_type": "sebi-investigation",
+          "order_type": "sebi-interim-order",
           "snippet": "Rs 3 crore to Rs 4,925 crore: Sebi order gives details on Dhenu Buildcon market cap surge"
+        },
+        {
+          "name": "Copthall Mauritius",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars two entities for 'manipulating' CAS"
+        },
+        {
+          "name": "Mansi Share and Stock Broking",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars two entities for 'manipulating' CAS"
+        },
+        {
+          "name": "Jane Street",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars Jane Street from accessing its securities market"
         }
       ]
     },
@@ -446,7 +460,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-08-29T07:14:48.148Z",
+      "at": "2026-08-30T05:36:35.085Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
