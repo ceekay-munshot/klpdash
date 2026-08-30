@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T07:58:07.966Z",
+  "generated_at": "2026-08-30T05:55:03.785Z",
   "source": {
     "url": "https://devde.muns.io/agents/run",
     "agent_library_id": "0789b5f8-48f2-49db-9490-399dcdc294ba",
@@ -10,8 +10,8 @@
   "total_universe": 540,
   "total_cached": 540,
   "total_live_opinion": 3,
-  "total_not_disclosed": 158,
-  "total_errors": 379,
+  "total_not_disclosed": 165,
+  "total_errors": 372,
   "companies": {
     "504375": {
       "name": "IDream Film",
@@ -28,20 +28,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:43.703Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.019Z"
     },
     "544467": {
       "name": "N S D L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.862Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.007Z"
     },
     "PGHH": {
       "name": "P & G Hygiene",
@@ -81,7 +81,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.834Z"
+      "fetched_at": "2026-08-30T05:42:54.818Z"
     },
     "NESTLEIND": {
       "name": "Nestle India",
@@ -91,7 +91,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.861Z"
+      "fetched_at": "2026-08-30T05:42:54.842Z"
     },
     "GVT&D": {
       "name": "GE Vernova T&D",
@@ -108,20 +108,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:15.905Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.843Z"
     },
     "HINDZINC": {
       "name": "Hindustan Zinc",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:15.783Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.843Z"
     },
     "ENRIN": {
       "name": "Siemens Ener.Ind",
@@ -178,10 +178,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:15.971Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.845Z"
     },
     "BSE": {
       "name": "BSE",
@@ -401,7 +401,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.869Z"
+      "fetched_at": "2026-08-30T05:42:54.846Z"
     },
     "MSUMI": {
       "name": "Motherson Wiring",
@@ -428,10 +428,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:24.631Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.846Z"
     },
     "JSWDULUX": {
       "name": "JSW Dulux",
@@ -471,7 +471,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.870Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "IKS": {
       "name": "Inventurus Knowl",
@@ -481,17 +481,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.871Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "SOLARINDS": {
       "name": "Solar Industries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:24.640Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.846Z"
     },
     "BEL": {
       "name": "Bharat Electron",
@@ -501,7 +501,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.871Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "FORCEMOT": {
       "name": "Force Motors",
@@ -511,7 +511,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.872Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "MAZDOCK": {
       "name": "Mazagon Dock",
@@ -521,17 +521,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.872Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "LLOYDSME": {
       "name": "Lloyds Metals",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:48:54.857Z"
     },
     "TRITURBINE": {
       "name": "Triveni Turbine",
@@ -541,7 +541,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "HEROMOTOCO": {
       "name": "Hero Motocorp",
@@ -551,7 +551,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.875Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "COALINDIA": {
       "name": "Coal India",
@@ -561,7 +561,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.875Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "LICI": {
       "name": "Life Insurance",
@@ -571,7 +571,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.875Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "CHENNPETRO": {
       "name": "C P C L",
@@ -581,7 +581,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "SUZLON": {
       "name": "Suzlon Energy",
@@ -591,7 +591,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "ECLERX": {
       "name": "eClerx Services",
@@ -601,17 +601,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "PERSISTENT": {
       "name": "Persistent Systems",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:24.622Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "POLYCAB": {
       "name": "Polycab India",
@@ -631,17 +631,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.877Z"
+      "fetched_at": "2026-08-30T05:42:54.853Z"
     },
     "INOXINDIA": {
       "name": "Inox India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:24.614Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.853Z"
     },
     "CUPID": {
       "name": "Cupid",
@@ -661,7 +661,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "PREMIERENE": {
       "name": "Premier Energies",
@@ -671,17 +671,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.877Z"
+      "fetched_at": "2026-08-30T05:42:54.853Z"
     },
     "BAGMANE": {
       "name": "Bagmane Prime REIT",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.436Z"
     },
     "GODFRYPHLP": {
       "name": "Godfrey Phillips",
@@ -701,7 +701,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.877Z"
+      "fetched_at": "2026-08-30T05:42:54.853Z"
     },
     "AJANTPHARM": {
       "name": "Ajanta Pharma",
@@ -711,47 +711,47 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.876Z"
+      "fetched_at": "2026-08-30T05:42:54.852Z"
     },
     "ABSLAMC": {
       "name": "Aditya AMC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.363Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "LGEINDIA": {
       "name": "LG Electronics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "CDSL": {
       "name": "C D S L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "HAL": {
       "name": "Hind.Aeronautics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "APLAPOLLO": {
       "name": "APL Apollo Tubes",
@@ -768,10 +768,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "APARINDS": {
       "name": "Apar Inds.",
@@ -788,10 +788,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "NBCC": {
       "name": "NBCC",
@@ -808,10 +808,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:15.854Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.843Z"
     },
     "HCLTECH": {
       "name": "HCL Technologies",
@@ -858,10 +858,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.363Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "SHAILY": {
       "name": "Shaily Engineer.",
@@ -948,10 +948,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:16.361Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "BAYERCROP": {
       "name": "Bayer Crop Sci.",
@@ -998,60 +998,60 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "BAJAJ-AUTO": {
       "name": "Bajaj Auto",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.364Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "RRKABEL": {
       "name": "R R Kabel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "SCHAEFFLER": {
       "name": "Schaeffler India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:42:54.856Z"
     },
     "TRENT": {
       "name": "Trent",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:16.361Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "NMDC": {
       "name": "NMDC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:42:54.856Z"
     },
     "UNITDSPR": {
       "name": "United Spirits",
@@ -1068,40 +1068,40 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:44:34.036Z"
     },
     "GABRIEL": {
       "name": "Gabriel India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.362Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:51.715Z"
     },
     "LTTS": {
       "name": "L&T Technology",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "fetched_at": "2026-08-30T05:48:54.857Z"
     },
     "NEULANDLAB": {
       "name": "Neuland Labs.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.362Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:51.416Z"
     },
     "ASIANPAINT": {
       "name": "Asian Paints",
@@ -1128,10 +1128,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.586Z"
     },
     "BPCL": {
       "name": "B P C L",
@@ -1158,10 +1158,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.364Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:51.800Z"
     },
     "ALIVUS": {
       "name": "Alivus Life",
@@ -1178,10 +1178,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:51.591Z"
     },
     "KSB": {
       "name": "KSB",
@@ -1198,10 +1198,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.363Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.390Z"
     },
     "DOMS": {
       "name": "DOMS Industries",
@@ -1218,10 +1218,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.862Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:51.913Z"
     },
     "RADICO": {
       "name": "Radico Khaitan",
@@ -1308,20 +1308,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.862Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:54.121Z"
     },
     "WELCORP": {
       "name": "Welspun Corp",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.899Z"
     },
     "MPHASIS": {
       "name": "Mphasis",
@@ -1338,20 +1338,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.361Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.502Z"
     },
     "PETRONET": {
       "name": "Petronet LNG",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:19.860Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:54.143Z"
     },
     "GRINDWELL": {
       "name": "Grindwell Norton",
@@ -1368,10 +1368,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.360Z"
+      "fetched_at": "2026-08-30T05:44:12.785Z"
     },
     "BBOX": {
       "name": "Black Box",
@@ -1388,10 +1388,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.361Z"
+      "fetched_at": "2026-08-30T05:44:12.707Z"
     },
     "HSCL": {
       "name": "Himadri Special",
@@ -1408,20 +1408,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.747Z"
     },
     "DIVISLAB": {
       "name": "Divi's Lab.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.862Z"
+      "fetched_at": "2026-08-30T05:44:12.703Z"
     },
     "BHARTIHEXA": {
       "name": "Bharti Hexacom",
@@ -1458,10 +1458,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "fetched_at": "2026-08-30T05:44:12.745Z"
     },
     "VINATIORGA": {
       "name": "Vinati Organics",
@@ -1498,10 +1498,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.360Z"
+      "fetched_at": "2026-08-30T05:44:12.807Z"
     },
     "SIEMENS": {
       "name": "Siemens",
@@ -1518,10 +1518,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:56.778Z"
     },
     "BLUESTARCO": {
       "name": "Blue Star",
@@ -1548,370 +1548,370 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.360Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.320Z"
     },
     "SHRIPISTON": {
       "name": "SPR Auto Technologies",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.860Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:56.500Z"
     },
     "TATATECH": {
       "name": "Tata Technolog.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.458Z"
     },
     "KIRLOSBROS": {
       "name": "Kirl. Brothers",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.980Z"
     },
     "EIHOTEL": {
       "name": "EIH",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.724Z"
     },
     "SUNPHARMA": {
       "name": "Sun Pharma.Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.737Z"
     },
     "KALYANKJIL": {
       "name": "Kalyan Jewellers",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.360Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:56.655Z"
     },
     "DABUR": {
       "name": "Dabur India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:58.388Z"
     },
     "GPIL": {
       "name": "Godawari Power",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:22.861Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.899Z"
     },
     "ASTRAMICRO": {
       "name": "Astra Microwave",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:37.132Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:58.075Z"
     },
     "USHAMART": {
       "name": "Usha Martin",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.131Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.230Z"
     },
     "METROBRAND": {
       "name": "Metro Brands",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:58.260Z"
     },
     "KPRMILL": {
       "name": "K P R Mill Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.134Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.519Z"
     },
     "KEI": {
       "name": "KEI Industries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.577Z"
     },
     "SYRMA": {
       "name": "Syrma SGS Tech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.734Z"
     },
     "ZFCVINDIA": {
       "name": "ZF Commercial",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "fetched_at": "2026-08-30T05:50:21.482Z"
     },
     "ASTRAL": {
       "name": "Astral",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.131Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:02.111Z"
     },
     "BIKAJI": {
       "name": "Bikaji Foods",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.361Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:54.094Z"
     },
     "VBL": {
       "name": "Varun Beverages",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:36.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:58.596Z"
     },
     "UNOMINDA": {
       "name": "Uno Minda",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:40.630Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.676Z"
     },
     "SAILIFE": {
       "name": "Sai Life",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.134Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.834Z"
     },
     "INDUSTOWER": {
       "name": "Indus Towers",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.333Z"
     },
     "JSL": {
       "name": "Jindal Stain.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.131Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.423Z"
     },
     "SPLPETRO": {
       "name": "Supreme Petroch.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.205Z"
     },
     "HONASA": {
       "name": "Honasa Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "fetched_at": "2026-08-30T05:48:54.864Z"
     },
     "GODREJCP": {
       "name": "Godrej Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.134Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:45.676Z"
     },
     "MARUTI": {
       "name": "Maruti Suzuki",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "fetched_at": "2026-08-30T05:54:54.865Z"
     },
     "CROMPTON": {
       "name": "Crompton Gr. Con",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "fetched_at": "2026-08-30T05:54:54.865Z"
     },
     "IOC": {
       "name": "I O C L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.134Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.297Z"
     },
     "CEATLTD": {
       "name": "CEAT",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.131Z"
+      "fetched_at": "2026-08-30T05:48:54.864Z"
     },
     "BHARTIARTL": {
       "name": "Bharti Airtel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.063Z"
     },
     "ABDL": {
       "name": "Allied Blenders",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.823Z"
     },
     "GESHIP": {
       "name": "GE Shipping Co",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.978Z"
     },
     "AWL": {
       "name": "AWL Agri Busine.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.427Z"
     },
     "ENDURANCE": {
       "name": "Endurance Tech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.925Z"
     },
     "TIMKEN": {
       "name": "Timken India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:42.630Z"
+      "fetched_at": "2026-08-30T05:50:05.156Z"
     },
     "RAINBOW": {
       "name": "Rainbow Child.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.273Z"
     },
     "GALLANTT": {
       "name": "Gallantt Ispat L",
@@ -1928,220 +1928,220 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.601Z"
     },
     "GRWRHITECH": {
       "name": "Garware Hi Tech",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.316Z"
     },
     "TBOTEK": {
       "name": "TBO Tek",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "fetched_at": "2026-08-30T05:50:05.144Z"
     },
     "CHOICEIN": {
       "name": "Choice Intl.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.704Z"
     },
     "RATNAMANI": {
       "name": "Ratnamani Metals",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.095Z"
     },
     "IGL": {
       "name": "Indraprastha Gas",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.700Z"
     },
     "APOLLOHOSP": {
       "name": "Apollo Hospitals",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.866Z"
     },
     "WIPRO": {
       "name": "Wipro",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.629Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.903Z"
     },
     "EIDPARRY": {
       "name": "EID Parry",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.248Z"
     },
     "OBEROIRLTY": {
       "name": "Oberoi Realty",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.554Z"
     },
     "LTFOODS": {
       "name": "L T Foods",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.531Z"
     },
     "MRPL": {
       "name": "M R P L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:42.631Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:49.212Z"
     },
     "LAURUSLABS": {
       "name": "Laurus Labs",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.330Z"
     },
     "SUNDRMFAST": {
       "name": "Sundram Fasten.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:50.218Z"
     },
     "NUVAMA": {
       "name": "Nuvama Wealth",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.627Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.278Z"
     },
     "REDINGTON": {
       "name": "Redington",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:40.630Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.415Z"
     },
     "TVSMOTOR": {
       "name": "TVS Motor Co.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.363Z"
     },
     "SARDAEN": {
       "name": "Sarda Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.490Z"
     },
     "GICRE": {
       "name": "General Insuranc",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.350Z"
     },
     "ADANIPOWER": {
       "name": "Adani Power",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.828Z"
     },
     "IPCALAB": {
       "name": "Ipca Labs.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:54.037Z"
     },
     "INDHOTEL": {
       "name": "Indian Hotels Co",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.925Z"
     },
     "NYKAA": {
       "name": "FSN E-Commerce",
@@ -2158,80 +2158,80 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.400Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.816Z"
     },
     "NATCOPHARM": {
       "name": "Natco Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.902Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.417Z"
     },
     "MEDANTA": {
       "name": "Global Health",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.902Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:52.826Z"
     },
     "PARADEEP": {
       "name": "Paradeep Phosph.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.902Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:52.695Z"
     },
     "CHALET": {
       "name": "Chalet Hotels",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.902Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:52.955Z"
     },
     "VGUARD": {
       "name": "V-Guard Industri",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.983Z"
     },
     "TVSHLTD": {
       "name": "TVS Holdings",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:55.983Z"
     },
     "TIINDIA": {
       "name": "Tube Investments",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.902Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.515Z"
     },
     "LINDEINDIA": {
       "name": "Linde India",
@@ -2248,10 +2248,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:57.041Z"
     },
     "HONAUT": {
       "name": "Honeywell Auto",
@@ -2268,40 +2268,40 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": null,
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.132Z"
+      "fetched_at": "2026-08-30T05:50:05.160Z"
     },
     "CIPLA": {
       "name": "Cipla",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.116Z"
     },
     "LODHA": {
       "name": "Lodha Developers",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.796Z"
     },
     "SUNTV": {
       "name": "Sun TV Network",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.817Z"
     },
     "VEDL": {
       "name": "Vedanta",
@@ -2328,20 +2328,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.748Z"
     },
     "FINCABLES": {
       "name": "Finolex Cables",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.891Z"
     },
     "COCHINSHIP": {
       "name": "Cochin Shipyard",
@@ -2378,40 +2378,40 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.855Z"
     },
     "MRF": {
       "name": "MRF",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:55.986Z"
     },
     "ESCORTS": {
       "name": "Escorts Kubota",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:07.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.098Z"
     },
     "PATANJALI": {
       "name": "Patanjali Foods",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.169Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.372Z"
     },
     "GRANULES": {
       "name": "Granules India",
@@ -2438,40 +2438,40 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.512Z"
     },
     "APTUS": {
       "name": "Aptus Value Hou.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.423Z"
     },
     "NH": {
       "name": "Narayana Hrudaya",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.128Z"
     },
     "HATSUN": {
       "name": "Hatsun Agro",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.404Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.409Z"
     },
     "MTARTECH": {
       "name": "MTAR Technologie",
@@ -2518,220 +2518,220 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.402Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.593Z"
     },
     "THERMAX": {
       "name": "Thermax",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.081Z"
     },
     "ATUL": {
       "name": "Atul",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.402Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.528Z"
     },
     "VMM": {
       "name": "Vishal Mega Mart",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.514Z"
     },
     "JBMA": {
       "name": "JBM Auto",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.713Z"
     },
     "ANGELONE": {
       "name": "Angel One",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.769Z"
     },
     "FIVESTAR": {
       "name": "Five-Star Bus.Fi",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.402Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.615Z"
     },
     "CIEINDIA": {
       "name": "CIE Automotive",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.558Z"
     },
     "KIRLOSENG": {
       "name": "Kirloskar Oil",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.840Z"
     },
     "MAXHEALTH": {
       "name": "Max Healthcare",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.662Z"
     },
     "PIIND": {
       "name": "P I Industries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.403Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.412Z"
     },
     "TATACOMM": {
       "name": "Tata Comm",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.405Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.744Z"
     },
     "BASF": {
       "name": "BASF India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.892Z"
     },
     "SRF": {
       "name": "SRF",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.804Z"
     },
     "JUBLFOOD": {
       "name": "Jubilant Food.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.402Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.671Z"
     },
     "LT": {
       "name": "Larsen & Toubro",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.838Z"
     },
     "APOLLO": {
       "name": "Apollo Micro Sys",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.953Z"
     },
     "SCI": {
       "name": "S C I",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.921Z"
     },
     "ONGC": {
       "name": "O N G C",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.045Z"
     },
     "CRAFTSMAN": {
       "name": "Craftsman Auto",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.171Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.077Z"
     },
     "ADANIPORTS": {
       "name": "Adani Ports",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.407Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:56.987Z"
     },
     "ERIS": {
       "name": "ERIS Lifescience",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:57.406Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.016Z"
     },
     "SANSERA": {
       "name": "Sansera Enginee.",
@@ -2748,50 +2748,50 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.780Z"
     },
     "TORNTPOWER": {
       "name": "Torrent Power",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.242Z"
     },
     "BELRISE": {
       "name": "Belrise Industri",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.136Z"
     },
     "BDL": {
       "name": "Bharat Dynamics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.171Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.211Z"
     },
     "APOLLOTYRE": {
       "name": "Apollo Tyres",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.119Z"
     },
     "ASHOKLEY": {
       "name": "Ashok Leyland",
@@ -2808,20 +2808,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.251Z"
     },
     "HINDALCO": {
       "name": "Hindalco Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.356Z"
     },
     "AIIL": {
       "name": "Authum Invest",
@@ -2838,80 +2838,80 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.850Z"
     },
     "AEGISLOG": {
       "name": "Aegis Logistics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.368Z"
     },
     "MANKIND": {
       "name": "Mankind Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.287Z"
     },
     "FORTIS": {
       "name": "Fortis Health.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.267Z"
     },
     "ARE&M": {
       "name": "Amara Raja Ener.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:07.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.315Z"
     },
     "SAGILITY": {
       "name": "Sagility",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:07.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.356Z"
     },
     "KAYNES": {
       "name": "Kaynes Tech",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.670Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.473Z"
     },
     "AETHER": {
       "name": "Aether Industri.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.818Z"
     },
     "BHARATFORG": {
       "name": "Bharat Forge",
@@ -2928,70 +2928,70 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.172Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.328Z"
     },
     "GODIGIT": {
       "name": "Go Digit General",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.447Z"
     },
     "KANSAINER": {
       "name": "Kansai Nerolac",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.169Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.885Z"
     },
     "SHYAMMETL": {
       "name": "Shyam Metalics",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.983Z"
     },
     "NAVA": {
       "name": "Nava",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.487Z"
     },
     "PHOENIXLTD": {
       "name": "Phoenix Mills",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.514Z"
     },
     "AUROPHARMA": {
       "name": "Aurobindo Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.742Z"
     },
     "ULTRACEMCO": {
       "name": "UltraTech Cem.",
@@ -3008,10 +3008,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.954Z"
     },
     "MOTILALOFS": {
       "name": "Motil.Oswal.Fin.",
@@ -3028,150 +3028,150 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.762Z"
     },
     "APLLTD": {
       "name": "Alembic Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.670Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.419Z"
     },
     "FRACTAL": {
       "name": "Fractal Analyt.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.670Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.727Z"
     },
     "CONCOR": {
       "name": "Container Corpn.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.320Z"
     },
     "BALKRISIND": {
       "name": "Balkrishna Inds",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:24.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.683Z"
     },
     "360ONE": {
       "name": "360 ONE",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.853Z"
     },
     "ANANTRAJ": {
       "name": "Anant Raj",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.169Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.726Z"
     },
     "AZAD": {
       "name": "Azad Engineering",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.018Z"
     },
     "DCMSHRIRAM": {
       "name": "DCM Shriram",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.637Z"
     },
     "ASAHIINDIA": {
       "name": "Asahi India Glas",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.586Z"
     },
     "CGCL": {
       "name": "Capri Global",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.696Z"
     },
     "GMRAIRPORT": {
       "name": "GMR Airports",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.952Z"
     },
     "DEEPAKFERT": {
       "name": "Deepak Fertilis.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.670Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.720Z"
     },
     "OIL": {
       "name": "Oil India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.084Z"
     },
     "PFOCUS": {
       "name": "Prime Focus",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.025Z"
     },
     "DEEPAKNTR": {
       "name": "Deepak Nitrite",
@@ -3188,210 +3188,210 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.803Z"
     },
     "CENTURYPLY": {
       "name": "Century Plyboard",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.919Z"
     },
     "ASTERDM": {
       "name": "Aster DM Quality",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.673Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.954Z"
     },
     "AADHARHFC": {
       "name": "Aadhar Hsg. Fin.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:08.674Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.532Z"
     },
     "VERTIS": {
       "name": "Vertis Infra.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:24.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.246Z"
     },
     "ACC": {
       "name": "ACC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.670Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.612Z"
     },
     "AGARWALEYE": {
       "name": "Dr Agarwal's Hea",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:23.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.171Z"
     },
     "JSWCEMENT": {
       "name": "JSW Cement",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:24.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.210Z"
     },
     "BAJAJHLDNG": {
       "name": "Bajaj Holdings",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:25.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.727Z"
     },
     "JSWSTEEL": {
       "name": "JSW Steel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:24.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.343Z"
     },
     "HFCL": {
       "name": "HFCL",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.436Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.648Z"
     },
     "BAJFINANCE": {
       "name": "Bajaj Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:25.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.269Z"
     },
     "VENTIVE": {
       "name": "Ventive Hospital",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:27.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.804Z"
     },
     "GMDCLTD": {
       "name": "G M D C",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.436Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.775Z"
     },
     "RVNL": {
       "name": "Rail Vikas",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.436Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.297Z"
     },
     "IIFL": {
       "name": "IIFL Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.772Z"
     },
     "ITCHOTELS": {
       "name": "ITC Hotels",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:10.671Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.559Z"
     },
     "UBL": {
       "name": "United Breweries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:27.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.398Z"
     },
     "CESC": {
       "name": "CESC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.108Z"
     },
     "BAJAJFINSV": {
       "name": "Bajaj Finserv",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.436Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.064Z"
     },
     "BRIGADE": {
       "name": "Brigade Enterpr.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.328Z"
     },
     "RELIANCE": {
       "name": "Reliance Industries",
@@ -3408,10 +3408,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.932Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.374Z"
     },
     "INOXWIND": {
       "name": "Inox Wind",
@@ -3438,20 +3438,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.353Z"
     },
     "NLCINDIA": {
       "name": "NLC India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.932Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.274Z"
     },
     "JINDALSAW": {
       "name": "Jindal Saw",
@@ -3468,40 +3468,40 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.932Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.431Z"
     },
     "PGEL": {
       "name": "PG Electroplast",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.932Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.940Z"
     },
     "POLICYBZR": {
       "name": "PB Fintech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.932Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.700Z"
     },
     "HDFCLIFE": {
       "name": "HDFC Life Insur.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.937Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.603Z"
     },
     "AMBER": {
       "name": "Amber Enterp.",
@@ -3528,60 +3528,60 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.277Z"
     },
     "SYNGENE": {
       "name": "Syngene Intl.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.159Z"
     },
     "SBICARD": {
       "name": "SBI Cards",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.257Z"
     },
     "CREDITACC": {
       "name": "CreditAcc. Gram.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.458Z"
     },
     "FLUOROCHEM": {
       "name": "Gujarat Fluoroch",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.492Z"
     },
     "CHOLAHLDNG": {
       "name": "Chola Financial",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.583Z"
     },
     "POWERGRID": {
       "name": "Power Grid Corpn",
@@ -3598,110 +3598,110 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.235Z"
     },
     "RECLTD": {
       "name": "REC Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.308Z"
     },
     "ADANIENSOL": {
       "name": "Adani Energy Sol",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.897Z"
     },
     "CHOLAFIN": {
       "name": "Cholaman.Inv.&Fn",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.506Z"
     },
     "JINDALSTEL": {
       "name": "Jindal Steel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.809Z"
     },
     "GAIL": {
       "name": "GAIL (India)",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.220Z"
     },
     "IREDA": {
       "name": "Indian Renewable",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.473Z"
     },
     "SUNDARMFIN": {
       "name": "Sundaram Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.183Z"
     },
     "PNBHOUSING": {
       "name": "PNB Housing",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.936Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.249Z"
     },
     "KIMS": {
       "name": "Krishna Institu.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.069Z"
     },
     "TATACONSUM": {
       "name": "Tata Consumer",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.936Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.892Z"
     },
     "HDBFS": {
       "name": "HDB FINANC SER",
@@ -3738,20 +3738,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.936Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.065Z"
     },
     "VTL": {
       "name": "Vardhman Textile",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.486Z"
     },
     "GODREJIND": {
       "name": "Godrej Industrie",
@@ -3768,20 +3768,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.350Z"
     },
     "EXIDEIND": {
       "name": "Exide Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:43.703Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.361Z"
     },
     "M&MFIN": {
       "name": "M & M Fin. Serv.",
@@ -3808,10 +3808,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.935Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.802Z"
     },
     "LICHSGFIN": {
       "name": "LIC Housing Fin.",
@@ -3838,90 +3838,90 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.933Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.324Z"
     },
     "BHEL": {
       "name": "B H E L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.936Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.469Z"
     },
     "LENSKART": {
       "name": "Lenskart Solut.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:46.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.990Z"
     },
     "HUDCO": {
       "name": "H U D C O",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.385Z"
     },
     "LTF": {
       "name": "L&T Finance Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.965Z"
     },
     "COHANCE": {
       "name": "Cohance Life",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.433Z"
     },
     "CANHLIFE": {
       "name": "Canara HSBC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.084Z"
     },
     "NTPC": {
       "name": "NTPC",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.936Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.456Z"
     },
     "JSWENERGY": {
       "name": "JSW Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.400Z"
     },
     "GODREJPROP": {
       "name": "Godrej Propert.",
@@ -3938,90 +3938,90 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.338Z"
     },
     "GRASIM": {
       "name": "Grasim Inds",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:46.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.106Z"
     },
     "DALBHARAT": {
       "name": "Dalmia BharatLtd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.864Z"
     },
     "INDIGRID": {
       "name": "IndiGrid Trust",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:46.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.501Z"
     },
     "SAIL": {
       "name": "S A I L",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.862Z"
     },
     "STLTECH": {
       "name": "Sterlite Tech.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.248Z"
     },
     "PTCIL": {
       "name": "PTC Industries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.370Z"
     },
     "BEML": {
       "name": "BEML Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.935Z"
     },
     "AUBANK": {
       "name": "AU Small Finance",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.002Z"
     },
     "KARURVYSYA": {
       "name": "Karur Vysya Bank",
@@ -4058,220 +4058,220 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:47.202Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.492Z"
     },
     "IRB": {
       "name": "IRB Infra.Devl.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:47.202Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.542Z"
     },
     "ANURAS": {
       "name": "Anupam Rasayan",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.910Z"
     },
     "AEGISVOPAK": {
       "name": "Aegis Vopak Term",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:47.702Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.493Z"
     },
     "ICICIBANK": {
       "name": "ICICI Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.845Z"
     },
     "HDFCBANK": {
       "name": "HDFC Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.142Z"
     },
     "ADANIGREEN": {
       "name": "Adani Green",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.317Z"
     },
     "KOTAKBANK": {
       "name": "Kotak Mah. Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.711Z"
     },
     "LMW": {
       "name": "LMW",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:57:58.465Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.695Z"
     },
     "SOBHA": {
       "name": "Sobha",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.663Z"
     },
     "AARTIIND": {
       "name": "Aarti Industries",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.096Z"
     },
     "CUB": {
       "name": "City Union Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.977Z"
     },
     "INDIGO": {
       "name": "Interglobe Aviat",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.365Z"
     },
     "CANBK": {
       "name": "Canara Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.541Z"
     },
     "IDBI": {
       "name": "IDBI Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.675Z"
     },
     "PIRAMALFIN": {
       "name": "Piramal Finance.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.053Z"
     },
     "BANDHANBNK": {
       "name": "Bandhan Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.983Z"
     },
     "FEDERALBNK": {
       "name": "Federal Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.123Z"
     },
     "DLF": {
       "name": "DLF",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.205Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.000Z"
     },
     "INDIANB": {
       "name": "Indian Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.319Z"
     },
     "UNIONBANK": {
       "name": "Union Bank (I)",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.674Z"
     },
     "WELSPUNLIV": {
       "name": "Welspun Living",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.178Z"
     },
     "AXISBANK": {
       "name": "Axis Bank",
@@ -4298,10 +4298,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.401Z"
     },
     "SBIN": {
       "name": "SBI",
@@ -4338,60 +4338,60 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.185Z"
     },
     "ADANIENT": {
       "name": "Adani Enterp.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:50.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.968Z"
     },
     "IDFCFIRSTB": {
       "name": "IDFC First Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.124Z"
     },
     "YESBANK": {
       "name": "Yes Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.961Z"
     },
     "PSB": {
       "name": "Pun. & Sind Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.660Z"
     },
     "BANKINDIA": {
       "name": "Bank of India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.029Z"
     },
     "SJVN": {
       "name": "SJVN",
@@ -4408,30 +4408,30 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.704Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.788Z"
     },
     "RBLBANK": {
       "name": "RBL Bank",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:50.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.586Z"
     },
     "NHPC": {
       "name": "NHPC Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:57:57.465Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.604Z"
     },
     "EMBASSY": {
       "name": "Embassy Off.REIT",
@@ -4448,30 +4448,30 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.464Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.439Z"
     },
     "BIRET": {
       "name": "Brookfield India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.276Z"
     },
     "IRFC": {
       "name": "I R F C",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:57:57.965Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.554Z"
     },
     "BANKBARODA": {
       "name": "Bank of Baroda",
@@ -4488,10 +4488,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.465Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.519Z"
     },
     "PNB": {
       "name": "Punjab Natl.Bank",
@@ -4518,170 +4518,170 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:57:58.465Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.335Z"
     },
     "NAUKRI": {
       "name": "Info Edg.(India)",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.963Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.457Z"
     },
     "IFCI": {
       "name": "IFCI",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.507Z"
     },
     "PAYTM": {
       "name": "One 97",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.579Z"
     },
     "ZYDUSWELL": {
       "name": "Zydus Wellness",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.779Z"
     },
     "FACT": {
       "name": "F A C T",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.223Z"
     },
     "SAMMAANCAP": {
       "name": "Sammaan Capital",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.525Z"
     },
     "DEVYANI": {
       "name": "Devyani Intl.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.968Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:01.230Z"
     },
     "NHIT": {
       "name": "National High",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.968Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.587Z"
     },
     "BHARATCOAL": {
       "name": "Bharat Coking",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.697Z"
     },
     "PINELABS": {
       "name": "Pine Labs",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.968Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.513Z"
     },
     "PWL": {
       "name": "Physicswallah",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.336Z"
     },
     "NIACL": {
       "name": "New India Assura",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.968Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.247Z"
     },
     "BIOCON": {
       "name": "Biocon",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.521Z"
     },
     "TATACHEM": {
       "name": "Tata Chemicals",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.963Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.377Z"
     },
     "NTPCGREEN": {
       "name": "NTPC Green Ene.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.963Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.477Z"
     },
     "NIVABUPA": {
       "name": "Niva Bupa Health",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.773Z"
     },
     "ETERNAL": {
       "name": "Eternal",
@@ -4698,20 +4698,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.784Z"
     },
     "DELHIVERY": {
       "name": "Delhivery",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.716Z"
     },
     "TMPV": {
       "name": "Tata Motors PVeh",
@@ -4728,10 +4728,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.606Z"
     },
     "JIOFIN": {
       "name": "Jio Financial",
@@ -4748,130 +4748,130 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.168Z"
     },
     "ITI": {
       "name": "ITI",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.344Z"
     },
     "KIOCL": {
       "name": "KIOCL",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.965Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.632Z"
     },
     "MAHSCOOTER": {
       "name": "Mah. Scooters",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.965Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.251Z"
     },
     "ONESOURCE": {
       "name": "OneSource Speci.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.681Z"
     },
     "IDEA": {
       "name": "Vodafone Idea",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.583Z"
     },
     "ABREL": {
       "name": "A B Real Estate",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.664Z"
     },
     "URBANCO": {
       "name": "Urban Company",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.965Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.758Z"
     },
     "OLAELEC": {
       "name": "Ola Electric",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.968Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.650Z"
     },
     "ATHERENERG": {
       "name": "Ather Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.962Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.745Z"
     },
     "SWIGGY": {
       "name": "Swiggy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.962Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.545Z"
     },
     "MEESHO": {
       "name": "Meesho",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.963Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.774Z"
     },
     "KRT": {
       "name": "Knowledge Realty",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.967Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:02.277Z"
     },
     "TMCV": {
       "name": "Tata Motors",
@@ -4881,17 +4881,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.872Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "ARVIND": {
       "name": "Arvind Ltd",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.171Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.159Z"
     },
     "INGERRAND": {
       "name": "Ingersoll-Rand",
@@ -4908,20 +4908,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:46.628Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:51.152Z"
     },
     "SHADOWFAX": {
       "name": "Shadowfax Technologies",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.934Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.322Z"
     },
     "SKFINDUS": {
       "name": "SKF India Indus.",
@@ -4947,21 +4947,21 @@
       "name": "Vedanta Power",
       "opinion": null,
       "source": null,
-      "conclusion_block": "## Final Report\n\n**Conclusion:** No auditor's opinion could be extracted, as the required annual report document was not provided or accessible for analysis. The critical strategic insight is that **data availability** is the binding constraint here—no financial statement analysis, opinion classification, or strategic judgment can proceed without source document access. Provide the specific annual report (PDF, filing link, or company/fiscal year identifier) to enable extraction of the Independent Auditor's",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-31T04:01:23.120Z"
+      "conclusion_block": null,
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.291Z"
     },
     "AEQUS": {
       "name": "Aequs",
       "opinion": null,
       "source": null,
-      "conclusion_block": "I'm unable to provide the requested table or conclusion because no company name, annual report, or source document was provided or successfully retrieved for analysis.\n\n**Critical insight:** Without access to the actual Independent Auditor's Report, any classification of the opinion would be fabricated rather than evidence-based — a critical failure state for **audit opinion accuracy**, which is foundational to investment due diligence.\n\n**Follow-Ups:** Please provide the company name and the specific ann",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-31T04:01:44.975Z"
+      "conclusion_block": null,
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.569Z"
     },
     "VOGL": {
       "name": "Vedanta Oil and Gas",
@@ -4977,21 +4977,21 @@
       "name": "Vedanta Aluminium Metal",
       "opinion": null,
       "source": null,
-      "conclusion_block": "## Final Report\n\nInsufficient data was retrieved to complete the auditor's opinion extraction — no annual report document, company name, or source material was provided for analysis.\n\n**Conclusion:** The critical gap is the absence of a verifiable source document; without it, no **auditor's opinion** can be responsibly classified or attributed. Provide the target company name and the specific annual report (PDF/filing) to proceed.\n\n**Follow-Ups:** Supply the company name and",
-      "error": null,
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-07-31T04:03:08.834Z"
+      "conclusion_block": null,
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.407Z"
     },
     "GUJENERGY": {
       "name": "Gujarat Energy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.151Z"
     },
     "LLOYDSENGG": {
       "name": "Lloyds Engineeri",
@@ -5008,10 +5008,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.705Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.446Z"
     },
     "TMB": {
       "name": "T N Merc. Bank",
@@ -5031,7 +5031,7 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.877Z"
+      "fetched_at": "2026-08-30T05:42:54.853Z"
     },
     "GRAPHITE": {
       "name": "Graphite India",
@@ -5058,20 +5058,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.862Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:52.197Z"
     },
     "AMAGI": {
       "name": "Amagi Media Labs",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.415Z"
     },
     "PRUDENT": {
       "name": "Prudent Corp.",
@@ -5081,27 +5081,27 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.869Z"
+      "fetched_at": "2026-08-30T05:42:54.847Z"
     },
     "ACE": {
       "name": "Action Const.Eq.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:14.362Z"
+      "fetched_at": "2026-08-30T05:42:54.854Z"
     },
     "NAZARA": {
       "name": "Nazara Technolo.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.362Z"
+      "fetched_at": "2026-08-30T05:48:54.857Z"
     },
     "INDOMIM": {
       "name": "Indo-MIM",
@@ -5148,10 +5148,10 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:15.937Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.843Z"
     },
     "ENGINERSIN": {
       "name": "Engineers India",
@@ -5178,60 +5178,60 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.134Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:44:00.919Z"
     },
     "INDGN": {
       "name": "Indegene",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.077Z"
     },
     "GRAVITA": {
       "name": "Gravita India",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:36:55.901Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:53.056Z"
     },
     "MANIPALHOS": {
       "name": "Manipal Health",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.168Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.914Z"
     },
     "SHILPAMED": {
       "name": "Shilpa Medicare",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:26.435Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:58.140Z"
     },
     "BALRAMCHIN": {
       "name": "Balrampur Chini",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:47:33.937Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:59.944Z"
     },
     "RKFORGE": {
       "name": "Ramkrishna Forg.",
@@ -5248,20 +5248,20 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.963Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.269Z"
     },
     "JSWHL": {
       "name": "JSW Holdings",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.239Z"
     },
     "ATLANTAELE": {
       "name": "Atlanta Electric",
@@ -5281,17 +5281,17 @@
       "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:21:05.875Z"
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "UTLSOLAR": {
       "name": "Fujiyama Power",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "HTTP 500",
-      "http_status": 500,
-      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
-      "fetched_at": "2026-08-29T07:15:24.604Z"
+      "error": "timeout",
+      "http_status": null,
+      "error_snippet": null,
+      "fetched_at": "2026-08-30T05:42:54.851Z"
     },
     "DHOOTTRANS": {
       "name": "Dhoot Transmission",
@@ -5308,110 +5308,110 @@
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.360Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:57.071Z"
     },
     "MARKSANS": {
       "name": "Marksans Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:45.844Z"
     },
     "TI": {
       "name": "Tilaknagar Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:15.167Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.849Z"
     },
     "TEGA": {
       "name": "Tega Inds.",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:44.204Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.141Z"
     },
     "BLUESTONE": {
       "name": "Bluestone Jewel",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:52:48.203Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:00.983Z"
     },
     "E2E": {
       "name": "E2E Networks",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:00.966Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.755Z"
     },
     "SUDEEPPHRM": {
       "name": "Sudeep Pharma",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
+      "error": "timeout",
       "http_status": null,
       "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:17.364Z"
+      "fetched_at": "2026-08-30T05:42:54.855Z"
     },
     "WABAG": {
       "name": "Va Tech Wabag",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:26:21.361Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:43:54.152Z"
     },
     "MOLBIO": {
       "name": "Molbio Diagnosti",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:31:41.133Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:49:46.568Z"
     },
     "MILKYMIST": {
       "name": "Milky Mist Dairy",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:42:05.672Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:54:57.181Z"
     },
     "HORIZONIND": {
       "name": "Horizon Industrial",
       "opinion": null,
       "source": null,
       "conclusion_block": null,
-      "error": "terminated",
-      "http_status": null,
-      "error_snippet": null,
-      "fetched_at": "2026-08-29T07:58:07.964Z"
+      "error": "HTTP 500",
+      "http_status": 500,
+      "error_snippet": "{\"message\":\"Internal server error during agent run setup.\"}",
+      "fetched_at": "2026-08-30T05:55:03.169Z"
     }
   }
 }
