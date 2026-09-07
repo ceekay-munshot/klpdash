@@ -1,12 +1,13 @@
 {
   "label": "LKP Manual picks",
-  "note": "Client's manually-recommended SPIP baskets, one per monthly report. Each month is a static basket keyed under picksByMonth['YYYY-MM'] and anchored at that report's start date (see anchorByMonth); the basket is tracked for ~4 months. Top-level generated_at / picks mirror the MOST RECENT month (August 2026) so the default view opens on the latest basket. Entry is a price RANGE; the midpoint is shown for reference. From August 2026 the client's rule is: the tracked ENTRY PRICE for each stock is the HIGH of the first 15-minute candle (09:15-09:30 IST) on the basket's start day, captured into entryByMonth['YYYY-MM'] by scrape-first15-high.mjs on that morning (the same rule is applied to the AI top-7). When no entry override is present the tracker falls back to the anchor-date snapshot close (June/July behaviour). Two targets (TGT1, TGT2) plus a stop-loss (SL). 'ticker' is our NSE symbol for data lookup; in_universe false means the stock sits below our ~Rs 12,500 Cr market-cap coverage floor, so we show the client's levels but cannot track it live yet.",
-  "generated_at": "2026-08-10T00:00:00.000Z",
+  "note": "Client's manually-recommended SPIP baskets, one per monthly report. Each month is a static basket keyed under picksByMonth['YYYY-MM'] and anchored at that report's start date (see anchorByMonth); the basket is tracked for ~4 months. Top-level generated_at / picks mirror the MOST RECENT month (September 2026) so the default view opens on the latest basket. Entry is a price RANGE; the midpoint is shown for reference. From August 2026 the client's rule is: the tracked ENTRY PRICE for each stock is the HIGH of the first 15-minute candle (09:15-09:30 IST) on the basket's start day, captured into entryByMonth['YYYY-MM'] by scrape-first15-high.mjs on that morning (the same rule is applied to the AI top-7). When no entry override is present the tracker falls back to the anchor-date snapshot close (June/July behaviour). Two targets (TGT1, TGT2) plus a stop-loss (SL). 'ticker' is our NSE symbol for data lookup; in_universe false means the stock sits below our ~Rs 12,500 Cr market-cap coverage floor, so we show the client's levels but cannot track it live yet.",
+  "generated_at": "2026-09-07T00:00:00.000Z",
   "source": "LKP SPIP monthly report (client-provided)",
   "anchorByMonth": {
     "2026-06": "2026-06-05",
     "2026-07": "2026-07-02",
-    "2026-08": "2026-08-10"
+    "2026-08": "2026-08-10",
+    "2026-09": "2026-09-07"
   },
   "entryByMonth": {
     "2026-06": {
@@ -35,6 +36,15 @@
       "NETWEB": 5009,
       "NEULANDLAB": 22638.5,
       "MEDANTA": 1472.95
+    },
+    "2026-09": {
+      "SYRMA": 1486.1,
+      "INOXINDIA": 2246.9,
+      "CGPOWER": 906.55,
+      "EMCURE": 1932.35,
+      "EMMVEE": 325.48,
+      "SOLARINDS": 21652.5,
+      "NAVINFLUOR": 8561.5
     }
   },
   "picksByMonth": {
@@ -298,92 +308,178 @@
         "sl": 146.88,
         "cmp_at_reco": 183.6
       }
+    ],
+    "2026-09": [
+      {
+        "selection": "Bank of Maharashtra",
+        "ticker": "MAHABANK",
+        "in_universe": true,
+        "entry_low": 85,
+        "entry_high": 87,
+        "entry": 86,
+        "tgt1": 91,
+        "tgt2": 96,
+        "sl": 69,
+        "cmp_at_reco": 85.5
+      },
+      {
+        "selection": "Edelweiss",
+        "ticker": "EDELWEISS",
+        "in_universe": true,
+        "entry_low": 134,
+        "entry_high": 137,
+        "entry": 135.5,
+        "tgt1": 144.8,
+        "tgt2": 152,
+        "sl": 109,
+        "cmp_at_reco": 133.33
+      },
+      {
+        "selection": "Engineers India",
+        "ticker": "ENGINERSIN",
+        "in_universe": true,
+        "entry_low": 277,
+        "entry_high": 282,
+        "entry": 279.5,
+        "tgt1": 297,
+        "tgt2": 312,
+        "sl": 224,
+        "cmp_at_reco": 280.45
+      },
+      {
+        "selection": "LT Foods",
+        "ticker": "LTFOODS",
+        "in_universe": true,
+        "entry_low": 441,
+        "entry_high": 447,
+        "entry": 444,
+        "tgt1": 466,
+        "tgt2": 498,
+        "sl": 354,
+        "cmp_at_reco": 445.35
+      },
+      {
+        "selection": "Prime Focus",
+        "ticker": "PFOCUS",
+        "in_universe": true,
+        "entry_low": 303,
+        "entry_high": 308,
+        "entry": 305.5,
+        "tgt1": 325,
+        "tgt2": 343,
+        "sl": 245,
+        "cmp_at_reco": 308.45
+      },
+      {
+        "selection": "Urban Company",
+        "ticker": "URBANCO",
+        "in_universe": true,
+        "entry_low": 180,
+        "entry_high": 182.8,
+        "entry": 181.4,
+        "tgt1": 193.8,
+        "tgt2": 200,
+        "sl": 145.5,
+        "cmp_at_reco": 178.85
+      },
+      {
+        "selection": "Vodafone Idea",
+        "ticker": "IDEA",
+        "in_universe": true,
+        "entry_low": 14.75,
+        "entry_high": 15.2,
+        "entry": 14.97,
+        "tgt1": 16,
+        "tgt2": 17,
+        "sl": 12,
+        "cmp_at_reco": 15.59
+      }
     ]
   },
   "picks": [
     {
-      "selection": "Gland Pharma",
-      "ticker": "GLAND",
+      "selection": "Bank of Maharashtra",
+      "ticker": "MAHABANK",
       "in_universe": true,
-      "entry_low": 2570,
-      "entry_high": 2630,
-      "entry": 2600,
-      "tgt1": 2735,
-      "tgt2": 2800,
-      "sl": 2080.8,
-      "cmp_at_reco": 2601
+      "entry_low": 85,
+      "entry_high": 87,
+      "entry": 86,
+      "tgt1": 91,
+      "tgt2": 96,
+      "sl": 69,
+      "cmp_at_reco": 85.5
     },
     {
-      "selection": "HAL",
-      "ticker": "HAL",
+      "selection": "Edelweiss",
+      "ticker": "EDELWEISS",
       "in_universe": true,
-      "entry_low": 4860,
-      "entry_high": 4940,
-      "entry": 4900,
-      "tgt1": 5198,
-      "tgt2": 5400,
-      "sl": 3928,
-      "cmp_at_reco": 4910
+      "entry_low": 134,
+      "entry_high": 137,
+      "entry": 135.5,
+      "tgt1": 144.8,
+      "tgt2": 152,
+      "sl": 109,
+      "cmp_at_reco": 133.33
     },
     {
-      "selection": "JSW Steel",
-      "ticker": "JSWSTEEL",
+      "selection": "Engineers India",
+      "ticker": "ENGINERSIN",
       "in_universe": true,
-      "entry_low": 1290,
-      "entry_high": 1310,
-      "entry": 1300,
-      "tgt1": 1365,
-      "tgt2": 1400,
-      "sl": 1040,
-      "cmp_at_reco": 1299.5
+      "entry_low": 277,
+      "entry_high": 282,
+      "entry": 279.5,
+      "tgt1": 297,
+      "tgt2": 312,
+      "sl": 224,
+      "cmp_at_reco": 280.45
     },
     {
-      "selection": "Kalyan Jewellers",
-      "ticker": "KALYANKJIL",
+      "selection": "LT Foods",
+      "ticker": "LTFOODS",
       "in_universe": true,
-      "entry_low": 598,
-      "entry_high": 612,
-      "entry": 605,
-      "tgt1": 650,
-      "tgt2": 675,
-      "sl": 485.04,
-      "cmp_at_reco": 606.3
+      "entry_low": 441,
+      "entry_high": 447,
+      "entry": 444,
+      "tgt1": 466,
+      "tgt2": 498,
+      "sl": 354,
+      "cmp_at_reco": 445.35
     },
     {
-      "selection": "Info Edge",
-      "ticker": "NAUKRI",
+      "selection": "Prime Focus",
+      "ticker": "PFOCUS",
       "in_universe": true,
-      "entry_low": 1215,
-      "entry_high": 1235,
-      "entry": 1225,
-      "tgt1": 1310,
-      "tgt2": 1350,
-      "sl": 980,
-      "cmp_at_reco": 1225.3
+      "entry_low": 303,
+      "entry_high": 308,
+      "entry": 305.5,
+      "tgt1": 325,
+      "tgt2": 343,
+      "sl": 245,
+      "cmp_at_reco": 308.45
     },
     {
-      "selection": "Sona BLW",
-      "ticker": "SONACOMS",
+      "selection": "Urban Company",
+      "ticker": "URBANCO",
       "in_universe": true,
-      "entry_low": 808,
-      "entry_high": 828,
-      "entry": 818,
-      "tgt1": 860,
-      "tgt2": 880,
-      "sl": 654.4,
-      "cmp_at_reco": 818.05
-    },
-    {
-      "selection": "Union Bank",
-      "ticker": "UNIONBANK",
-      "in_universe": true,
-      "entry_low": 182,
-      "entry_high": 185,
-      "entry": 183.5,
-      "tgt1": 194,
+      "entry_low": 180,
+      "entry_high": 182.8,
+      "entry": 181.4,
+      "tgt1": 193.8,
       "tgt2": 200,
-      "sl": 146.88,
-      "cmp_at_reco": 183.6
+      "sl": 145.5,
+      "cmp_at_reco": 178.85
+    },
+    {
+      "selection": "Vodafone Idea",
+      "ticker": "IDEA",
+      "in_universe": true,
+      "entry_low": 14.75,
+      "entry_high": 15.2,
+      "entry": 14.97,
+      "tgt1": 16,
+      "tgt2": 17,
+      "sl": 12,
+      "cmp_at_reco": 15.59
     }
   ],
   "entryBasis": {
