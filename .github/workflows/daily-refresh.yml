@@ -6,9 +6,11 @@ name: Daily refresh (all scrapers)
 # scrapes still live in weekly-refresh.yml (Sun 23:53 IST) because those
 # numbers are quarterly/annual and don't move daily.
 #
-# IMPORTANT: workflow name is preserved as "Daily refresh (all scrapers)"
-# because auditor-opinions-refresh.yml chains off this exact name via
-# workflow_run — renaming would silently break the Muns agent trigger.
+# NOTE: the auditor-opinions refresh no longer chains off this workflow.
+# It has been turned OFF (manual-only, no schedule) — the automatic daily
+# sweep called the Muns agent for hundreds of companies and re-read the same
+# annual-report PDFs every day, which was the main Firecrawl credit drain.
+# See auditor-opinions-refresh.yml.
 #
 # Total runtime budget: ~8 min (Technicals ~4, Sentiment <1, Macro <1,
 # Governance ~3).

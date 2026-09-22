@@ -1,5 +1,11 @@
 name: Auditor to-do list updater
 
+# NOTE: manual-only now. The auditor feature's automatic refresh has been
+# turned off (see auditor-opinions-refresh.yml), so this to-do list no longer
+# rebuilds on a schedule. It costs no Firecrawl credits (local file only) —
+# the schedule was removed just to avoid pointless daily runs. Run by hand
+# if you ever re-enable the auditor feature.
+#
 # Regenerates public/data/auditor-todo.csv based on:
 #   - current universe (screener-companies.json)
 #   - existing opinions + their freshness (auditor-opinions.json)
@@ -14,17 +20,8 @@ name: Auditor to-do list updater
 # to-do always reflects the latest universe + freshest opinion data.
 
 on:
-  schedule:
-    # 01:30 UTC == 07:00 IST every day. After daily-refresh (00:23 UTC)
-    # and any chained workflows finish.
-    - cron: "30 1 * * *"
+  # Manual-only (auto schedule + push triggers removed — auditor feature off).
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'public/data/screener-companies.json'
-      - 'public/data/auditor-opinions.json'
-      - 'screener-test/static/bse-codes-supplement.json'
 
 jobs:
   build:
