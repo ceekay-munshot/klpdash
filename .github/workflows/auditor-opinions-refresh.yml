@@ -1,14 +1,21 @@
 name: Auditor opinions refresh (Muns agent)
 
-# Runs after the daily CSV refresh completes — calls the Muns Auditor
-# Opinion agent in parallel batches (50 at a time) for every company
-# in the screener universe whose cached opinion is missing, errored,
-# or older than 30 days. Result lands in public/data/auditor-opinions.json.
+# DISABLED — manual-only, runs on NO automatic schedule.
+#
+# This workflow called the Muns Auditor Opinion agent once per company, and
+# each call can trigger an annual-report PDF read (a Firecrawl charge). Run
+# automatically every day, it was the main source of the Firecrawl credit
+# spike — the devde.muns.io backend was failing for ~all companies and the
+# job re-read hundreds of the same annual-report PDFs daily. The auditor
+# feature is not needed, so the automatic trigger has been removed.
+#
+# To run it by hand anyway (e.g. after the devde.muns.io backend is fixed):
+#   GitHub → Actions → "Auditor opinions refresh (Muns agent)" → Run workflow.
+# Even then the scraper caps its own cost via per-company error backoff + a
+# circuit breaker (see screener-test/scrape-auditor-opinions.mjs), and
+# setting DRY_RUN=true previews the call count without spending anything.
 
 on:
-  workflow_run:
-    workflows: ["Daily refresh (all scrapers)"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       force_refresh:
@@ -22,8 +29,7 @@ on:
 
 jobs:
   refresh:
-    # Only proceed if the triggering daily-refresh succeeded.
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Manual-only now (workflow_dispatch). No automatic trigger to gate on.
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
