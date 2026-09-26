@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25T05:09:33.226Z",
+  "generated_at": "2026-09-26T05:13:02.559Z",
   "pcr": {
     "value": 1.05,
     "source": "NSE option-chain (via Firecrawl LLM extract)",
@@ -13,14 +13,14 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-09-25T05:09:33.449Z",
+        "at": "2026-09-26T05:13:02.922Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 402,
         "fc_body_sample": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}",
         "outcome": "fc_extract_http_error"
       },
       {
-        "at": "2026-09-25T05:09:33.665Z",
+        "at": "2026-09-26T05:13:03.129Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 402,
         "fc_body_sample": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}",
