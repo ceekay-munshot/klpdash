@@ -1,9 +1,78 @@
 {
-  "generated_at": "2026-09-28T05:38:19.643Z",
+  "generated_at": "2026-09-29T05:56:20.591Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 5,
+  "total_entities_seen": 20,
   "flagged_companies": {
+    "ADANIPOWER": {
+      "primary_name": "Adani Group",
+      "order_type": "settlement",
+      "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations.",
+      "source_url": "https://www.livemint.com/topic/sebi",
+      "source_label": "Mint — SEBI topic (news)",
+      "origins": [
+        "curated",
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Mint — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations."
+        },
+        {
+          "source": "Business Standard — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "other",
+          "snippet": "Sebi finds no evidence Vinod Adani controlled FPIs, drops Adani MPS case."
+        },
+        {
+          "source": "Business Standard — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Five Adani group companies settle Sebi proceedings for ₹1.51 crore."
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "settlement",
+          "snippet": "Four Adani group companies settle public shareholding violations case with Sebi."
+        },
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "adjudication",
+          "snippet": "Sebi clears Gautam, Vinod Adani of MPS norm violation; imposes penalties on others."
+        },
+        {
+          "source": "SEBI status report to Supreme Court (2024-25)",
+          "origin": "curated",
+          "order_type": "sebi-investigation",
+          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
+        }
+      ],
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
+    },
+    "BSE": {
+      "primary_name": "BSE",
+      "order_type": "other",
+      "snippet": "BSE stock falls 2.3% as SEBI mulls self-listing rules revamp, days after NSE IPO listing - Check details.",
+      "source_url": "https://www.livemint.com/topic/sebi",
+      "source_label": "Mint — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Mint — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "other",
+          "snippet": "BSE stock falls 2.3% as SEBI mulls self-listing rules revamp, days after NSE IPO listing - Check details."
+        }
+      ],
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
+    },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
       "order_type": "sebi-investigation",
@@ -21,7 +90,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-09-28T05:38:19.643Z"
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -40,7 +109,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-09-28T05:38:19.643Z"
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -59,26 +128,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-09-28T05:38:19.643Z"
-    },
-    "ADANIPOWER": {
-      "primary_name": "Adani Power",
-      "order_type": "sebi-investigation",
-      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
-      "source_url": null,
-      "source_label": "SEBI status report to Supreme Court (2024-25)",
-      "origins": [
-        "curated"
-      ],
-      "mentions": [
-        {
-          "source": "SEBI status report to Supreme Court (2024-25)",
-          "origin": "curated",
-          "order_type": "sebi-investigation",
-          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
-        }
-      ],
-      "first_seen_at": "2026-09-28T05:38:19.643Z"
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -97,46 +147,353 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-09-28T05:38:19.643Z"
+      "first_seen_at": "2026-09-29T05:56:20.590Z"
     }
   },
-  "unmatched_sample": [],
+  "unmatched_sample": [
+    {
+      "name": "SEBI",
+      "type": "other",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "SEBI",
+      "type": "other",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "SEBI",
+      "type": "other",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Vinod Adani",
+      "type": "other",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Pioneer Fil-Med",
+      "type": "other",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Trans ACNR",
+      "type": "other",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "PM Cona Industries Ltd",
+      "type": "other",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Omaxe",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Kore Digital",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    }
+  ],
   "sources": [
     {
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-09-28T05:38:17.349Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-09-29T05:56:04.807Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
+      "prefilter_sample": [
+        {
+          "name": "Adani Group",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations."
+        },
+        {
+          "name": "BSE",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "BSE stock falls 2.3% as SEBI mulls self-listing rules revamp, days after NSE IPO listing - Check details."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "SEBI board clears a number of reforms; expands FPI access to commodity derivatives, relaxes advertising norms."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "SEBI widens FPI access to commodity derivatives; delivery rules laid out."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Sebi board allows FPI access in non-farm goods, approves revamp of PMS, settlement rules."
+        }
+      ],
+      "after_filter_count": 5,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Adani Group",
+          "order_type": "settlement",
+          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations."
+        },
+        {
+          "name": "BSE",
+          "order_type": "other",
+          "snippet": "BSE stock falls 2.3% as SEBI mulls self-listing rules revamp, days after NSE IPO listing - Check details."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "snippet": "SEBI board clears a number of reforms; expands FPI access to commodity derivatives, relaxes advertising norms."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "snippet": "SEBI widens FPI access to commodity derivatives; delivery rules laid out."
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "snippet": "Sebi board allows FPI access in non-farm goods, approves revamp of PMS, settlement rules."
+        }
+      ]
     },
     {
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-09-28T05:38:18.013Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-09-29T05:56:08.081Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 8,
+      "total_extracted": 8,
+      "prefilter_sample": [
+        {
+          "name": "Gautam Adani",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Gautam Adani, four Adani group firms and 13 others paid a cumulative ₹1.48 crore to settle proceedings over alleged non-compliance with minimum public"
+        },
+        {
+          "name": "Vinod Adani",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Sebi said there was no evidence of Vinod Adani directing the management or policy decisions of two FPIs that invested in listed Adani group companies."
+        },
+        {
+          "name": "Adani",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Sebi finds no evidence Vinod Adani controlled FPIs, drops Adani MPS case."
+        },
+        {
+          "name": "Pioneer Fil-Med",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Pioneer Fil-Med, Tonbo Imaging India and Functional & Innovative Foods have secured approval from capital markets regulator Sebi for their proposed in"
+        },
+        {
+          "name": "Trans ACNR",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Nine companies, including Trans ACNR Solutions and Maharashtra Oil Extractions have filed preliminary papers with markets regulator Sebi for IPOs."
+        },
+        {
+          "name": "PM Cona Industries Ltd",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Electrical products maker PM Cona Industries Ltd has filed preliminary papers with markets regulator Sebi to raise funds through an initial public off"
+        },
+        {
+          "name": "Abakkus",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "The IPO will comprise an offer for sale of up to 15 million equity shares by promoter Abakkus Expert Professionals LLP, representing a 10 per cent sta"
+        },
+        {
+          "name": "Adani",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Five Adani group companies settle Sebi proceedings for ₹1.51 crore."
+        }
+      ],
+      "after_filter_count": 6,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 2,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Vinod Adani",
+          "order_type": "other",
+          "snippet": "Sebi said there was no evidence of Vinod Adani directing the management or policy decisions of two FPIs that invested in"
+        },
+        {
+          "name": "Adani",
+          "order_type": "other",
+          "snippet": "Sebi finds no evidence Vinod Adani controlled FPIs, drops Adani MPS case."
+        },
+        {
+          "name": "Pioneer Fil-Med",
+          "order_type": "other",
+          "snippet": "Pioneer Fil-Med, Tonbo Imaging India and Functional & Innovative Foods have secured approval from capital markets regula"
+        },
+        {
+          "name": "Trans ACNR",
+          "order_type": "other",
+          "snippet": "Nine companies, including Trans ACNR Solutions and Maharashtra Oil Extractions have filed preliminary papers with market"
+        },
+        {
+          "name": "PM Cona Industries Ltd",
+          "order_type": "other",
+          "snippet": "Electrical products maker PM Cona Industries Ltd has filed preliminary papers with markets regulator Sebi to raise funds"
+        },
+        {
+          "name": "Adani",
+          "order_type": "settlement",
+          "snippet": "Five Adani group companies settle Sebi proceedings for ₹1.51 crore."
+        }
+      ]
     },
     {
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-09-28T05:38:18.495Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-09-29T05:56:13.143Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
+      "prefilter_sample": [
+        {
+          "name": "Omaxe",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Sebi bans Omaxe, 5 others for violating minimum public shareholding norms."
+        },
+        {
+          "name": "Adani Enterprises",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Four Adani group companies settle public shareholding violations case with Sebi."
+        },
+        {
+          "name": "Adani Enterprises",
+          "order_type": "adjudication",
+          "is_listed_entity": true,
+          "snippet": "Sebi clears Gautam, Vinod Adani of MPS norm violation; imposes penalties on others."
+        },
+        {
+          "name": "Kore Digital",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Kore Digital shares crash 10% as Sebi alleges Rs 541 cr revenue misstatement."
+        },
+        {
+          "name": "Mirae Asset Venture Investments",
+          "order_type": "settlement",
+          "is_listed_entity": false,
+          "snippet": "Mirae Asset Venture Investments, others pay Rs 12.75 lakh to settle Sebi proceedings over violations."
+        },
+        {
+          "name": "Vinod Adani",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "Sebi drops minimum public shareholding norms violation case against Vinod Adani and 4 Adani group companies."
+        }
+      ],
+      "after_filter_count": 4,
+      "dropped_counts": {
+        "not_listed": 2,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Omaxe",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bans Omaxe, 5 others for violating minimum public shareholding norms."
+        },
+        {
+          "name": "Adani Enterprises",
+          "order_type": "settlement",
+          "snippet": "Four Adani group companies settle public shareholding violations case with Sebi."
+        },
+        {
+          "name": "Adani Enterprises",
+          "order_type": "adjudication",
+          "snippet": "Sebi clears Gautam, Vinod Adani of MPS norm violation; imposes penalties on others."
+        },
+        {
+          "name": "Kore Digital",
+          "order_type": "sebi-ban",
+          "snippet": "Kore Digital shares crash 10% as Sebi alleges Rs 541 cr revenue misstatement."
+        }
+      ]
     },
     {
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-09-28T05:38:19.044Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-09-29T05:56:17.235Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
+      "prefilter_sample": [
+        {
+          "name": "CITRUS CHECK INNS LIMITED",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
+        },
+        {
+          "name": "ROYAL TWINKLE STAR CLUB PVT. LTD",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
+        }
+      ],
+      "after_filter_count": 0,
+      "dropped_counts": {
+        "not_listed": 2,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": []
     }
   ]
 }
