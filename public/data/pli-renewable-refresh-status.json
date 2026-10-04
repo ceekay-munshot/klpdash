@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-27T22:45:22.855Z",
+  "generated_at": "2026-10-04T22:52:26.919Z",
   "pli": {
     "existing": 174,
     "discovered": 0,
@@ -7,7 +7,7 @@
   },
   "renewable": {
     "existing": 54,
-    "discovered": 0,
+    "discovered": 1,
     "added": []
   },
   "sources": [
@@ -15,46 +15,62 @@
       "url": "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2&MenuId=1",
       "label": "PIB — recent press releases",
       "category": "pli",
-      "at": "2026-09-27T22:45:19.051Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-10-04T22:51:50.185Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "candidates_count": 0,
+      "candidates_sample": []
     },
     {
       "url": "https://pib.gov.in/indexd.aspx",
       "label": "PIB — home",
       "category": "pli",
-      "at": "2026-09-27T22:45:20.088Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-10-04T22:51:56.911Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "candidates_count": 0,
+      "candidates_sample": []
     },
     {
       "url": "https://www.dpiit.gov.in/whats-new",
       "label": "DPIIT — what's new",
       "category": "pli",
-      "at": "2026-09-27T22:45:20.831Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-10-04T22:52:03.465Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "candidates_count": 0,
+      "candidates_sample": []
     },
     {
       "url": "https://mnre.gov.in/whats-new/",
       "label": "MNRE — what's new",
       "category": "renewable",
-      "at": "2026-09-27T22:45:21.572Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-10-04T22:52:05.384Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "candidates_count": 2,
+      "candidates_sample": [
+        "Indian Renewable Energy Development Agency Limited (IREDA)",
+        "Solar Energy Corporation of India Limited (SECI)"
+      ]
     },
     {
       "url": "https://mnre.gov.in/press-releases/",
       "label": "MNRE — press releases",
       "category": "renewable",
-      "at": "2026-09-27T22:45:22.213Z",
-      "fc_status": 402,
-      "outcome": "fc_http_error",
-      "error_body": "{\"success\":false,\"error\":\"Insufficient credits to perform this request. For more credits, you can upgrade your plan at https://firecrawl.dev/pricing or try changing the request limit to a lower value.\"}"
+      "at": "2026-10-04T22:52:18.728Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 404,
+      "candidates_count": 2,
+      "candidates_sample": [
+        "भारतीय अक्षय ऊर्जा विकास संस्था लिमिटेड (इरेडा )",
+        "सोलर एनर्जी कॉर्पोरेशन ऑफ इंडिया (सेकी)"
+      ]
     }
   ]
 }
