@@ -1,32 +1,32 @@
 {
-  "generated_at": "2026-10-14T05:07:46.609Z",
+  "generated_at": "2026-10-15T04:56:25.381Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 15,
+  "total_entities_seen": 16,
   "flagged_companies": {
-    "INOXINDIA": {
-      "primary_name": "Inox Clean Energy Ltd",
-      "order_type": "other",
-      "snippet": "Sebi keeps Inox Clean Energy's IPO papers to raise ₹10K cr in abeyance",
-      "source_url": "https://www.business-standard.com/topic/sebi",
-      "source_label": "Business Standard — SEBI topic (news)",
+    "INDHOTEL": {
+      "primary_name": "Indian Gas Exchange",
+      "order_type": "sebi-consent",
+      "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO.",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
         "scraper"
       ],
       "mentions": [
         {
-          "source": "Business Standard — SEBI topic (news)",
+          "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Sebi keeps Inox Clean Energy's IPO papers to raise ₹10K cr in abeyance"
+          "order_type": "sebi-consent",
+          "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
     "LLOYDSME": {
       "primary_name": "Lloyds Enterprises",
       "order_type": "settlement",
-      "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi",
+      "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -37,42 +37,29 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "settlement",
-          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi"
+          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
-    "ADANIPOWER": {
-      "primary_name": "Adani Enterprises",
-      "order_type": "settlement",
-      "snippet": "4 Adani group companies settle public shareholding violations case with Sebi",
+    "BIOCON": {
+      "primary_name": "Biocon Electric",
+      "order_type": "sebi-investigation",
+      "snippet": "IPO Ahead! Electrical products maker Biocon Electric files draft papers with Sebi.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
-        "curated",
         "scraper"
       ],
       "mentions": [
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "4 Adani group companies settle public shareholding violations case with Sebi"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Sebi drops minimum public shareholding norms violation case against Vinod Adani and 4 Adani group companies"
-        },
-        {
-          "source": "SEBI status report to Supreme Court (2024-25)",
-          "origin": "curated",
           "order_type": "sebi-investigation",
-          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
+          "snippet": "IPO Ahead! Electrical products maker Biocon Electric files draft papers with Sebi."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -91,7 +78,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -110,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -129,7 +116,26 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
+    },
+    "ADANIPOWER": {
+      "primary_name": "Adani Power",
+      "order_type": "sebi-investigation",
+      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
+      "source_url": null,
+      "source_label": "SEBI status report to Supreme Court (2024-25)",
+      "origins": [
+        "curated"
+      ],
+      "mentions": [
+        {
+          "source": "SEBI status report to Supreme Court (2024-25)",
+          "origin": "curated",
+          "order_type": "sebi-investigation",
+          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
+        }
+      ],
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -148,12 +154,24 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-10-14T05:07:46.609Z"
+      "first_seen_at": "2026-10-15T04:56:25.380Z"
     }
   },
   "unmatched_sample": [
     {
-      "name": "Carlsberg India",
+      "name": "Rajesh Exports",
+      "type": "sebi-ban",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Rajesh Exports",
+      "type": "sebi-ban",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Carlsberg",
       "type": "other",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
@@ -165,26 +183,26 @@
       "origin": "scraper"
     },
     {
-      "name": "Jane Street",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Jane Street",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Jane Street",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
       "name": "SMC Global Securities",
       "type": "sebi-fine",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Jane Street",
+      "type": "sebi-investigation",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Growpital",
+      "type": "sebi-fine",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Carlsberg",
+      "type": "sebi-consent",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -194,78 +212,152 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-14T05:07:30.438Z",
+      "at": "2026-10-15T04:56:05.951Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
       "prefilter_sample": [
         {
-          "name": "Jane Street",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": false,
-          "snippet": "SAT has reserved its verdict on Jane Street's appeal against Sebi's ex-parte interim order."
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": false,
-          "snippet": "Jane Street gets SEBI trade logs as regulator presses firm on manipulation allegations."
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": false,
-          "snippet": "Sebi vs Jane Street: 'Dilatory tactic; ulta chor kotwal ko daante'."
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
         }
       ],
-      "after_filter_count": 0,
+      "after_filter_count": 1,
       "dropped_counts": {
-        "not_listed": 3,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
-      "sample": []
+      "sample": [
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
+        }
+      ]
     },
     {
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-14T05:07:33.445Z",
+      "at": "2026-10-15T04:56:08.396Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
-          "name": "Inox Clean Energy Ltd",
-          "order_type": "other",
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "Sebi keeps Inox Clean Energy's IPO papers to raise ₹10K cr in abeyance"
+          "snippet": "Rajesh Mehta remains barred from dealing in Rajesh Exports securities as Sebi examines financial disclosures, subsidiary consolidation and alleged rel"
         },
         {
-          "name": "Carlsberg India",
+          "name": "Carlsberg",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Carlsberg gets Sebi approval for IPO"
-        },
-        {
-          "name": "Sindhuja Microcredit",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sindhuja raises ₹100 crore via NCDs"
-        },
-        {
-          "name": "Anarock Property Consultants Ltd",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Anarock Property Consultants files draft papers for ₹1,000 crore IPO"
+          "snippet": "Carlsberg gets Sebi approval for a ₹6,600 crore IPO involving a stake sale by its parent."
         }
       ],
       "after_filter_count": 2,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
+          "snippet": "Rajesh Mehta remains barred from dealing in Rajesh Exports securities as Sebi examines financial disclosures, subsidiary"
+        },
+        {
+          "name": "Carlsberg",
+          "order_type": "other",
+          "snippet": "Carlsberg gets Sebi approval for a ₹6,600 crore IPO involving a stake sale by its parent."
+        }
+      ]
+    },
+    {
+      "url": "https://economictimes.indiatimes.com/topic/sebi",
+      "label": "Economic Times — SEBI topic (news)",
+      "mode": "news",
+      "at": "2026-10-15T04:56:14.770Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 10,
+      "total_extracted": 10,
+      "prefilter_sample": [
+        {
+          "name": "Singularity AMC",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi."
+        },
+        {
+          "name": "SMC Global Securities",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Sebi penalises SMC Global Securities for compliance lapses."
+        },
+        {
+          "name": "Jane Street",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi accuses Jane Street of dilatory tactics at SAT, says investigator is being investigated."
+        },
+        {
+          "name": "Indian Gas Exchange",
+          "order_type": "sebi-consent",
+          "is_listed_entity": true,
+          "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
+        },
+        {
+          "name": "Lloyds Enterprises",
+          "order_type": "settlement",
+          "is_listed_entity": true,
+          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi."
+        },
+        {
+          "name": "Growpital",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Growpital case: Sebi to refund money directly to investors for first time."
+        },
+        {
+          "name": "Polycab India",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Polycab shares tumble 5% as stock set to exit F&O segment from December 30 onwards."
+        },
+        {
+          "name": "Biocon Electric",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "IPO Ahead! Electrical products maker Biocon Electric files draft papers with Sebi."
+        },
+        {
+          "name": "Carlsberg",
+          "order_type": "sebi-consent",
+          "is_listed_entity": true,
+          "snippet": "Danish brewing giant Carlsberg’s India arm, 3 others get Sebi nod to float IPOs."
+        },
+        {
+          "name": "Groww",
+          "order_type": "sebi-fine",
+          "is_listed_entity": true,
+          "snippet": "Groww Q2 Results: Cons net profit surges 54% YoY to Rs 726 crore; revenue jumps 47."
+        }
+      ],
+      "after_filter_count": 8,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 2,
@@ -274,124 +366,44 @@
       },
       "sample": [
         {
-          "name": "Inox Clean Energy Ltd",
-          "order_type": "other",
-          "snippet": "Sebi keeps Inox Clean Energy's IPO papers to raise ₹10K cr in abeyance"
-        },
-        {
-          "name": "Carlsberg India",
-          "order_type": "other",
-          "snippet": "Carlsberg gets Sebi approval for IPO"
-        }
-      ]
-    },
-    {
-      "url": "https://economictimes.indiatimes.com/topic/sebi",
-      "label": "Economic Times — SEBI topic (news)",
-      "mode": "news",
-      "at": "2026-10-14T05:07:37.559Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 8,
-      "total_extracted": 8,
-      "prefilter_sample": [
-        {
           "name": "Singularity AMC",
           "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi"
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Jane Street hits back at Sebi’s allegations, says 'regulator changed the goal posts'"
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi says Jane Street’s appeal for more details a delaying ploy"
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi accuses Jane Street of dilatory tactics at SAT, says 'investigator is being investigated'"
-        },
-        {
-          "name": "Lloyds Enterprises",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi"
-        },
-        {
-          "name": "Adani Enterprises",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "4 Adani group companies settle public shareholding violations case with Sebi"
-        },
-        {
-          "name": "Adani Enterprises",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi drops minimum public shareholding norms violation case against Vinod Adani and 4 Adani group companies"
+          "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi."
         },
         {
           "name": "SMC Global Securities",
           "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi penalises SMC Global Securities for compliance lapses"
-        }
-      ],
-      "after_filter_count": 8,
-      "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
-        "resolved_in_favour": 0,
-        "no_name": 0
-      },
-      "sample": [
-        {
-          "name": "Singularity AMC",
-          "order_type": "settlement",
-          "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi"
+          "snippet": "Sebi penalises SMC Global Securities for compliance lapses."
         },
         {
           "name": "Jane Street",
-          "order_type": "other",
-          "snippet": "Jane Street hits back at Sebi’s allegations, says 'regulator changed the goal posts'"
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi accuses Jane Street of dilatory tactics at SAT, says investigator is being investigated."
         },
         {
-          "name": "Jane Street",
-          "order_type": "other",
-          "snippet": "Sebi says Jane Street’s appeal for more details a delaying ploy"
-        },
-        {
-          "name": "Jane Street",
-          "order_type": "other",
-          "snippet": "Sebi accuses Jane Street of dilatory tactics at SAT, says 'investigator is being investigated'"
+          "name": "Indian Gas Exchange",
+          "order_type": "sebi-consent",
+          "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
         },
         {
           "name": "Lloyds Enterprises",
           "order_type": "settlement",
-          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi"
+          "snippet": "Lloyds Enterprises settles listing rule violations case with Sebi."
         },
         {
-          "name": "Adani Enterprises",
-          "order_type": "settlement",
-          "snippet": "4 Adani group companies settle public shareholding violations case with Sebi"
-        },
-        {
-          "name": "Adani Enterprises",
-          "order_type": "other",
-          "snippet": "Sebi drops minimum public shareholding norms violation case against Vinod Adani and 4 Adani group companies"
-        },
-        {
-          "name": "SMC Global Securities",
+          "name": "Growpital",
           "order_type": "sebi-fine",
-          "snippet": "Sebi penalises SMC Global Securities for compliance lapses"
+          "snippet": "Growpital case: Sebi to refund money directly to investors for first time."
+        },
+        {
+          "name": "Biocon Electric",
+          "order_type": "sebi-investigation",
+          "snippet": "IPO Ahead! Electrical products maker Biocon Electric files draft papers with Sebi."
+        },
+        {
+          "name": "Carlsberg",
+          "order_type": "sebi-consent",
+          "snippet": "Danish brewing giant Carlsberg’s India arm, 3 others get Sebi nod to float IPOs."
         }
       ]
     },
@@ -399,7 +411,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-10-14T05:07:44.085Z",
+      "at": "2026-10-15T04:56:21.152Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -408,13 +420,13 @@
       "prefilter_sample": [
         {
           "name": "CITRUS CHECK INNS LIMITED",
-          "order_type": "public-notice",
+          "order_type": "other",
           "is_listed_entity": false,
           "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
         },
         {
           "name": "ROYAL TWINKLE STAR CLUB PVT. LTD",
-          "order_type": "public-notice",
+          "order_type": "other",
           "is_listed_entity": false,
           "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
         }
