@@ -1,99 +1,56 @@
 {
-  "generated_at": "2026-06-07T06:00:00.000Z",
+  "generated_at": "2026-07-14T02:30:00.000Z",
   "source": "Per-company AR extraction (Screener.in PDFs + IR sites) — Claude.ai routine, daily batch of 20",
-  "as_of": "2026-06-07",
+  "as_of": "2026-07-14",
   "companies": {
-    "INOXINDIA": {
+    "LUPIN": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 47,
-        "export_pct": 53,
-        "export_us_pct": null,
+        "domestic_pct": 34,
+        "export_pct": 66,
+        "export_us_pct": 36,
         "export_europe_pct": null,
         "export_asia_ex_china_pct": null,
-        "export_other_pct": null
+        "export_other_pct": 25
       },
       "china_plus_one": {
         "narrative_present": true,
         "strength": "moderate",
-        "evidence": "INOX India secured a significant order from Australia for Oxygen, Nitrogen, and CO2 IMO containers directly competing with Chinese suppliers. User base spans 100+ countries served via after-sales support network in 30+ countries. Q4 FY25 export revenue ₹205 Cr = 53% of Q4 revenue (up sharply YoY). FY25 total revenue ₹1,354 Cr; export ~53% (~₹718 Cr) based on Q4 FY25 export data. Export growth narrative present in quarterly results commentary; no explicit 'China+1' framing found in available MD&A."
+        "evidence": "FY2024-25 Integrated Report business review: Lupin's API and CDMO businesses (API Plus, Lupin Manufacturing Solutions Ltd) described as 'reflecting strong alignment with global industry trends such as supply chain diversification, CDMO outsourcing' with ambition to become a 'preferred global API CDMO partner' as customers seek secure, diversified API sources; no explicit revenue figure attributed to China+1 shift."
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "India formulations (34% of global sales) includes branded generics/trade generics business (Lupin Life Sciences) and Lupin Diagnostics expanding into Tier 3/Tier 4 towns across 250+ cities; no explicit rural revenue percentage disclosed."
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "Industrial gases division serves hydrogen/green energy infrastructure and LNG dispensing projects linked to government energy transition plans. Some government-linked capex exposure but revenue % not disclosed."
+        "evidence": null
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "Floating vs fixed rate borrowing split not found in accessible sources; third-party analysis (Simply Wall St) notes Lupin holds more cash than total debt and debt-to-equity has fallen from ~34.5% to ~26.3% over 5 years, suggesting low overall leverage/rate sensitivity, but this is not a direct AR disclosure."
       },
       "crude_exposure": {
         "raw_material_pct": null,
         "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 40,
-        "hedging_policy": null,
-        "evidence": "FY25 total revenue ₹1,354 Cr. Export ~53% of revenue. Industrial Gases division 61% of FY25 revenue (largest); LNG 19%; Cryo Scientific ~20%. Exports to 100+ countries; USD revenue estimated ~40% of total (mix of USD, EUR, and other currencies across global industrial gas markets)."
+        "usd_revenue_pct": 36,
+        "hedging_policy": "Company exposed to USD-INR, EUR-INR and ZAR-INR fluctuations across 100+ markets; treasury operations reported to use natural hedges plus forex derivatives in a layered hedging strategy.",
+        "evidence": "US FY2025 sales of USD 925 Mn (up from USD 815 Mn in FY2024) represented 36% of Lupin's global sales; risk management disclosures reference natural hedges and forex derivative usage for currency exposure."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": true,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Lupin (via its API business/Lupin Manufacturing Solutions Ltd, formerly the API Research Park in Pune) is listed as an approved domestic applicant under India's PLI Scheme for Pharmaceuticals (KSMs/Drug Intermediates/APIs), Group A category; specific incentive amount or revenue contribution not disclosed in accessible sources."
       },
-      "confidence": "Medium"
+      "confidence": "Low"
     },
-    "ABB": {
-      "report_year": "CY2024",
-      "geography": {
-        "domestic_pct": 90,
-        "export_pct": 10,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "ABB India CEO stated: 'Export hub to support other geographies' — ABB India is being positioned as a global manufacturing hub. Exported to 50+ countries in CY2024. CEO stated India is on track to become ABB's third-largest market globally. Record revenue ₹12,188 Cr in CY2024 (+17% YoY), record orders ₹13,079 Cr. Operates across 23 diverse market segments. Positioned as export manufacturing base for parent's Asia-Pacific supply chain — no explicit China+1 attribution in available sources."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": 38,
-        "evidence": "ABB India serves Indian Railways (traction electronics, signalling, transformers), state/central utilities (T&D switchgear, transformers), and public infrastructure projects across Electrification, Motion, Process Automation, and Robotics segments. Indirect exposure through EPCs at approximately 35–40% of revenue. Government capex is a key demand driver; exact revenue % for direct government contracts not disclosed separately."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 10,
-        "hedging_policy": null,
-        "evidence": "Export revenue approximately 10% of CY2024 total of ₹12,188 Cr. ABB India exports to 50+ countries primarily within ABB global group's Asia-Pacific supply network. USD revenue estimated ~10% of total. ABB India follows January–December calendar year."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "PREMIERENE": {
+    "INDHOTEL": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 96,
-        "export_pct": 4,
+        "domestic_pct": null,
+        "export_pct": null,
         "export_us_pct": null,
         "export_europe_pct": null,
         "export_asia_ex_china_pct": null,
@@ -101,8 +58,51 @@
       },
       "china_plus_one": {
         "narrative_present": false,
-        "strength": "weak",
-        "evidence": "Premier Energies is India's second-largest integrated solar cell and module manufacturer (3.2 GW total cell capacity as of FY25). Some international customers prefer India-made solar modules amid tariff/geopolitical pressures on Chinese panels, but the company does not explicitly frame strategy around China+1 in available MD&A summaries. Export share ~4% of FY25 revenue of ₹6,652 Cr (exports <1% in FY26 per latest data)."
+        "strength": "none",
+        "evidence": "IHCL is a domestic hospitality/services company (Taj, Vivanta, Ginger, Gateway brands operating hotels in India and ~12-15 countries); it is not a goods exporter and no China+1/supply-chain diversification narrative appears in company communications."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "No disclosed revenue % from rural markets. Third-party industry coverage describes IHCL's Ginger and Gateway brands expanding into Tier 2/Tier 3 towns and pilgrimage/leisure destinations as a growth engine, with Ginger portfolio reaching 262 hotels and ~68% of operating portfolio in asset-light formats, but no rural revenue contribution figure was found."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "No disclosed revenue % tied to government capex/infrastructure. Contextual/industry-level narrative notes India's push to be a global MICE hub post-G20 (Budget 2025-26 allocated INR 2,541 crore for tourism infrastructure), a demand tailwind for IHCL's MICE/banqueting business, but IHCL-specific quantification was not found."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "No floating-vs-fixed debt split found, but IHCL reported a net-cash-positive/near debt-free consolidated balance sheet as of FY2024-25 (gross cash position of INR 3,073 crore), implying low overall rate sensitivity from company borrowings."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "No disclosed power/fuel/energy cost as % of total expenses was located. IHCL's ESG disclosures note renewable energy sourced ~35-39% of total electricity consumption, which partially mitigates but does not eliminate fuel/energy cost exposure."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": null,
+        "evidence": "Directors' Report 'Foreign Exchange Earnings and Outgo' disclosure (year uncertain from available snippets) showed foreign exchange earnings of INR 733.28 crore against outgo of INR 81.65 crore. IHCL earns foreign exchange from international guests and international hotel subsidiaries/management fees, but no current-year USD revenue % or explicit hedging policy could be confirmed."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "India's PLI scheme covers 14 manufacturing sectors with no hospitality/services category; no indication IHCL participates in or benefits from PLI."
+      },
+      "confidence": "Low"
+    },
+    "SUNPHARMA": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 33,
+        "export_pct": 67,
+        "export_us_pct": 31,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 36
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "No explicit China+1 or China-diversification narrative found. Sun Pharma discusses API self-sufficiency (14 API manufacturing sites in India, Hungary, US, Israel, Australia; 400+ APIs) but frames this as vertical integration/self-reliance, not as a China+1 beneficiary story tied to customer diversification away from China."
       },
       "rural": {
         "revenue_pct": null,
@@ -110,7 +110,50 @@
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "Solar modules predominantly sold to government-tendered utility-scale solar projects (SECI, state DISCOMs, PM Kusum, ISTS-linked) and large IPPs. Indian solar capacity additions are predominantly government-funded or government-tendered. Domestic share is ~96% and near-entirety of India market is government/regulated-utility linked. Revenue % from specifically government-tendered projects not disclosed."
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Not disclosed; company reported a net cash surplus position (~US$3.1bn) at consolidated level, suggesting limited net debt exposure, but no floating-rate liability percentage was found."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 67,
+        "hedging_policy": "Not confirmed from a primary-source read; third-party commentary indicates Sun Pharma uses forward contracts and natural hedges (foreign-currency debt/opex) to manage USD/INR and JPY/INR exposure, given large US and emerging-markets revenue base.",
+        "evidence": "FY25 non-India (foreign-currency) revenue mix approx.: US 31%, Emerging Markets 18%, RoW 13%, API 4% (~66-67% combined) vs. India Business ~33%, per FY25 results commentary."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "Sun Pharma was among 55 companies selected under India's ~Rs 15,000 crore PLI scheme for pharmaceuticals covering 41 critical APIs/KSMs/Drug Intermediates; specific incremental-revenue or incentive amount attributable to Sun Pharma was not found in sources reviewed."
+      },
+      "confidence": "Low"
+    },
+    "ZYDUSLIFE": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 39,
+        "export_pct": 61,
+        "export_us_pct": 46,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "No explicit China+1 or China-diversification narrative found in available third-party summaries; company disclosures emphasize US generics and emerging-markets export growth without a diversification-from-China framing."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
@@ -121,22 +164,22 @@
         "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 4,
-        "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹6,652 Cr (+110% YoY); domestic 96%, export ~4% (~₹266 Cr). Product mix: solar modules 74%, cells 23%, other 3%. 1.2 GW TOPCon solar cell line commissioned in FY25 taking total cell capacity to 3.2 GW."
+        "usd_revenue_pct": 46,
+        "hedging_policy": "Company disclosed to use a mix of natural hedges and financial hedging policy (forward contracts) plus a diversified export footprint to moderate INR/USD earnings impact; specific % hedged not confirmed from primary source.",
+        "evidence": "North America (US) formulations business contributed approximately 46-51% of consolidated revenue across FY24-25 quarters; India business incl. Consumer Wellness was 39% of consolidated revenue in Q4FY25."
       },
       "pli_scheme": {
-        "is_beneficiary": true,
+        "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": "Premier Energies is a confirmed beneficiary of India's Solar PLI scheme (PLI for High Efficiency Solar PV Modules). Manufacturing capacity expansion to 3.2 GW cells linked to PLI commitments. No confirmed PLI tranche received as of Sep 2025; PLI incentives support scale-up with exact PLI incentive income not yet material or separately disclosed."
+        "evidence": "No confirmed disclosure found that Zydus Lifesciences is a named beneficiary under the PLI Bulk Drugs or PLI Medical Devices schemes; could not verify via primary annual report due to source access restrictions."
       },
-      "confidence": "Medium"
+      "confidence": "Low"
     },
-    "IPCALAB": {
+    "RADICO": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 45,
-        "export_pct": 55,
+        "domestic_pct": 90,
+        "export_pct": 10,
         "export_us_pct": null,
         "export_europe_pct": null,
         "export_asia_ex_china_pct": null,
@@ -149,7 +192,7 @@
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "No explicit rural revenue % disclosed. FY25 commentary notes Regular (mass-market/semi-urban-rural skewed) IMFL volumes returned to growth after 9 quarters of degrowth, while Prestige & Above (more urban/premium) grew to ~41-46% of IMFL volume and ~69-70% of IMFL value in FY25, up from 28.5%/48% in FY19."
       },
       "govt_capex": {
         "revenue_pct": null,
@@ -161,21 +204,365 @@
       },
       "crude_exposure": {
         "raw_material_pct": null,
-        "evidence": null
+        "evidence": "Company commentary describes grain, ENA (extra neutral alcohol), glass and packaging material costs as volatile/inflationary; gross margins were pressured in FY22-FY24 by grain/ENA inflation and rebounded ~590bps to 42.82% in FY25 as costs eased. Radico commissioned a 350 KLPD grain-based ENA distillery in Sitapur (Sep'23, ~INR 550 cr capex) for raw-material self-sufficiency. No explicit % of raw material cost tied directly to crude oil derivatives found."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 55,
+        "usd_revenue_pct": 9,
         "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹8,940 Cr (+16% YoY); consolidated net profit ₹738 Cr (+35% YoY). Revenue from outside India ~₹4,898 Cr = 55% of total. Business mix: domestic branded generics ~45% (Zerodol, Revelol, CTD brands); API exports ~20%; regulated market formulation exports (UK, Canada) ~12%; emerging market branded generic exports ~15%; institutional ~8%. USD revenue estimated ~55% of total (API sales to US/EU buyers + branded generics in USD markets + regulated formulations)."
+        "evidence": "Exports (largely USD/hard-currency denominated via Gulf duty-free, Africa, APAC and travel retail channels) account for ~5-6% of sales volume and ~9-10% of revenue."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
         "evidence": null
       },
+      "confidence": "Low"
+    },
+    "UNITDSPR": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": null,
+        "export_pct": null,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "USL is an overwhelmingly domestic-focused Indian spirits company (McDowell's No.1, Signature, Royal Challenge, Antiquity). Exports are routed through subsidiary Shaw Wallace Overseas Ltd to ~37 countries but represent a minor, undisclosed share of revenue. No China+1 narrative found."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "MD&A/analyst commentary flags rural and semi-urban demand recovery as a recurring growth theme. Prestige & Above (premium, more urban-skewed) segment was 83% of volumes and ~89% of net sales in FY25, implying Popular/mass segment (more rural/semi-urban weighted) is a minority of net sales. No explicit standalone rural revenue % disclosed."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Notes to financial statements: majority of Company's short term and long term borrowings are benchmarked to Bank's MCLR (variable rate), indicating predominant floating-rate debt exposure, though exact percentage of total borrowings was not quantified."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "CFO commentary: glass bottle costs up 11-17%, paper cartons up nearly 100%, PET resin up 30-50%; 'geopolitical tensions, especially in West Asia, have raised crude oil prices, increasing costs for packaging and energy,' with packaging inflation cutting gross margins by 1.25-1.5pp. Confirms crude-oil-linked packaging/energy input cost exposure, no single raw-material % of revenue figure located."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": "Central treasury manages FX risk under Board-approved policies covering forex, interest rate and credit risk, using derivative and non-derivative instruments; net FX exposure mainly from export receivables and import payables in USD, EUR, GBP.",
+        "evidence": "Revenue overwhelmingly INR-denominated domestic sales; direct USD revenue exposure appears minimal but unquantified."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "Alcoholic beverages is not among the 14 sectors notified under India's PLI scheme."
+      },
       "confidence": "Medium"
     },
-    "CPPLUS": {
+    "AJANTPHARM": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 31,
+        "export_pct": 69,
+        "export_us_pct": 28,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": 24,
+        "export_other_pct": 17
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "No explicit China+1/supply-chain-diversification-from-China narrative found. AR risk-factor language cites generic 'geopolitical tensions, complexities in the global supply chain... and rising input costs' rather than a China+1 opportunity framing. Ajanta's single API plant (Waluj, Aurangabad) is for captive consumption, not export-diversification-driven."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Company widely reported as 'almost debt free'; no specific floating vs fixed rate borrowing breakdown found."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 69,
+        "hedging_policy": "Ajanta hedges outstanding export sales via forward contracts; under mark-to-market accounting hedge losses are booked in expenses while gains flow to other income, leaving the company largely protected from net FX impact.",
+        "evidence": "Exports (branded generics in Asia/Africa and US generics) contributed ~69% of consolidated revenue in FY2024-25."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No confirmed PLI scheme participation found. Ajanta's sole API facility (Waluj) is oriented toward captive/in-house API consumption rather than a PLI-registered bulk-drug/KSM export business."
+      },
+      "confidence": "Low"
+    },
+    "NESTLEIND": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 96.1,
+        "export_pct": 3.9,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "Exports are a minor part of business (~3.9% of sales), largely intra-group shipments to other Nestle affiliates; no China+1 or supply-chain diversification narrative."
+      },
+      "rural": {
+        "revenue_pct": 25,
+        "evidence": "Management described rural India as a significant growth opportunity; rural contribution to sales cited at ~20-25% (up from ~10% in 2016). Company has presence across ~216,000 villages and added ~5.2 lakh outlets across urban/semi-urban/rural markets since April 2023."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Nestle India is a near debt-free company with minimal borrowings; no floating-rate debt percentage disclosed."
+      },
+      "crude_exposure": {
+        "raw_material_pct": 37.7,
+        "evidence": "Cost of materials consumed was ~37.7% of net sales in FY24 (down ~50bps YoY). Company commentary cites crude-oil-linked packaging costs, edible oil/palm oil price volatility, and milk/coffee/cocoa/wheat inflation as key raw-material cost drivers."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 3.9,
+        "hedging_policy": "Not separately quantified; company sources over 97% of raw materials locally, limiting import/forex cost exposure aside from crude-linked packaging inputs.",
+        "evidence": "Company sources more than 97% of materials locally though not fully insulated from crude/edible-oil price moves; export sales (~3.9% of total sales) represent the primary direct USD revenue exposure."
+      },
+      "pli_scheme": {
+        "is_beneficiary": true,
+        "revenue_pct": null,
+        "evidence": "On 6 Dec 2021, Nestle India received approval under the PLI Scheme for Food Processing Industry (PLISFPI) for 'processed fruits and vegetables' and 'ready-to-eat/ready-to-cook' categories. No specific incentive amount or revenue attribution disclosed."
+      },
+      "confidence": "Medium"
+    },
+    "JBCHEPHARM": {
+      "report_year": "FY2023-24",
+      "geography": {
+        "domestic_pct": 54.4,
+        "export_pct": 45.6,
+        "export_us_pct": null,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "weak",
+        "evidence": "International/export business (~45.6% of FY24 consolidated revenue) concentrated in Russia/CIS, South Africa and other emerging markets rather than US/Europe. No explicit China+1 or API supply-chain-diversification narrative found."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Company reported as 'almost debt free' by FY25 (short-term debt ~INR 138 million as of June 2025); FY23 showed long-term debt ~Rs 251.14 crore and short-term borrowings ~Rs 53.56 crore, but no floating-vs-fixed split found."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": null,
+        "hedging_policy": "Company reportedly hedges against currency fluctuations on its export/international book.",
+        "evidence": "Secondary source states company 'hedges against currency fluctuations' given ~45.6% international revenue exposure (Russia/CIS, Africa, other emerging markets)."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No public disclosure found indicating JB Chemicals is an approved participant under API or Bulk Drugs PLI schemes."
+      },
+      "confidence": "Low"
+    },
+    "TORNTPHARM": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 55,
+        "export_pct": 45,
+        "export_us_pct": 10,
+        "export_europe_pct": 10,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 25
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "No mention of China+1, China de-risking, or API sourcing diversification found. Torrent is a branded-generics/formulations player (India, Brazil, Germany, US) with vertically integrated API-to-formulation supply chain, framed as margin/quality control, not China+1."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Average interest rate on borrowings was ~6.26% for year ended 31 March 2024; fixed vs floating rate split not confirmed."
+      },
+      "crude_exposure": {
+        "raw_material_pct": 24,
+        "evidence": "Raw material consumption cost was approx Rs 2,776 crore against consolidated revenue of Rs 11,516 crore in FY25 (~24%); inputs are pharma intermediates/APIs/excipients/solvents so crude linkage is indirect at best."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 10,
+        "hedging_policy": null,
+        "evidence": "FY25 revenue mix: India ~55%, Brazil ~10% (BRL), US ~10% (USD), Germany ~10% (EUR), Other markets ~15%. Specific hedging policy could not be verified."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No confirmed evidence of Torrent Pharma being a named beneficiary under Pharma PLI schemes; primarily a branded-generics/formulations company rather than bulk API/KSM manufacturer."
+      },
+      "confidence": "Low"
+    },
+    "IKS": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 0,
+        "export_pct": 100,
+        "export_us_pct": 80,
+        "export_europe_pct": null,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": 20
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "IKS Health is a healthcare BPO/tech-enabled services company delivering services from India-based centers to physician groups, hospitals and healthcare systems in the US, Canada and Australia. No China+1 narrative applicable to this services business model."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": null
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Third-party financial data shows consolidated total debt of roughly INR 640 crore (debt-to-equity ~23%); floating-vs-fixed rate borrowings breakdown could not be confirmed."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": null
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 95,
+        "hedging_policy": null,
+        "evidence": "Revenue earned almost entirely from US-based (and Canada/Australia) healthcare provider clients invoiced in USD, while cost base and delivery operations are largely India-based (rupee costs), creating structural USD revenue/INR cost exposure. ~80% of revenue from the US market specifically per DRHP-era summary; precise hedging policy could not be confirmed."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "IKS Health is a services company, not a manufacturer, so not eligible for PLI schemes which target manufacturing sectors."
+      },
+      "confidence": "Low"
+    },
+    "OFSS": {
+      "report_year": "FY2025-26",
+      "geography": {
+        "domestic_pct": 8.71,
+        "export_pct": 91.29,
+        "export_us_pct": 29.01,
+        "export_europe_pct": 16.07,
+        "export_asia_ex_china_pct": 18.45,
+        "export_other_pct": 27.77
+      },
+      "china_plus_one": {
+        "narrative_present": false,
+        "strength": "none",
+        "evidence": "No China+1 or supply-chain-diversification narrative in the FY25-26 AR. OFSS is a BFSI banking-software vendor (Flexcube, Digital Experience, Banking Platform), not a China-alternative manufacturing/export play. Has a subsidiary Oracle Financial Services Software (Shanghai) Ltd for local market servicing, not a relocation story."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "Not applicable — OFSS sells banking software globally to financial institutions in 160+ countries; no rural-India revenue exposure concept."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Not applicable/not disclosed — customer base is commercial banks/financial institutions, not Indian government infra spend."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Company had zero borrowings (CARO report: no outstanding loans or borrowings due to any lender during the year ended March 31, 2026). OFSS is debt-free; rate-cut sensitivity via floating-rate debt is not applicable."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Not applicable — software/IT-services company with no raw-material or crude-oil-linked input costs; cost base is predominantly employee compensation and technology/infrastructure costs."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 91.29,
+        "hedging_policy": "OFSS hedges trade receivables in major currencies (USD, EUR, AUD, GBP, JPY) using forward contracts with 30-120 day tenor matched to expected invoice collection; not designated as hedge-accounting relationships, fair-valued through P&L. Net unhedged FX exposure ₹1,443mn as of March 31 2026.",
+        "evidence": "Note 24 revenue-by-geography: 91.3% (₹70,042mn of ₹76,721mn FY26 revenue) generated outside India; Americas revenue (largely USD) ~29% of total. The 91.29% figure is a proxy for total foreign-currency revenue exposure rather than USD-exclusive."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No mention of PLI scheme anywhere in the AR; India's PLI schemes target manufacturing sectors and do not apply to BFSI software vendors."
+      },
+      "confidence": "High"
+    },
+    "DIVISLAB": {
+      "report_year": "FY2024-25",
+      "geography": {
+        "domestic_pct": 10,
+        "export_pct": 90,
+        "export_us_pct": 17.1,
+        "export_europe_pct": 52.3,
+        "export_asia_ex_china_pct": null,
+        "export_other_pct": null
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "strong",
+        "evidence": "Analyst/broker coverage consistently frames Divi's as a prime China+1 beneficiary: 'Divi's plays in well as a China+1 strategy for major pharma companies as they look to de-leverage from dependence on Chinese API manufacturers... a perfect alternative to Chinese API giants.' Divi's has backward-integrated into KSMs for Gabapentin, Naproxen, Valsartan and Levetiracetam explicitly 'to reduce import dependency from China.' Custom Synthesis/CRAMS (~45% of sales) targets multinational-innovator diversification demand away from China."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "Not applicable — Divi's is a pure B2B API/CRAMS exporter to global pharma innovators/generics majors, not consumer/rural-facing. Only rural linkage is CSR spend near Visakhapatnam/Hyderabad plants."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Not applicable — revenue comes from private multinational pharma customers, not government infrastructure spending."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Widely reported as near debt-free with minimal borrowings and very high interest coverage (~1,394x per third-party analysis), implying floating-rate debt exposure is immaterial."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Petrochemical-derived solvents and API intermediates cited by broker commentary as a margin driver; 'rise in raw material, power and fuel and shipment costs' pressured FY23 EBITDA, margins compressed to ~32-32.5% from historical 37-40% band. Divi's mitigates via backward integration and >90% solvent recovery."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 90,
+        "hedging_policy": null,
+        "evidence": "FY2024-25 exports ~90% of consolidated revenue (domestic ~10%), Europe and US together ~74% of sales, implying dominant USD/EUR-denominated revenue and high INR sensitivity."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "Does not appear on publicly reported approved-beneficiary lists for India's PLI Scheme for Bulk Drugs (initial Feb-2021 cohort or May-2021 waitlist additions). KSM/intermediate backward-integration investments appear self-funded rather than PLI-incentivized."
+      },
+      "confidence": "Low"
+    },
+    "TITAN": {
       "report_year": "FY2024-25",
       "geography": {
         "domestic_pct": 99,
@@ -188,179 +575,93 @@
       "china_plus_one": {
         "narrative_present": false,
         "strength": "none",
-        "evidence": "Aditya Infotech (CP Plus) sources approximately 90% of its surveillance camera components from China (CMOS sensors, SoCs, modules). Despite operating in a segment where Chinese brands (Hikvision, Dahua) face government procurement bans, CP Plus is NOT a China+1 beneficiary — it is heavily China-dependent for manufacturing inputs. Revenue ~99% domestic with <1% exports. FY25 revenue ₹4,221 Cr. The company benefits from India-made branding but its supply chain remains China-centric; any disruption to China component supply would be material."
+        "evidence": "No China+1, supply-chain diversification, or China-related sourcing/export narrative found. Titan is an overwhelmingly domestic consumer business (Tanishq, Titan watches, Eyecare, Taneira) with only a small international retail footprint (UAE, Singapore, newly Atlanta/Santa Clara in the US)."
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "MD&A/strategy commentary describes a 'Middle India' focused expansion targeting Tier 2/3/4 towns: Tanishq plans B & C town entry with mid-sized stores aiming for ~10% jewellery market share by FY27 via 1,250+ stores across 300+ towns. No explicit rural revenue percentage disclosed."
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "CP Plus supplies surveillance systems to government offices, Smart City projects, Indian Railways, police departments, and public safety installations. Government procurement is a meaningful revenue source but specific % not disclosed."
+        "evidence": null
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "Titan added approximately Rs 3,500 crore to long-term borrowings during FY2024 via NCDs and term loans, but no explicit floating-vs-fixed rate split found."
       },
       "crude_exposure": {
         "raw_material_pct": null,
-        "evidence": null
+        "evidence": "Not applicable — key raw materials are gold, silver and diamonds, not crude oil or petroleum derivatives."
+      },
+      "inr_exposure": {
+        "usd_revenue_pct": 1,
+        "hedging_policy": "Titan states it remains 'fully hedged at all times' against gold price movements via Gold Metal Loan (GML), gold exchange at outlets (~40-50% of gold procured this way in FY23), and spot buying hedged via forward contracts. ~120-day supply-chain visibility through advance procurement contracts.",
+        "evidence": "Gold is imported and priced in USD even though virtually all final sales are domestic (INR), so USD exposure sits primarily on the raw-material/cost side. Revenue-side USD exposure limited to small international Tanishq/Mia retail business (~1% of consolidated revenue, ~Rs 550-561 crore of FY25 consolidated Total Income of Rs 57,818 crore)."
+      },
+      "pli_scheme": {
+        "is_beneficiary": false,
+        "revenue_pct": null,
+        "evidence": "No mention of PLI scheme participation found. Titan's core segments (jewellery, watches, eyewear, sarees) are not PLI-eligible categories."
+      },
+      "confidence": "Low"
+    },
+    "USHAMART": {
+      "report_year": "FY2025-26",
+      "geography": {
+        "domestic_pct": 43,
+        "export_pct": 57,
+        "export_us_pct": 8,
+        "export_europe_pct": 26,
+        "export_asia_ex_china_pct": 14,
+        "export_other_pct": 9
+      },
+      "china_plus_one": {
+        "narrative_present": true,
+        "strength": "moderate",
+        "evidence": "No explicit China+1 framing found. Company shows sustained export momentum (international revenue rose from ~55% of topline in FY25 to 57% in FY26, split India 43%/Europe 26%/Asia Pacific 14%/Middle East & Africa 9%/America 8%) plus active geographic diversification: new UK synthetic slings plant reaching commercial production in Q4 FY25, and a new rigging/distribution facility in Saudi Arabia."
+      },
+      "rural": {
+        "revenue_pct": null,
+        "evidence": "Not applicable — end markets (mining, infrastructure, oil & gas, elevators, cranes, construction, marine/fisheries) are industrial/B2B, not consumer or rural-facing."
+      },
+      "govt_capex": {
+        "revenue_pct": null,
+        "evidence": "Management commentary repeatedly cites 'sustained demand in sectors such as oil and gas, mining, and infrastructure' as revenue drivers; Wire Rope segment (72-73% of consolidated revenue) serves mining, infrastructure and construction end-markets heavily influenced by government capex cycles. No explicit numeric % found."
+      },
+      "rate_sensitive": {
+        "floating_rate_liability_pct": null,
+        "evidence": "Historical AR risk-management disclosures state most long-term borrowings are floating-rate, though current % not retrievable. Company has been rapidly deleveraging: net debt fell to ~Rs 63 crore by end-FY25, reporting a net CASH position of ~Rs 332 crore by end-FY26, sharply reducing rate sensitivity."
+      },
+      "crude_exposure": {
+        "raw_material_pct": null,
+        "evidence": "Steel wire rod is an estimated 90-96% of raw material sourcing (majority from a Tata group steel supplier in Jamshedpur); wire rod/steel is the primary cost input, energy/coking-coal cost-linked rather than crude oil directly. Q3 FY25 raw material costs rose 11.3% YoY."
       },
       "inr_exposure": {
         "usd_revenue_pct": null,
         "hedging_policy": null,
-        "evidence": "Near-fully domestic business (~99% of revenue from India market). Export share <1% and USD revenue negligible. FY25 revenue ₹4,221 Cr; net profit ₹368 Cr (includes ~₹249 Cr one-time non-cash gain). USD exposure is primarily on the import side (component sourcing from China in USD)."
+        "evidence": "International/export revenue ~57% of consolidated topline in FY26, spread across Europe (26%), Asia Pacific (14%), Middle East & Africa (9%) and America (8%) — meaningful but not purely USD-denominated given UK/Thailand/UAE manufacturing and Saudi/Europe sales presence. Hedge ratios not found."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "RRKABEL": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 74,
-        "export_pct": 26,
-        "export_us_pct": 2.5,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "RR Kabel exports cables to international markets (~26% of revenue). Western buyers are actively qualifying Indian cable suppliers amid concerns about Chinese cable product quality and supply chain resilience. RR Kabel has been gaining new export customers in the Middle East and Europe in this context. Export growth is consistent with the China+1 qualification wave for Indian cable manufacturers. Annual report FY2024-25 PDF was located but not accessible for direct extraction."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "RR Kabel supplies cables for power transmission, industrial, and residential infrastructure. Government infrastructure capex drives demand for power cables but exact revenue % not disclosed."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": "Cable insulation materials (PVC, XLPE) are petroleum-derived and crude-linked, alongside copper/aluminium conductors. PVC/XLPE are crude-linked but % of total raw material cost not disclosed."
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 15,
-        "hedging_policy": null,
-        "evidence": "Export revenue ~26% of FY25 revenue; FY25 highest-ever ₹9,722 Cr (+27.6% YoY). Wires and Cables segment ~90% of total revenue. Export markets: Middle East, Europe; US exports ~2.5% of total revenue. USD + EUR denominated. USD revenue estimated ~15% of total."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
+        "evidence": "Specialty Steel PLI scheme has selected ~30 companies across multiple rounds (PLI 1.1, 1.2), but no source names Usha Martin among approved beneficiaries/signatories."
       },
       "confidence": "Low"
     },
-    "HSCL": {
+    "GLENMARK": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 73,
-        "export_pct": 27,
-        "export_us_pct": null,
-        "export_europe_pct": null,
+        "domestic_pct": 33.4,
+        "export_pct": 66.6,
+        "export_us_pct": 24.5,
+        "export_europe_pct": 21.2,
         "export_asia_ex_china_pct": null,
-        "export_other_pct": null
+        "export_other_pct": 20.9
       },
       "china_plus_one": {
         "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "Himadri Speciality Chemical is positioning itself as a 'China Plus One global supplier' for advanced battery anode materials (lithium-ion EV batteries). Export revenue ~26.81% of total per Equitymaster analysis of FY25 AR; exports to 61 countries (expanded from 56 in prior year). Anode material business targets global EV battery manufacturers seeking non-Chinese supply. Company approved setting up a subsidiary in China for global expansion — indicating dual-track engagement with China alongside the C+1 positioning narrative."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": "Primary raw material is coal tar (a by-product of coal/coke at steel plants) — a coal derivative, not crude oil. Coal tar pitch is ~70% of product portfolio; carbon black and specialty chemicals make up the remainder. No significant petroleum/crude-linked raw material exposure."
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 20,
-        "hedging_policy": null,
-        "evidence": "Export revenue ~26.81% of total per FY25 AR analysis. FY25 revenue ~₹3,800-4,000 Cr (FY26 consolidated ₹4,661 Cr; EBITDA grew from ₹847 Cr FY25 to ₹1,006 Cr FY26). Exports to 61 countries across Asia, Europe, and Americas. USD revenue estimated ~20% of total."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "SYRMA": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 77,
-        "export_pct": 23,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": true,
-        "strength": "moderate",
-        "evidence": "Syrma SGS Technology is a leading EMS company benefiting from 'Make in India' and global supply chain diversification from China. Export revenue was ~23% of FY25 revenue. Company cites global electronics supply chain diversification as a growth driver. FY25 revenue ₹3,836 Cr (+19.4% YoY); net profit ₹185 Cr (+48.3% YoY). EMS sector broadly benefits from the China+1 trend as global OEMs qualify Indian manufacturing alternatives."
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "Syrma SGS serves defence electronics customers including DRDO-linked programs. Government defence procurement drives a portion of revenue. Specific % not disclosed."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 15,
-        "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹3,836 Cr. Export revenue ~23% of revenue, primarily to US and European customers under global EMS contracts. USD revenue estimated ~15% of total."
-      },
-      "pli_scheme": {
-        "is_beneficiary": true,
-        "revenue_pct": null,
-        "evidence": "Syrma SGS received PLI (Production Linked Incentive) approval for the MedTech business, enabling expansion in healthcare electronics manufacturing. Company also benefits from SPECS scheme for electronics. PLI-linked revenue is in early stages and not yet material in FY25."
-      },
-      "confidence": "Medium"
-    },
-    "ELGIEQUIP": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 54,
-        "export_pct": 46,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
         "strength": "weak",
-        "evidence": "Elgi Equipments is the 6th largest air compressor manufacturer globally and 2nd largest in India. Exports ~46% of consolidated revenue through subsidiaries in Americas, Europe, Australia. Competes with Chinese compressor brands in global markets. No explicit China+1 narrative found; the company's international strategy pre-dates the China+1 trend."
+        "evidence": "Glenmark divested 75% of its API subsidiary Glenmark Life Sciences (GLS) to Nirma Ltd (completed FY23-24, retaining ~7.84% residual stake), so the classic China+1 API-sourcing story now sits with GLS/Nirma rather than Glenmark Pharma's own formulations business. Third-party analysis frames China+1 as an industry tailwind, but no direct AR quote attributing revenue growth to China+1 was found."
       },
       "rural": {
         "revenue_pct": null,
@@ -372,296 +673,38 @@
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "Finance costs rose ~47.8% YoY in FY24 and total borrowings fell sharply post GLS-Nirma divestiture proceeds (used for deleveraging); no explicit fixed vs floating rate split located."
       },
       "crude_exposure": {
         "raw_material_pct": null,
         "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 15,
-        "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹3,510 Cr; India standalone ₹1,899 Cr (54%); international subsidiaries ₹1,611 Cr (~46%). Americas, Europe, Australia subsidiaries generate local-currency revenue. Americas (USD) estimated ~15-18% of consolidated revenue; Europe (EUR) ~15%; Australia (AUD) ~6-8%. USD revenue estimated ~15% of consolidated. In FY26, consolidated grew to ₹3,951 Cr (+13%)."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Low"
-    },
-    "VBL": {
-      "report_year": "CY2024",
-      "geography": {
-        "domestic_pct": 72,
-        "export_pct": 28,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": 3,
-        "export_other_pct": 25
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": "Varun Beverages distributes PepsiCo products (Pepsi, Mountain Dew, Sting, Lay's) across India including rural and semi-urban markets. Rural distribution is part of PepsiCo India expansion strategy but specific rural revenue % not disclosed."
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": "PET resin (petroleum-derived) used for bottles is a key raw material alongside sugar, concentrate, and caps. PET is crude-linked but specific % of total raw material cost not disclosed."
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 20,
-        "hedging_policy": null,
-        "evidence": "CY2024 consolidated revenue ₹20,008 Cr (+24.7% YoY). India 72% (~₹14,406 Cr); International 28% (~₹5,602 Cr). International: South Africa (BevCo acquisition, 12.5% volume growth first year), Zimbabwe, Morocco, Zambia, Nepal, Sri Lanka, DRC (new). Nepal/Sri Lanka ~3% of total; Africa/Middle East ~25%. International volume grew 23.2% in CY2024 (India +11.4%). USD revenue estimated ~20% of total (Africa USD-denominated + Middle East). Note: Varun Beverages follows January–December calendar year."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Low"
-    },
-    "THANGAMAYL": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 100,
-        "export_pct": 0,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": "Thangamayil Jewellery operates primarily in Tamil Nadu with strong presence in tier-2/tier-3 towns and semi-urban markets. ICRA notes 'long presence and strong brand recall in Tamil Nadu.' Plans to open eight mid-level retail outlets across Tamil Nadu targeting semi-urban customers. Specific rural revenue % not disclosed."
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 0,
-        "hedging_policy": null,
-        "evidence": "100% domestic jewellery retailer operating in Tamil Nadu. No export or international revenue. Revenue driven by gold price appreciation and volume. FY25 operating income grew ~16–18% YoY."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "MARICO": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 76,
-        "export_pct": 24,
-        "export_us_pct": 2,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": 5,
-        "export_other_pct": 17
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": "Marico has a large rural distribution network for Parachute coconut oil, Saffola, and Nihar brands, particularly strong in rural Bengal, Odisha, and South India. Rural distribution is a strategic priority cited in annual reports but specific rural revenue % not disclosed."
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": 18,
-        "evidence": "Marico's own risk disclosure states: 'direct exposure to volatile crude derivatives is limited to about 18–20% of its total raw material base.' Primary crude-linked inputs are HDPE packaging and specialty wax/polymer additives. Main inputs — copra and vegetable oils — are not crude-derived."
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 10,
-        "hedging_policy": "Board-approved hedging policy; translation risk unhedged",
-        "evidence": "FY25 consolidated revenue ₹10,831 Cr (+12% YoY; first time crossing ₹10,000 Cr). Q4 FY25: India ₹2,068 Cr (76%); International ₹662 Cr (24%). Full-year India ~76%, International ~24% (~₹2,600 Cr). International: Bangladesh (largest single international market, BDT), Middle East (AED/USD ~5%), Africa (USD), South-East Asia (VND/MYR ~3%), USA (~2%). Constant currency international growth 14% in FY25. USD revenue estimated ~10% of total (Middle East + partial Africa)."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "NMDC": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 100,
-        "export_pct": 0,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "NMDC is a Navratna PSU under Ministry of Steel (100% GoI owned) and India's single largest iron ore producer (~25–30% domestic market share). Iron ore sold to domestic steel producers including PSUs (SAIL) and private players (Tata Steel, JSW Steel, JSPL). Demand is driven by domestic steel sector capex and production growth. H1 FY26 turnover ₹12,895 Cr, PAT ₹3,663 Cr. Q2 FY26 production 10.21 MT, sales 10.72 MT."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 0,
-        "hedging_policy": "All revenue in INR from domestic sales",
-        "evidence": "NMDC sells all iron ore domestically to Indian steel manufacturers — 100% INR-denominated revenue. Sixth-largest iron ore producer globally but no meaningful export revenue. FY25 annual revenue estimated ~₹22,000–24,000 Cr based on quarterly run rates."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "SOLARINDS": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 86,
-        "export_pct": 14,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": 18,
-        "evidence": "Defence sector contributed approximately 18% of consolidated FY2025 revenue (up from 9% in FY2024), driven by Pinaka Multi-Barrel Rocket Launcher System (MLRS), Nagastra-I loitering munitions, 155mm artillery shells, and UAV/anti-drone systems under Indian government defence contracts. Industrial explosives (72% of FY25 revenue) also serve government infrastructure and mining projects. Highest-ever order book of ~₹21,000 Cr of which ~₹18,000 Cr is from defence."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 12,
-        "hedging_policy": null,
-        "evidence": "International/overseas explosives revenue crossed ₹1,000 Cr in FY25; export defence orders of ₹1,076 Cr booked. FY25 total revenue estimated ~₹7,100 Cr. Export ~14% of consolidated revenue. International explosives sales to mining markets in Africa, Middle East, and SE Asia; defence exports in USD. Revenue CAGR ~30% over FY2021–FY2025."
+        "usd_revenue_pct": 24.5,
+        "hedging_policy": "Company relies primarily on natural hedging for currency exposure rather than extensive forward-contract hedging, per press-reported CFO commentary.",
+        "evidence": "North America (largely USD) was ~24.5% of FY2024-25 consolidated revenue (₹32,909 Mn of ₹134,355 Mn); Europe (~21.2%, EUR) and RoW (~20.9%, mixed currencies) add further non-INR exposure, roughly two-thirds of consolidated sales total."
       },
       "pli_scheme": {
         "is_beneficiary": true,
         "revenue_pct": null,
-        "evidence": "Solar Industries is a confirmed beneficiary of the Defence PLI (Production Linked Incentive) scheme under Ministry of Defence. Company manufactures defence explosives, Pinaka rockets, loitering munitions, and ammunition under defence PLI. PLI incentives support indigenisation of defence manufacturing under Atmanirbhar Bharat."
+        "evidence": "Glenmark Pharmaceuticals is listed as one of 9 approved domestic companies in Group A of India's PLI Scheme for Pharmaceuticals (biopharmaceuticals, complex generics, patented/near-patent-expiry drugs, orphan drugs; ₹11,000 cr of the scheme's ₹15,000 cr outlay earmarked for Group A). No specific incentive income or revenue % disclosed."
       },
       "confidence": "Medium"
     },
-    "VIJAYA": {
+    "CCL": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 100,
-        "export_pct": 0,
-        "export_us_pct": null,
-        "export_europe_pct": null,
+        "domestic_pct": 10,
+        "export_pct": 90,
+        "export_us_pct": 13,
+        "export_europe_pct": 14,
         "export_asia_ex_china_pct": null,
-        "export_other_pct": null
+        "export_other_pct": 63
       },
       "china_plus_one": {
         "narrative_present": false,
         "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": 0,
-        "evidence": "Vijaya Diagnostic Centre is explicitly debt-free (zero long-term debt). Net cash company as of FY25. Floating rate liability percentage is 0% — company carries no interest-bearing debt."
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 0,
-        "hedging_policy": null,
-        "evidence": "Vijaya Diagnostic Centre is a pure-play domestic diagnostics chain (pathology + radiology) operating in South India (Telangana, Andhra Pradesh, NCR). FY25 revenue ₹680 Cr (+24.4% YoY; organic growth 18.9%). Revenue is 100% from domestic patients; >95% B2C (direct cash + insurance). No international or export revenue."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "SHRIPISTON": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 83,
-        "export_pct": 17,
-        "export_us_pct": 1.7,
-        "export_europe_pct": 5.3,
-        "export_asia_ex_china_pct": 2.2,
-        "export_other_pct": 7.8
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "weak",
-        "evidence": "Shriram Pistons exports to 45+ countries across 5 continents (17% of FY25 revenue). No explicit China+1 narrative; primary focus is on OEM supply to domestic auto manufacturers (52%) and aftermarket (26%). Export split: Europe 5.3%, US 1.7%, Asia ex-China 2.2%, Other 7.8% of total revenue."
+        "evidence": "No China+1 or China-alternative sourcing framing found. CCL's diversification narrative centers on multi-country green coffee bean sourcing (150+ suppliers across Brazil, Vietnam, India) and Vietnam plant expansion, not on displacing China in any supply chain."
       },
       "rural": {
         "revenue_pct": null,
@@ -673,38 +716,38 @@
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
-        "evidence": null
+        "evidence": "India Ratings affirmed CCL at IND AA-; net leverage ~2.09x FY23, expected to stay elevated ~3.0x over FY24-25 due to Vietnam and India spray-dry capacity expansion (debt-funded). Exact floating vs fixed rate split not found."
       },
       "crude_exposure": {
         "raw_material_pct": null,
-        "evidence": null
+        "evidence": "Primary raw material is green coffee beans (not petroleum-derived), ~1.6kg green beans per 1kg instant coffee. Company operates a cost-plus/presale model shielding margins from raw-material price volatility. Exact raw-material-cost-as-%-of-revenue not found."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 10,
-        "hedging_policy": null,
-        "evidence": "FY25 revenue ₹3,550 Cr (+15% YoY). Revenue mix: OEM 52%, Aftermarket 26%, Export 17%, Non-automotive 5%. Domestic total 83%; exports 17% to 45+ countries. Export: US 1.7%, Europe 5.3%, Asia ex-China 2.2%, Other 7.8%. 9 manufacturing units and 5 assembly plants. USD revenue estimated ~10% of total (US + Middle East portion of Other). Net income ₹507 Cr (+14% YoY)."
+        "usd_revenue_pct": 90,
+        "hedging_policy": "Company uses hedging and long-term procurement/pricing contracts to manage currency and raw-material volatility (qualitative disclosure only; no quantified forward-cover % found).",
+        "evidence": "World's largest private-label instant coffee exporter, selling to 100+ countries with major revenue concentration in CIS/Russia (~20-25%), Europe (~12-15%) and North America (~12-14%), implying large majority of consolidated revenue is USD/EUR-denominated."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": "Shriram Pistons explicitly did NOT join the Auto Components PLI scheme. Company confirmed non-participation in available disclosures."
+        "evidence": "PLISFPI scheme covers RTC/RTE foods, processed fruits & vegetables, marine products, mozzarella cheese, and millets — instant/soluble coffee is not among eligible categories; no evidence of CCL participation found."
       },
-      "confidence": "Medium"
+      "confidence": "Low"
     },
-    "LAURUSLABS": {
+    "SONACOMS": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 40,
-        "export_pct": 60,
-        "export_us_pct": 18,
-        "export_europe_pct": 16,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": 26
+        "domestic_pct": 29,
+        "export_pct": 71,
+        "export_us_pct": 41,
+        "export_europe_pct": 24,
+        "export_asia_ex_china_pct": 6,
+        "export_other_pct": 0.3
       },
       "china_plus_one": {
         "narrative_present": true,
         "strength": "moderate",
-        "evidence": "Laurus Labs is a major API manufacturer competing directly with Chinese API suppliers globally; world's leading third-party supplier of antiretroviral APIs (serving Africa and global health programs). CDMO business grew 49% YoY in FY25 as global pharma innovators diversify manufacturing from China. Indian API manufacturers structurally benefit from supply chain diversification. FY25 revenue ₹5,554 Cr (+10% YoY); EBITDA margin 20.1%."
+        "evidence": "Chairman Emeritus letter: 'As global supply chains continue to diversify, our strong alignment with India's industrial growth becomes increasingly evident' and 'India is positioning itself as a trusted global hub for clean, scalable production.' Also: 'Sona Comstar is emerging as a strategic partner of choice in a reshaped global supply chain' amid US tariffs/trade-war disruption. No explicit 'China+1' phrase or quantified revenue attributed to it; Sona is also expanding INTO China/Asia as a growth market (JV plans), not purely benefiting from OEMs exiting China."
       },
       "rural": {
         "revenue_pct": null,
@@ -712,50 +755,50 @@
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Company acquired the Railway Equipment Division of Escorts Kubota Ltd (transaction consummated 1 June 2025, after FY24-25 close). AR discloses standalone Railway Business revenue of INR 9,128 million under Escorts Kubota's ownership and notes 'Railway capex has increased at a 10-year CAGR of 17%.' Commercial vehicle segment 'impacted by a slowdown in infrastructure activities' tied to elections/government transition."
       },
       "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
+        "floating_rate_liability_pct": 100,
+        "evidence": "Interest Rate Risk note (standalone financials): Variable rate borrowings INR 134.63 million vs Fixed rate borrowings Nil as at 31 March 2025 — 100% of borrowings floating-rate. Total borrowings minor relative to balance sheet; Company held INR 26.7 billion net cash at year-end, so absolute rate sensitivity is low despite 100% floating composition."
       },
       "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": null
+        "raw_material_pct": 43,
+        "evidence": "MD&A: 'Material cost accounted for 43% of total income in both FY 2024-25 and FY 2023-24,' primarily special steel alloy bars, iron castings, steel blanks/bolts, alloy steel, aluminium and copper. Commodity price risk is largely a passthrough with time lag; company does not specifically hedge commodities."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 35,
-        "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹5,554 Cr; exports ~60% of total. Segment mix: API (ARVs, oncology, cardiovascular) ~37%; FDF/Generics (US regulated + emerging markets) ~35%; CDMO (synthesis for global innovators) ~28%. Export: US 18%, Europe 16%, Other/Africa 26%. USD revenue estimated ~35% of total (US generics + Africa ARVs in USD + global CDMO contracts). 110+ active CDMO projects; 70 US DMFs filed; approved by USFDA, EMA, WHO, TGA."
+        "usd_revenue_pct": null,
+        "hedging_policy": "Board-approved hedging policy primarily using forward contracts to hedge currency risk.",
+        "evidence": "'Large portion of business is transacted in international currencies primarily US$ and EUR... exposed to foreign exchange risk through sales in USA, Europe, China and other countries.' No single consolidated USD-revenue % disclosed; North America alone is 41% of total revenue per segment note (predominantly USD-denominated)."
       },
       "pli_scheme": {
         "is_beneficiary": true,
         "revenue_pct": null,
-        "evidence": "Laurus Labs is a confirmed PLI Bulk Drugs beneficiary under the PLI scheme for Key Starting Materials (KSMs), Drug Intermediates (DIs), and Active Pharmaceutical Ingredients (APIs). The scheme supports domestic manufacturing of critical pharma raw materials to reduce import dependence on China."
+        "evidence": "Board's Report: 'received certifications for more products i.e. Traction Motor for electric three wheelers, Hub Wheel Integrated Motor for electric two wheelers, under the Production-Linked Incentive (PLI) Scheme for Automobile and Auto Component Industry.' Chairman's letter: 'We benefited from income accrual from the Auto PLI scheme, for which we had eight products approved.' No specific % of revenue disclosed."
       },
-      "confidence": "Medium"
+      "confidence": "High"
     },
-    "WELCORP": {
+    "ALKEM": {
       "report_year": "FY2024-25",
       "geography": {
-        "domestic_pct": 67,
-        "export_pct": 33,
-        "export_us_pct": 25,
+        "domestic_pct": 70.2,
+        "export_pct": 29.8,
+        "export_us_pct": 19.4,
         "export_europe_pct": null,
         "export_asia_ex_china_pct": null,
-        "export_other_pct": 8
+        "export_other_pct": 10.5
       },
       "china_plus_one": {
         "narrative_present": false,
         "strength": "none",
-        "evidence": null
+        "evidence": "No explicit 'China+1' or API-sourcing diversification narrative for Alkem was found in accessible sources. Broader industry commentary notes India depends on China for ~60-70% of bulk drug/KSM/API imports, but no Alkem-specific statement attributing revenue or order growth to diversification away from China was located."
       },
       "rural": {
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Third-party summaries describe Alkem's historical strength in semi-urban/rural and Tier 2-3 town distribution built around its acute-therapy franchise, and note that the Trade Generics (TGx) segment has become a growth driver. No explicit rural revenue percentage was found."
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "Welspun Corp supplies large-diameter pipes to domestic oil & gas pipeline projects (ONGC, GAIL, HPCL city gas distribution expansion). Government-linked domestic pipeline capex is a key revenue driver, % not disclosed."
+        "evidence": null
       },
       "rate_sensitive": {
         "floating_rate_liability_pct": null,
@@ -763,77 +806,34 @@
       },
       "crude_exposure": {
         "raw_material_pct": null,
-        "evidence": "Primary raw material is hot rolled coils (HRC, steel) — not crude-linked. Minor crude-linked coating materials (coal tar epoxy, PE coating)."
+        "evidence": null
       },
       "inr_exposure": {
-        "usd_revenue_pct": 30,
+        "usd_revenue_pct": 19.4,
         "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹13,978 Cr. India operations revenue ₹9,340 Cr (67%); International (outside India, primarily USA subsidiary) ₹4,638 Cr (33%). USA subsidiary ~25% of total revenue (USD-denominated); Middle East/other exports ~8%. Order book ₹19,553 Cr as of March 2025. Welspun USA bagged two orders for US natural gas/NGL pipelines ~USD 715 million. USD revenue estimated ~30% of total. EBITDA ₹1,858 Cr (record); PAT ₹1,908 Cr (+72% YoY)."
+        "evidence": "US business contributed 19.4% of consolidated revenue in FY25 versus 22.3% in FY24; non-US international/RoW sales contributed 10.5% in FY25 vs 9.9% in FY24."
       },
       "pli_scheme": {
         "is_beneficiary": false,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Alkem operates an API/bulk-drug manufacturing arm branded 'Alkem Activa', and India's PLI (Bulk Drugs) scheme targets KSM/API/Drug Intermediate manufacturers, but no source located confirms Alkem or Alkem Activa as a selected PLI scheme beneficiary."
       },
-      "confidence": "Medium"
+      "confidence": "Low"
     },
-    "KEI": {
-      "report_year": "FY2024-25",
+    "SANSERA": {
+      "report_year": "FY2023-24",
       "geography": {
-        "domestic_pct": 87,
-        "export_pct": 13,
-        "export_us_pct": null,
-        "export_europe_pct": null,
+        "domestic_pct": 70.0,
+        "export_pct": 29.9,
+        "export_us_pct": 9.4,
+        "export_europe_pct": 17.6,
         "export_asia_ex_china_pct": null,
-        "export_other_pct": null
-      },
-      "china_plus_one": {
-        "narrative_present": false,
-        "strength": "none",
-        "evidence": null
-      },
-      "rural": {
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "govt_capex": {
-        "revenue_pct": null,
-        "evidence": "KEI Industries supplies cables to government infrastructure projects: urban/rural electrification, solar power projects, highways/tunnelling, railway and metro projects, and refinery expansion. Government infra capex is a significant demand driver. Strategic decision to scale down EPC while growing institutional W&C segment. Revenue % from government projects not disclosed."
-      },
-      "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
-      },
-      "crude_exposure": {
-        "raw_material_pct": null,
-        "evidence": "Cables use PVC/XLPE insulation (petroleum-derived) alongside copper/aluminium conductors. PVC/XLPE are crude-linked; specific % of total RM cost not disclosed."
-      },
-      "inr_exposure": {
-        "usd_revenue_pct": 10,
-        "hedging_policy": null,
-        "evidence": "FY25 revenue ₹9,736 Cr (+20% YoY). Segment: cables 64%, house wires 30%, EPC 4%, SS wires 2%. Export ~13% of revenue (~₹1,266 Cr), primarily Middle East (USD). Company has net foreign currency receivables (exports > FX imports) for last 4 consecutive fiscals FY2022–FY2025 per ICRA. USD revenue estimated ~10% of total."
-      },
-      "pli_scheme": {
-        "is_beneficiary": false,
-        "revenue_pct": null,
-        "evidence": null
-      },
-      "confidence": "Medium"
-    },
-    "APARINDS": {
-      "report_year": "FY2024-25",
-      "geography": {
-        "domestic_pct": 67.2,
-        "export_pct": 32.8,
-        "export_us_pct": null,
-        "export_europe_pct": null,
-        "export_asia_ex_china_pct": null,
-        "export_other_pct": null
+        "export_other_pct": 2.9
       },
       "china_plus_one": {
         "narrative_present": true,
         "strength": "moderate",
-        "evidence": "Apar Industries is the world's largest aluminium and alloy conductor manufacturer. Export revenue 32.8% of FY25 consolidated revenue of ₹18,581 Cr (all-time high, +15% YoY). Apar FY24 AR quotes 'Western interest in diversifying supply chain away from China' as a demand tailwind for Indian conductor exports. Global utilities are qualifying Indian manufacturers as alternative to Chinese suppliers. Apar benefits from this trend as a world-class Indian conductor exporter. Domestic revenue grew 40.9% YoY in FY25."
+        "evidence": "FY2023-24 AR contains a dedicated 'China Plus One' section framing it as an India-wide macro opportunity for auto-component/aerospace manufacturers, but does not explicitly attribute Sansera's own order wins or revenue growth to the trend — hence moderate rather than strong."
       },
       "rural": {
         "revenue_pct": null,
@@ -841,25 +841,25 @@
       },
       "govt_capex": {
         "revenue_pct": null,
-        "evidence": "Apar's conductors power transmission and distribution infrastructure; state and central utilities are primary buyers domestically. Transformer oil serves Indian power utilities. Significant exposure to government-linked power T&D capex but exact revenue % from government projects not disclosed."
+        "evidence": null
       },
       "rate_sensitive": {
-        "floating_rate_liability_pct": null,
-        "evidence": null
+        "floating_rate_liability_pct": 99.8,
+        "evidence": "Per FY2023-24 AR risk-management notes, floating-rate borrowings constitute 99.8% of total debt."
       },
       "crude_exposure": {
-        "raw_material_pct": 25.7,
-        "evidence": "Apar's specialty oils/lubricants segment (transformer oil, industrial lubricants, auto lubricants) contributes approximately 25.7% of consolidated FY25 revenue; base oil (crude-derived) is the primary input for this segment, making its gross margins crude-price-sensitive. Conductors (48% of revenue, aluminium/alloy-based) and cables (27%, copper/PVC) have partial but smaller crude-linked RM exposure."
+        "raw_material_pct": 44.5,
+        "evidence": "Raw material cost is 44.5% of revenue in FY2023-24, with explicit steel and energy price-risk commentary in the MD&A (forging/machining steel inputs, energy-cost-linked rather than literally crude oil)."
       },
       "inr_exposure": {
-        "usd_revenue_pct": 22,
-        "hedging_policy": null,
-        "evidence": "FY25 consolidated revenue ₹18,581 Cr (highest-ever). Export revenue 32.8% = ₹6,095 Cr. Business: conductors 48%, specialty oils 25.7%, cables ~26%. Export markets: USA, Middle East, Africa (conductors); SE Asia (specialty oils). USD revenue estimated ~22% of total (Middle East + partial USA conductor exports + specialty oil exports to USD markets)."
+        "usd_revenue_pct": null,
+        "hedging_policy": "Forex exposure hedged via forward contracts plus non-INR-denominated loans, per FY2023-24 AR risk management notes.",
+        "evidence": "Consolidated FY24 revenue ₹28,114.32mn split: India 70.0%, Europe 17.6%, USA 9.4%, other foreign 2.9% — implying ~30% non-INR revenue exposure across USD/EUR."
       },
       "pli_scheme": {
-        "is_beneficiary": false,
+        "is_beneficiary": true,
         "revenue_pct": null,
-        "evidence": null
+        "evidence": "Auto Components PLI participation is asserted by third-party sources, not confirmed directly in the AR itself — lower confidence on this specific field than the rest of the extraction."
       },
       "confidence": "Medium"
     }
