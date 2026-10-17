@@ -1,59 +1,59 @@
 {
-  "generated_at": "2026-06-06T00:00:00Z",
+  "generated_at": "2026-08-22T00:00:00Z",
   "source": "Macro indicators refresh — Claude.ai routine",
   "indicators": {
     "gdp_yoy": {
       "value": 7.8,
-      "trending_up": true,
-      "source": "MOSPI Provisional Estimates of National Income FY2025-26 (Q4 Jan–Mar 2026), new base year 2022-23 series, released June 5, 2026. Q4 'climbed to 7.8%'; full-year FY26 at 7.7%.",
+      "trending_up": false,
+      "source": "MoSPI Provisional Estimates of Annual GDP for FY2025-26 and Quarterly Estimates of GDP for Q4 (Jan–Mar) FY2025-26, released June 5, 2026. Q4 grew 7.8% YoY, flat versus Q3 FY26 (also 7.8%) and down from Q2 FY26 (8.4%); full-year FY26 provisional estimate at 7.7%. No newer quarterly release available — Q1 FY27 estimates are due Aug 31, 2026.",
       "as_of": "2026-06-05",
       "confidence": "High"
     },
     "cpi": {
-      "value": 3.48,
-      "source": "MOSPI Consumer Price Index Press Release, April 2026 (provisional, base year 2024); embargoed until 4 PM on May 12, 2026. May 2026 data due June 12, 2026.",
-      "as_of": "2026-05-12",
+      "value": 4.45,
+      "source": "MoSPI Consumer Price Index Press Release for July 2026 (provisional, base year 2024): CPI YoY inflation at 4.45%, up from 4.38% in June 2026. Food inflation (CFPI) at 5.52% YoY.",
+      "as_of": "2026-08-12",
       "confidence": "High"
     },
     "gsec10y": {
-      "value": 7.12,
+      "value": 6.87,
       "trend": "rising",
-      "source": "CCIL Tenorwise Indicative Yields via DealPlexus/CEIC: 10Y benchmark at 7.00% on June 2, rising to 7.12% on June 6, 2026. Yield range-bound but ticking up from recent 7.00% base.",
-      "as_of": "2026-06-06",
+      "source": "Market reports (FX.co/Reuters citing CCIL benchmark 6.94% 2036 G-Sec) — 10Y yield closed at its highest level in over two months on Aug 20, 2026, extending an August rise toward an eight-week high after hawkish RBI Aug 3–5 MPC minutes (released Aug 19) lifted rate-hike expectations.",
+      "as_of": "2026-08-20",
       "confidence": "Medium"
     },
     "rate_cut_cycle": {
       "active": false,
-      "note": "RBI MPC held repo rate at 5.25% on June 5, 2026 (third consecutive hold; unanimous decision); neutral policy stance maintained. Cumulative 125 bps eased Feb–Dec 2025 remains paused. Elevated energy prices and sticky FY27 CPI outlook limit near-term cuts.",
-      "source": "RBI MPC Resolution June 5, 2026 — repo rate held at 5.25%, neutral stance (via Upstox market news; Business Standard RBI June MPC coverage).",
-      "as_of": "2026-06-05",
+      "note": "RBI MPC held the repo rate at 5.25% on Aug 5, 2026 (fourth consecutive hold), maintaining a neutral stance. Governor Malhotra said the MPC is 'neither dovish nor hawkish' and wants greater clarity on the inflation outlook; Deputy Governor Gupta said there is no scope for further easing and flagged a possible case for a hike this fiscal year. Not in an easing cycle; policy risk has shifted toward tightening.",
+      "source": "RBI MPC Resolution, August 3–5, 2026 (via Business Standard, Forbes India MPC coverage); Aug 19, 2026 MPC minutes.",
+      "as_of": "2026-08-05",
       "confidence": "High"
     },
     "gov_capex": {
       "active": true,
-      "note": "Centre's FY26 capex reached 76.9% of Revised Estimates in Apr–Jan (vs 61.7% pace in FY25); FY27 Union Budget targets ₹12.2 lakh crore capex (+9% vs FY26 BE), with defence, railways and roads accounting for 67.6% of budgeted outlay. Capex-led growth strategy continues into FY27.",
-      "source": "CGA Monthly Expenditure Report (Apr–Jan FY26) via Business Standard (March 6, 2026); Budget 2026-27 capex analysis (Business Standard, Feb 1, 2026).",
-      "as_of": "2026-03-06",
+      "note": "CPSE capex rose 26% YoY to ₹2.10 lakh crore in Q1 FY27 (Apr–Jun 2026), reaching 25% of the full-year target versus 22% achieved in the same period of FY26. FY27 Union Budget capex target remains ₹12.2 lakh crore (+9% YoY). Capex-led growth push continues into FY27, though state-level capex utilisation eased in Q1FY27.",
+      "source": "CPSE capital expenditure data reported via Business Standard ('CPSEs meet 25% of FY27 cumulative capital expenditure target in Q1', 'State capex utilisation eases in Q1FY27'), July 2026.",
+      "as_of": "2026-07-06",
       "confidence": "Medium"
     },
     "china_plus_one": {
       "active": true,
-      "note": "Manufacturing FDI +18% YoY in FY25 to USD 19.04 bn; India eased FDI rules in Mar 2026 for limited Chinese investment in electronics and capital goods to deepen supply-chain integration; PLI scheme and China+1 sourcing thesis remain active. BusinessToday analysis (Jun 2, 2026) confirms manufacturing diversification to India is ongoing.",
-      "source": "BusinessToday — 'Can China+1 help India create millions of jobs?' (June 2, 2026); CNBC — India relaxes Chinese FDI rules (March 11, 2026).",
-      "as_of": "2026-06-02",
-      "confidence": "High"
+      "note": "India's Cabinet eased FDI rules in March 2026 to allow non-controlling Chinese stakes of up to 10% without prior approval, plus a 60-day fast-track approval for priority manufacturing (electronics, capital goods, solar). FY26 FDI inflows grew 18% YoY to USD 58.85 bn. Early-August 2026 commentary confirms India continues to balance courting China-linked manufacturing investment with trade/anti-dumping caution — the China+1 diversification thesis remains active.",
+      "source": "Commerce Ministry FDI policy (Press Note 3 relaxation, Mar 2026); EcoNiti Daily Brief 'India dilutes FDI curbs on China, softens anti-dumping stance to court trade', Aug 2, 2026.",
+      "as_of": "2026-08-02",
+      "confidence": "Medium"
     },
     "rural_recovery": {
       "signal": "weak",
-      "note": "IMD maintains below-normal SW Monsoon 2026 forecast at 90% of LPA; El Niño conditions with 92% probability; kharif sowing at risk in northern/central states (Punjab, Haryana, UP, MP); deficient rain in August–September likely. Southern states near-normal. Farm cash flows and food prices under pressure.",
-      "source": "IMD Updated Long-Range Forecast SW Monsoon 2026 (released May 29, 2026); BusinessToday rural economy analysis (May 29, 2026); AgroSpectrumIndia (April 15, 2026).",
-      "as_of": "2026-05-29",
-      "confidence": "High"
+      "note": "IMD forecasts below-normal rainfall (<94% of LPA) for Aug–Sep 2026 amid El Niño; kharif sowing trailed ~3% YoY as of end-July 2026 (pulses and coarse cereals down 6–8% YoY), though narrower than the ~23% YoY gap seen in late June. A NABARD survey signals a rural slowdown, with income growth at a two-year low and rising informal borrowing; major reservoirs at ~44% of capacity.",
+      "source": "IMD Southwest Monsoon updates and ICRA 'Mid-Monsoon Update — August 2026'; USDA FAS 'Monsoon Recovery Fails to Boost Sluggish Crop Planting' (Aug 2026); NABARD rural sentiment survey.",
+      "as_of": "2026-08-15",
+      "confidence": "Medium"
     },
     "put_call_ratio": {
-      "value": 0.96,
-      "source": "NSE Nifty 50 option chain aggregate (total put OI / total call OI) via NiftyInvest and NiftyTrader, as of June 4, 2026. Call OI 13.73 Cr, Put OI 13.14 Cr; PCR ≈ 0.957.",
-      "as_of": "2026-06-04",
+      "value": 1.08,
+      "source": "NSE Nifty option-chain aggregate PCR via NiftyTrader.in, as of Aug 21, 2026 (Total Put OI 29.67 vs Total Call OI 27.39, in lakhs); cross-checked against other aggregators showing ~1.0–1.1 range same day.",
+      "as_of": "2026-08-21",
       "confidence": "Medium"
     }
   },
