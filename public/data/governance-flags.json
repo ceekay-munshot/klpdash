@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-17T04:47:40.530Z",
+  "generated_at": "2026-10-18T04:50:52.881Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 16,
+  "total_entities_seen": 11,
   "flagged_companies": {
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -21,7 +21,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-10-17T04:47:40.529Z"
+      "first_seen_at": "2026-10-18T04:50:52.880Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -40,7 +40,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-10-17T04:47:40.529Z"
+      "first_seen_at": "2026-10-18T04:50:52.880Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -59,7 +59,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-17T04:47:40.529Z"
+      "first_seen_at": "2026-10-18T04:50:52.880Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -78,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-17T04:47:40.529Z"
+      "first_seen_at": "2026-10-18T04:50:52.880Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -97,7 +97,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-10-17T04:47:40.529Z"
+      "first_seen_at": "2026-10-18T04:50:52.880Z"
     }
   },
   "unmatched_sample": [
@@ -109,61 +109,31 @@
     },
     {
       "name": "Rajesh Exports",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Cult.fit",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Sohan Lal Commodity",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Eswari Global Metal",
-      "type": "other",
+      "type": "sebi-ban",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "enforcement-order",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Singularity AMC",
-      "type": "settlement",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Rajesh Exports",
-      "type": "enforcement-order",
+      "type": "sebi-settlement",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Cult.fit",
-      "type": "other",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Paramotor Digital Technology",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "SMC Global Securities",
-      "type": "fine",
+      "name": "Rajesh Exports",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -173,102 +143,21 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-17T04:47:02.470Z",
+      "at": "2026-10-18T04:50:18.076Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-ban",
           "is_listed_entity": true,
-          "snippet": "SEBI bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place."
-        },
-        {
-          "name": "Billionbrains Garage Ventures",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "...experts bullish on Groww brand parent Billionbrains Garage Ventures shares; target."
-        },
-        {
-          "name": "ITC",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "ITC sets board meeting date to declare Q2 results 2026; net profit may decline due to cigarette taxation."
-        },
-        {
-          "name": "SEBI",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "SEBI's CAS new rule: Regulator's move to restore final 30-minute continuous-session VWAP."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi discusses new UPI merchant charges with NPCI as brokers flag cost concerns."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi likely to adopt blended pricing framework to curb expiry-day volatility in derivatives."
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
         }
       ],
       "after_filter_count": 1,
-      "dropped_counts": {
-        "not_listed": 3,
-        "no_sebi_signal_in_snippet": 2,
-        "resolved_in_favour": 0,
-        "no_name": 0
-      },
-      "sample": [
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
-          "snippet": "SEBI bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place."
-        }
-      ]
-    },
-    {
-      "url": "https://www.business-standard.com/topic/sebi",
-      "label": "Business Standard — SEBI topic (news)",
-      "mode": "news",
-      "at": "2026-10-17T04:47:08.415Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
-      "prefilter_sample": [
-        {
-          "name": "Rajesh Exports",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe"
-        },
-        {
-          "name": "Cult.fit",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
-        },
-        {
-          "name": "Sohan Lal Commodity",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
-        },
-        {
-          "name": "Eswari Global Metal",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
-        }
-      ],
-      "after_filter_count": 4,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -278,23 +167,41 @@
       "sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
-          "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe"
-        },
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
+        }
+      ]
+    },
+    {
+      "url": "https://www.business-standard.com/topic/sebi",
+      "label": "Business Standard — SEBI topic (news)",
+      "mode": "news",
+      "at": "2026-10-18T04:50:23.000Z",
+      "fc_status": 200,
+      "outcome": "ok",
+      "upstream_status": 200,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
+      "prefilter_sample": [
         {
-          "name": "Cult.fit",
-          "order_type": "other",
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
-        },
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe."
+        }
+      ],
+      "after_filter_count": 1,
+      "dropped_counts": {
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 0,
+        "resolved_in_favour": 0,
+        "no_name": 0
+      },
+      "sample": [
         {
-          "name": "Sohan Lal Commodity",
-          "order_type": "other",
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
-        },
-        {
-          "name": "Eswari Global Metal",
-          "order_type": "other",
-          "snippet": "Sebi's IPO nod to Cult.fit, Eswari Global Metal, Sohan Lal Commodity"
+          "name": "Rajesh Exports",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe."
         }
       ]
     },
@@ -302,7 +209,7 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-17T04:47:21.472Z",
+      "at": "2026-10-18T04:50:34.884Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -311,102 +218,92 @@
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "enforcement-order",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved."
         },
         {
           "name": "Singularity AMC",
-          "order_type": "settlement",
+          "order_type": "sebi-settlement",
           "is_listed_entity": true,
           "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi."
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "enforcement-order",
-          "is_listed_entity": true,
-          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
-        },
-        {
           "name": "Cult.fit",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Cult.fit receives Sebi approval for proposed IPO."
         },
         {
-          "name": "Paramotor Digital Technology",
-          "order_type": "other",
+          "name": "Goodluck India",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Paramotor Digital Technology files updated draft papers with Sebi for Rs 1,000 crore issue."
+          "snippet": "Goodluck India shares surge 17% as merger expands, defence arm to join firm along with green energy unit."
+        },
+        {
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
+        },
+        {
+          "name": "Jane Street",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": false,
+          "snippet": "Jane Street hits back at Sebi’s allegations, says ‘regulator changed the goal posts’."
         },
         {
           "name": "Polycab India",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Polycab India’s F&O exit: NSE sets December 30 deadline; NCLAT stays insolvency order."
+          "snippet": "Polycab shares tumble 6% as stock set to exit F&O segment from December 30 onwards."
         },
         {
-          "name": "SMC Global Securities",
-          "order_type": "fine",
+          "name": "Yes Bank",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi penalises SMC Global Securities for compliance lapses."
+          "snippet": "Yes Bank shares nosedive 20% after SC declares Rs 8,415 crore AT-1 bond write-off illegal."
         },
         {
-          "name": "Groww",
-          "order_type": "other",
+          "name": "Tata Communications",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Groww Q2 Results: Cons net profit surges 54% YoY to Rs 726 crore; revenue jumps 47."
+          "snippet": "Tata Communications Q2 results: Net profit jumps 86% YoY to Rs 341 crore; revenue rises 10%."
         },
         {
-          "name": "IDBI Bank",
-          "order_type": "other",
+          "name": "Tech Mahindra",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "IDBI Bank shares fall 7% as investors book profit after Fairfax deal gets cabinet nod."
-        },
-        {
-          "name": "Reliance Industries",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Reliance Industries shares rise 3% as Jio sets price band for possibly biggest-ever issue."
+          "snippet": "Tech Mahindra shares gain 5% after Q2 results. Should you buy, sell or hold the stock?"
         }
       ],
-      "after_filter_count": 6,
+      "after_filter_count": 4,
       "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 4,
+        "not_listed": 1,
+        "no_sebi_signal_in_snippet": 5,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "enforcement-order",
+          "order_type": "sebi-investigation",
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved."
         },
         {
           "name": "Singularity AMC",
-          "order_type": "settlement",
+          "order_type": "sebi-settlement",
           "snippet": "Singularity AMC pays over Rs 40 lakh to settle AIF rule violation case with Sebi."
         },
         {
-          "name": "Rajesh Exports",
-          "order_type": "enforcement-order",
-          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
-        },
-        {
           "name": "Cult.fit",
-          "order_type": "other",
+          "order_type": "sebi-investigation",
           "snippet": "Cult.fit receives Sebi approval for proposed IPO."
         },
         {
-          "name": "Paramotor Digital Technology",
-          "order_type": "other",
-          "snippet": "Paramotor Digital Technology files updated draft papers with Sebi for Rs 1,000 crore issue."
-        },
-        {
-          "name": "SMC Global Securities",
-          "order_type": "fine",
-          "snippet": "Sebi penalises SMC Global Securities for compliance lapses."
+          "name": "Rajesh Exports",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
         }
       ]
     },
@@ -414,29 +311,16 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-10-17T04:47:29.846Z",
+      "at": "2026-10-18T04:50:44.717Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
-      "prefilter_sample": [
-        {
-          "name": "CITRUS CHECK INNS LIMITED",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
-        },
-        {
-          "name": "ROYAL TWINKLE STAR CLUB PVT. LTD",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
-        }
-      ],
+      "total_extracted_raw": 0,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 2,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
