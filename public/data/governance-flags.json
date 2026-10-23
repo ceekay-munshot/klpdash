@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-22T05:07:50.428Z",
+  "generated_at": "2026-10-23T05:07:25.413Z",
   "source_count": 4,
   "curated_baseline_count": 5,
   "total_entities_seen": 12,
   "flagged_companies": {
     "INDHOTEL": {
       "primary_name": "Indian Gas Exchange",
-      "order_type": "investigation",
+      "order_type": "other",
       "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO.",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
@@ -17,30 +17,11 @@
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "investigation",
+          "order_type": "other",
           "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
-    },
-    "HDFCBANK": {
-      "primary_name": "HDFC Bank",
-      "order_type": "other",
-      "snippet": "HDFC Bank investigates two senior executives over alleged leak of business secrets.",
-      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
-      "source_label": "Economic Times — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "HDFC Bank investigates two senior executives over alleged leak of business secrets."
-        }
-      ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -59,7 +40,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -78,7 +59,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -97,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -116,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -135,25 +116,25 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-10-22T05:07:50.427Z"
+      "first_seen_at": "2026-10-23T05:07:25.413Z"
     }
   },
   "unmatched_sample": [
     {
       "name": "Rajesh Exports",
-      "type": "other",
+      "type": "sebi-confirms",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-ban",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
       "name": "Rajesh Exports",
-      "type": "sebi-ban",
+      "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -165,7 +146,13 @@
     },
     {
       "name": "Cult.fit",
-      "type": "investigation",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Paramotor Digital Technology",
+      "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -175,36 +162,48 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-22T05:06:56.180Z",
+      "at": "2026-10-23T05:07:01.460Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 5,
+      "total_extracted": 5,
       "prefilter_sample": [
-        {
-          "name": "Reliance Industries",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Jio IPO gets blockbuster response, but Reliance stock near 52-week low; what should you do?"
-        },
-        {
-          "name": "PC Jeweller",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "PC Jeweller shares jump 9% after Q2 results; Halwasiya’s bulk deal in focus"
-        },
         {
           "name": "Billionbrains Garage Ventures",
           "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Experts bullish on Groww brand parent Billionbrains Garage Ventures shares; target"
+        },
+        {
+          "name": "Sebi",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "How Sebi’s changes to bonds could help NBFCs"
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "SEBI’s PRIM route lowers the minimum investment for portfolio management services"
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "SEBI reintroduces VWAP for derivatives expiry after CAS turns markets volatile"
+        },
+        {
+          "name": "SEBI",
+          "order_type": "other",
+          "is_listed_entity": false,
+          "snippet": "SEBI has revised the Closing Auction Session framework"
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 0,
-        "no_sebi_signal_in_snippet": 3,
+        "not_listed": 4,
+        "no_sebi_signal_in_snippet": 1,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -214,7 +213,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-22T05:07:00.953Z",
+      "at": "2026-10-23T05:07:11.238Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -223,7 +222,7 @@
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "sebi-confirms",
           "is_listed_entity": true,
           "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe."
         }
@@ -238,7 +237,7 @@
       "sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "other",
+          "order_type": "sebi-confirms",
           "snippet": "Sebi confirms Rajesh Exports curbs, flags incomplete information in probe."
         }
       ]
@@ -247,22 +246,22 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-22T05:07:13.359Z",
+      "at": "2026-10-23T05:07:13.470Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 9,
-      "total_extracted": 9,
+      "total_extracted_raw": 8,
+      "total_extracted": 8,
       "prefilter_sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved."
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
         },
@@ -274,57 +273,51 @@
         },
         {
           "name": "Cult.fit",
-          "order_type": "investigation",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Cult.fit receives Sebi approval for proposed IPO."
+          "snippet": "Cult.fit receives Sebi approval for Rs 3,500-4,000 crore IPO."
         },
         {
           "name": "Indian Gas Exchange",
-          "order_type": "investigation",
+          "order_type": "other",
           "is_listed_entity": true,
           "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
         },
         {
-          "name": "Cemindia Projects",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Cemindia Projects’ Rs 1400-crore QIP oversubscribed 2.3x."
-        },
-        {
-          "name": "Transrail Lighting",
+          "name": "Jio Platforms",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Transrail Lighting shares rally 9% after bagging orders worth Rs 927 crore."
+          "snippet": "Jio IPO: LIC, BlackRock, Fidelity, GIC among 212 anchor investors to pour Rs 8,110 crore."
         },
         {
-          "name": "HDFC Bank",
+          "name": "Jio Platforms",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "HDFC Bank investigates two senior executives over alleged leak of business secrets."
+          "snippet": "Jio IPO strengthens Reliance’s financial flexibility; capex funding remains key: Moody’s."
         },
         {
-          "name": "PC Jeweller",
-          "order_type": "sebi-investigation",
+          "name": "Paramotor Digital Technology",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PC Jeweller shares soar 26% in just two sessions."
+          "snippet": "IPO ahead! Paramotor Digital Technology files updated draft papers with Sebi for Rs 1,000 crore issue."
         }
       ],
       "after_filter_count": 6,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 3,
+        "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-investigation",
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved."
         },
         {
           "name": "Rajesh Exports",
-          "order_type": "sebi-ban",
+          "order_type": "other",
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing."
         },
         {
@@ -334,18 +327,18 @@
         },
         {
           "name": "Cult.fit",
-          "order_type": "investigation",
-          "snippet": "Cult.fit receives Sebi approval for proposed IPO."
+          "order_type": "other",
+          "snippet": "Cult.fit receives Sebi approval for Rs 3,500-4,000 crore IPO."
         },
         {
           "name": "Indian Gas Exchange",
-          "order_type": "investigation",
+          "order_type": "other",
           "snippet": "Indian Gas Exchange secures Sebi's nod to float IPO."
         },
         {
-          "name": "HDFC Bank",
+          "name": "Paramotor Digital Technology",
           "order_type": "other",
-          "snippet": "HDFC Bank investigates two senior executives over alleged leak of business secrets."
+          "snippet": "IPO ahead! Paramotor Digital Technology files updated draft papers with Sebi for Rs 1,000 crore issue."
         }
       ]
     },
@@ -353,7 +346,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-10-22T05:07:33.959Z",
+      "at": "2026-10-23T05:07:19.852Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -363,20 +356,20 @@
         {
           "name": "Pancard Clubs Limited",
           "order_type": "other",
-          "is_listed_entity": false,
+          "is_listed_entity": true,
           "snippet": "Asset Sale committee in matter of Pancard Clubs Limited - All investors are advised to communicate any queries/requests to Asset Sale committee in mat"
         },
         {
           "name": "Citrus Check Inns Limited",
           "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)."
+          "is_listed_entity": true,
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 2,
-        "no_sebi_signal_in_snippet": 0,
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
