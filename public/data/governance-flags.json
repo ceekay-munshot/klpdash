@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-25T05:00:38.554Z",
+  "generated_at": "2026-10-26T05:03:52.450Z",
   "source_count": 4,
   "curated_baseline_count": 5,
   "total_entities_seen": 10,
@@ -27,7 +27,7 @@
           "snippet": "Nippon AMC gets Sebi nod for settlement in Yes Bank AT1 case"
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -46,7 +46,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -65,7 +65,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -84,7 +84,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -103,7 +103,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -122,19 +122,19 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-10-25T05:00:38.553Z"
+      "first_seen_at": "2026-10-26T05:03:52.450Z"
     }
   },
   "unmatched_sample": [
     {
-      "name": "Avadhut Sathe Academy",
+      "name": "Avadhut Sathe Trading Academy Pvt Ltd",
       "type": "enforcement-order",
-      "source": "Economic Times — SEBI topic (news)",
+      "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Rajesh Exports",
-      "type": "sebi-investigation",
+      "name": "Avadhut Sathe Academy",
+      "type": "sebi-fine",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
@@ -150,21 +150,15 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-25T05:00:24.994Z",
+      "at": "2026-10-26T05:03:34.083Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
+      "total_extracted_raw": 1,
+      "total_extracted": 1,
       "prefilter_sample": [
         {
-          "name": "Avadhut Sathe",
-          "order_type": "sebi-fine",
-          "is_listed_entity": false,
-          "snippet": "Sebi bars Avadhut Sathe, academy from markets, imposes ₹11.5 crore penalty"
-        },
-        {
-          "name": "ASTAPL",
+          "name": "Avadhut Sathe Academy",
           "order_type": "sebi-fine",
           "is_listed_entity": false,
           "snippet": "Sebi bars Avadhut Sathe, academy from markets, imposes ₹11.5 crore penalty"
@@ -172,7 +166,7 @@
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 2,
+        "not_listed": 1,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -183,7 +177,7 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-25T05:00:27.990Z",
+      "at": "2026-10-26T05:03:39.130Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -192,8 +186,8 @@
       "prefilter_sample": [
         {
           "name": "Avadhut Sathe Trading Academy Pvt Ltd",
-          "order_type": "sebi-fine",
-          "is_listed_entity": false,
+          "order_type": "enforcement-order",
+          "is_listed_entity": true,
           "snippet": "Sebi orders Avadhut Sathe Trading Academy and its founder to refund ₹546 cr"
         },
         {
@@ -203,14 +197,19 @@
           "snippet": "Nippon Life India AMC gets Sebi nod to settle Yes Bank AT-1 bond case"
         }
       ],
-      "after_filter_count": 1,
+      "after_filter_count": 2,
       "dropped_counts": {
-        "not_listed": 1,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
+        {
+          "name": "Avadhut Sathe Trading Academy Pvt Ltd",
+          "order_type": "enforcement-order",
+          "snippet": "Sebi orders Avadhut Sathe Trading Academy and its founder to refund ₹546 cr"
+        },
         {
           "name": "Nippon Life India AMC",
           "order_type": "settlement",
@@ -222,12 +221,12 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-10-25T05:00:30.568Z",
+      "at": "2026-10-26T05:03:41.963Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
         {
           "name": "Nippon AMC",
@@ -237,7 +236,7 @@
         },
         {
           "name": "Avadhut Sathe Academy",
-          "order_type": "enforcement-order",
+          "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Sebi orders Avadhut Sathe, academy to refund Rs 546 crore"
         },
@@ -248,16 +247,28 @@
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved"
         },
         {
-          "name": "Rajesh Exports",
+          "name": "eMudhra",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing"
+          "snippet": "eMudhra shares plunge 37% in just two sessions due to security incident."
+        },
+        {
+          "name": "SWIGGY",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Rs 9,000 crore wiped out in a day: Why Swiggy investors are losing patience with Instamart"
+        },
+        {
+          "name": "L&T",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Dividends & stock splits: L&T Tech, Shriram Finance among 24 stocks turning ex-record date this week. Do you own?"
         }
       ],
-      "after_filter_count": 4,
+      "after_filter_count": 3,
       "dropped_counts": {
         "not_listed": 0,
-        "no_sebi_signal_in_snippet": 0,
+        "no_sebi_signal_in_snippet": 3,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -269,18 +280,13 @@
         },
         {
           "name": "Avadhut Sathe Academy",
-          "order_type": "enforcement-order",
+          "order_type": "sebi-fine",
           "snippet": "Sebi orders Avadhut Sathe, academy to refund Rs 546 crore"
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "snippet": "Sebi confirms interim curbs on Rajesh Exports, says financial disclosure concerns remain unresolved"
-        },
-        {
-          "name": "Rajesh Exports",
-          "order_type": "sebi-investigation",
-          "snippet": "Sebi confirms interim curbs on Rajesh Exports, promoter over alleged fund routing"
         }
       ]
     },
@@ -288,7 +294,7 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-10-25T05:00:36.226Z",
+      "at": "2026-10-26T05:03:49.398Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
