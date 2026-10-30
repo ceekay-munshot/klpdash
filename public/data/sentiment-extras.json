@@ -1,11 +1,10 @@
 {
-  "generated_at": "2026-10-29T06:04:19.550Z",
+  "generated_at": "2026-10-30T06:06:00.469Z",
   "pcr": {
-    "value": 1.09,
+    "value": 1.02,
     "source": "NSE option-chain (via Firecrawl LLM extract)",
     "basis": "LLM-extracted",
-    "fetched_at": "2026-10-28T05:59:04.604Z",
-    "stale": true
+    "fetched_at": "2026-10-30T06:06:03.061Z"
   },
   "impact_cost": null,
   "_debug": {
@@ -13,25 +12,14 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-10-29T06:04:24.120Z",
+        "at": "2026-10-30T06:06:03.061Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 200,
         "outcome": "extract_ok",
         "extract_keys": [
           "nifty_pcr"
         ],
-        "extract_value": "{\"nifty_pcr\":0}"
-      },
-      {
-        "at": "2026-10-29T06:04:24.473Z",
-        "url": "https://www.nseindia.com/option-chain",
-        "fc_status": 200,
-        "upstream_status": 200,
-        "html_len": 368970,
-        "raw_len": 0,
-        "md_len": 83743,
-        "body_sample": "<!DOCTYPE html><html lang=\"en\">\n  <body class=\"notranslate showBand\" direction=\"rtl\" style=\"padding-top: 155px;\">\n    <!-- Google Tag Manager (noscript) -->\n\n\n    \n<!-- End Google Tag Manager (noscript) -->\n    \n    <div class=\"skip-to-main\" id=\"skipToMainPopup\"></div>\n    <div id=\"pageLoader\"><div class=\"loader-wrp\"><div class=\"spin-loader\" aria-hidden=\"true\"></div></div></div>\n    \n\n<div id=\"bet",
-        "outcome": "ok"
+        "extract_value": "{\"nifty_pcr\":1.02}"
       }
     ]
   }
