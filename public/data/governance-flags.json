@@ -1,31 +1,12 @@
 {
-  "generated_at": "2026-11-05T07:05:09.122Z",
+  "generated_at": "2026-11-06T07:05:01.957Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 13,
+  "total_entities_seen": 14,
   "flagged_companies": {
-    "SBIN": {
-      "primary_name": "SBI",
-      "order_type": "enforcement-order",
-      "snippet": "Sensex, Nifty tomorrow 3 Nov: Will stock market jump on Sebi's 12.5% foreign ‌investors LTCG tax removal recommendation?",
-      "source_url": "https://www.livemint.com/topic/sebi",
-      "source_label": "Mint — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Mint — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "enforcement-order",
-          "snippet": "Sensex, Nifty tomorrow 3 Nov: Will stock market jump on Sebi's 12.5% foreign ‌investors LTCG tax removal recommendation?"
-        }
-      ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
-    },
     "AXISBANK": {
       "primary_name": "Axis Capital",
-      "order_type": "sebi-fine",
+      "order_type": "sebi-investigation",
       "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
@@ -36,7 +17,7 @@
         {
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
-          "order_type": "sebi-fine",
+          "order_type": "sebi-investigation",
           "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
         },
         {
@@ -52,7 +33,7 @@
           "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "PCJEWELLER": {
       "primary_name": "PC Jeweller",
@@ -71,7 +52,45 @@
           "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
+    },
+    "COALINDIA": {
+      "primary_name": "Coal India",
+      "order_type": "sebi-investigation",
+      "snippet": "Sebi approves Coal India unit Mahanadi Coalfields IPO",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi approves Coal India unit Mahanadi Coalfields IPO"
+        }
+      ],
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
+    },
+    "NAM-INDIA": {
+      "primary_name": "Nippon AMC",
+      "order_type": "sebi-settlement",
+      "snippet": "Nippon AMC gets Sebi nod for settlement in Yes Bank AT1 case",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "sebi-settlement",
+          "snippet": "Nippon AMC gets Sebi nod for settlement in Yes Bank AT1 case"
+        }
+      ],
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -90,7 +109,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -109,7 +128,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -128,7 +147,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -147,7 +166,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -166,16 +185,10 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-11-05T07:05:09.121Z"
+      "first_seen_at": "2026-11-06T07:05:01.956Z"
     }
   },
   "unmatched_sample": [
-    {
-      "name": "ASTA",
-      "type": "sebi-investigation",
-      "source": "Mint — SEBI topic (news)",
-      "origin": "scraper"
-    },
     {
       "name": "EKI Energy Services Ltd",
       "type": "sebi-ban",
@@ -184,7 +197,13 @@
     },
     {
       "name": "EKI Energy Services Ltd",
-      "type": "sebi-ban",
+      "type": "sebi-fine",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Ratnadeep Retail",
+      "type": "sebi-investigation",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     }
@@ -194,7 +213,7 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-05T07:04:37.583Z",
+      "at": "2026-11-06T07:04:24.025Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -203,60 +222,49 @@
       "prefilter_sample": [
         {
           "name": "SEBI",
-          "order_type": "enforcement-order",
+          "order_type": "other",
           "is_listed_entity": false,
           "snippet": "SEBI relaxes KYC rules for NRIs, OCIs: Can overseas investors now onboard digitally from abroad? Decoded"
         },
         {
-          "name": "ASTA",
-          "order_type": "sebi-investigation",
-          "is_listed_entity": true,
-          "snippet": "Avadhut Sathe case: Why ASTA may challenge SEBI order before SAT over ‘grey areas’ in stock-market education rules"
-        },
-        {
-          "name": "SEBI",
-          "order_type": "enforcement-order",
-          "is_listed_entity": false,
-          "snippet": "Sebi backs removal of LTCG for foreign investors: Report"
-        },
-        {
           "name": "SBI",
-          "order_type": "enforcement-order",
+          "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sensex, Nifty tomorrow 3 Nov: Will stock market jump on Sebi's 12.5% foreign ‌investors LTCG tax removal recommendation?"
+          "snippet": "US Midterm Election results lift banking, financial stocks - SBI Cards, Bajaj Finance, Axis, ICICI Bank surge up to 6%"
         },
         {
-          "name": "SEBI",
-          "order_type": "enforcement-order",
-          "is_listed_entity": false,
-          "snippet": "Sebi, investment bankers discuss giving IPO-bound companies more room to revise issue sizes"
+          "name": "PhysicsWallah",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "PhysicsWallah shares jump 10% after Q2 profit more than doubles: Buy, sell or hold? Brokerages on Alakh Pandey-led firm"
+        },
+        {
+          "name": "Titan",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Dhanteras, Diwali 2026: Titan, Shanti Gold, Senco among top jewellery stocks to buy for long-term | Check list"
+        },
+        {
+          "name": "Indian Oil",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "US Midterm Election results impact on oil and IT shares: Reliance, Indian Oil, TCS, Infosys - 10 stocks from experts"
         }
       ],
-      "after_filter_count": 2,
+      "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 3,
-        "no_sebi_signal_in_snippet": 0,
+        "not_listed": 1,
+        "no_sebi_signal_in_snippet": 4,
         "resolved_in_favour": 0,
         "no_name": 0
       },
-      "sample": [
-        {
-          "name": "ASTA",
-          "order_type": "sebi-investigation",
-          "snippet": "Avadhut Sathe case: Why ASTA may challenge SEBI order before SAT over ‘grey areas’ in stock-market education rules"
-        },
-        {
-          "name": "SBI",
-          "order_type": "enforcement-order",
-          "snippet": "Sensex, Nifty tomorrow 3 Nov: Will stock market jump on Sebi's 12.5% foreign ‌investors LTCG tax removal recommendation?"
-        }
-      ]
+      "sample": []
     },
     {
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-05T07:04:44.646Z",
+      "at": "2026-11-06T07:04:39.783Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
@@ -289,33 +297,27 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-05T07:04:48.564Z",
+      "at": "2026-11-06T07:04:42.365Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 8,
+      "total_extracted": 8,
       "prefilter_sample": [
         {
           "name": "EKI Energy Services Ltd",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty"
         },
         {
           "name": "Axis Capital",
-          "order_type": "sebi-fine",
+          "order_type": "sebi-investigation",
           "is_listed_entity": true,
           "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
         },
         {
-          "name": "PC Jeweller",
-          "order_type": "show-cause",
-          "is_listed_entity": true,
-          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
-        },
-        {
-          "name": "Axis Mutual Fund",
+          "name": "Axis MF",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
           "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
@@ -327,15 +329,33 @@
           "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
         },
         {
-          "name": "Avadhut Sathe Trading Academy",
-          "order_type": "sebi-order",
-          "is_listed_entity": false,
-          "snippet": "Sebi orders Avadhut Sathe, academy to refund Rs 546 crore"
+          "name": "PC Jeweller",
+          "order_type": "show-cause",
+          "is_listed_entity": true,
+          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
+        },
+        {
+          "name": "Ratnadeep Retail",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "IPO ahead: Value-fashion retailer Ratnadeep Retail gets Sebi nod to raise funds through public issue"
+        },
+        {
+          "name": "Coal India",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Sebi approves Coal India unit Mahanadi Coalfields IPO"
+        },
+        {
+          "name": "Nippon AMC",
+          "order_type": "sebi-settlement",
+          "is_listed_entity": true,
+          "snippet": "Nippon AMC gets Sebi nod for settlement in Yes Bank AT1 case"
         }
       ],
-      "after_filter_count": 5,
+      "after_filter_count": 8,
       "dropped_counts": {
-        "not_listed": 1,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
@@ -343,21 +363,16 @@
       "sample": [
         {
           "name": "EKI Energy Services Ltd",
-          "order_type": "sebi-ban",
+          "order_type": "sebi-fine",
           "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty"
         },
         {
           "name": "Axis Capital",
-          "order_type": "sebi-fine",
+          "order_type": "sebi-investigation",
           "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
         },
         {
-          "name": "PC Jeweller",
-          "order_type": "show-cause",
-          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
-        },
-        {
-          "name": "Axis Mutual Fund",
+          "name": "Axis MF",
           "order_type": "sebi-fine",
           "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
         },
@@ -365,6 +380,26 @@
           "name": "Axis Mutual Fund",
           "order_type": "sebi-fine",
           "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
+        },
+        {
+          "name": "PC Jeweller",
+          "order_type": "show-cause",
+          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
+        },
+        {
+          "name": "Ratnadeep Retail",
+          "order_type": "sebi-investigation",
+          "snippet": "IPO ahead: Value-fashion retailer Ratnadeep Retail gets Sebi nod to raise funds through public issue"
+        },
+        {
+          "name": "Coal India",
+          "order_type": "sebi-investigation",
+          "snippet": "Sebi approves Coal India unit Mahanadi Coalfields IPO"
+        },
+        {
+          "name": "Nippon AMC",
+          "order_type": "sebi-settlement",
+          "snippet": "Nippon AMC gets Sebi nod for settlement in Yes Bank AT1 case"
         }
       ]
     },
@@ -372,36 +407,30 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-11-05T07:04:59.597Z",
+      "at": "2026-11-06T07:04:51.396Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 3,
-      "total_extracted": 3,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
           "name": "Pancard Clubs Limited",
           "order_type": "other",
-          "is_listed_entity": false,
+          "is_listed_entity": true,
           "snippet": "Asset Sale committee in matter of Pancard Clubs Limited - All investors are advised to communicate any queries/requests to Asset Sale committee in mat"
         },
         {
           "name": "Citrus Check Inns Limited",
           "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
-        },
-        {
-          "name": "Royal Twinkle Star Club Pvt. Ltd.",
-          "order_type": "other",
-          "is_listed_entity": false,
+          "is_listed_entity": true,
           "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 3,
-        "no_sebi_signal_in_snippet": 0,
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 2,
         "resolved_in_favour": 0,
         "no_name": 0
       },
