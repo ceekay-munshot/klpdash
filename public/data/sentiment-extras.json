@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-10T07:33:58.519Z",
+  "generated_at": "2026-11-11T06:50:49.637Z",
   "pcr": {
-    "value": 1.5,
+    "value": 0.65,
     "source": "NSE option-chain (via Firecrawl LLM extract)",
     "basis": "LLM-extracted",
-    "fetched_at": "2026-11-10T07:34:02.173Z"
+    "fetched_at": "2026-11-11T06:50:59.642Z"
   },
   "impact_cost": null,
   "_debug": {
@@ -12,14 +12,14 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-11-10T07:34:02.172Z",
+        "at": "2026-11-11T06:50:59.642Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 200,
         "outcome": "extract_ok",
         "extract_keys": [
           "nifty_pcr"
         ],
-        "extract_value": "{\"nifty_pcr\":1.5}"
+        "extract_value": "{\"nifty_pcr\":0.65}"
       }
     ]
   }
