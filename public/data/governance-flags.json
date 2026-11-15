@@ -1,58 +1,13 @@
 {
-  "generated_at": "2026-11-14T06:49:17.915Z",
+  "generated_at": "2026-11-15T06:53:53.251Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 25,
+  "total_entities_seen": 18,
   "flagged_companies": {
-    "ADANIPOWER": {
-      "primary_name": "Adani Group",
-      "order_type": "settlement",
-      "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations",
-      "source_url": "https://www.livemint.com/topic/sebi",
-      "source_label": "Mint — SEBI topic (news)",
-      "origins": [
-        "curated",
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Mint — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations"
-        },
-        {
-          "source": "SEBI status report to Supreme Court (2024-25)",
-          "origin": "curated",
-          "order_type": "sebi-investigation",
-          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
-        }
-      ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
-    },
-    "LLOYDSME": {
-      "primary_name": "Lloyds Enterprises",
-      "order_type": "settlement",
-      "snippet": "Lloyds Enterprises settles Sebi case over ₹144.82 crore advances",
-      "source_url": "https://www.livemint.com/topic/sebi",
-      "source_label": "Mint — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Mint — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "settlement",
-          "snippet": "Lloyds Enterprises settles Sebi case over ₹144.82 crore advances"
-        }
-      ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
-    },
     "DABUR": {
       "primary_name": "Dabur India",
       "order_type": "enforcement-order",
-      "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter.",
+      "snippet": "Sebi warns Dabur India over delayed disclosure of a USFDA warning letter, saying repeated violations could attract enforcement action under Sebi rules.",
       "source_url": "https://www.business-standard.com/topic/sebi",
       "source_label": "Business Standard — SEBI topic (news)",
       "origins": [
@@ -63,15 +18,15 @@
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "enforcement-order",
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
+          "snippet": "Sebi warns Dabur India over delayed disclosure of a USFDA warning letter, saying repeated violations could attract enforcement action under Sebi rules."
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "HINDZINC": {
-      "primary_name": "Hindustan Coca-Cola Holdings Ltd",
+      "primary_name": "Hindustan Coca-Cola Holdings",
       "order_type": "other",
-      "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO.",
+      "snippet": "Hindustan Coca-Cola Holdings Ltd (HCCH), backed by The Coca-Cola Company and Jubilant Beverages, has filed its draft papers with the market regulator Sebi to raise funds through an initial public offering (IPO).",
       "source_url": "https://www.business-standard.com/topic/sebi",
       "source_label": "Business Standard — SEBI topic (news)",
       "origins": [
@@ -82,15 +37,34 @@
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "other",
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
+          "snippet": "Hindustan Coca-Cola Holdings Ltd (HCCH), backed by The Coca-Cola Company and Jubilant Beverages, has filed its draft papers with the market regulator Sebi to raise funds through an initial public offe"
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "AXISBANK": {
-      "primary_name": "Axis MF",
+      "primary_name": "Axis Capital",
+      "order_type": "other",
+      "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%",
+      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
+      "source_label": "Economic Times — SEBI topic (news)",
+      "origins": [
+        "scraper"
+      ],
+      "mentions": [
+        {
+          "source": "Economic Times — SEBI topic (news)",
+          "origin": "scraper",
+          "order_type": "other",
+          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
+        }
+      ],
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
+    },
+    "BAJFINANCE": {
+      "primary_name": "Bajaj Finance",
       "order_type": "sebi-fine",
-      "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case.",
+      "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -101,21 +75,15 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "sebi-fine",
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case."
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "other",
-          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure."
+          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "PCJEWELLER": {
       "primary_name": "PC Jeweller",
       "order_type": "other",
-      "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary.",
+      "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why",
       "source_url": "https://economictimes.indiatimes.com/topic/sebi",
       "source_label": "Economic Times — SEBI topic (news)",
       "origins": [
@@ -126,10 +94,10 @@
           "source": "Economic Times — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "other",
-          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary."
+          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -148,7 +116,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -167,7 +135,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -186,7 +154,26 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
+    },
+    "ADANIPOWER": {
+      "primary_name": "Adani Power",
+      "order_type": "sebi-investigation",
+      "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions.",
+      "source_url": null,
+      "source_label": "SEBI status report to Supreme Court (2024-25)",
+      "origins": [
+        "curated"
+      ],
+      "mentions": [
+        {
+          "source": "SEBI status report to Supreme Court (2024-25)",
+          "origin": "curated",
+          "order_type": "sebi-investigation",
+          "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
+        }
+      ],
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -205,7 +192,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-11-14T06:49:17.915Z"
+      "first_seen_at": "2026-11-15T06:53:53.251Z"
     }
   },
   "unmatched_sample": [
@@ -216,7 +203,7 @@
       "origin": "scraper"
     },
     {
-      "name": "MakeMyTrip (India) Ltd",
+      "name": "MakeMyTrip",
       "type": "other",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
@@ -240,15 +227,9 @@
       "origin": "scraper"
     },
     {
-      "name": "Arjun Jewellers",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "IFL Finance",
-      "type": "other",
-      "source": "Business Standard — SEBI topic (news)",
+      "name": "EKI Energy Services Ltd",
+      "type": "sebi-ban",
+      "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
@@ -258,31 +239,7 @@
       "origin": "scraper"
     },
     {
-      "name": "Sembcorp Green Infra",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Mahanadi Coalfields",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
       "name": "MakeMyTrip",
-      "type": "other",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "Eki Energy Services Ltd",
-      "type": "sebi-ban",
-      "source": "Economic Times — SEBI topic (news)",
-      "origin": "scraper"
-    },
-    {
-      "name": "HT Media",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -293,12 +250,12 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-14T06:48:29.555Z",
+      "at": "2026-11-15T06:52:59.649Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 5,
-      "total_extracted": 5,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
           "name": "Avadhut Sathe",
@@ -311,30 +268,12 @@
           "order_type": "sebi-ban",
           "is_listed_entity": true,
           "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
-        },
-        {
-          "name": "Adani Group",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations"
-        },
-        {
-          "name": "Lloyds Enterprises",
-          "order_type": "settlement",
-          "is_listed_entity": true,
-          "snippet": "Lloyds Enterprises settles Sebi case over ₹144.82 crore advances"
-        },
-        {
-          "name": "Reliance",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Reliance, Waaree among 22 shortlisted for battery storage tender"
         }
       ],
-      "after_filter_count": 3,
+      "after_filter_count": 1,
       "dropped_counts": {
         "not_listed": 1,
-        "no_sebi_signal_in_snippet": 1,
+        "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
       },
@@ -343,16 +282,6 @@
           "name": "Rajesh Exports",
           "order_type": "sebi-ban",
           "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
-        },
-        {
-          "name": "Adani Group",
-          "order_type": "settlement",
-          "snippet": "Adani Group firms settle Sebi cases over public shareholding allegations"
-        },
-        {
-          "name": "Lloyds Enterprises",
-          "order_type": "settlement",
-          "snippet": "Lloyds Enterprises settles Sebi case over ₹144.82 crore advances"
         }
       ]
     },
@@ -360,30 +289,30 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-14T06:48:40.739Z",
+      "at": "2026-11-15T06:53:13.941Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 8,
-      "total_extracted": 8,
+      "total_extracted_raw": 6,
+      "total_extracted": 6,
       "prefilter_sample": [
         {
           "name": "Dabur India",
           "order_type": "enforcement-order",
           "is_listed_entity": true,
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
+          "snippet": "Sebi warns Dabur India over delayed disclosure of a USFDA warning letter, saying repeated violations could attract enforcement action under Sebi rules"
         },
         {
-          "name": "MakeMyTrip (India) Ltd",
+          "name": "Hindustan Coca-Cola Holdings",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO."
+          "snippet": "Hindustan Coca-Cola Holdings Ltd (HCCH), backed by The Coca-Cola Company and Jubilant Beverages, has filed its draft papers with the market regulator "
         },
         {
-          "name": "Hindustan Coca-Cola Holdings Ltd",
+          "name": "MakeMyTrip",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
+          "snippet": "Nasdaq-listed travel booking platform MakeMyTrip's India subsidiary has received Sebi's approval to launch an initial public offering (IPO)."
         },
         {
           "name": "Mahanadi Coalfields",
@@ -395,28 +324,16 @@
           "name": "Sagar Defence Engineering",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+          "snippet": "Sagar Defence, Encube Ethicals, Arjun Jewellers and IFL Finance have received Sebi's approval to launch IPOs, with proposed issues including fresh sha"
         },
         {
           "name": "Encube Ethicals",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
-        },
-        {
-          "name": "Arjun Jewellers",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
-        },
-        {
-          "name": "IFL Finance",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+          "snippet": "Sagar Defence, Encube Ethicals, Arjun Jewellers and IFL Finance have received Sebi's approval to launch IPOs, with proposed issues including fresh sha"
         }
       ],
-      "after_filter_count": 8,
+      "after_filter_count": 6,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -427,17 +344,17 @@
         {
           "name": "Dabur India",
           "order_type": "enforcement-order",
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
+          "snippet": "Sebi warns Dabur India over delayed disclosure of a USFDA warning letter, saying repeated violations could attract enfor"
         },
         {
-          "name": "MakeMyTrip (India) Ltd",
+          "name": "Hindustan Coca-Cola Holdings",
           "order_type": "other",
-          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO."
+          "snippet": "Hindustan Coca-Cola Holdings Ltd (HCCH), backed by The Coca-Cola Company and Jubilant Beverages, has filed its draft pap"
         },
         {
-          "name": "Hindustan Coca-Cola Holdings Ltd",
+          "name": "MakeMyTrip",
           "order_type": "other",
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
+          "snippet": "Nasdaq-listed travel booking platform MakeMyTrip's India subsidiary has received Sebi's approval to launch an initial pu"
         },
         {
           "name": "Mahanadi Coalfields",
@@ -447,22 +364,12 @@
         {
           "name": "Sagar Defence Engineering",
           "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+          "snippet": "Sagar Defence, Encube Ethicals, Arjun Jewellers and IFL Finance have received Sebi's approval to launch IPOs, with propo"
         },
         {
           "name": "Encube Ethicals",
           "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
-        },
-        {
-          "name": "Arjun Jewellers",
-          "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
-        },
-        {
-          "name": "IFL Finance",
-          "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+          "snippet": "Sagar Defence, Encube Ethicals, Arjun Jewellers and IFL Finance have received Sebi's approval to launch IPOs, with propo"
         }
       ]
     },
@@ -470,156 +377,105 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-14T06:48:49.632Z",
+      "at": "2026-11-15T06:53:24.755Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 16,
-      "total_extracted": 16,
+      "total_extracted_raw": 9,
+      "total_extracted": 9,
       "prefilter_sample": [
+        {
+          "name": "Axis Capital",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
+        },
+        {
+          "name": "EKI Energy Services Ltd",
+          "order_type": "sebi-ban",
+          "is_listed_entity": true,
+          "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty"
+        },
         {
           "name": "Razorpay Software Ltd",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Razorpay Software Ltd and Sembcorp Green Infra recently received approval from Sebi for their initial public offerings."
-        },
-        {
-          "name": "Sembcorp Green Infra",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Razorpay Software Ltd and Sembcorp Green Infra recently received approval from Sebi for their initial public offerings."
+          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO"
         },
         {
           "name": "Mahanadi Coalfields",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi has granted approval for initial public offerings from six companies including Mahanadi Coalfields."
+          "snippet": "Mahanadi Coalfields IPO may open next week, issue size pegged at Rs 10,000 crore"
         },
         {
           "name": "MakeMyTrip",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO."
+          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO"
         },
         {
-          "name": "Axis MF",
+          "name": "Bajaj Finance",
           "order_type": "sebi-fine",
           "is_listed_entity": true,
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case."
-        },
-        {
-          "name": "Axis Capital",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure."
+          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
         },
         {
           "name": "PC Jeweller",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary."
-        },
-        {
-          "name": "Bajaj Finance",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "Bajaj Finance opens QIP at Rs 992.25 floor price, may offer up to 5% discount."
-        },
-        {
-          "name": "Eki Energy Services Ltd",
-          "order_type": "sebi-ban",
-          "is_listed_entity": true,
-          "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty."
+          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
         },
         {
           "name": "Zee Entertainment",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Zee Entertainment approves Rs 600-crore share buyback at Rs 91 per share."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi revises currency derivative norms for domestic investors."
-        },
-        {
-          "name": "Sebi",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Sebi sets up working group to review Innovators Growth Platform framework."
-        },
-        {
-          "name": "HT Media",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "HT Media gets SEBI nod to launch IPO."
-        },
-        {
-          "name": "IRCTC",
-          "order_type": "other",
-          "is_listed_entity": true,
-          "snippet": "IRCTC reported a 22.9% year-on-year decline in Q2FY27 consolidated net profit."
+          "snippet": "Zee Entertainment approves Rs 600-crore share buyback at Rs 91 apiece; promoters to stay out"
         },
         {
           "name": "HFCL",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "HFCL shares gain 2% after securing Rs 834 crore export orders for optical fibre cables."
+          "snippet": "HFCL shares gain 2% after securing Rs 834 crore export orders for optical fibre cables"
         }
       ],
-      "after_filter_count": 9,
+      "after_filter_count": 6,
       "dropped_counts": {
-        "not_listed": 2,
-        "no_sebi_signal_in_snippet": 5,
+        "not_listed": 0,
+        "no_sebi_signal_in_snippet": 3,
         "resolved_in_favour": 0,
         "no_name": 0
       },
       "sample": [
         {
+          "name": "Axis Capital",
+          "order_type": "other",
+          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure; Axis Bank shares fall over 1%"
+        },
+        {
+          "name": "EKI Energy Services Ltd",
+          "order_type": "sebi-ban",
+          "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty"
+        },
+        {
           "name": "Razorpay Software Ltd",
           "order_type": "other",
-          "snippet": "Razorpay Software Ltd and Sembcorp Green Infra recently received approval from Sebi for their initial public offerings."
-        },
-        {
-          "name": "Sembcorp Green Infra",
-          "order_type": "other",
-          "snippet": "Razorpay Software Ltd and Sembcorp Green Infra recently received approval from Sebi for their initial public offerings."
-        },
-        {
-          "name": "Mahanadi Coalfields",
-          "order_type": "other",
-          "snippet": "Sebi has granted approval for initial public offerings from six companies including Mahanadi Coalfields."
+          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO"
         },
         {
           "name": "MakeMyTrip",
           "order_type": "other",
-          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO."
+          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO"
         },
         {
-          "name": "Axis MF",
+          "name": "Bajaj Finance",
           "order_type": "sebi-fine",
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case."
-        },
-        {
-          "name": "Axis Capital",
-          "order_type": "other",
-          "snippet": "Sebi issues final order against Axis Capital, imposes regulatory censure."
+          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
         },
         {
           "name": "PC Jeweller",
           "order_type": "other",
-          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary."
-        },
-        {
-          "name": "Eki Energy Services Ltd",
-          "order_type": "sebi-ban",
-          "snippet": "Sebi bars EKI Energy, MD Dabkara, others from market; imposes penalty."
-        },
-        {
-          "name": "HT Media",
-          "order_type": "other",
-          "snippet": "HT Media gets SEBI nod to launch IPO."
+          "snippet": "PC Jeweller shares drop 4% after Sebi sends warning letters to MD, company secretary. Here's why"
         }
       ]
     },
@@ -627,29 +483,16 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-11-14T06:49:06.315Z",
+      "at": "2026-11-15T06:53:46.213Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
-      "prefilter_sample": [
-        {
-          "name": "CITRUS CHECK INNS LIMITED",
-          "order_type": "public-notice",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
-        },
-        {
-          "name": "ROYAL TWINKLE STAR CLUB PVT. LTD",
-          "order_type": "public-notice",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
-        }
-      ],
+      "total_extracted_raw": 0,
+      "total_extracted": 0,
+      "prefilter_sample": [],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 2,
+        "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
