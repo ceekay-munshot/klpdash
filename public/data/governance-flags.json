@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-11-18T07:47:19.544Z",
+  "generated_at": "2026-11-19T07:44:08.286Z",
   "source_count": 4,
   "curated_baseline_count": 5,
-  "total_entities_seen": 19,
+  "total_entities_seen": 22,
   "flagged_companies": {
     "DABUR": {
       "primary_name": "Dabur India",
       "order_type": "other",
-      "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter",
+      "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter.",
       "source_url": "https://www.business-standard.com/topic/sebi",
       "source_label": "Business Standard — SEBI topic (news)",
       "origins": [
@@ -18,15 +18,15 @@
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "other",
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter"
+          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "HINDZINC": {
-      "primary_name": "Hindustan Coca-Cola Holdings Ltd",
+      "primary_name": "Hindustan Coca-Cola Holdings",
       "order_type": "other",
-      "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO",
+      "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO.",
       "source_url": "https://www.business-standard.com/topic/sebi",
       "source_label": "Business Standard — SEBI topic (news)",
       "origins": [
@@ -37,35 +37,10 @@
           "source": "Business Standard — SEBI topic (news)",
           "origin": "scraper",
           "order_type": "other",
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO"
+          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
-    },
-    "AXISBANK": {
-      "primary_name": "Axis Mutual Fund",
-      "order_type": "sebi-fine",
-      "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case",
-      "source_url": "https://economictimes.indiatimes.com/topic/sebi",
-      "source_label": "Economic Times — SEBI topic (news)",
-      "origins": [
-        "scraper"
-      ],
-      "mentions": [
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
-        },
-        {
-          "source": "Economic Times — SEBI topic (news)",
-          "origin": "scraper",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
-        }
-      ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "ADANIENT": {
       "primary_name": "Adani Enterprises",
@@ -84,7 +59,7 @@
           "snippet": "Ongoing SEBI investigation into Adani group entities — disclosures of related-party transactions and offshore-holding allegations following the 2023 Hindenburg report; SEBI status reports filed with S"
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "ADANIGREEN": {
       "primary_name": "Adani Green Energy",
@@ -103,7 +78,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group related-party / offshore-holding disclosures."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "ADANIPORTS": {
       "primary_name": "Adani Ports & SEZ",
@@ -122,7 +97,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "ADANIPOWER": {
       "primary_name": "Adani Power",
@@ -141,7 +116,7 @@
           "snippet": "Subject entity in ongoing SEBI investigation into Adani group disclosures and related-party transactions."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     },
     "ZEEL": {
       "primary_name": "Zee Entertainment",
@@ -160,7 +135,7 @@
           "snippet": "SEBI orders restricting Zee promoters from directorship + show-cause on alleged fund diversion (orders issued 2023, appeals + follow-ups ongoing through 2024-25)."
         }
       ],
-      "first_seen_at": "2026-11-18T07:47:19.544Z"
+      "first_seen_at": "2026-11-19T07:44:08.286Z"
     }
   },
   "unmatched_sample": [
@@ -171,13 +146,19 @@
       "origin": "scraper"
     },
     {
-      "name": "MakeMyTrip (India) Ltd",
+      "name": "Razorpay",
+      "type": "sebi-investigation",
+      "source": "Mint — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "MakeMyTrip",
       "type": "other",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Sagar Defence Engineering",
+      "name": "Sagar Defence",
       "type": "other",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
@@ -189,37 +170,61 @@
       "origin": "scraper"
     },
     {
-      "name": "Mahanadi Coalfields",
+      "name": "Arjun Jewellers",
       "type": "other",
       "source": "Business Standard — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Razorpay",
+      "name": "IFL Finance",
+      "type": "other",
+      "source": "Business Standard — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Assetz Ltd",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Razorpay",
+      "name": "Razorpay Software Ltd",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Arihant Capital",
+      "name": "Razorpay Software Ltd",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "Arihant Capital",
+      "name": "Sembcorp Green Infra",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
     },
     {
-      "name": "MakeMyTrip",
+      "name": "Vikas Khemani’s Carnelian Asset Management",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "MakeMyTrip India",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Mahanadi Coalfields",
+      "type": "other",
+      "source": "Economic Times — SEBI topic (news)",
+      "origin": "scraper"
+    },
+    {
+      "name": "Sequent Scientific",
       "type": "other",
       "source": "Economic Times — SEBI topic (news)",
       "origin": "scraper"
@@ -230,27 +235,33 @@
       "url": "https://www.livemint.com/topic/sebi",
       "label": "Mint — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-18T07:46:41.461Z",
+      "at": "2026-11-19T07:43:28.658Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 2,
-      "total_extracted": 2,
+      "total_extracted_raw": 3,
+      "total_extracted": 3,
       "prefilter_sample": [
         {
           "name": "Avadhut Sathe",
           "order_type": "sebi-ban",
           "is_listed_entity": false,
-          "snippet": "Sebi bars Avadhut Sathe, academy from markets, imposes ₹11.5 crore penalty"
+          "snippet": "Sebi bars Avadhut Sathe, academy from markets, imposes ₹11.5 crore penalty."
         },
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
           "is_listed_entity": true,
-          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place."
+        },
+        {
+          "name": "Razorpay",
+          "order_type": "sebi-investigation",
+          "is_listed_entity": true,
+          "snippet": "Upcoming IPO: Razorpay gets SEBI nod for IPO launch: Top things to know about the issue."
         }
       ],
-      "after_filter_count": 1,
+      "after_filter_count": 2,
       "dropped_counts": {
         "not_listed": 1,
         "no_sebi_signal_in_snippet": 0,
@@ -261,7 +272,12 @@
         {
           "name": "Rajesh Exports",
           "order_type": "sebi-investigation",
-          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place"
+          "snippet": "Sebi bars Rajesh Mehta from trading in Rajesh Exports, keeps curbs in place."
+        },
+        {
+          "name": "Razorpay",
+          "order_type": "sebi-investigation",
+          "snippet": "Upcoming IPO: Razorpay gets SEBI nod for IPO launch: Top things to know about the issue."
         }
       ]
     },
@@ -269,51 +285,57 @@
       "url": "https://www.business-standard.com/topic/sebi",
       "label": "Business Standard — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-18T07:46:49.589Z",
+      "at": "2026-11-19T07:43:37.010Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 6,
-      "total_extracted": 6,
+      "total_extracted_raw": 7,
+      "total_extracted": 7,
       "prefilter_sample": [
         {
           "name": "Dabur India",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter"
+          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
         },
         {
-          "name": "MakeMyTrip (India) Ltd",
+          "name": "MakeMyTrip",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO"
+          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO."
         },
         {
-          "name": "Hindustan Coca-Cola Holdings Ltd",
+          "name": "Hindustan Coca-Cola Holdings",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO"
+          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
         },
         {
-          "name": "Sagar Defence Engineering",
+          "name": "Sagar Defence",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         },
         {
           "name": "Encube Ethicals",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         },
         {
-          "name": "Mahanadi Coalfields",
+          "name": "Arjun Jewellers",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi approves Mahanadi Coalfields IPO as Coal India plans 10% stake sale"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+        },
+        {
+          "name": "IFL Finance",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         }
       ],
-      "after_filter_count": 6,
+      "after_filter_count": 7,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 0,
@@ -324,32 +346,37 @@
         {
           "name": "Dabur India",
           "order_type": "other",
-          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter"
+          "snippet": "Sebi warns Dabur India over delay in disclosing USFDA warning letter."
         },
         {
-          "name": "MakeMyTrip (India) Ltd",
+          "name": "MakeMyTrip",
           "order_type": "other",
-          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO"
+          "snippet": "MakeMyTrip's India subsidiary receives Sebi approval to float IPO."
         },
         {
-          "name": "Hindustan Coca-Cola Holdings Ltd",
+          "name": "Hindustan Coca-Cola Holdings",
           "order_type": "other",
-          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO"
+          "snippet": "Hindustan Coca-Cola Holdings files draft papers with Sebi for IPO."
         },
         {
-          "name": "Sagar Defence Engineering",
+          "name": "Sagar Defence",
           "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         },
         {
           "name": "Encube Ethicals",
           "order_type": "other",
-          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         },
         {
-          "name": "Mahanadi Coalfields",
+          "name": "Arjun Jewellers",
           "order_type": "other",
-          "snippet": "Sebi approves Mahanadi Coalfields IPO as Coal India plans 10% stake sale"
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
+        },
+        {
+          "name": "IFL Finance",
+          "order_type": "other",
+          "snippet": "Sagar Defence, Encube Ethicals among 4 firms to secure Sebi's nod for IPOs."
         }
       ]
     },
@@ -357,87 +384,93 @@
       "url": "https://economictimes.indiatimes.com/topic/sebi",
       "label": "Economic Times — SEBI topic (news)",
       "mode": "news",
-      "at": "2026-11-18T07:46:57.466Z",
+      "at": "2026-11-19T07:43:46.256Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 12,
-      "total_extracted": 12,
+      "total_extracted_raw": 13,
+      "total_extracted": 13,
       "prefilter_sample": [
         {
-          "name": "Axis Mutual Fund",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
-        },
-        {
-          "name": "Axis Mutual Fund",
-          "order_type": "sebi-fine",
-          "is_listed_entity": true,
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
-        },
-        {
-          "name": "Razorpay",
+          "name": "Assetz Ltd",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs"
+          "snippet": "Real estate firm Assetz gets Sebi nod to float Rs 1,200-cr IPO."
         },
         {
-          "name": "Razorpay",
+          "name": "Razorpay Software Ltd",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO"
+          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs."
         },
         {
-          "name": "Arihant Capital",
+          "name": "Razorpay Software Ltd",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Arihant Capital gets SEBI's in-principle approval to launch mutual fund business"
+          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO."
         },
         {
-          "name": "Arihant Capital",
+          "name": "Sembcorp Green Infra",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Sebi approves net settlement of cash market trades for mutual funds"
+          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs."
+        },
+        {
+          "name": "Vikas Khemani’s Carnelian Asset Management",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Vikas Khemani’s Carnelian Asset Management files draft document with Sebi for flexi cap fund."
+        },
+        {
+          "name": "MakeMyTrip India",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO."
         },
         {
           "name": "Mahanadi Coalfields",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Mahanadi Coalfields IPO may open next week, issue size pegged at Rs 10,000 crore"
+          "snippet": "Sebi approves 6 IPOs including Mahanadi Coalfields, Veritas Finance and Sagar Defence."
         },
         {
-          "name": "Mahanadi Coalfields",
+          "name": "Anand Rathi Wealth",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Mahanadi Coalfields files RHP for proposed IPO worth nearly Rs 9,500 crore"
+          "snippet": "Anand Rathi to gift shares worth Rs 30 cr to 5,000 employees and personal staff."
         },
         {
-          "name": "MakeMyTrip",
+          "name": "BSE",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO"
+          "snippet": "BSE shares rise 2% as Bankex becomes first Indian sectoral index futures to be approved for US market."
         },
         {
-          "name": "Zee Entertainment",
+          "name": "Cipla",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Zee Entertainment approves Rs 600-crore share buyback at Rs 91 apiece; promoters to stay out"
+          "snippet": "DRI searches Cipla's Mumbai office, Bhiwandi depot over imported drugs."
         },
         {
-          "name": "Bajaj Finance",
+          "name": "Sequent Scientific",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "Bajaj Finance opens QIP at Rs 992.25 floor price, may offer up to 5% discount"
+          "snippet": "Sebi cancels registrations of 8 investment advisers for non-payment of renewal fees."
         },
         {
-          "name": "NSE",
+          "name": "Groww",
           "order_type": "other",
           "is_listed_entity": true,
-          "snippet": "BSE shares will be in focus after its Bankex futures contract became the first Indian sectoral index futures to receive approval from the US Commodity"
+          "snippet": "Groww shares in focus as Ribbit Capital offloads stake worth Rs 1,905 crore; Morgan Stanley, BlackRock among buyers."
+        },
+        {
+          "name": "Groww",
+          "order_type": "other",
+          "is_listed_entity": true,
+          "snippet": "Groww shares in focus as Ribbit Capital offloads stake worth Rs 1,905 crore; Morgan Stanley, BlackRock among buyers."
         }
       ],
-      "after_filter_count": 7,
+      "after_filter_count": 8,
       "dropped_counts": {
         "not_listed": 0,
         "no_sebi_signal_in_snippet": 5,
@@ -446,39 +479,44 @@
       },
       "sample": [
         {
-          "name": "Axis Mutual Fund",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi imposes Rs 40 lakh penalty on two brokers in Axis Mutual Fund front-running case"
-        },
-        {
-          "name": "Axis Mutual Fund",
-          "order_type": "sebi-fine",
-          "snippet": "Sebi levies Rs 40 lakh penalty on four entities in Axis MF front-running case"
-        },
-        {
-          "name": "Razorpay",
+          "name": "Assetz Ltd",
           "order_type": "other",
-          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs"
+          "snippet": "Real estate firm Assetz gets Sebi nod to float Rs 1,200-cr IPO."
         },
         {
-          "name": "Razorpay",
+          "name": "Razorpay Software Ltd",
           "order_type": "other",
-          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO"
+          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs."
         },
         {
-          "name": "Arihant Capital",
+          "name": "Razorpay Software Ltd",
           "order_type": "other",
-          "snippet": "Arihant Capital gets SEBI's in-principle approval to launch mutual fund business"
+          "snippet": "Razorpay moves closer to public market debut as Sebi gives green signal to IPO."
         },
         {
-          "name": "Arihant Capital",
+          "name": "Sembcorp Green Infra",
           "order_type": "other",
-          "snippet": "Sebi approves net settlement of cash market trades for mutual funds"
+          "snippet": "Razorpay, Sembcorp Green Infra get Sebi nod to float IPOs."
         },
         {
-          "name": "MakeMyTrip",
+          "name": "Vikas Khemani’s Carnelian Asset Management",
           "order_type": "other",
-          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO"
+          "snippet": "Vikas Khemani’s Carnelian Asset Management files draft document with Sebi for flexi cap fund."
+        },
+        {
+          "name": "MakeMyTrip India",
+          "order_type": "other",
+          "snippet": "MakeMyTrip's India arm gets Sebi nod to float IPO."
+        },
+        {
+          "name": "Mahanadi Coalfields",
+          "order_type": "other",
+          "snippet": "Sebi approves 6 IPOs including Mahanadi Coalfields, Veritas Finance and Sagar Defence."
+        },
+        {
+          "name": "Sequent Scientific",
+          "order_type": "other",
+          "snippet": "Sebi cancels registrations of 8 investment advisers for non-payment of renewal fees."
         }
       ]
     },
@@ -486,41 +524,29 @@
       "url": "https://www.sebi.gov.in/enforcement/orders.html",
       "label": "SEBI — orders listing (backup)",
       "mode": "regulator",
-      "at": "2026-11-18T07:47:14.364Z",
+      "at": "2026-11-19T07:43:59.202Z",
       "fc_status": 200,
       "outcome": "ok",
       "upstream_status": 200,
-      "total_extracted_raw": 4,
-      "total_extracted": 4,
+      "total_extracted_raw": 2,
+      "total_extracted": 2,
       "prefilter_sample": [
         {
           "name": "CITRUS CHECK INNS LIMITED",
-          "order_type": "other",
+          "order_type": "public-notice",
           "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
-        },
-        {
-          "name": "PANCARD CLUBS LIMITED",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "Asset Sale committee in matter of Pancard Clubs Limited - All investors are advised to communicate any queries/requests to Asset Sale committee in mat"
-        },
-        {
-          "name": "ROYAL TWINKLE STAR CLUB PVT. LTD",
-          "order_type": "other",
-          "is_listed_entity": false,
-          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND"
+          "snippet": "PUBLIC NOTICE IN THE MATTER OF CITRUS CHECK INNS LIMITED AND ROYAL TWINKLE STAR CLUB PVT. LTD FOR REFUND (PHASE-II)"
         },
         {
           "name": "PACL LIMITED",
-          "order_type": "other",
+          "order_type": "public-notice",
           "is_listed_entity": false,
-          "snippet": "Public Notice - Submission of Original PACL Certificate for Refund"
+          "snippet": "Requirements for filing objections w.r.t properties of PACL Limited"
         }
       ],
       "after_filter_count": 0,
       "dropped_counts": {
-        "not_listed": 4,
+        "not_listed": 2,
         "no_sebi_signal_in_snippet": 0,
         "resolved_in_favour": 0,
         "no_name": 0
