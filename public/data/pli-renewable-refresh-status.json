@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-15T23:50:31.524Z",
+  "generated_at": "2026-11-23T00:33:29.864Z",
   "pli": {
     "existing": 174,
     "discovered": 0,
@@ -15,56 +15,46 @@
       "url": "https://www.pib.gov.in/PressReleseDetailm.aspx?PRID=2&MenuId=1",
       "label": "PIB — recent press releases",
       "category": "pli",
-      "at": "2026-11-15T23:50:02.848Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "candidates_count": 0,
-      "candidates_sample": []
+      "at": "2026-11-23T00:33:26.986Z",
+      "fc_status": 401,
+      "outcome": "fc_http_error",
+      "error_body": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}"
     },
     {
       "url": "https://pib.gov.in/indexd.aspx",
       "label": "PIB — home",
       "category": "pli",
-      "at": "2026-11-15T23:50:06.344Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "candidates_count": 0,
-      "candidates_sample": []
+      "at": "2026-11-23T00:33:27.676Z",
+      "fc_status": 401,
+      "outcome": "fc_http_error",
+      "error_body": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}"
     },
     {
       "url": "https://www.dpiit.gov.in/whats-new",
       "label": "DPIIT — what's new",
       "category": "pli",
-      "at": "2026-11-15T23:50:13.580Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "candidates_count": 0,
-      "candidates_sample": []
+      "at": "2026-11-23T00:33:28.223Z",
+      "fc_status": 401,
+      "outcome": "fc_http_error",
+      "error_body": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}"
     },
     {
       "url": "https://mnre.gov.in/whats-new/",
       "label": "MNRE — what's new",
       "category": "renewable",
-      "at": "2026-11-15T23:50:15.399Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "candidates_count": 0,
-      "candidates_sample": []
+      "at": "2026-11-23T00:33:28.770Z",
+      "fc_status": 401,
+      "outcome": "fc_http_error",
+      "error_body": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}"
     },
     {
       "url": "https://mnre.gov.in/press-releases/",
       "label": "MNRE — press releases",
       "category": "renewable",
-      "at": "2026-11-15T23:50:24.897Z",
-      "fc_status": 200,
-      "outcome": "ok",
-      "upstream_status": 200,
-      "candidates_count": 0,
-      "candidates_sample": []
+      "at": "2026-11-23T00:33:29.317Z",
+      "fc_status": 401,
+      "outcome": "fc_http_error",
+      "error_body": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}"
     }
   ]
 }
