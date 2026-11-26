@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-25T08:55:10.883Z",
+  "generated_at": "2026-11-26T08:41:01.315Z",
   "pcr": {
     "value": 1.14,
     "source": "NSE option-chain (via Firecrawl LLM extract)",
@@ -13,14 +13,14 @@
     "api_key_prefix": "fc-203...",
     "calls": [
       {
-        "at": "2026-11-25T08:55:11.121Z",
+        "at": "2026-11-26T08:41:01.498Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 401,
         "fc_body_sample": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}",
         "outcome": "fc_extract_http_error"
       },
       {
-        "at": "2026-11-25T08:55:11.301Z",
+        "at": "2026-11-26T08:41:01.557Z",
         "url": "https://www.nseindia.com/option-chain",
         "fc_status": 401,
         "fc_body_sample": "{\"success\":false,\"error\":\"Unauthorized: Invalid token\"}",
